@@ -1,0 +1,72 @@
+# Rust
+/target/
+**/*.rs.bk
+*.pdb
+Cargo.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated files
+**/generated/
+**/proto_gen/
+
+# Build artifacts
+/dist/
+/build/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Testing
+/coverage/
+*.test
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Docker
+docker-compose.override.yml
+
+# Configuration (keep templates only)
+config/*.local.yaml
+config/*.dev.yaml
+!config/*.example.yaml
+
+# AI Tools
+.cursor/
+.aider*
+.copilot/
+.github/copilot/
+*.ai.md
+.ai/
+.claude/
+.chatgpt/
+.codeium/
+.tabnine/
+.kite/
+.sourcegraph/
+.continue/
+.windsurf/

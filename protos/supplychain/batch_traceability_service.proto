@@ -1,0 +1,72 @@
+// ============================================================================
+// /supplychain/batch-traceability-service (版本 2.0)
+// 描述: 提供批次的端到端追溯功能，包括向上追溯（到原材料）和向下追溯（到客户）。
+//       字段设计参考核心ERP的批次主数据 (MCH1, MCHA) 和批次使用清单 (CHVW)。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.supplychain.traceability;
+
+option java_package = "com.enterprise.supplychain.traceability.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/supplychain/traceability/v2;traceability";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: BatchTraceabilityService
+// ============================================================================
+
+service BatchTraceabilityService {
+  // 向上追溯批次 (找到其来源)
+  rpc TraceUpstream(TraceRequest) returns (TraceabilityTree);
+
+  // 向下追溯批次 (找到其去向)
+  rpc TraceDownstream(TraceRequest) returns (TraceabilityTree);
+}
+
+// ============================================================================
+// 数据结构: Traceability (追溯)
+// ============================================================================
+
+// 追溯树
+message TraceabilityTree {
+  // 根节点
+  TraceabilityNode root = 1;
+}
+
+// 追溯节点
+message TraceabilityNode {
+  // 物料编号
+  string material = 1;
+  // 批次号
+  string batch = 2;
+  // 工厂
+  string plant = 3;
+  // 节点类型 (例如, RAW_MATERIAL, FINISHED_GOOD, WIP)
+  string node_type = 4;
+  // 相关的文档 (例如, 生产订单, 采购订单, 交货单)
+  string reference_document = 5;
+  // 生产/收货日期
+  google.protobuf.Timestamp production_date = 6;
+  // 子节点 (对于向上追溯，是其组件；对于向下追溯，是其被用到的地方)
+  repeated TraceabilityNode children = 7;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 追溯请求
+message TraceRequest {
+  // 物料编号
+  string material = 1;
+  // 批次号
+  string batch = 2;
+  // 工厂
+  string plant = 3;
+  // 追溯深度限制
+  int32 depth_limit = 4;
+}

@@ -1,0 +1,192 @@
+// ============================================================================
+// /supplychain/inventory-management-service (版本 2.0)
+// 描述: 提供库存查询、库存移动（转移、杂项收发）和物理盘点功能。
+//       字段设计参考核心ERP的 MKPF, MSEG, MARD, ISEG 表。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.supplychain.inventory;
+
+option java_package = "com.enterprise.supplychain.inventory.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/supplychain/inventory/v2;inventory";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: InventoryManagementService
+// ============================================================================
+
+service InventoryManagementService {
+  // 获取物料在不同存储地点的库存概览
+  rpc GetStockOverview(GetStockOverviewRequest) returns (GetStockOverviewResponse);
+
+  // 执行库存移动（如库存转移、杂项收发货）
+  rpc PostStockMovement(PostStockMovementRequest) returns (StockMovementResponse);
+
+  // 创建物理盘点凭证
+  rpc CreatePhysicalInventoryDocument(CreatePIDocumentRequest) returns (PIDocumentResponse);
+
+  // 输入盘点数量
+  rpc EnterInventoryCount(EnterInventoryCountRequest) returns (EnterInventoryCountResponse);
+
+  // 过账盘点差异
+  rpc PostInventoryDifference(PostInventoryDifferenceRequest) returns (StockMovementResponse);
+}
+
+// ============================================================================
+// 数据结构: 库存与物料移动
+// ============================================================================
+
+// 库存级别 (参考: MARD)
+message StockLevel {
+  // 工厂 (原: WERKS)
+  string plant = 1;
+  // 存储地点 (原: LGORT)
+  string storage_location = 2;
+  // 非限制使用库存 (原: LABST)
+  string unrestricted_use_stock = 3;
+  // 质检库存 (原: INSME)
+  string quality_inspection_stock = 4;
+  // 冻结库存 (原: SPEME)
+  string blocked_stock = 5;
+  // 单位 (原: MEINS)
+  string unit = 6;
+}
+
+// 物料移动抬头 (参考: MKPF)
+message StockMovementHeader {
+  // 凭证日期 (原: BLDAT)
+  google.protobuf.Timestamp document_date = 1;
+  // 过账日期 (原: BUDAT)
+  google.protobuf.Timestamp posting_date = 2;
+  // 凭证抬头文本 (原: BKTXT)
+  string header_text = 3;
+  // 参考凭证号 (原: XBLNR)
+  string reference_document = 4;
+}
+
+// 物料移动行项目 (参考: MSEG)
+message StockMovementItem {
+  // 移动类型 (原: BWART)
+  string movement_type = 1;
+  // 物料编号 (原: MATNR)
+  string material = 2;
+  // 工厂 (原: WERKS)
+  string plant = 3;
+  // 存储地点 (原: LGORT)
+  string storage_location = 4;
+  // 数量 (原: MENGE)
+  string quantity = 5;
+  // 单位 (原: MEINS)
+  string unit = 6;
+  // 接收方/发出方存储地点 (原: UMLGO)
+  string receiving_issuing_location = 7;
+  // 成本中心 (原: KOSTL)
+  string cost_center = 8;
+  // 订单号 (原: AUFNR)
+  string order_number = 9;
+  // 借贷标识 (原: SHKZG)
+  string debit_credit_indicator = 10;
+  // 行项目文本 (原: SGTXT)
+  string item_text = 11;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 获取库存概览请求
+message GetStockOverviewRequest {
+  // 物料编号
+  string material = 1;
+  // 工厂
+  string plant = 2;
+}
+
+// 获取库存概览响应
+message GetStockOverviewResponse {
+  // 物料编号
+  string material = 1;
+  // 库存级别列表
+  repeated StockLevel stock_levels = 2;
+}
+
+// 过账库存移动请求
+message PostStockMovementRequest {
+  // 移动抬头
+  StockMovementHeader header = 1;
+  // 移动行项目
+  repeated StockMovementItem items = 2;
+}
+
+// 库存移动响应
+message StockMovementResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的物料凭证引用
+  enterprise.common.SystemDocumentReference material_document = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 创建物理盘点凭证请求
+message CreatePIDocumentRequest {
+  // 工厂
+  string plant = 1;
+  // 存储地点
+  string storage_location = 2;
+  // 计划盘点日期
+  google.protobuf.Timestamp planned_count_date = 3;
+  // 要盘点的物料列表 (如果为空，则盘点整个存储地点)
+  repeated string materials = 4;
+}
+
+// 物理盘点凭证响应
+message PIDocumentResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的盘点凭证号
+  string document_number = 2;
+  // 会计年度
+  int32 fiscal_year = 3;
+}
+
+// 输入盘点数量请求 (参考: ISEG)
+message EnterInventoryCountRequest {
+  // 盘点凭证号
+  string document_number = 1;
+  // 会计年度
+  int32 fiscal_year = 2;
+  // 盘点数量列表
+  repeated InventoryCountItem items = 3;
+}
+
+message InventoryCountItem {
+  // 物料编号
+  string material = 1;
+  // 盘点数量 (原: MENGE)
+  string counted_quantity = 2;
+  // 单位 (原: MEINS)
+  string unit = 3;
+}
+
+// 输入盘点数量响应
+message EnterInventoryCountResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 2;
+}
+
+// 过账盘点差异请求
+message PostInventoryDifferenceRequest {
+  // 盘点凭证号
+  string document_number = 1;
+  // 会计年度
+  int32 fiscal_year = 2;
+  // 过账日期
+  google.protobuf.Timestamp posting_date = 3;
+}

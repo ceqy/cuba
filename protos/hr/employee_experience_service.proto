@@ -1,0 +1,161 @@
+// ============================================================================
+// /hr/employee-experience-service (版本 2.0)
+// 描述: 管理员工体验，例如员工敬业度调查、反馈和认可。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.hr.experience;
+
+option java_package = "com.enterprise.hr.experience.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/hr/experience/v2;experience";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: EmployeeExperienceService
+// ============================================================================
+
+service EmployeeExperienceService {
+  // 发起一个员工调查
+  rpc LaunchSurvey(LaunchSurveyRequest) returns (LaunchSurveyResponse);
+
+  // 提交员工调查回复
+  rpc SubmitSurveyResponse(SubmitSurveyResponseRequest) returns (SubmitSurveyResponseResponse);
+
+  // 获取调查结果分析
+  rpc GetSurveyAnalytics(GetSurveyAnalyticsRequest) returns (SurveyAnalytics);
+
+  // 给予员工认可/赞赏
+  rpc GiveRecognition(GiveRecognitionRequest) returns (GiveRecognitionResponse);
+}
+
+// ============================================================================
+// 数据结构: Survey & Recognition
+// ============================================================================
+
+// 员工调查
+message Survey {
+  // 调查ID
+  string survey_id = 1;
+  // 调查标题
+  string title = 2;
+  // 调查问题
+  repeated SurveyQuestion questions = 3;
+  // 目标受众 (例如, 部门、职位级别)
+  string target_audience = 4;
+  // 调查有效期
+  enterprise.common.DateRange active_period = 5;
+}
+
+// 调查问题
+message SurveyQuestion {
+  // 问题ID
+  string question_id = 1;
+  // 问题文本
+  string text = 2;
+  // 问题类型 (例如, RATING_SCALE, MULTIPLE_CHOICE, OPEN_TEXT)
+  string question_type = 3;
+}
+
+// 调查结果分析
+message SurveyAnalytics {
+  // 调查ID
+  string survey_id = 1;
+  // 参与率
+  double participation_rate = 2;
+  // 总体敬业度得分
+  double overall_engagement_score = 3;
+  // 按问题分析
+  repeated QuestionAnalytics question_analytics = 4;
+}
+
+// 问题分析
+message QuestionAnalytics {
+  // 问题ID
+  string question_id = 1;
+  // 平均分 (对于评分问题)
+  double average_score = 2;
+  // 回复分布 (对于选择题)
+  map<string, int32> response_distribution = 3;
+}
+
+// 员工认可
+message Recognition {
+  // 认可ID
+  string recognition_id = 1;
+  // 发起人 (员工ID)
+  string giver_employee_id = 2;
+  // 接收人 (员工ID)
+  string receiver_employee_id = 3;
+  // 认可内容/原因
+  string message = 4;
+  // 关联的企业价值观
+  string company_value_aligned = 5;
+  // 认可时间
+  google.protobuf.Timestamp recognition_time = 6;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 发起调查请求
+message LaunchSurveyRequest {
+  // 调查详情
+  Survey survey = 1;
+}
+
+// 发起调查响应
+message LaunchSurveyResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的调查ID
+  string survey_id = 2;
+}
+
+// 提交调查回复请求
+message SubmitSurveyResponseRequest {
+  // 调查ID
+  string survey_id = 1;
+  // 回复人 (员工ID)
+  string respondent_employee_id = 2;
+  // 回复内容
+  repeated SurveyAnswer answers = 3;
+}
+
+// 调查回复
+message SurveyAnswer {
+  // 问题ID
+  string question_id = 1;
+  // 回复值
+  string answer_value = 2;
+}
+
+// 提交调查回复响应
+message SubmitSurveyResponseResponse {
+  // 操作是否成功
+  bool success = 1;
+}
+
+// 获取调查分析请求
+message GetSurveyAnalyticsRequest {
+  // 调查ID
+  string survey_id = 1;
+}
+
+// 给予认可请求
+message GiveRecognitionRequest {
+  // 认可详情
+  Recognition recognition = 1;
+}
+
+// 给予认可响应
+message GiveRecognitionResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的认可ID
+  string recognition_id = 2;
+}

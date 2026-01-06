@@ -1,0 +1,23 @@
+# Rust Toolchain Configuration
+# CUBA Enterprise Monorepo
+#
+# This file ensures all developers use the same Rust version.
+# See: https://rust-lang.github.io/rustup/overrides.html
+
+[toolchain]
+channel = "1.92.0"
+profile = "default"
+components = [
+    "rustfmt",
+    "clippy",
+    "rust-analyzer",
+    "rust-src",
+    "llvm-tools-preview",
+]
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-unknown-linux-musl",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin",
+]

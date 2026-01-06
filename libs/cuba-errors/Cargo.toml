@@ -1,0 +1,10 @@
+[package]
+name = "cuba-errors"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+sqlx.workspace = true
+config.workspace = true
+anyhow.workspace = true

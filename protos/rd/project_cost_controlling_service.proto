@@ -1,0 +1,102 @@
+// ============================================================================
+// /rd/project-cost-controlling-service (版本 2.0)
+// 描述: 管理研发项目的成本和预算。
+//       字段设计参考核心ERP的项目系统 (PS) 模块表结构 (例如, PRPS, COSP, COSS)。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.rd.projectcost;
+
+option java_package = "com.enterprise.rd.projectcost.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/rd/projectcost/v2;projectcost";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: ProjectCostControllingService
+// ============================================================================
+
+service ProjectCostControllingService {
+  // 获取项目/WBS元素的成本报告
+  rpc GetProjectCostReport(GetProjectCostReportRequest) returns (ProjectCostReport);
+
+  // 为项目/WBS元素过账直接成本
+  rpc PostDirectCost(PostDirectCostRequest) returns (PostDirectCostResponse);
+}
+
+// ============================================================================
+// 数据结构: ProjectCost (项目成本)
+// ============================================================================
+
+// 项目成本报告
+message ProjectCostReport {
+  // 项目定义或WBS元素 (原: POSID)
+  string project_or_wbs_element = 1;
+  // 描述
+  string description = 2;
+  // 计划成本
+  enterprise.common.MonetaryValue planned_cost = 3;
+  // 实际成本
+  enterprise.common.MonetaryValue actual_cost = 4;
+  // 承诺成本 (例如, 从采购订单)
+  enterprise.common.MonetaryValue commitment_cost = 5;
+  // 预算
+  enterprise.common.MonetaryValue budget = 6;
+  // 可用金额 (预算 - 实际 - 承诺)
+  enterprise.common.MonetaryValue available_amount = 7;
+  // 成本明细
+  repeated CostDetailItem cost_details = 8;
+}
+
+// 成本明细项
+message CostDetailItem {
+  // 成本要素 (原: KSTAR)
+  string cost_element = 1;
+  // 成本要素描述
+  string cost_element_description = 2;
+  // 金额
+  enterprise.common.MonetaryValue amount = 3;
+  // 过账日期
+  google.protobuf.Timestamp posting_date = 4;
+  // 参考凭证
+  string reference_document = 5;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 获取项目成本报告请求
+message GetProjectCostReportRequest {
+  // 项目定义或WBS元素
+  string project_or_wbs_element = 1;
+  // 是否展开所有下级WBS元素
+  bool drilldown = 2;
+}
+
+// 过账直接成本请求
+message PostDirectCostRequest {
+  // WBS元素
+  string wbs_element = 1;
+  // 成本要素
+  string cost_element = 2;
+  // 金额
+  enterprise.common.MonetaryValue amount = 3;
+  // 过账日期
+  google.protobuf.Timestamp posting_date = 4;
+  // 文本
+  string text = 5;
+}
+
+// 过账直接成本响应
+message PostDirectCostResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的会计凭证号
+  string accounting_document_number = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}

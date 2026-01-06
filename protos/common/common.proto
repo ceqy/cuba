@@ -1,0 +1,161 @@
+// ============================================================================
+// 通用消息定义 (版本 2.0)
+// 描述: 此文件定义了所有微服务共享的、经过脱敏处理的、参考核心ERP表结构的通用数据类型。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.common;
+
+option java_package = "com.enterprise.common.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/common/v2;common";
+
+import "google/protobuf/timestamp.proto";
+
+// ============================================================================
+// 基础数据类型
+// ============================================================================
+
+// 金额值
+// 用于表示货币金额，将值定义为字符串以避免精度损失。
+message MonetaryValue {
+  // 货币代码 (ISO 4217), 例如 "USD", "CNY"
+  string currency_code = 1; 
+  // 金额的字符串表示，例如 "12345.67"
+  string value = 2;
+}
+
+// 数量值
+// 用于表示带有单位的数量。
+message QuantityValue {
+  // 单位代码 (ISO), 例如 "PCE" (件), "KG" (千克)
+  string unit_code = 1;
+  // 数量的字符串表示，例如 "100.000"
+  string value = 2;
+}
+
+// 日期范围
+message DateRange {
+  // 开始日期
+  google.protobuf.Timestamp start_date = 1;
+  // 结束日期
+  google.protobuf.Timestamp end_date = 2;
+}
+
+// 时间戳范围
+message TimestampRange {
+  // 开始时间戳
+  google.protobuf.Timestamp start_time = 1;
+  // 结束时间戳
+  google.protobuf.Timestamp end_time = 2;
+}
+
+// ============================================================================
+// 集合与分页
+// ============================================================================
+
+// 分页请求
+message PaginationRequest {
+  // 页码 (从1开始)
+  int32 page = 1;
+  // 每页大小
+  int32 page_size = 2;
+}
+
+// 分页响应
+message PaginationResponse {
+  // 当前页码
+  int32 current_page = 1;
+  // 每页大小
+  int32 page_size = 2;
+  // 总记录数
+  int64 total_items = 3;
+  // 总页数
+  int32 total_pages = 4;
+}
+
+// ============================================================================
+// 系统交互
+// ============================================================================
+
+// 系统凭证引用
+// 用于唯一标识核心ERP系统中生成的凭证。
+message SystemDocumentReference {
+  // 凭证编号 (原: BELNR, VBELN, MBLNR)
+  string document_number = 1;
+  // 会计年度 (原: GJAHR, MJAHR)
+  int32 fiscal_year = 2;
+  // 法人实体/公司代码 (原: BUKRS)
+  string company_code = 3;
+  // 凭证类型 (原: BLART, AUART, BSART)
+  string document_type = 4;
+  // 凭证类别 (原: VBTYP, BSTYP)
+  string document_category = 5;
+}
+
+// API 调用消息
+// 用于包装从核心ERP系统API返回的消息。
+message ApiMessage {
+  // 消息类型 (E: Error, W: Warning, I: Info, S: Success)
+  string type = 1;
+  // 消息代码或编号
+  string code = 2;
+  // 消息文本
+  string message = 3;
+  // 消息指向的目标字段或参数
+  string target = 4;
+}
+
+// 审计数据
+// 记录数据的创建和修改信息。
+message AuditData {
+  // 创建人 (原: ERNAM)
+  string created_by = 1;
+  // 创建时间 (原: ERDAT, ERZET)
+  google.protobuf.Timestamp created_at = 2;
+  // 最后修改人 (原: AENAM)
+  string changed_by = 3;
+  // 最后修改时间 (原: AEDAT)
+  google.protobuf.Timestamp changed_at = 4;
+}
+
+// 错误详情
+// 用于在批量操作中返回具体某个项目的错误信息。
+message ErrorDetail {
+  // 失败的条目ID或索引
+  string item_id = 1;
+  // 错误信息
+  string error_message = 2;
+}
+
+// 批量操作结果
+message BatchOperationResult {
+  // 成功处理的总数
+  int32 success_count = 1;
+  // 处理失败的总数
+  int32 failure_count = 2;
+  // 失败条目的详细信息
+  repeated ErrorDetail errors = 3;
+}
+
+// ============================================================================
+// 主数据片段
+// ============================================================================
+
+// 地址信息
+// 基于客户/供应商主数据地址结构。
+message Address {
+  // 国家代码 (ISO 3166-1), (原: LAND1)
+  string country = 1;
+  // 省/州
+  string region = 2;
+  // 城市 (原: ORT01)
+  string city = 3;
+  // 邮政编码 (原: PSTLZ)
+  string postal_code = 4;
+  // 街道地址 (原: STRAS)
+  string street = 5;
+  // 门牌号
+  string house_number = 6;
+}

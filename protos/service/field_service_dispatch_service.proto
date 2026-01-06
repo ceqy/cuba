@@ -1,0 +1,101 @@
+// ============================================================================
+// /service/field-service-dispatch-service (版本 2.0)
+// 描述: 管理现场服务订单的调度和执行。
+//       字段设计参考核心ERP的服务订单 (类似AUFK) 和资源计划表。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.service.dispatch;
+
+option java_package = "com.enterprise.service.dispatch.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/service/dispatch/v2;dispatch";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: FieldServiceDispatchService
+// ============================================================================
+
+service FieldServiceDispatchService {
+  // 获取服务订单详情
+  rpc GetServiceOrder(GetServiceOrderRequest) returns (ServiceOrderDetail);
+
+  // 将技术人员分配到服务订单
+  rpc AssignTechnician(AssignTechnicianRequest) returns (AssignTechnicianResponse);
+
+  // 更新服务订单状态 (例如, Dispatched, On-site, Completed)
+  rpc UpdateServiceOrderStatus(UpdateServiceOrderStatusRequest) returns (UpdateServiceOrderStatusResponse);
+}
+
+// ============================================================================
+// 数据结构: ServiceOrder (服务订单)
+// ============================================================================
+
+// 服务订单详情
+message ServiceOrderDetail {
+  // 服务订单号
+  string order_number = 1;
+  // 订单类型
+  string order_type = 2;
+  // 客户编号
+  string customer_id = 3;
+  // 服务地点
+  enterprise.common.Address service_location = 4;
+  // 描述
+  string description = 5;
+  // 计划开始时间
+  google.protobuf.Timestamp planned_start_datetime = 6;
+  // 分配的技术人员ID
+  string assigned_technician_id = 7;
+  // 当前状态
+  string status = 8;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 获取服务订单请求
+message GetServiceOrderRequest {
+  // 服务订单号
+  string order_number = 1;
+}
+
+// 分配技术人员请求
+message AssignTechnicianRequest {
+  // 服务订单号
+  string order_number = 1;
+  // 技术人员ID
+  string technician_id = 2;
+  // 计划的服务时间
+  google.protobuf.Timestamp scheduled_datetime = 3;
+}
+
+// 分配技术人员响应
+message AssignTechnicianResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 2;
+}
+
+// 更新服务订单状态请求
+message UpdateServiceOrderStatusRequest {
+  // 服务订单号
+  string order_number = 1;
+  // 新的状态
+  string new_status = 2;
+  // 备注
+  string notes = 3;
+}
+
+// 更新服务订单状态响应
+message UpdateServiceOrderStatusResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 2;
+}

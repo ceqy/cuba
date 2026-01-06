@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package auth;
+
+option java_package = "com.cuba.auth";
+option go_package = "github.com/cuba/auth";
+
+// 认证服务 - 用户身份验证与授权管理
+service AuthService {
+  // 用户登录
+  rpc Login(LoginRequest) returns (LoginResponse);
+  
+  // 用户登出
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  
+  // 刷新令牌
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  
+  // 验证令牌
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  
+  // 获取用户信息
+  rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse);
+}
+
+// 登录请求
+message LoginRequest {
+  string username = 1;  // 用户名
+  string password = 2;  // 密码
+}
+
+// 登录响应
+message LoginResponse {
+  string access_token = 1;   // 访问令牌
+  string refresh_token = 2;  // 刷新令牌
+  int64 expires_in = 3;      // 过期时间（秒）
+  UserInfo user = 4;         // 用户信息
+}
+
+// 登出请求
+message LogoutRequest {
+  string access_token = 1;  // 访问令牌
+}
+
+// 登出响应
+message LogoutResponse {
+  bool success = 1;  // 是否成功
+}
+
+// 刷新令牌请求
+message RefreshTokenRequest {
+  string refresh_token = 1;  // 刷新令牌
+}
+
+// 刷新令牌响应
+message RefreshTokenResponse {
+  string access_token = 1;   // 新访问令牌
+  string refresh_token = 2;  // 新刷新令牌
+  int64 expires_in = 3;      // 过期时间（秒）
+}
+
+// 验证令牌请求
+message ValidateTokenRequest {
+  string access_token = 1;  // 访问令牌
+}
+
+// 验证令牌响应
+message ValidateTokenResponse {
+  bool valid = 1;        // 是否有效
+  string user_id = 2;    // 用户ID
+  repeated string roles = 3;  // 用户角色
+}
+
+// 获取用户信息请求
+message GetUserInfoRequest {
+  string user_id = 1;  // 用户ID
+}
+
+// 获取用户信息响应
+message GetUserInfoResponse {
+  UserInfo user = 1;  // 用户信息
+}
+
+// 用户信息
+message UserInfo {
+  string user_id = 1;         // 用户ID
+  string username = 2;        // 用户名
+  string email = 3;           // 邮箱
+  string display_name = 4;    // 显示名称
+  repeated string roles = 5;  // 角色列表
+  int64 created_at = 6;       // 创建时间戳
+  int64 last_login_at = 7;    // 最后登录时间戳
+}

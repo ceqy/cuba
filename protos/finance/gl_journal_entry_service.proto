@@ -1,0 +1,189 @@
+// ============================================================================
+// /finance/gl-journal-entry-service (版本 2.0)
+// 描述: 提供总账凭证的创建、查询和冲销功能，字段设计参考核心ERP的BKPF和BSEG表。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.finance.gl;
+
+option java_package = "com.enterprise.finance.gl.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/finance/gl/v2;gl";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: GeneralLedgerJournalEntryService
+// ============================================================================
+
+service GeneralLedgerJournalEntryService {
+  // 创建一笔总账凭证
+  rpc CreateJournalEntry(CreateJournalEntryRequest) returns (JournalEntryResponse);
+
+  // 获取一笔总账凭证的详细信息
+  rpc GetJournalEntry(GetJournalEntryRequest) returns (JournalEntryDetail);
+
+  // 冲销一笔总账凭证
+  rpc ReverseJournalEntry(ReverseJournalEntryRequest) returns (JournalEntryResponse);
+
+  // 查询总账凭证列表
+  rpc ListJournalEntries(ListJournalEntriesRequest) returns (ListJournalEntriesResponse);
+}
+
+// ============================================================================
+// 数据结构: JournalEntry (凭证)
+// ============================================================================
+
+// 凭证抬头信息 (参考: BKPF)
+message JournalEntryHeader {
+  // 公司代码 (原: BUKRS)
+  string company_code = 1;
+  // 凭证类型 (原: BLART)
+  string document_type = 2;
+  // 凭证日期 (原: BLDAT)
+  google.protobuf.Timestamp document_date = 3;
+  // 过账日期 (原: BUDAT)
+  google.protobuf.Timestamp posting_date = 4;
+  // 会计期间 (原: MONAT)
+  int32 fiscal_period = 5;
+  // 凭证抬头文本 (原: BKTXT)
+  string header_text = 6;
+  // 参考凭证号 (原: XBLNR)
+  string reference_document = 7;
+  // 货币代码 (原: WAERS)
+  string currency = 8;
+  // 汇率 (原: KURSF)
+  string exchange_rate = 9;
+  // 创建人 (原: USNAM)
+  string created_by = 10;
+  // 事务代码 (原: TCODE)
+  string transaction_code = 11;
+  // 跨公司编号 (原: BVORG)
+  string cross_company_number = 12;
+}
+
+// 凭证行项目信息 (参考: BSEG)
+message JournalEntryLineItem {
+  // 行项目号 (原: BUZEI)
+  int32 line_item_number = 1;
+  // 记账码 (原: BSCHL)
+  string posting_key = 2;
+  // 借贷标识 (S-借, H-贷) (原: SHKZG)
+  string debit_credit_indicator = 3;
+  // 总账科目 (原: HKONT)
+  string gl_account = 4;
+  // 凭证货币金额 (原: WRBTR)
+  string amount_doc = 5;
+  // 本位币金额 (原: DMBTR)
+  string amount_local = 6;
+  // 税码 (原: MWSKZ)
+  string tax_code = 7;
+  // 成本中心 (原: KOSTL)
+  string cost_center = 8;
+  // 利润中心 (原: PRCTR)
+  string profit_center = 9;
+  // 业务范围 (原: GSBER)
+  string business_area = 10;
+  // 分部 (原: SEGMENT)
+  string segment = 11;
+  // 功能范围 (原: FKBER)
+  string functional_area = 12;
+  // 行项目文本 (原: SGTXT)
+  string item_text = 13;
+  // 分配号 (原: ZUONR)
+  string assignment = 14;
+  // 贸易伙伴 (原: VBUND)
+  string trading_partner = 15;
+}
+
+// 完整的凭证详情
+message JournalEntryDetail {
+  // 核心ERP系统中的凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 凭证抬头
+  JournalEntryHeader header = 2;
+  // 凭证行项目列表
+  repeated JournalEntryLineItem line_items = 3;
+  // 审计信息
+  enterprise.common.AuditData audit_data = 4;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 创建凭证请求
+message CreateJournalEntryRequest {
+  // 凭证抬头
+  JournalEntryHeader header = 1;
+  // 凭证行项目列表
+  repeated JournalEntryLineItem line_items = 2;
+  // 是否为测试运行，仅检查不实际过账
+  bool test_run = 3;
+}
+
+// 凭证操作响应
+message JournalEntryResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 核心ERP系统中的凭证引用 (如果成功)
+  enterprise.common.SystemDocumentReference document_reference = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 获取凭证请求
+message GetJournalEntryRequest {
+  // 核心ERP系统中的凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+}
+
+// 冲销凭证请求
+message ReverseJournalEntryRequest {
+  // 要冲销的凭证引用
+  enterprise.common.SystemDocumentReference document_to_reverse = 1;
+  // 冲销原因
+  string reversal_reason = 2;
+  // 冲销过账日期
+  google.protobuf.Timestamp posting_date = 3;
+}
+
+// 查询凭证请求
+message ListJournalEntriesRequest {
+  // 公司代码 (必填)
+  string company_code = 1;
+  // 会计年度
+  int32 fiscal_year = 2;
+  // 过账日期范围
+  enterprise.common.DateRange posting_date_range = 3;
+  // 凭证类型
+  string document_type = 4;
+  // 创建人
+  string created_by = 5;
+  // 分页请求
+  enterprise.common.PaginationRequest pagination = 6;
+}
+
+// 查询凭证响应
+message ListJournalEntriesResponse {
+  // 凭证摘要列表
+  repeated JournalEntrySummary entries = 1;
+  // 分页响应
+  enterprise.common.PaginationResponse pagination = 2;
+}
+
+// 凭证摘要信息
+message JournalEntrySummary {
+  // 核心ERP系统中的凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 凭证日期
+  google.protobuf.Timestamp document_date = 2;
+  // 过账日期
+  google.protobuf.Timestamp posting_date = 3;
+  // 凭证抬头文本
+  string header_text = 4;
+  // 创建人
+  string created_by = 5;
+}

@@ -1,0 +1,156 @@
+// ============================================================================
+// /manufacturing/production-planning-service (版本 2.0)
+// 描述: 提供物料需求计划 (MRP) 运行、计划订单管理和产能计划功能。
+//       字段设计参考核心ERP的 MDKP (MRP抬头), PLAF (计划订单) 等表。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.manufacturing.planning;
+
+option java_package = "com.enterprise.manufacturing.planning.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/manufacturing/planning/v2;planning";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: ProductionPlanningService
+// ============================================================================
+
+service ProductionPlanningService {
+  // 运行物料需求计划 (MRP)
+  rpc RunMRP(RunMRPRequest) returns (RunMRPResponse);
+
+  // 查询计划订单
+  rpc ListPlannedOrders(ListPlannedOrdersRequest) returns (ListPlannedOrdersResponse);
+
+  // 将计划订单转换为生产订单
+  rpc ConvertPlannedOrder(ConvertPlannedOrderRequest) returns (ConvertPlannedOrderResponse);
+
+  // 获取工作中心的产能负荷
+  rpc GetWorkCenterCapacityLoad(GetWorkCenterCapacityLoadRequest) returns (GetWorkCenterCapacityLoadResponse);
+}
+
+// ============================================================================
+// 数据结构: MRP 与 计划订单
+// ============================================================================
+
+// 计划订单 (参考: PLAF)
+message PlannedOrder {
+  // 计划订单号 (原: PLNUM)
+  string planned_order_number = 1;
+  // 物料编号 (原: MATNR)
+  string material = 2;
+  // 工厂 (原: PLWRK)
+  string plant = 3;
+  // 订单数量 (原: GSMNG)
+  string order_quantity = 4;
+  // 单位
+  string unit = 5;
+  // 订单开始日期 (原: PSTTR)
+  google.protobuf.Timestamp order_start_date = 6;
+  // 订单完成日期 (原: PEDTR)
+  google.protobuf.Timestamp order_finish_date = 7;
+  // 计划员 (原: DISPO)
+  string mrp_controller = 8;
+  // 转换标识 (是否已转为生产订单或采购申请) (原: UMSKZ)
+  string conversion_indicator = 9;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 运行MRP请求
+message RunMRPRequest {
+  // 工厂
+  string plant = 1;
+  // 要运行MRP的物料列表 (如果为空，则为全厂运行)
+  repeated string materials = 2;
+  // MRP运行类型 (e.g., NETCH, NETPL, NEUPL)
+  string run_type = 3;
+  // 是否为测试运行
+  bool test_run = 4;
+}
+
+// 运行MRP响应
+message RunMRPResponse {
+  // 操作是否成功
+  bool success = 1;
+  // MRP运行的ID或日志号
+  string run_id = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 查询计划订单请求
+message ListPlannedOrdersRequest {
+  // 工厂
+  string plant = 1;
+  // 物料编号
+  string material = 2;
+  // 计划员
+  string mrp_controller = 3;
+  // 订单完成日期范围
+  enterprise.common.DateRange finish_date_range = 4;
+  // 分页请求
+  enterprise.common.PaginationRequest pagination = 5;
+}
+
+// 查询计划订单响应
+message ListPlannedOrdersResponse {
+  // 计划订单列表
+  repeated PlannedOrder planned_orders = 1;
+  // 分页响应
+  enterprise.common.PaginationResponse pagination = 2;
+}
+
+// 转换计划订单请求
+message ConvertPlannedOrderRequest {
+  // 计划订单号
+  string planned_order_number = 1;
+  // 要转换成的生产订单类型
+  string production_order_type = 2;
+}
+
+// 转换计划订单响应
+message ConvertPlannedOrderResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的生产订单号
+  string production_order_number = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 获取工作中心产能负荷请求
+message GetWorkCenterCapacityLoadRequest {
+  // 工厂
+  string plant = 1;
+  // 工作中心
+  string work_center = 2;
+  // 评估周期
+  enterprise.common.DateRange evaluation_period = 3;
+}
+
+// 获取工作中心产能负荷响应
+message GetWorkCenterCapacityLoadResponse {
+  // 工作中心
+  string work_center = 1;
+  // 周期性负荷列表
+  repeated CapacityLoadPeriod periods = 2;
+}
+
+// 产能负荷周期
+message CapacityLoadPeriod {
+  // 时间段 (例如, "2026-W01")
+  string time_period = 1;
+  // 可用产能 (例如, 小时)
+  string available_capacity = 2;
+  // 已分配负荷
+  string load = 3;
+  // 负荷百分比
+  string load_percentage = 4;
+}

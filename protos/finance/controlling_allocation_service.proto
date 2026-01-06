@@ -1,0 +1,93 @@
+// ============================================================================
+// /finance/controlling-allocation-service (版本 2.0)
+// 描述: 提供成本中心相关的成本分配和活动分配功能。
+//       字段设计参考核心ERP的成本中心会计相关表结构。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.finance.controlling;
+
+option java_package = "com.enterprise.finance.controlling.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/finance/controlling/v2;controlling";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: ControllingAllocationService
+// ============================================================================
+
+service ControllingAllocationService {
+  // 执行成本中心分配
+  rpc ExecuteCostCenterAllocation(ExecuteAllocationRequest) returns (AllocationResponse);
+
+  // 执行活动分配
+  rpc ExecuteActivityAllocation(ExecuteAllocationRequest) returns (AllocationResponse);
+
+  // 获取分配运行的结果
+  rpc GetAllocationResult(GetAllocationResultRequest) returns (GetAllocationResultResponse);
+}
+
+// ============================================================================
+// 数据结构: 分配
+// ============================================================================
+
+// 分配请求
+message ExecuteAllocationRequest {
+  // 控制范围 (原: KOKRS)
+  string controlling_area = 1;
+  // 会计年度 (原: GJAHR)
+  int32 fiscal_year = 2;
+  // 会计期间 (原: MONAT)
+  int32 fiscal_period = 3;
+  // 分配周期 (原: CYCLE)
+  string allocation_cycle = 4;
+  // 是否为测试运行
+  bool test_run = 5;
+}
+
+// 分配响应
+message AllocationResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 分配运行的ID
+  string run_id = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 获取分配结果请求
+message GetAllocationResultRequest {
+  // 分配运行的ID
+  string run_id = 1;
+}
+
+// 获取分配结果响应
+message GetAllocationResultResponse {
+  // 分配运行的ID
+  string run_id = 1;
+  // 生成的凭证列表
+  repeated enterprise.common.SystemDocumentReference generated_documents = 2;
+  // 发送方列表
+  repeated AllocationSender senders = 3;
+  // 接收方列表
+  repeated AllocationReceiver receivers = 4;
+}
+
+// 分配发送方信息
+message AllocationSender {
+  // 发送方对象 (例如成本中心)
+  string sender_object = 1;
+  // 发送的金额
+  enterprise.common.MonetaryValue sent_amount = 2;
+}
+
+// 分配接收方信息
+message AllocationReceiver {
+  // 接收方对象 (例如成本中心)
+  string receiver_object = 1;
+  // 接收的金额
+  enterprise.common.MonetaryValue received_amount = 2;
+}

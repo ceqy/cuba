@@ -1,0 +1,11 @@
+[package]
+name = "cuba-messaging"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+rdkafka.workspace = true
+cuba-core.workspace = true
+cuba-errors.workspace = true
+serde_json.workspace = true
+async-trait.workspace = true

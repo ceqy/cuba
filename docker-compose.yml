@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: cuba_postgres
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cuba_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cuba_password}
+      POSTGRES_DB: ${POSTGRES_DB:-cuba_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: cuba_zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: cuba_kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+volumes:
+  postgres_data:

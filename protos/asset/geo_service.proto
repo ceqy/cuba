@@ -1,0 +1,111 @@
+// ============================================================================
+// /asset/geo-service (版本 2.0)
+// 描述: 提供地理空间功能，如资产定位、地理围栏和路线规划。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.asset.geo;
+
+option java_package = "com.enterprise.asset.geo.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/asset/geo/v2;geo";
+
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: GeoService
+// ============================================================================
+
+service GeoService {
+  // 获取资产的最后已知位置
+  rpc GetAssetLocation(GetAssetLocationRequest) returns (AssetLocation);
+
+  // 检查资产是否在指定的地理围栏内
+  rpc CheckGeofence(CheckGeofenceRequest) returns (CheckGeofenceResponse);
+
+  // 计算两个地理点之间的路线
+  rpc CalculateRoute(CalculateRouteRequest) returns (Route);
+}
+
+// ============================================================================
+// 数据结构: Geo (地理)
+// ============================================================================
+
+// 地理坐标
+message GeoPoint {
+  // 纬度
+  double latitude = 1;
+  // 经度
+  double longitude = 2;
+}
+
+// 资产位置
+message AssetLocation {
+  // 设备号或资产ID
+  string asset_id = 1;
+  // 位置坐标
+  GeoPoint location = 2;
+  // 时间戳
+  google.protobuf.Timestamp timestamp = 3;
+}
+
+// 地理围栏 (以多边形定义)
+message Geofence {
+  // 围栏ID
+  string fence_id = 1;
+  // 定义围栏边界的顶点列表
+  repeated GeoPoint vertices = 2;
+}
+
+// 路线
+message Route {
+  // 总距离 (米)
+  double distance_meters = 1;
+  // 预计行驶时间 (秒)
+  int64 duration_seconds = 2;
+  // 路线步骤
+  repeated RouteStep steps = 3;
+}
+
+// 路线步骤
+message RouteStep {
+  // 步骤指令 (例如, "Turn left on Main St")
+  string instruction = 1;
+  // 步骤距离 (米)
+  double distance_meters = 2;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 获取资产位置请求
+message GetAssetLocationRequest {
+  // 资产ID
+  string asset_id = 1;
+}
+
+// 检查地理围栏请求
+message CheckGeofenceRequest {
+  // 资产ID
+  string asset_id = 1;
+  // 围栏ID
+  string fence_id = 2;
+}
+
+// 检查地理围栏响应
+message CheckGeofenceResponse {
+  // 是否在围栏内
+  bool is_inside = 1;
+}
+
+// 计算路线请求
+message CalculateRouteRequest {
+  // 起点
+  GeoPoint start = 1;
+  // 终点
+  GeoPoint end = 2;
+  // 交通方式 (DRIVING, WALKING, BICYCLING)
+  string travel_mode = 3;
+}

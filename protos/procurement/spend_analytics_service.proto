@@ -1,0 +1,92 @@
+// ============================================================================
+// /procurement/spend-analytics-service (版本 2.0)
+// 描述: 提供采购支出的多维度分析功能。
+//       数据源于采购订单、合同和发票，通常在数据仓库或分析平台中进行聚合。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.procurement.analytics;
+
+option java_package = "com.enterprise.procurement.analytics.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/procurement/analytics/v2;analytics";
+
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: SpendAnalyticsService
+// ============================================================================
+
+service SpendAnalyticsService {
+  // 按物料类别获取支出
+  rpc GetSpendByCategory(SpendAnalysisRequest) returns (SpendAnalysisResponse);
+
+  // 按供应商获取支出
+  rpc GetSpendBySupplier(SpendAnalysisRequest) returns (SpendAnalysisResponse);
+
+  // 获取支出趋势
+  rpc GetSpendTrend(SpendTrendRequest) returns (SpendTrendResponse);
+}
+
+// ============================================================================
+// 数据结构: SpendAnalysis (支出分析)
+// ============================================================================
+
+// 支出分析维度
+message SpendDimension {
+  // 维度ID (例如, 物料类别ID或供应商ID)
+  string id = 1;
+  // 维度名称
+  string name = 2;
+  // 支出金额
+  enterprise.common.MonetaryValue spend_amount = 3;
+  // 订单/发票数量
+  int64 document_count = 4;
+}
+
+// 时间序列数据点
+message TimeSeriesDataPoint {
+  // 时间点 (例如, "2026-01")
+  string period = 1;
+  // 该时间点的支出金额
+  enterprise.common.MonetaryValue spend_amount = 2;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 支出分析请求
+message SpendAnalysisRequest {
+  // 时间范围
+  enterprise.common.DateRange time_range = 1;
+  // 公司代码过滤器
+  repeated string company_codes = 2;
+  // 采购组织过滤器
+  repeated string purchasing_orgs = 3;
+  // 返回结果数量限制
+  int32 top_n = 4;
+}
+
+// 支出分析响应
+message SpendAnalysisResponse {
+  // 分析结果列表
+  repeated SpendDimension results = 1;
+}
+
+// 支出趋势请求
+message SpendTrendRequest {
+  // 时间范围
+  enterprise.common.DateRange time_range = 1;
+  // 时间粒度 (MONTHLY, QUARTERLY, YEARLY)
+  string granularity = 2;
+  // 过滤器
+  SpendAnalysisRequest filters = 3;
+}
+
+// 支出趋势响应
+message SpendTrendResponse {
+  // 时间序列数据点列表
+  repeated TimeSeriesDataPoint trend = 1;
+}

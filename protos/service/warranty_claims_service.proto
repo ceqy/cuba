@@ -1,0 +1,102 @@
+// ============================================================================
+// /service/warranty-claims-service (版本 2.0)
+// 描述: 管理产品的保修索赔流程。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.service.warranty;
+
+option java_package = "com.enterprise.service.warranty.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/service/warranty/v2;warranty";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: WarrantyClaimsService
+// ============================================================================
+
+service WarrantyClaimsService {
+  // 创建保修索赔
+  rpc CreateClaim(CreateClaimRequest) returns (ClaimResponse);
+
+  // 获取保修索赔详情
+  rpc GetClaim(GetClaimRequest) returns (ClaimDetail);
+
+  // 裁定保修索赔 (批准/拒绝)
+  rpc AdjudicateClaim(AdjudicateClaimRequest) returns (ClaimResponse);
+}
+
+// ============================================================================
+// 数据结构: Claim (索赔)
+// ============================================================================
+
+// 保修索赔详情
+message ClaimDetail {
+  // 索赔ID
+  string claim_id = 1;
+  // 客户编号
+  string customer_id = 2;
+  // 产品/设备号
+  string product_or_equipment_id = 3;
+  // 故障日期
+  google.protobuf.Timestamp failure_date = 4;
+  // 故障描述
+  string failure_description = 5;
+  // 索赔金额
+  enterprise.common.MonetaryValue claimed_amount = 6;
+  // 状态 (例如, Submitted, UnderReview, Approved, Rejected)
+  string status = 7;
+  // 裁定结果
+  AdjudicationResult adjudication = 8;
+}
+
+// 裁定结果
+message AdjudicationResult {
+  // 裁定人
+  string adjudicated_by = 1;
+  // 裁定日期
+  google.protobuf.Timestamp adjudication_date = 2;
+  // 批准金额
+  enterprise.common.MonetaryValue approved_amount = 3;
+  // 裁定备注
+  string notes = 4;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 创建索赔请求
+message CreateClaimRequest {
+  // 索赔详情
+  ClaimDetail claim = 1;
+}
+
+// 索赔响应
+message ClaimResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 索赔ID
+  string claim_id = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 获取索赔请求
+message GetClaimRequest {
+  // 索赔ID
+  string claim_id = 1;
+}
+
+// 裁定索赔请求
+message AdjudicateClaimRequest {
+  // 索赔ID
+  string claim_id = 1;
+  // 新的状态 (Approved/Rejected)
+  string new_status = 2;
+  // 裁定结果
+  AdjudicationResult result = 3;
+}

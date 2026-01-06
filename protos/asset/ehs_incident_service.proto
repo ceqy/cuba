@@ -1,0 +1,115 @@
+// ============================================================================
+// /asset/ehs-incident-service (版本 2.0)
+// 描述: 管理环境、健康与安全 (EHS) 事件的报告和跟踪。
+//       字段设计参考核心ERP的EHS模块事件管理表结构。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.asset.ehs;
+
+option java_package = "com.enterprise.asset.ehs.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/asset/ehs/v2;ehs";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: EHSIncidentService
+// ============================================================================
+
+service EHSIncidentService {
+  // 报告一个EHS事件
+  rpc ReportIncident(ReportIncidentRequest) returns (ReportIncidentResponse);
+
+  // 获取EHS事件详情
+  rpc GetIncident(GetIncidentRequest) returns (IncidentDetail);
+
+  // 更新EHS事件状态或添加调查结果
+  rpc UpdateIncident(UpdateIncidentRequest) returns (UpdateIncidentResponse);
+}
+
+// ============================================================================
+// 数据结构: Incident (事件)
+// ============================================================================
+
+// EHS事件详情
+message IncidentDetail {
+  // 事件ID
+  string incident_id = 1;
+  // 事件类别 (例如, Safety, Environmental, Health)
+  string category = 2;
+  // 事件标题
+  string title = 3;
+  // 详细描述
+  string description = 4;
+  // 事件发生的地点
+  string location = 5;
+  // 事件发生时间
+  google.protobuf.Timestamp incident_datetime = 6;
+  // 报告人
+  string reported_by = 7;
+  // 当前状态 (例如, Reported, Under Investigation, Closed)
+  string status = 8;
+  // 调查结果
+  repeated InvestigationFinding findings = 9;
+}
+
+// 调查结果
+message InvestigationFinding {
+  // 结果ID
+  string finding_id = 1;
+  // 调查人
+  string investigator = 2;
+  // 调查结果描述
+  string description = 3;
+  // 根本原因分析
+  string root_cause_analysis = 4;
+  // 纠正和预防措施 (CAPA)
+  string corrective_and_preventive_actions = 5;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 报告事件请求
+message ReportIncidentRequest {
+  // 事件详情
+  IncidentDetail incident = 1;
+}
+
+// 报告事件响应
+message ReportIncidentResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的事件ID
+  string incident_id = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 获取事件请求
+message GetIncidentRequest {
+  // 事件ID
+  string incident_id = 1;
+}
+
+// 更新事件请求
+message UpdateIncidentRequest {
+  // 事件ID
+  string incident_id = 1;
+  // 新的状态 (可选)
+  string new_status = 2;
+  // 新增的调查结果 (可选)
+  InvestigationFinding new_finding = 3;
+}
+
+// 更新事件响应
+message UpdateIncidentResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 2;
+}

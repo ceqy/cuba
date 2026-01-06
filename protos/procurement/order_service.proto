@@ -1,0 +1,216 @@
+// ============================================================================
+// /procurement/order-service (版本 2.0)
+// 描述: 提供采购订单的创建、查询和审批功能。
+//       字段设计参考核心ERP的 EKKO, EKPO, EKET 表。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.procurement.order;
+
+option java_package = "com.enterprise.procurement.order.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/procurement/order/v2;order";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: PurchaseOrderService
+// ============================================================================
+
+service PurchaseOrderService {
+  // 创建采购订单
+  rpc CreatePurchaseOrder(CreatePurchaseOrderRequest) returns (PurchaseOrderResponse);
+
+  // 获取采购订单详情
+  rpc GetPurchaseOrder(GetPurchaseOrderRequest) returns (PurchaseOrderDetail);
+
+  // 查询采购订单列表
+  rpc ListPurchaseOrders(ListPurchaseOrdersRequest) returns (ListPurchaseOrdersResponse);
+
+  // 审批或拒绝采购订单
+  rpc ReleasePurchaseOrder(ReleasePurchaseOrderRequest) returns (ReleasePurchaseOrderResponse);
+}
+
+// ============================================================================
+// 数据结构: PurchaseOrder (采购订单)
+// ============================================================================
+
+// 采购订单抬头 (参考: EKKO)
+message PurchaseOrderHeader {
+  // 凭证类型 (原: BSART)
+  string document_type = 1;
+  // 公司代码 (原: BUKRS)
+  string company_code = 2;
+  // 采购组织 (原: EKORG)
+  string purchasing_org = 3;
+  // 采购组 (原: EKGRP)
+  string purchasing_group = 4;
+  // 供应商 (原: LIFNR)
+  string supplier = 5;
+  // 订单日期 (原: BEDAT)
+  google.protobuf.Timestamp order_date = 6;
+  // 货币代码 (原: WAERS)
+  string currency = 7;
+  // 付款条件 (原: ZTERM)
+  string payment_terms = 8;
+  // 国际贸易条款 (原: INCO1)
+  string incoterms = 9;
+  // 国际贸易条款地点 (原: INCO2)
+  string incoterms_location = 10;
+  // 完整交货标识 (原: AUTLF)
+  bool complete_delivery = 11;
+  // 审批标识 (原: FRGKE)
+  string release_indicator = 12;
+}
+
+// 采购订单行项目 (参考: EKPO)
+message PurchaseOrderItem {
+  // 行项目号 (原: EBELP)
+  int32 item_number = 1;
+  // 项目类别 (原: PSTYP)
+  string item_category = 2;
+  // 物料编号 (原: MATNR)
+  string material = 3;
+  // 短文本 (原: TXZ01)
+  string short_text = 4;
+  // 工厂 (原: WERKS)
+  string plant = 5;
+  // 存储地点 (原: LGORT)
+  string storage_location = 6;
+  // 物料组 (原: MATKL)
+  string material_group = 7;
+  // 订单数量 (原: MENGE)
+  string quantity = 8;
+  // 订单单位 (原: MEINS)
+  string unit = 9;
+  // 净价 (原: NETPR)
+  string net_price = 10;
+  // 价格单位 (原: PEINH)
+  int32 price_unit = 11;
+  // 基于收货的发票校验 (原: WEBRE)
+  bool gr_based_iv = 12;
+  // 税码 (原: MWSKZ)
+  string tax_code = 13;
+  // 账户分配类别 (原: KNTTP)
+  string account_assignment_category = 14;
+  // 采购申请号 (原: BANFN)
+  string requisition_number = 15;
+  // 采购申请项目 (原: BNFPO)
+  int32 requisition_item = 16;
+  // 删除标识 (原: LOEKZ)
+  bool deletion_indicator = 17;
+}
+
+// 采购订单计划行 (参考: EKET)
+message PurchaseOrderScheduleLine {
+  // 计划行号 (原: ETENR)
+  int32 schedule_line = 1;
+  // 交货日期 (原: EINDT)
+  google.protobuf.Timestamp delivery_date = 2;
+  // 计划数量 (原: MENGE)
+  string scheduled_quantity = 3;
+  // 已收货数量 (原: WEMNG)
+  string goods_receipt_quantity = 4;
+}
+
+// 完整的采购订单详情
+message PurchaseOrderDetail {
+  // 采购订单号 (原: EBELN)
+  string order_number = 1;
+  // 订单抬头
+  PurchaseOrderHeader header = 2;
+  // 订单行项目列表
+  repeated PurchaseOrderItem items = 3;
+  // 订单计划行列表
+  repeated PurchaseOrderScheduleLine schedule_lines = 4;
+  // 审计信息
+  enterprise.common.AuditData audit_data = 5;
+  // 审批状态 (原: FRGZU)
+  string release_status = 6;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 创建采购订单请求
+message CreatePurchaseOrderRequest {
+  // 订单抬头
+  PurchaseOrderHeader header = 1;
+  // 订单行项目
+  repeated PurchaseOrderItem items = 2;
+  // 订单计划行
+  repeated PurchaseOrderScheduleLine schedule_lines = 3;
+}
+
+// 采购订单响应
+message PurchaseOrderResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 采购订单号
+  string order_number = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 获取采购订单请求
+message GetPurchaseOrderRequest {
+  // 采购订单号
+  string order_number = 1;
+}
+
+// 查询采购订单请求
+message ListPurchaseOrdersRequest {
+  // 供应商编号
+  string supplier = 1;
+  // 物料编号
+  string material = 2;
+  // 订单日期范围
+  enterprise.common.DateRange order_date_range = 3;
+  // 工厂
+  string plant = 4;
+  // 分页请求
+  enterprise.common.PaginationRequest pagination = 5;
+}
+
+// 查询采购订单响应
+message ListPurchaseOrdersResponse {
+  // 采购订单摘要列表
+  repeated PurchaseOrderSummary orders = 1;
+  // 分页响应
+  enterprise.common.PaginationResponse pagination = 2;
+}
+
+// 采购订单摘要
+message PurchaseOrderSummary {
+  // 采购订单号
+  string order_number = 1;
+  // 订单日期
+  google.protobuf.Timestamp order_date = 2;
+  // 供应商
+  string supplier = 3;
+  // 净值
+  enterprise.common.MonetaryValue net_value = 4;
+  // 审批状态
+  string release_status = 5;
+}
+
+// 审批采购订单请求
+message ReleasePurchaseOrderRequest {
+  // 采购订单号
+  string order_number = 1;
+  // 审批代码 (用于多级审批)
+  string release_code = 2;
+  // true为批准, false为拒绝
+  bool approve = 3;
+}
+
+// 审批采购订单响应
+message ReleasePurchaseOrderResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 新的审批状态
+  string new_release_status = 2;
+}

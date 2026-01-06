@@ -1,0 +1,185 @@
+// ============================================================================
+// /finance/ar-ap-service (版本 2.0)
+// 描述: 提供客户和供应商主数据、未清项查询以及清账功能。
+//       字段设计参考核心ERP的 KNA1, KNB1, LFA1, LFB1, BSEG 表。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.finance.arap;
+
+option java_package = "com.enterprise.finance.arap.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/finance/arap/v2;arap";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: AccountsReceivablePayableService
+// ============================================================================
+
+service AccountsReceivablePayableService {
+  // 获取客户主数据详情
+  rpc GetCustomerDetails(GetCustomerDetailsRequest) returns (CustomerDetails);
+
+  // 获取供应商主数据详情
+  rpc GetSupplierDetails(GetSupplierDetailsRequest) returns (SupplierDetails);
+
+  // 查询客户的未清项
+  rpc ListCustomerOpenItems(ListOpenItemsRequest) returns (ListOpenItemsResponse);
+
+  // 查询供应商的未清项
+  rpc ListSupplierOpenItems(ListOpenItemsRequest) returns (ListOpenItemsResponse);
+
+  // 对一组未清项执行清账
+  rpc ClearOpenItems(ClearOpenItemsRequest) returns (ClearOpenItemsResponse);
+}
+
+// ============================================================================
+// 数据结构: 主数据
+// ============================================================================
+
+// 客户主数据详情 (参考: KNA1, KNB1)
+message CustomerDetails {
+  // 客户编号 (原: KUNNR)
+  string customer_id = 1;
+  // 客户名称 (原: NAME1)
+  string name = 2;
+  // 账户组 (原: KTOKD)
+  string account_group = 3;
+  // 地址信息
+  enterprise.common.Address address = 4;
+  // 电话号码 (原: TELF1)
+  string telephone = 5;
+  // 统驭科目 (原: AKONT)
+  string reconciliation_account = 6;
+  // 付款条件 (原: ZTERM)
+  string payment_terms = 7;
+  // 催款程序 (原: MAHNA)
+  string dunning_procedure = 8;
+  // 会计文员 (原: BUSAB)
+  string accounting_clerk = 9;
+}
+
+// 供应商主数据详情 (参考: LFA1, LFB1)
+message SupplierDetails {
+  // 供应商编号 (原: LIFNR)
+  string supplier_id = 1;
+  // 供应商名称 (原: NAME1)
+  string name = 2;
+  // 账户组 (原: KTOKK)
+  string account_group = 3;
+  // 地址信息
+  enterprise.common.Address address = 4;
+  // 电话号码 (原: TELF1)
+  string telephone = 5;
+  // 统驭科目 (原: AKONT)
+  string reconciliation_account = 6;
+  // 付款条件 (原: ZTERM)
+  string payment_terms = 7;
+  // 付款方式 (原: ZWELS)
+  string payment_methods = 8;
+  // 重复发票检查 (原: REPRF)
+  bool check_double_invoice = 9;
+}
+
+// ============================================================================
+// 数据结构: 未清项与清账
+// ============================================================================
+
+// 未清项信息 (参考: BSEG 及客户/供应商行项目表)
+message OpenItem {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 行项目号 (原: BUZEI)
+  int32 line_item_number = 2;
+  // 过账日期 (原: BUDAT)
+  google.protobuf.Timestamp posting_date = 3;
+  // 净到期日
+  google.protobuf.Timestamp net_due_date = 4;
+  // 凭证货币金额 (原: WRBTR)
+  enterprise.common.MonetaryValue amount_in_doc_currency = 5;
+  // 本位币金额 (原: DMBTR)
+  enterprise.common.MonetaryValue amount_in_local_currency = 6;
+  // 借/贷标识 (原: SHKZG)
+  string debit_credit_indicator = 7;
+  // 行项目文本 (原: SGTXT)
+  string item_text = 8;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 获取客户主数据请求
+message GetCustomerDetailsRequest {
+  // 客户编号
+  string customer_id = 1;
+  // 公司代码 (用于获取公司代码特定数据)
+  string company_code = 2;
+}
+
+// 获取供应商主数据请求
+message GetSupplierDetailsRequest {
+  // 供应商编号
+  string supplier_id = 1;
+  // 公司代码 (用于获取公司代码特定数据)
+  string company_code = 2;
+}
+
+// 查询未清项请求
+message ListOpenItemsRequest {
+  // 客户或供应商编号
+  string partner_id = 1;
+  // 公司代码
+  string company_code = 2;
+  // 截至日期 (查询此日期前的所有未清项)
+  google.protobuf.Timestamp key_date = 3;
+  // 分页请求
+  enterprise.common.PaginationRequest pagination = 4;
+}
+
+// 查询未清项响应
+message ListOpenItemsResponse {
+  // 未清项列表
+  repeated OpenItem open_items = 1;
+  // 分页响应
+  enterprise.common.PaginationResponse pagination = 2;
+}
+
+// 清账请求
+message ClearOpenItemsRequest {
+  // 公司代码
+  string company_code = 1;
+  // 清账日期
+  google.protobuf.Timestamp clearing_date = 2;
+  // 账户类型 ('D' for Customer, 'K' for Supplier)
+  string account_type = 3;
+  // 账户编号
+  string account_id = 4;
+  // 要清账的凭证列表
+  repeated OpenItemIdentifier items_to_clear = 5;
+  // 清账凭证抬头文本
+  string header_text = 6;
+}
+
+// 待清账项目的标识符
+message OpenItemIdentifier {
+  // 凭证编号
+  string document_number = 1;
+  // 会计年度
+  int32 fiscal_year = 2;
+  // 行项目号
+  int32 line_item_number = 3;
+}
+
+// 清账响应
+message ClearOpenItemsResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的清账凭证引用
+  enterprise.common.SystemDocumentReference clearing_document = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}

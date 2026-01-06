@@ -1,0 +1,170 @@
+// ============================================================================
+// /asset/asset-maintenance-service (版本 2.0)
+// 描述: 提供技术对象（设备、功能位置）管理和维护订单的创建与执行功能。
+//       字段设计参考核心ERP的 EQUI, ILOA, AUFK, AFVC 表。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.asset.maintenance;
+
+option java_package = "com.enterprise.asset.maintenance.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/asset/maintenance/v2;maintenance";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: AssetMaintenanceService
+// ============================================================================
+
+service AssetMaintenanceService {
+  // 创建维护通知单
+  rpc CreateMaintenanceNotification(CreateNotificationRequest) returns (NotificationResponse);
+
+  // 基于通知单创建维护订单
+  rpc CreateMaintenanceOrder(CreateMaintenanceOrderRequest) returns (MaintenanceOrderResponse);
+
+  // 获取维护订单详情
+  rpc GetMaintenanceOrder(GetMaintenanceOrderRequest) returns (MaintenanceOrderDetail);
+
+  // 确认维护订单工序
+  rpc ConfirmMaintenanceOperation(ConfirmMaintenanceOperationRequest) returns (ConfirmMaintenanceOperationResponse);
+}
+
+// ============================================================================
+// 数据结构: Maintenance (维护)
+// ============================================================================
+
+// 维护通知单
+message MaintenanceNotification {
+  // 通知单类型 (原: QMART)
+  string notification_type = 1;
+  // 设备号 (原: EQUNR)
+  string equipment_number = 2;
+  // 功能位置 (原: TPLNR)
+  string functional_location = 3;
+  // 描述 (原: QMTXT)
+  string description = 4;
+  // 报告人 (原: QMNAM)
+  string reported_by = 5;
+  // 故障开始日期 (原: AUSVN)
+  google.protobuf.Timestamp breakdown_start_date = 6;
+  // 优先级 (原: PRIOK)
+  string priority = 7;
+}
+
+// 维护订单详情
+message MaintenanceOrderDetail {
+  // 订单号 (原: AUFNR)
+  string order_number = 1;
+  // 订单类型 (原: AUART)
+  string order_type = 2;
+  // 描述 (原: KTEXT)
+  string description = 3;
+  // 设备号 (原: EQUNR)
+  string equipment_number = 4;
+  // 功能位置 (原: TPLNR)
+  string functional_location = 5;
+  // 工作中心 (原: VAPLZ)
+  string work_center = 6;
+  // 计划员组 (原: INGRP)
+  string planner_group = 7;
+  // 订单状态
+  string status = 8;
+  // 计划开始日期 (原: GSTRP)
+  google.protobuf.Timestamp scheduled_start_date = 9;
+  // 计划完成日期 (原: GLTRP)
+  google.protobuf.Timestamp scheduled_finish_date = 10;
+  // 订单工序列表
+  repeated MaintenanceOperation operations = 11;
+}
+
+// 维护订单工序
+message MaintenanceOperation {
+  // 工序编号 (原: VORNR)
+  string operation_number = 1;
+  // 控制码 (原: STEUS)
+  string control_key = 2;
+  // 工作中心 (原: ARBPL)
+  string work_center = 3;
+  // 工序描述 (原: LTXA1)
+  string description = 4;
+  // 工作时长 (原: ARBEI)
+  string work_duration = 5;
+  // 单位
+  string unit = 6;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 创建维护通知单请求
+message CreateNotificationRequest {
+  // 通知单信息
+  MaintenanceNotification notification = 1;
+}
+
+// 通知单响应
+message NotificationResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的通知单号 (原: QMNUM)
+  string notification_number = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 创建维护订单请求
+message CreateMaintenanceOrderRequest {
+  // 订单类型
+  string order_type = 1;
+  // 参考的通知单号
+  string reference_notification_number = 2;
+  // 描述
+  string description = 3;
+}
+
+// 维护订单响应
+message MaintenanceOrderResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的订单号
+  string order_number = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 获取维护订单请求
+message GetMaintenanceOrderRequest {
+  // 订单号
+  string order_number = 1;
+}
+
+// 确认维护订单工序请求
+message ConfirmMaintenanceOperationRequest {
+  // 订单号
+  string order_number = 1;
+  // 工序编号
+  string operation_number = 2;
+  // 实际工作时长
+  string actual_work_duration = 3;
+  // 单位
+  string unit = 4;
+  // 是否为最后确认
+  bool final_confirmation = 5;
+  // 过账日期
+  google.protobuf.Timestamp posting_date = 6;
+}
+
+// 确认维护订单工序响应
+message ConfirmMaintenanceOperationResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的确认号
+  string confirmation_number = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}

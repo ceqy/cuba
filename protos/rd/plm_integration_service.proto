@@ -1,0 +1,100 @@
+// ============================================================================
+// /rd/plm-integration-service (版本 2.0)
+// 描述: 与产品生命周期管理(PLM)系统集成，同步物料主数据和物料清单(BOM)。
+//       字段设计参考核心ERP的 MAST (物料BOM), STKO (BOM抬头), STPO (BOM项目) 表。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.rd.plm;
+
+option java_package = "com.enterprise.rd.plm.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/rd/plm/v2;plm";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: PLMIntegrationService
+// ============================================================================
+
+service PLMIntegrationService {
+  // 从PLM系统同步一个物料清单 (BOM) 到核心ERP
+  rpc SyncBillOfMaterial(SyncBOMRequest) returns (SyncBOMResponse);
+
+  // 获取核心ERP中的物料清单
+  rpc GetBillOfMaterial(GetBOMRequest) returns (BillOfMaterial);
+}
+
+// ============================================================================
+// 数据结构: BillOfMaterial (BOM)
+// ============================================================================
+
+// 物料清单 (BOM)
+message BillOfMaterial {
+  // BOM 抬头
+  BOMHeader header = 1;
+  // BOM 项目列表
+  repeated BOMItem items = 2;
+}
+
+// BOM 抬头 (参考: STKO)
+message BOMHeader {
+  // 物料编号 (成品或半成品) (原: STLNR)
+  string material = 1;
+  // 工厂 (原: WERKS)
+  string plant = 2;
+  // BOM 用途 (例如, '1' for Production) (原: STLAN)
+  string bom_usage = 3;
+  // BOM 状态 (原: STLST)
+  string bom_status = 4;
+  // 基本数量 (原: BMENG)
+  string base_quantity = 5;
+}
+
+// BOM 项目 (参考: STPO)
+message BOMItem {
+  // 项目节点 (原: STLKN)
+  string item_node = 1;
+  // 项目类别 (例如, 'L' for Stock Item) (原: POSTP)
+  string item_category = 2;
+  // 组件物料编号 (原: IDNRK)
+  string component_material = 3;
+  // 组件数量 (原: MENGE)
+  string component_quantity = 4;
+  // 组件单位
+  string component_unit = 5;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 同步BOM请求
+message SyncBOMRequest {
+  // 物料清单
+  BillOfMaterial bom = 1;
+  // 变更号 (用于记录工程变更)
+  string change_number = 2;
+}
+
+// 同步BOM响应
+message SyncBOMResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 核心ERP中的BOM编号
+  string bom_number = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 获取BOM请求
+message GetBOMRequest {
+  // 物料编号
+  string material = 1;
+  // 工厂
+  string plant = 2;
+  // BOM 用途
+  string bom_usage = 3;
+}

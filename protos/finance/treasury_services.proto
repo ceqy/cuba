@@ -1,0 +1,126 @@
+// ============================================================================
+// /finance/treasury-services (版本 2.0)
+// 描述: 提供资金管理相关功能，如银行对账单处理和支付运行。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.finance.treasury;
+
+option java_package = "com.enterprise.finance.treasury.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/finance/treasury/v2;treasury";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: TreasuryService
+// ============================================================================
+
+service TreasuryService {
+  // 导入并处理电子银行对账单
+  rpc ProcessBankStatement(ProcessBankStatementRequest) returns (ProcessBankStatementResponse);
+
+  // 执行自动支付程序
+  rpc ExecutePaymentRun(ExecutePaymentRunRequest) returns (ExecutePaymentRunResponse);
+
+  // 获取支付运行的详情
+  rpc GetPaymentRunDetails(GetPaymentRunDetailsRequest) returns (PaymentRunDetails);
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 处理银行对账单请求
+message ProcessBankStatementRequest {
+  // 公司代码
+  string company_code = 1;
+  // 银行对账单的原始数据 (例如 MT940, CAMT.053 格式)
+  bytes raw_statement_data = 2;
+  // 对账单格式
+  string statement_format = 3;
+}
+
+// 处理银行对账单响应
+message ProcessBankStatementResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 对账单ID
+  string statement_id = 2;
+  // 生成的过账日志ID
+  string posting_log_id = 3;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 4;
+}
+
+// 执行支付运行请求
+message ExecutePaymentRunRequest {
+  // 运行ID (日期和标识)
+  string run_id = 1;
+  // 过账日期
+  google.protobuf.Timestamp posting_date = 2;
+  // 支付运行参数
+  PaymentRunParameters parameters = 3;
+}
+
+// 支付运行参数
+message PaymentRunParameters {
+  // 公司代码
+  repeated string company_codes = 1;
+  // 付款方式
+  repeated string payment_methods = 2;
+  // 下一个付款日期
+  google.protobuf.Timestamp next_payment_date = 3;
+  // 供应商列表
+  repeated string suppliers = 4;
+  // 客户列表
+  repeated string customers = 5;
+}
+
+// 执行支付运行响应
+message ExecutePaymentRunResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 运行ID
+  string run_id = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 获取支付运行详情请求
+message GetPaymentRunDetailsRequest {
+    // 运行ID
+    string run_id = 1;
+}
+
+// 支付运行详情
+message PaymentRunDetails {
+    // 运行ID
+    string run_id = 1;
+    // 支付的凭证列表
+    repeated PaymentDocument payments = 2;
+    // 异常或未支付的项目列表
+    repeated PaymentException exceptions = 3;
+}
+
+// 已支付的凭证信息
+message PaymentDocument {
+    // 账户编号 (供应商或客户)
+    string account_id = 1;
+    // 支付的凭证号
+    string document_number = 2;
+    // 支付金额
+    enterprise.common.MonetaryValue paid_amount = 3;
+}
+
+// 支付异常信息
+message PaymentException {
+    // 账户编号
+    string account_id = 1;
+    // 未支付的凭证号
+    string document_number = 2;
+    // 异常原因
+    string reason = 3;
+}

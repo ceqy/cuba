@@ -1,0 +1,79 @@
+// ============================================================================
+// /supplychain/visibility-service (版本 2.0)
+// 描述: 提供端到端的供应链可见性，整合来自不同微服务的事件和状态。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.supplychain.visibility;
+
+option java_package = "com.enterprise.supplychain.visibility.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/supplychain/visibility/v2;visibility";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// ============================================================================
+// 服务定义: VisibilityService
+// ============================================================================
+
+service VisibilityService {
+  // 根据销售订单号跟踪整个订单到现金的流程
+  rpc TrackSalesOrderFlow(TrackRequest) returns (SalesOrderFlow);
+
+  // 根据采购订单号跟踪整个采购到付款的流程
+  rpc TrackPurchaseOrderFlow(TrackRequest) returns (PurchaseOrderFlow);
+}
+
+// ============================================================================
+// 数据结构: Flows (流程)
+// ============================================================================
+
+// 销售订单流程
+message SalesOrderFlow {
+  // 销售订单状态
+  DocumentStatus sales_order = 1;
+  // 交货单状态
+  repeated DocumentStatus deliveries = 2;
+  // 货运单状态
+  repeated DocumentStatus shipments = 3;
+  // 发票状态
+  repeated DocumentStatus invoices = 4;
+  // 付款状态
+  DocumentStatus payment = 5;
+}
+
+// 采购订单流程
+message PurchaseOrderFlow {
+  // 采购订单状态
+  DocumentStatus purchase_order = 1;
+  // 收货状态
+  repeated DocumentStatus goods_receipts = 2;
+  // 发票状态
+  repeated DocumentStatus invoices = 3;
+  // 付款状态
+  DocumentStatus payment = 4;
+}
+
+// 文档状态
+message DocumentStatus {
+  // 文档编号
+  string document_number = 1;
+  // 文档类型 (SalesOrder, Delivery, Invoice, etc.)
+  string document_type = 2;
+  // 当前状态
+  string status = 3;
+  // 最后更新时间
+  google.protobuf.Timestamp last_updated = 4;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 跟踪请求
+message TrackRequest {
+  // 要跟踪的主文档编号 (例如, 销售订单号或采购订单号)
+  string document_number = 1;
+}
