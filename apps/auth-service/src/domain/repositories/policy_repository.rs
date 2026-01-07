@@ -12,4 +12,5 @@ pub trait PolicyRepository: Send + Sync {
     // 附件相关
     async fn attach_to_role(&self, policy_id: &str, role_id: &str) -> Result<(), DomainError>;
     async fn attach_to_user(&self, policy_id: &str, user_id: &str) -> Result<(), DomainError>;
+    async fn find_all(&self, limit: i64, offset: i64) -> Result<(Vec<Policy>, i64), DomainError>;
 }

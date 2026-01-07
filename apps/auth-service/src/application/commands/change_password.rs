@@ -44,12 +44,8 @@ impl ChangePasswordHandler {
             return Err(DomainError::InvalidInput("新密码长度必须至少为 8 位".to_string()));
         }
 
-        // 哈希新密码
-        let new_password_hash = hash(&command.new_password, DEFAULT_COST)
-            .map_err(|e| DomainError::InternalError(e.to_string()))?;
-
         // 更新用户聚合根
-        user.update_password(&new_password_hash)?;
+        user.update_password(&command.new_password)?;
 
         // 保存更新
         self.user_repo.save(&mut user).await

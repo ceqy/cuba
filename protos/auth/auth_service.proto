@@ -3,133 +3,365 @@ syntax = "proto3";
 package auth;
 
 import "google/protobuf/timestamp.proto";
-
-option java_package = "com.cuba.auth";
-option go_package = "github.com/cuba/auth";
+import "google/api/annotations.proto";
 
 // 认证服务 - 用户身份验证与授权管理
 service AuthService {
   // 用户注册
-  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Register(RegisterRequest) returns (RegisterResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/register"
+      body: "*"
+    };
+  }
 
   // 用户登录
-  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Login(LoginRequest) returns (LoginResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/login"
+      body: "*"
+    };
+  }
 
   // 用户登出
-  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/logout"
+      body: "*"
+    };
+  }
 
   // 刷新令牌
-  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/refresh"
+      body: "*"
+    };
+  }
 
   // 验证令牌（供其他服务内部调用）
-  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/validate"
+      body: "*"
+    };
+  }
 
   // 获取用户信息
-  rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse);
+  rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/auth/me"
+    };
+  }
 
   // --- RBAC 权限管理 ---
   // 创建角色
-  rpc CreateRole(CreateRoleRequest) returns (CreateRoleResponse);
+  rpc CreateRole(CreateRoleRequest) returns (CreateRoleResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/roles"
+      body: "*"
+    };
+  }
 
   // 分配角色给用户
-  rpc AssignRoleToUser(AssignRoleToUserRequest) returns (AssignRoleToUserResponse);
+  rpc AssignRoleToUser(AssignRoleToUserRequest) returns (AssignRoleToUserResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/users/{user_id}/roles"
+      body: "*"
+    };
+  }
 
   // 添加权限到角色
-  rpc AddPermissionToRole(AddPermissionToRoleRequest) returns (AddPermissionToRoleResponse);
+  rpc AddPermissionToRole(AddPermissionToRoleRequest) returns (AddPermissionToRoleResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/roles/{role_id}/permissions"
+      body: "*"
+    };
+  }
 
   // 获取用户权限列表
-  rpc GetUserPermissions(GetUserPermissionsRequest) returns (GetUserPermissionsResponse);
+  rpc GetUserPermissions(GetUserPermissionsRequest) returns (GetUserPermissionsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users/{user_id}/permissions"
+    };
+  }
 
   // 修改密码
-  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/change-password"
+      body: "*"
+    };
+  }
 
   // 重置密码（忘记密码流程）
-  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/reset-password"
+      body: "*"
+    };
+  }
 
   // 发送重置密码邮件/验证码（忘记密码第一步）
-  rpc SendPasswordResetToken(SendPasswordResetTokenRequest) returns (SendPasswordResetTokenResponse);
+  rpc SendPasswordResetToken(SendPasswordResetTokenRequest) returns (SendPasswordResetTokenResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/forgot-password"
+      body: "*"
+    };
+  }
 
   // 邮箱验证
-  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
+  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/verify-email"
+      body: "*"
+    };
+  }
 
   // 更新用户信息（昵称、头像等）
-  rpc UpdateUserProfile(UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
+  rpc UpdateUserProfile(UpdateUserProfileRequest) returns (UpdateUserProfileResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/users/profile"
+      body: "*"
+    };
+  }
 
   // 列出角色（管理员用）
-  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse);
+  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/roles"
+    };
+  }
 
   // 列出所有权限（管理员用）
-  rpc ListPermissions(ListPermissionsRequest) returns (ListPermissionsResponse);
+  rpc ListPermissions(ListPermissionsRequest) returns (ListPermissionsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/permissions"
+    };
+  }
 
-  // 删除角色、移除用户角色、移除角色权限等（慎用但必要）
-  rpc DeleteRole(DeleteRoleRequest) returns (DeleteRoleResponse);
-  rpc RemoveRoleFromUser(RemoveRoleFromUserRequest) returns (RemoveRoleFromUserResponse);
-  rpc RemovePermissionFromRole(RemovePermissionFromRoleRequest) returns (RemovePermissionFromRoleResponse);
+  // 删除角色
+  rpc DeleteRole(DeleteRoleRequest) returns (DeleteRoleResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/roles/{role_id}"
+    };
+  }
+
+  // 移除用户角色
+  rpc RemoveRoleFromUser(RemoveRoleFromUserRequest) returns (RemoveRoleFromUserResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/users/{user_id}/roles/{role_id}"
+    };
+  }
+
+  // 移除角色权限
+  rpc RemovePermissionFromRole(RemovePermissionFromRoleRequest) returns (RemovePermissionFromRoleResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/roles/{role_id}/permissions/{permission_id}"
+    };
+  }
 
   // 获取用户操作审计日志（管理员用）
-  rpc GetAuditLogs(GetAuditLogsRequest) returns (GetAuditLogsResponse);
+  rpc GetAuditLogs(GetAuditLogsRequest) returns (GetAuditLogsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/admin/audit-logs"
+    };
+  }
 
   // 获取当前用户的所有活跃会话
-  rpc ListUserSessions(ListUserSessionsRequest) returns (ListUserSessionsResponse);
+  rpc ListUserSessions(ListUserSessionsRequest) returns (ListUserSessionsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/auth/sessions"
+    };
+  }
 
   // 撤销指定会话（登出其他设备）
-  rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse);
+  rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/auth/sessions/{session_id}"
+    };
+  }
 
   // 启用2FA（生成密钥和二维码）
-  rpc Enable2FA(Enable2FARequest) returns (Enable2FAResponse);
+  rpc Enable2FA(Enable2FARequest) returns (Enable2FAResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/2fa/enable"
+      body: "*"
+    };
+  }
 
   // 验证2FA并完成启用
-  rpc Verify2FASetup(Verify2FARequest) returns (Verify2FAResponse);
+  rpc Verify2FASetup(Verify2FARequest) returns (Verify2FAResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/2fa/verify"
+      body: "*"
+    };
+  }
 
   // 登录时验证2FA代码
-  rpc Verify2FACode(Verify2FACodeRequest) returns (Verify2FACodeResponse);
+  rpc Verify2FACode(Verify2FACodeRequest) returns (Verify2FACodeResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/2fa/login"
+      body: "*"
+    };
+  }
 
   // 禁用/启用用户账号
-  rpc UpdateUserStatus(UpdateUserStatusRequest) returns (UpdateUserStatusResponse);
+  rpc UpdateUserStatus(UpdateUserStatusRequest) returns (UpdateUserStatusResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/users/{user_id}/status"
+      body: "*"
+    };
+  }
 
   // 批量导入用户（企业常见）
-  rpc BulkCreateUsers(BulkCreateUsersRequest) returns (BulkCreateUsersResponse);
+  rpc BulkCreateUsers(BulkCreateUsersRequest) returns (BulkCreateUsersResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/users/bulk"
+      body: "*"
+    };
+  }
 
   // 获取用户列表（管理员分页查询）
-  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/admin/users"
+    };
+  }
 
   // OAuth2 授权码模式 - 生成授权码（前端跳转用）
-  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse);
+  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/oauth2/authorize"
+    };
+  }
 
   // OAuth2 Token Endpoint - 换取 access_token
-  rpc Token(TokenRequest) returns (TokenResponse);
+  rpc Token(TokenRequest) returns (TokenResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/oauth2/token"
+      body: "*"
+    };
+  }
 
   // OpenID Connect UserInfo Endpoint
-  rpc UserInfo(UserInfoRequest) returns (UserInfoResponse);
+  rpc UserInfo(UserInfoRequest) returns (UserInfoResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/oauth2/userinfo"
+    };
+  }
 
   // 客户端管理（应用注册）
-  rpc CreateClient(CreateClientRequest) returns (CreateClientResponse);
-  rpc ListClients(ListClientsRequest) returns (ListClientsResponse);
+  rpc CreateClient(CreateClientRequest) returns (CreateClientResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/oauth2/clients"
+      body: "*"
+    };
+  }
+
+  rpc ListClients(ListClientsRequest) returns (ListClientsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/oauth2/clients"
+    };
+  }
 
   // 创建API Key
-  rpc CreateAPIKey(CreateAPIKeyRequest) returns (CreateAPIKeyResponse);
-  rpc ListAPIKeys(ListAPIKeysRequest) returns (ListAPIKeysResponse);
-  rpc RevokeAPIKey(RevokeAPIKeyRequest) returns (RevokeAPIKeyResponse);
+  rpc CreateAPIKey(CreateAPIKeyRequest) returns (CreateAPIKeyResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/api-keys"
+      body: "*"
+    };
+  }
+
+  rpc ListAPIKeys(ListAPIKeysRequest) returns (ListAPIKeysResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/api-keys"
+    };
+  }
+
+  rpc RevokeAPIKey(RevokeAPIKeyRequest) returns (RevokeAPIKeyResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/api-keys/{key_id}"
+    };
+  }
 
   // SSO 登录发起（IdP Initiated）
-  rpc SSOLogin(SSOLoginRequest) returns (SSOLoginResponse);
+  rpc SSOLogin(SSOLoginRequest) returns (SSOLoginResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/sso/login"
+      body: "*"
+    };
+  }
 
   // SSO 登出（全局登出）
-  rpc GlobalLogout(GlobalLogoutRequest) returns (GlobalLogoutResponse);
+  rpc GlobalLogout(GlobalLogoutRequest) returns (GlobalLogoutResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/sso/logout"
+      body: "*"
+    };
+  }
 
   // 新增 Policy 相关
-  rpc CreatePolicy(CreatePolicyRequest) returns (CreatePolicyResponse);
-  rpc AttachPolicyToRole(AttachPolicyToRoleRequest) returns (AttachPolicyToRoleResponse);
-  rpc AttachPolicyToUser(AttachPolicyToUserRequest) returns (AttachPolicyToUserResponse);
+  rpc CreatePolicy(CreatePolicyRequest) returns (CreatePolicyResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/policies"
+      body: "*"
+    };
+  }
+
+  rpc AttachPolicyToRole(AttachPolicyToRoleRequest) returns (AttachPolicyToRoleResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/roles/{role_id}/policies"
+      body: "*"
+    };
+  }
+
+  rpc AttachPolicyToUser(AttachPolicyToUserRequest) returns (AttachPolicyToUserResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/users/{user_id}/policies"
+      body: "*"
+    };
+  }
+
+  rpc GetPolicy(GetPolicyRequest) returns (GetPolicyResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/policies/{policy_id}"
+    };
+  }
+
+  rpc DeletePolicy(DeletePolicyRequest) returns (DeletePolicyResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/policies/{policy_id}"
+    };
+  }
+
+  rpc ListPolicies(ListPoliciesRequest) returns (ListPoliciesResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/policies"
+    };
+  }
 
   // 服务健康检查
-  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse) {
+    option (google.api.http) = {
+      get: "/health"
+    };
+  }
 
   // 获取服务统计指标（用于 Prometheus）
-  rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse);
+  rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse) {
+    option (google.api.http) = {
+      get: "/metrics"
+    };
+  }
 
   // 第三方登录（OAuth2/Social Login）
-  rpc SocialLogin(SocialLoginRequest) returns (LoginResponse);
+  rpc SocialLogin(SocialLoginRequest) returns (LoginResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/social/login"
+      body: "*"
+    };
+  }
 }
 
 // --- 核心实体 ---
@@ -761,6 +993,31 @@ message AttachPolicyToUserRequest {
 
 message AttachPolicyToUserResponse {
   bool success = 1;
+}
+
+message GetPolicyRequest {
+  string policy_id = 1;
+}
+
+message GetPolicyResponse {
+  Policy policy = 1;
+}
+
+message DeletePolicyRequest {
+  string policy_id = 1;
+}
+
+message DeletePolicyResponse {
+  bool success = 1;
+}
+
+message ListPoliciesRequest {
+  PageRequest pagination = 1;
+}
+
+message ListPoliciesResponse {
+  repeated Policy policies = 1;
+  PageResponse pagination = 2;
 }
 
 // --- Health & Metrics ---

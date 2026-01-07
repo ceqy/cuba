@@ -5,14 +5,29 @@ services:
     env_file:
       - .env
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-cuba_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cuba_password}
-      POSTGRES_DB: ${POSTGRES_DB:-cuba_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-cuba_auth}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations:/docker-entrypoint-initdb.d
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: cuba_pgadmin
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
@@ -36,3 +51,4 @@ services:
 
 volumes:
   postgres_data:
+  pgadmin_data:

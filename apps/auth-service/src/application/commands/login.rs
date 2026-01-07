@@ -35,6 +35,18 @@ pub enum LoginError {
     TokenError(String),
 }
 
+impl From<LoginError> for crate::domain::errors::DomainError {
+    fn from(err: LoginError) -> Self {
+        match err {
+            LoginError::InvalidCredentials => crate::domain::errors::DomainError::InvalidCredentials,
+            LoginError::AccountDisabled => crate::domain::errors::DomainError::AuthenticationFailed("Account disabled".to_string()),
+            LoginError::EmailNotVerified => crate::domain::errors::DomainError::AuthenticationFailed("Email not verified".to_string()),
+            LoginError::RepositoryError(e) => crate::domain::errors::DomainError::from(e),
+            LoginError::TokenError(m) => crate::domain::errors::DomainError::InternalError(m),
+        }
+    }
+}
+
 /// 登录命令处理器
 pub struct LoginHandler {
     user_repo: Arc<dyn UserRepository>,

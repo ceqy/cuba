@@ -29,6 +29,16 @@ pub enum RepositoryError {
     DuplicateKey(String),
 }
 
+impl From<RepositoryError> for crate::domain::errors::DomainError {
+    fn from(err: RepositoryError) -> Self {
+        match err {
+            RepositoryError::NotFound => crate::domain::errors::DomainError::NotFound("Item not found".to_string()),
+            RepositoryError::DuplicateKey(m) => crate::domain::errors::DomainError::AlreadyExists(m),
+            _ => crate::domain::errors::DomainError::InfrastructureError(err.to_string()),
+        }
+    }
+}
+
 // ============================================================================
 // User Repository
 // ============================================================================

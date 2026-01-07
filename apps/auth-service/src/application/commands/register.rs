@@ -35,6 +35,18 @@ pub enum RegisterError {
     DomainError(String),
 }
 
+impl From<RegisterError> for crate::domain::errors::DomainError {
+    fn from(err: RegisterError) -> Self {
+        match err {
+            RegisterError::UsernameExists => crate::domain::errors::DomainError::UsernameAlreadyExists("".to_string()),
+            RegisterError::EmailExists => crate::domain::errors::DomainError::EmailAlreadyExists("".to_string()),
+            RegisterError::InvalidInput(m) => crate::domain::errors::DomainError::InvalidInput(m),
+            RegisterError::RepositoryError(e) => crate::domain::errors::DomainError::from(e),
+            RegisterError::DomainError(m) => crate::domain::errors::DomainError::InternalError(m),
+        }
+    }
+}
+
 /// 注册命令处理器
 pub struct RegisterHandler {
     user_repo: Arc<dyn UserRepository>,

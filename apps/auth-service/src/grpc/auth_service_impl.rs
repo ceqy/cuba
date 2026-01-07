@@ -185,6 +185,54 @@ impl AuthServiceImpl {
             nanos: dt.timestamp_subsec_nanos() as i32,
         }
     }
+    // Helper to extract user_id from metadata or Authorization header
+    fn get_user_id_from_metadata(&self, metadata: &tonic::metadata::MetadataMap) -> Result<String, Status> {
+        // 1. Try x-user-id (internal/gateway usage)
+        if let Some(user_id) = metadata.get("x-user-id") {
+            if let Ok(id_str) = user_id.to_str() {
+                return Ok(id_str.to_string());
+            }
+        }
+
+        // 2. Try Authorization Bearer token
+        if let Some(auth_val) = metadata.get("authorization") {
+            if let Ok(auth_str) = auth_val.to_str() {
+                if auth_str.starts_with("Bearer ") {
+                    let token = &auth_str[7..];
+                    match self.token_service.validate_token(token) {
+                        Ok(claims) => return Ok(claims.sub),
+                        Err(e) => return Err(Status::unauthenticated(format!("Invalid token: {}", e))),
+                    }
+                }
+            }
+        }
+
+        Err(Status::unauthenticated("User ID not found in metadata and missing/invalid Authorization token"))
+    }
+
+    fn map_error(e: DomainError) -> Status {
+        match e {
+            DomainError::InvalidCredentials | DomainError::AuthenticationFailed(_) | DomainError::TokenInvalid | DomainError::TokenExpired | DomainError::TokenRevoked | DomainError::RefreshTokenRevoked => {
+                Status::unauthenticated(e.to_string())
+            }
+            DomainError::UserNotFound | DomainError::RoleNotFound(_) | DomainError::PermissionNotFound(_) | DomainError::NotFound(_) => {
+                Status::not_found(e.to_string())
+            }
+            DomainError::UsernameAlreadyExists(_) | DomainError::EmailAlreadyExists(_) | DomainError::AlreadyExists(_) => {
+                Status::already_exists(e.to_string())
+            }
+            DomainError::NotPermitted => {
+                Status::permission_denied(e.to_string())
+            }
+            DomainError::InvalidInput(_) | DomainError::UsernameRequired | DomainError::InvalidEmailFormat | DomainError::PasswordTooShort | DomainError::PasswordNoUppercase | DomainError::PasswordNoDigit | DomainError::RoleNameRequired => {
+                Status::invalid_argument(e.to_string())
+            }
+            DomainError::InfrastructureError(_) | DomainError::InternalError(_) => {
+                Status::internal(e.to_string())
+            }
+            _ => Status::internal(e.to_string()),
+        }
+    }
 }
 
 #[tonic::async_trait]
@@ -206,7 +254,7 @@ impl AuthService for AuthServiceImpl {
             .register_handler
             .handle(command)
             .await
-            .map_err(|e| Status::invalid_argument(e.to_string()))?;
+            .map_err(|e| Self::map_error(e.into()))?;
 
         let response = RegisterResponse {
             user: Some(self.map_user_info(req.tenant_id, user_dto)),
@@ -232,7 +280,7 @@ impl AuthService for AuthServiceImpl {
             .login_handler
             .handle(command)
             .await
-            .map_err(|e| Status::unauthenticated(e.to_string()))?;
+            .map_err(|e| Self::map_error(e.into()))?;
 
         let response = LoginResponse {
             access_token: login_response.access_token.unwrap_or_default(),
@@ -313,10 +361,13 @@ impl AuthService for AuthServiceImpl {
         &self,
         request: Request<GetUserInfoRequest>,
     ) -> Result<Response<GetUserInfoResponse>, Status> {
-        let req = request.into_inner();
+        let user_id_str = if request.get_ref().user_id.is_empty() {
+            self.get_user_id_from_metadata(request.metadata())?
+        } else {
+            request.into_inner().user_id
+        };
 
-        let user_id: uuid::Uuid = req
-            .user_id
+        let user_id: uuid::Uuid = user_id_str
             .parse()
             .map_err(|_| Status::invalid_argument("Invalid user_id"))?;
 
@@ -324,7 +375,7 @@ impl AuthService for AuthServiceImpl {
             .user_repo
             .find_by_id(&crate::domain::value_objects::UserId::from(user_id))
             .await
-            .map_err(|e| Status::internal(e.to_string()))?
+            .map_err(|e| Self::map_error(e.into()))?
             .ok_or_else(|| Status::not_found("User not found"))?;
 
         Ok(Response::new(GetUserInfoResponse {
@@ -445,10 +496,7 @@ impl AuthService for AuthServiceImpl {
         &self,
         request: Request<ChangePasswordRequest>,
     ) -> Result<Response<ChangePasswordResponse>, Status> {
-        let user_id = request.metadata().get("x-user-id")
-            .and_then(|v| v.to_str().ok())
-            .ok_or_else(|| Status::unauthenticated("User ID not found in metadata"))?
-            .to_string();
+        let user_id = self.get_user_id_from_metadata(request.metadata())?;
     
         let req = request.into_inner();
 
@@ -461,7 +509,7 @@ impl AuthService for AuthServiceImpl {
         self.change_password_handler
             .handle(command)
             .await
-            .map_err(|e| Status::internal(e.to_string()))?;
+            .map_err(Self::map_error)?;
 
         Ok(Response::new(ChangePasswordResponse { 
             success: true,
@@ -480,7 +528,7 @@ impl AuthService for AuthServiceImpl {
             new_password: req.new_password,
         })
         .await
-        .map_err(|e| Status::internal(e.to_string()))?;
+        .map_err(Self::map_error)?;
 
         Ok(Response::new(ResetPasswordResponse { success: true, message: "Password reset successful".to_string() }))
     }
@@ -519,10 +567,16 @@ impl AuthService for AuthServiceImpl {
         &self,
         request: Request<UpdateUserProfileRequest>,
     ) -> Result<Response<UpdateUserProfileResponse>, Status> {
+        let user_id = if request.get_ref().user_id.is_empty() {
+            self.get_user_id_from_metadata(request.metadata())?
+        } else {
+            request.get_ref().user_id.clone()
+        };
+
         let req = request.into_inner();
 
         let command = UpdateUserProfileCommand {
-            user_id: req.user_id,
+            user_id,
             display_name: if req.display_name.is_empty() {
                 None
             } else {
@@ -538,7 +592,7 @@ impl AuthService for AuthServiceImpl {
         let user_dto = self.update_user_profile_handler
             .handle(command)
             .await
-            .map_err(|e| Status::internal(e.to_string()))?;
+            .map_err(|e| Self::map_error(e.into()))?;
 
         Ok(Response::new(UpdateUserProfileResponse {
             user: Some(self.map_user_info(String::new(), user_dto)),
@@ -699,9 +753,7 @@ impl AuthService for AuthServiceImpl {
         &self,
         request: Request<ListUserSessionsRequest>,
     ) -> Result<Response<ListUserSessionsResponse>, Status> {
-        let user_id = request.metadata().get("x-user-id")
-            .and_then(|v| v.to_str().ok())
-            .ok_or_else(|| Status::unauthenticated("User ID not found in metadata"))?;
+        let user_id = self.get_user_id_from_metadata(request.metadata())?;
 
         let response = self.list_user_sessions_handler.handle(ListUserSessionsCommand { user_id: user_id.to_string() })
             .await
@@ -724,10 +776,7 @@ impl AuthService for AuthServiceImpl {
         &self,
         request: Request<RevokeSessionRequest>,
     ) -> Result<Response<RevokeSessionResponse>, Status> {
-        let user_id = request.metadata().get("x-user-id")
-            .and_then(|v| v.to_str().ok())
-            .ok_or_else(|| Status::unauthenticated("User ID not found in metadata"))?
-            .to_string();
+        let user_id = self.get_user_id_from_metadata(request.metadata())?;
 
         let req = request.into_inner();
         
@@ -745,9 +794,7 @@ impl AuthService for AuthServiceImpl {
         &self,
         request: Request<Enable2FaRequest>,
     ) -> Result<Response<Enable2FaResponse>, Status> {
-        let user_id = request.metadata().get("x-user-id")
-            .and_then(|v| v.to_str().ok())
-            .ok_or_else(|| Status::unauthenticated("User ID not found in metadata"))?;
+        let user_id = self.get_user_id_from_metadata(request.metadata())?;
 
         let command = Enable2FACommand {
             user_id: user_id.to_string(),
@@ -767,10 +814,7 @@ impl AuthService for AuthServiceImpl {
         &self,
         request: Request<Verify2FaRequest>,
     ) -> Result<Response<Verify2FaResponse>, Status> {
-        let user_id = request.metadata().get("x-user-id")
-            .and_then(|v| v.to_str().ok())
-            .ok_or_else(|| Status::unauthenticated("User ID not found in metadata"))?
-            .to_string();
+        let user_id = self.get_user_id_from_metadata(request.metadata())?;
 
         let req = request.into_inner();
         let command = Verify2FASetupCommand {
@@ -805,6 +849,10 @@ impl AuthService for AuthServiceImpl {
             expires_in: response.expires_in,
         }))
     }
+
+
+
+
 
     async fn update_user_status(
         &self,
@@ -1061,10 +1109,7 @@ impl AuthService for AuthServiceImpl {
         &self,
         request: Request<ListApiKeysRequest>,
     ) -> Result<Response<ListApiKeysResponse>, Status> {
-        let user_id = request.metadata().get("x-user-id")
-            .and_then(|v| v.to_str().ok())
-            .ok_or_else(|| Status::unauthenticated("User ID not found in metadata"))?
-            .to_string();
+        let user_id = self.get_user_id_from_metadata(request.metadata())?;
 
         let req = request.into_inner();
         
@@ -1078,7 +1123,7 @@ impl AuthService for AuthServiceImpl {
         };
         let response = self.list_api_keys_handler.handle(command)
             .await
-            .map_err(|e: RepositoryError| Status::internal(e.to_string()))?;
+            .map_err(|e| Self::map_error(e.into()))?;
 
         Ok(Response::new(ListApiKeysResponse {
             keys: response.keys.into_iter().map(|k| ApiKey {
@@ -1190,10 +1235,7 @@ impl AuthService for AuthServiceImpl {
         };
 
         let policy = self.create_policy_handler.handle(command).await
-            .map_err(|e| match e {
-                DomainError::AlreadyExists(msg) => Status::already_exists(msg),
-                _ => Status::internal(e.to_string()),
-            })?;
+            .map_err(Self::map_error)?;
 
         let proto_statements = policy.statements.into_iter().map(|s| Statement {
             effect: match s.effect {
@@ -1301,11 +1343,7 @@ impl AuthService for AuthServiceImpl {
 
         let login_response = self.social_login_handler.handle(command)
             .await
-            .map_err(|e| match e {
-                DomainError::AuthenticationFailed(_) => Status::unauthenticated(e.to_string()),
-                DomainError::InvalidInput(_) => Status::invalid_argument(e.to_string()),
-                _ => Status::internal(e.to_string()),
-            })?;
+            .map_err(Self::map_error)?;
 
         Ok(Response::new(LoginResponse {
             access_token: login_response.access_token.unwrap_or_default(),
@@ -1316,6 +1354,93 @@ impl AuthService for AuthServiceImpl {
             account_locked: false,
             lock_until: None,
             temp_token: login_response.temp_token.unwrap_or_default(),
+        }))
+    }
+
+    async fn get_policy(
+        &self,
+        request: Request<GetPolicyRequest>,
+    ) -> Result<Response<GetPolicyResponse>, Status> {
+        let req = request.into_inner();
+
+        let policy = self.policy_repo.find_by_id(&req.policy_id)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?
+            .ok_or_else(|| Status::not_found("Policy not found"))?;
+
+        let statements = policy.statements.into_iter().map(|s| Statement {
+            effect: match s.effect {
+                crate::domain::aggregates::policy::Effect::Allow => "Allow".to_string(),
+                crate::domain::aggregates::policy::Effect::Deny => "Deny".to_string(),
+            },
+            actions: s.actions,
+            resources: s.resources,
+            conditions: std::collections::HashMap::new(),
+        }).collect();
+
+        Ok(Response::new(GetPolicyResponse {
+            policy: Some(crate::proto::Policy {
+                policy_id: policy.id,
+                name: policy.name,
+                version: policy.version,
+                statements,
+                created_at: Some(Self::to_timestamp(policy.created_at)),
+            }),
+        }))
+    }
+
+    async fn delete_policy(
+        &self,
+        request: Request<DeletePolicyRequest>,
+    ) -> Result<Response<DeletePolicyResponse>, Status> {
+        let req = request.into_inner();
+
+        self.policy_repo.delete(&req.policy_id)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(DeletePolicyResponse { success: true }))
+    }
+
+    async fn list_policies(
+        &self,
+        request: Request<ListPoliciesRequest>,
+    ) -> Result<Response<ListPoliciesResponse>, Status> {
+        let req = request.into_inner();
+        let limit = req.pagination.as_ref().map(|p| p.page_size as i64).unwrap_or(20);
+        let offset = req.pagination.as_ref().map(|p| (p.page as i64) * limit).unwrap_or(0);
+
+        let (policies, total) = self.policy_repo.find_all(limit, offset)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        let proto_policies = policies.into_iter().map(|p| {
+            let statements = p.statements.into_iter().map(|s| Statement {
+                effect: match s.effect {
+                    crate::domain::aggregates::policy::Effect::Allow => "Allow".to_string(),
+                    crate::domain::aggregates::policy::Effect::Deny => "Deny".to_string(),
+                },
+                actions: s.actions,
+                resources: s.resources,
+                conditions: std::collections::HashMap::new(),
+            }).collect();
+
+            crate::proto::Policy {
+                policy_id: p.id,
+                name: p.name,
+                version: p.version,
+                statements,
+                created_at: Some(Self::to_timestamp(p.created_at)),
+            }
+        }).collect();
+
+        Ok(Response::new(ListPoliciesResponse {
+            policies: proto_policies,
+            pagination: Some(PageResponse {
+                total,
+                page: req.pagination.as_ref().map(|p| p.page).unwrap_or(0),
+                page_size: limit as i32,
+            }),
         }))
     }
 }

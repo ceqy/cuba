@@ -34,7 +34,13 @@ async fn main() -> anyhow::Result<()> {
     cuba_telemetry::init_subscriber("auth-service");
 
     // 加载配置
-    let config: AuthServiceConfig = cuba_config::load_config("auth-service")?;
+    let mut config: AuthServiceConfig = cuba_config::load_config("auth-service")?;
+    
+    // 优先使用环境变量
+    if let Ok(addr) = std::env::var("SERVER_ADDR") {
+        config.server_addr = addr;
+    }
+    
     info!("Starting auth-service on {}", config.server_addr);
 
     // 创建数据库连接池
