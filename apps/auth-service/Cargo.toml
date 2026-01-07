@@ -4,19 +4,49 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+# Async Runtime
 tokio = { workspace = true, features = ["full"] }
+async-trait.workspace = true
+
+# gRPC
 tonic.workspace = true
+tonic-prost.workspace = true
 prost.workspace = true
-anyhow.workspace = true
+prost-types.workspace = true
+
+# Database
+sqlx = { workspace = true, features = ["runtime-tokio", "postgres", "uuid", "chrono", "json"] }
+
+# Serialization
 serde.workspace = true
+serde_json.workspace = true
+
+# Error Handling
+thiserror.workspace = true
+anyhow.workspace = true
+
+# Logging
 tracing.workspace = true
 
+# Auth
+bcrypt.workspace = true
+jsonwebtoken.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+ring = "0.17"
+base64 = "0.22"
+sha2 = "0.10"
+totp-rs = "5.6"
+
+# Internal Crates
 cuba-core = { path = "../../libs/cuba-core" }
 cuba-config = { path = "../../libs/cuba-config" }
 cuba-errors = { path = "../../libs/cuba-errors" }
 cuba-database = { path = "../../libs/cuba-database" }
 cuba-messaging = { path = "../../libs/cuba-messaging" }
 cuba-telemetry = { path = "../../libs/cuba-telemetry" }
+reqwest.workspace = true
+base32 = "0.5.1"
 
 [build-dependencies]
 tonic-prost-build.workspace = true

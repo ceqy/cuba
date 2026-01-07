@@ -18,3 +18,6 @@ cuba-telemetry = { path = "../../libs/cuba-telemetry" }
 
 [build-dependencies]
 tonic-prost-build.workspace = true
+prost-build = "0.14"
+prost-types = "0.14"
+prost = "0.14"

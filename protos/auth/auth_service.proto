@@ -2,31 +2,313 @@ syntax = "proto3";
 
 package auth;
 
+import "google/protobuf/timestamp.proto";
+
 option java_package = "com.cuba.auth";
 option go_package = "github.com/cuba/auth";
 
 // 认证服务 - 用户身份验证与授权管理
 service AuthService {
+  // 用户注册
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+
   // 用户登录
   rpc Login(LoginRequest) returns (LoginResponse);
-  
+
   // 用户登出
   rpc Logout(LogoutRequest) returns (LogoutResponse);
-  
+
   // 刷新令牌
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
-  
-  // 验证令牌
+
+  // 验证令牌（供其他服务内部调用）
   rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
-  
+
   // 获取用户信息
   rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse);
+
+  // --- RBAC 权限管理 ---
+  // 创建角色
+  rpc CreateRole(CreateRoleRequest) returns (CreateRoleResponse);
+
+  // 分配角色给用户
+  rpc AssignRoleToUser(AssignRoleToUserRequest) returns (AssignRoleToUserResponse);
+
+  // 添加权限到角色
+  rpc AddPermissionToRole(AddPermissionToRoleRequest) returns (AddPermissionToRoleResponse);
+
+  // 获取用户权限列表
+  rpc GetUserPermissions(GetUserPermissionsRequest) returns (GetUserPermissionsResponse);
+
+  // 修改密码
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+
+  // 重置密码（忘记密码流程）
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+
+  // 发送重置密码邮件/验证码（忘记密码第一步）
+  rpc SendPasswordResetToken(SendPasswordResetTokenRequest) returns (SendPasswordResetTokenResponse);
+
+  // 邮箱验证
+  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
+
+  // 更新用户信息（昵称、头像等）
+  rpc UpdateUserProfile(UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
+
+  // 列出角色（管理员用）
+  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse);
+
+  // 列出所有权限（管理员用）
+  rpc ListPermissions(ListPermissionsRequest) returns (ListPermissionsResponse);
+
+  // 删除角色、移除用户角色、移除角色权限等（慎用但必要）
+  rpc DeleteRole(DeleteRoleRequest) returns (DeleteRoleResponse);
+  rpc RemoveRoleFromUser(RemoveRoleFromUserRequest) returns (RemoveRoleFromUserResponse);
+  rpc RemovePermissionFromRole(RemovePermissionFromRoleRequest) returns (RemovePermissionFromRoleResponse);
+
+  // 获取用户操作审计日志（管理员用）
+  rpc GetAuditLogs(GetAuditLogsRequest) returns (GetAuditLogsResponse);
+
+  // 获取当前用户的所有活跃会话
+  rpc ListUserSessions(ListUserSessionsRequest) returns (ListUserSessionsResponse);
+
+  // 撤销指定会话（登出其他设备）
+  rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse);
+
+  // 启用2FA（生成密钥和二维码）
+  rpc Enable2FA(Enable2FARequest) returns (Enable2FAResponse);
+
+  // 验证2FA并完成启用
+  rpc Verify2FASetup(Verify2FARequest) returns (Verify2FAResponse);
+
+  // 登录时验证2FA代码
+  rpc Verify2FACode(Verify2FACodeRequest) returns (Verify2FACodeResponse);
+
+  // 禁用/启用用户账号
+  rpc UpdateUserStatus(UpdateUserStatusRequest) returns (UpdateUserStatusResponse);
+
+  // 批量导入用户（企业常见）
+  rpc BulkCreateUsers(BulkCreateUsersRequest) returns (BulkCreateUsersResponse);
+
+  // 获取用户列表（管理员分页查询）
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+
+  // OAuth2 授权码模式 - 生成授权码（前端跳转用）
+  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse);
+
+  // OAuth2 Token Endpoint - 换取 access_token
+  rpc Token(TokenRequest) returns (TokenResponse);
+
+  // OpenID Connect UserInfo Endpoint
+  rpc UserInfo(UserInfoRequest) returns (UserInfoResponse);
+
+  // 客户端管理（应用注册）
+  rpc CreateClient(CreateClientRequest) returns (CreateClientResponse);
+  rpc ListClients(ListClientsRequest) returns (ListClientsResponse);
+
+  // 创建API Key
+  rpc CreateAPIKey(CreateAPIKeyRequest) returns (CreateAPIKeyResponse);
+  rpc ListAPIKeys(ListAPIKeysRequest) returns (ListAPIKeysResponse);
+  rpc RevokeAPIKey(RevokeAPIKeyRequest) returns (RevokeAPIKeyResponse);
+
+  // SSO 登录发起（IdP Initiated）
+  rpc SSOLogin(SSOLoginRequest) returns (SSOLoginResponse);
+
+  // SSO 登出（全局登出）
+  rpc GlobalLogout(GlobalLogoutRequest) returns (GlobalLogoutResponse);
+
+  // 新增 Policy 相关
+  rpc CreatePolicy(CreatePolicyRequest) returns (CreatePolicyResponse);
+  rpc AttachPolicyToRole(AttachPolicyToRoleRequest) returns (AttachPolicyToRoleResponse);
+  rpc AttachPolicyToUser(AttachPolicyToUserRequest) returns (AttachPolicyToUserResponse);
+
+  // 服务健康检查
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+
+  // 获取服务统计指标（用于 Prometheus）
+  rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse);
+
+  // 第三方登录（OAuth2/Social Login）
+  rpc SocialLogin(SocialLoginRequest) returns (LoginResponse);
+}
+
+// --- 核心实体 ---
+
+// 租户/组织
+message Tenant {
+  string tenant_id = 1;              // 租户ID
+  string name = 2;                   // 租户名称
+  string domain = 3;                 // 可选：自定义域名
+  bool is_active = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+// 用户信息
+message UserInfo {
+  string tenant_id = 1;              // 用户所属租户
+  string user_id = 2;                // 用户ID
+  string username = 3;               // 用户名
+  string email = 4;                  // 邮箱
+  string display_name = 5;           // 显示名称
+  string avatar_url = 6;             // 头像
+  bool email_verified = 7;           // 邮箱是否验证
+  bool is_active = 8;                // 账号是否启用
+  repeated string roles = 9;         // 角色列表
+  google.protobuf.Timestamp created_at = 10;      // 创建时间
+  google.protobuf.Timestamp updated_at = 11;      // 更新时间
+  google.protobuf.Timestamp last_login_at = 12;   // 最后登录时间
+}
+
+// 角色
+message Role {
+  string role_id = 1;        // 角色ID
+  string name = 2;           // 角色名称
+  string description = 3;    // 角色描述
+  google.protobuf.Timestamp created_at = 4;  // 创建时间
+}
+
+// 权限
+message Permission {
+  string permission_id = 1;  // 权限ID
+  string resource = 2;       // 资源名称（如：sales_order）
+  repeated string actions = 3; // 操作类型（如：create, read, update, delete）
+  string scope = 4;          // 如 "own"（仅自己数据）或 "all"
+  map<string, string> attributes = 5; // 条件权限，如 {"department_id": "{user.department_id}"}
+  string description = 6;    // 权限描述
+}
+
+// 审计日志条目
+message AuditLog {
+  string log_id = 1;
+  string user_id = 2;
+  string tenant_id = 3;
+  string action = 4;                 // 如 "login", "change_password", "assign_role"
+  string resource = 5;               // 操作资源
+  string ip_address = 6;
+  string user_agent = 7;
+  google.protobuf.Timestamp timestamp = 8;
+  map<string, string> details = 9;   // 额外信息
+}
+
+// 当前会话信息
+message UserSession {
+  string session_id = 1;
+  string device_name = 2;            // 如 "Chrome on Windows"
+  string ip_address = 3;
+  string location = 4;               // approximate location
+  google.protobuf.Timestamp last_active = 5;
+  google.protobuf.Timestamp created_at = 6;
+  bool is_current = 7;               // 是否是当前会话
+}
+
+// 客户端（OAuth2）
+message Client {
+  string client_id = 1;
+  string client_secret = 2;              // 只在创建时返回
+  string name = 3;
+  repeated string redirect_uris = 4;     // 回调地址
+  repeated string grant_types = 5;       // authorization_code, refresh_token, client_credentials 等
+  repeated string scopes = 6;            // openid profile email 等
+  google.protobuf.Timestamp created_at = 7;
+}
+
+// API Key
+message APIKey {
+  string key_id = 1;
+  string name = 2;
+  string prefix = 3;           // 如 "ak_1a2b3c"
+  string hashed_key = 4;       // 服务端存储
+  repeated string scopes = 5;  // 权限范围
+  google.protobuf.Timestamp expires_at = 6;
+  google.protobuf.Timestamp created_at = 7;
+  string created_by_user_id = 8;
+}
+
+// 权限策略
+message Policy {
+  string policy_id = 1;
+  string name = 2;
+  string version = 3;          // "v1"
+  repeated Statement statements = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message Statement {
+  string effect = 1;           // "Allow" or "Deny"
+  repeated string actions = 2; // "sales_order:create"
+  repeated string resources = 3; // "arn:tenant:123:order:*"
+  map<string, string> conditions = 4;  // 复杂条件
+}
+
+// 登录尝试（用于安全日志）
+message LoginAttempt {
+  string ip_address = 1;
+  string username = 2;
+  bool success = 3;
+  google.protobuf.Timestamp timestamp = 4;
+  string reason = 5;           // "invalid_password", "require_2fa" 等
+}
+
+// Webhook
+message Webhook {
+  string webhook_id = 1;
+  string url = 2;
+  repeated string events = 3;  // "user.created", "user.login", "role.assigned"
+  string secret = 4;           // 用于签名验证
+}
+
+// 认证事件
+message AuthEvent {
+  string event_id = 1;
+  string type = 2;             // "user.registered"
+  google.protobuf.Timestamp timestamp = 3;
+  string user_id = 4;
+  string tenant_id = 5;
+  map<string, string> payload = 6;
+}
+
+// 指标
+message Metrics {
+  int64 total_users = 1;
+  int64 active_sessions = 2;
+  int64 login_attempts_last_hour = 3;
+  int64 failed_logins_last_hour = 4;
+}
+
+// 列表查询通用分页
+message PageRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  string sort_by = 3;     // 如 "created_at"
+  bool desc = 4;          // 是否降序
+}
+
+message PageResponse {
+  int64 total = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+// --- 认证相关 RPC ---
+
+// 用户注册请求
+message RegisterRequest {
+  string tenant_id = 1;              // 指定租户（管理员创建用户时用）
+  string username = 2;  // 用户名
+  string email = 3;     // 邮箱
+  string password = 4;  // 密码
+}
+
+// 用户注册响应
+message RegisterResponse {
+  UserInfo user = 1;  // 用户信息
 }
 
 // 登录请求
 message LoginRequest {
-  string username = 1;  // 用户名
-  string password = 2;  // 密码
+  string tenant_id = 1;              // 可选，支持多租户登录
+  string username = 2;  // 用户名
+  string password = 3;  // 密码
 }
 
 // 登录响应
@@ -35,11 +317,16 @@ message LoginResponse {
   string refresh_token = 2;  // 刷新令牌
   int64 expires_in = 3;      // 过期时间（秒）
   UserInfo user = 4;         // 用户信息
+  bool requires_2fa = 5;     // 是否需要二次验证
+  bool account_locked = 6;   // 账号是否被锁定
+  google.protobuf.Timestamp lock_until = 7;  // 锁定到期时间
+  string temp_token = 8;     // 2FA 临时 token
 }
 
 // 登出请求
 message LogoutRequest {
-  string access_token = 1;  // 访问令牌
+  string access_token = 1;   // 访问令牌（用于撤销）
+  string refresh_token = 2;  // 刷新令牌（用于撤销）
 }
 
 // 登出响应
@@ -66,9 +353,11 @@ message ValidateTokenRequest {
 
 // 验证令牌响应
 message ValidateTokenResponse {
-  bool valid = 1;        // 是否有效
-  string user_id = 2;    // 用户ID
-  repeated string roles = 3;  // 用户角色
+  bool valid = 1;                  // 是否有效
+  string user_id = 2;              // 用户ID
+  string tenant_id = 3;            // 租户ID
+  repeated string roles = 4;       // 用户角色列表
+  repeated string permissions = 5; // 用户权限列表
 }
 
 // 获取用户信息请求
@@ -81,13 +370,417 @@ message GetUserInfoResponse {
   UserInfo user = 1;  // 用户信息
 }
 
-// 用户信息
-message UserInfo {
-  string user_id = 1;         // 用户ID
-  string username = 2;        // 用户名
-  string email = 3;           // 邮箱
-  string display_name = 4;    // 显示名称
-  repeated string roles = 5;  // 角色列表
-  int64 created_at = 6;       // 创建时间戳
-  int64 last_login_at = 7;    // 最后登录时间戳
+// 修改密码
+message ChangePasswordRequest {
+  string old_password = 1;
+  string new_password = 2;
+}
+
+message ChangePasswordResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 发送重置密码令牌（邮箱或手机号）
+message SendPasswordResetTokenRequest {
+  string email = 1;  // 或 username/phone
+}
+
+message SendPasswordResetTokenResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 重置密码
+message ResetPasswordRequest {
+  string token = 1;      // 重置令牌
+  string new_password = 2;
+}
+
+message ResetPasswordResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 邮箱验证
+message VerifyEmailRequest {
+  string token = 1;
+}
+
+message VerifyEmailResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 更新用户资料
+message UpdateUserProfileRequest {
+  string user_id = 1;
+  string display_name = 2;
+  string avatar_url = 3;  // 新增字段建议
+  // 可扩展其他非敏感字段
+}
+
+message UpdateUserProfileResponse {
+  UserInfo user = 1;
+}
+
+// 启用2FA
+message Enable2FARequest {}  // 空请求
+
+message Enable2FAResponse {
+  string secret_key = 1;             // TOTP 密钥
+  string qr_code_url = 2;            // 二维码图片URL（供前端显示）
+}
+
+// 验证2FA设置
+message Verify2FARequest {
+  string code = 1;                   // 用户输入的6位代码
+}
+
+message Verify2FAResponse {
+  bool success = 1;
+}
+
+// 验证2FA代码
+message Verify2FACodeRequest {
+  string temp_token = 1;             // Login 返回的临时 token
+  string code = 2;
+}
+
+message Verify2FACodeResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3;
+}
+
+// 获取审计日志
+message GetAuditLogsRequest {
+  string user_id = 1;                // 可选过滤
+  string tenant_id = 2;
+  google.protobuf.Timestamp start_time = 3;
+  google.protobuf.Timestamp end_time = 4;
+  PageRequest pagination = 5;
+}
+
+message GetAuditLogsResponse {
+  repeated AuditLog logs = 1;
+  PageResponse pagination = 2;
+}
+
+// 列出会话
+message ListUserSessionsRequest {
+  // 无参数，使用当前 token 的用户
+}
+
+message ListUserSessionsResponse {
+  repeated UserSession sessions = 1;
+}
+
+// 撤销会话
+message RevokeSessionRequest {
+  string session_id = 1;             // "all" 表示全部撤销除当前
+}
+
+message RevokeSessionResponse {
+  bool success = 1;
+}
+
+// 禁用/启用用户
+message UpdateUserStatusRequest {
+  string user_id = 1;
+  bool is_active = 2;
+}
+
+message UpdateUserStatusResponse {
+  bool success = 1;
+}
+
+// 批量创建用户
+message BulkCreateUsersRequest {
+  repeated RegisterRequest users = 1;
+  string tenant_id = 2;
+}
+
+message BulkCreateUsersResponse {
+  repeated UserInfo created_users = 1;
+  repeated string errors = 2;
+}
+
+// 列出用户
+message ListUsersRequest {
+  string tenant_id = 1;
+  string role_id = 2;                // 可选过滤角色
+  string search = 3;                 // 模糊搜索 username/email/display_name
+  PageRequest pagination = 4;
+}
+
+message ListUsersResponse {
+  repeated UserInfo users = 1;
+  PageResponse pagination = 2;
+}
+
+// --- RBAC 管理 RPC ---
+
+// 创建角色请求
+message CreateRoleRequest {
+  string name = 1;        // 角色名称
+  string description = 2; // 角色描述
+}
+
+// 创建角色响应
+message CreateRoleResponse {
+  Role role = 1;  // 创建的角色
+}
+
+// 分配角色给用户请求
+message AssignRoleToUserRequest {
+  string user_id = 1;  // 用户ID
+  string role_id = 2;  // 角色ID
+}
+
+// 分配角色给用户响应
+message AssignRoleToUserResponse {
+  bool success = 1;  // 是否成功
+}
+
+// 添加权限到角色请求
+message AddPermissionToRoleRequest {
+  string role_id = 1;       // 角色ID
+  string permission_id = 2; // 权限ID
+}
+
+// 添加权限到角色响应
+message AddPermissionToRoleResponse {
+  bool success = 1;  // 是否成功
+}
+
+// 获取用户权限列表请求
+message GetUserPermissionsRequest {
+  string user_id = 1;  // 用户ID
+}
+
+// 获取用户权限列表响应
+message GetUserPermissionsResponse {
+  repeated Permission permissions = 1;  // 权限列表
+}
+
+// 列出角色
+message ListRolesRequest {
+  PageRequest pagination = 1;
+}
+
+message ListRolesResponse {
+  repeated Role roles = 1;
+  PageResponse pagination = 2;
+}
+
+// 列出权限
+message ListPermissionsRequest {
+  PageRequest pagination = 1;
+}
+
+message ListPermissionsResponse {
+  repeated Permission permissions = 1;
+  PageResponse pagination = 2;
+}
+
+// 删除角色
+message DeleteRoleRequest {
+  string role_id = 1;
+}
+
+message DeleteRoleResponse {
+  bool success = 1;
+}
+
+// 移除用户角色
+message RemoveRoleFromUserRequest {
+  string user_id = 1;
+  string role_id = 2;
+}
+
+message RemoveRoleFromUserResponse {
+  bool success = 1;
+}
+
+// 移除角色权限
+message RemovePermissionFromRoleRequest {
+  string role_id = 1;
+  string permission_id = 2;
+}
+
+message RemovePermissionFromRoleResponse {
+  bool success = 1;
+}
+
+// --- OAuth2 / OIDC ---
+
+message AuthorizeRequest {
+  string response_type = 1;   // "code"
+  string client_id = 2;
+  string redirect_uri = 3;
+  string scope = 4;
+  string state = 5;
+  string user_id = 6;         // 内部已登录用户
+}
+
+message AuthorizeResponse {
+  string code = 1;            // 授权码
+  string state = 2;
+}
+
+message TokenRequest {
+  string grant_type = 1;      // authorization_code, refresh_token, client_credentials
+  string code = 2;
+  string redirect_uri = 3;
+  string client_id = 4;
+  string client_secret = 5;
+  string refresh_token = 6;
+}
+
+message TokenResponse {
+  string access_token = 1;
+  string token_type = 2;      // "Bearer"
+  string refresh_token = 3;
+  int64 expires_in = 4;
+  string scope = 5;
+  string id_token = 6;        // OpenID Connect ID Token (JWT)
+}
+
+message UserInfoRequest {
+  string access_token = 1;
+}
+
+message UserInfoResponse {
+  string sub = 1;             // user_id
+  string name = 2;
+  string email = 3;
+  bool email_verified = 4;
+  string picture = 5;
+  // 可扩展其他 claims
+}
+
+message CreateClientRequest {
+  string name = 1;
+  repeated string redirect_uris = 2;
+  repeated string grant_types = 3;
+  repeated string scopes = 4;
+}
+
+message CreateClientResponse {
+  Client client = 1;
+}
+
+message ListClientsRequest {
+  PageRequest pagination = 1;
+}
+
+message ListClientsResponse {
+  repeated Client clients = 1;
+  PageResponse pagination = 2;
+}
+
+// --- API Key ---
+
+message CreateAPIKeyRequest {
+  string name = 1;
+  repeated string scopes = 2;
+  google.protobuf.Timestamp expires_at = 3;  // 可选
+}
+
+message CreateAPIKeyResponse {
+  string api_key = 1;          // 明文，只返回一次！
+  APIKey info = 2;
+}
+
+message ListAPIKeysRequest {
+  PageRequest pagination = 1;
+}
+
+message ListAPIKeysResponse {
+  repeated APIKey keys = 1;
+  PageResponse pagination = 2;
+}
+
+message RevokeAPIKeyRequest {
+  string key_id = 1;
+}
+
+message RevokeAPIKeyResponse {
+  bool success = 1;
+}
+
+// --- SSO ---
+
+message SSOLoginRequest {
+  // SSO 特定参数，如 SAML Assertion 等
+  string provider = 1;
+  string assertion = 2;
+}
+
+message SSOLoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3;
+  UserInfo user = 4;
+}
+
+message GlobalLogoutRequest {
+  string access_token = 1;
+}
+
+message GlobalLogoutResponse {
+  bool success = 1;
+}
+
+// --- Policy ---
+
+message CreatePolicyRequest {
+  string name = 1;
+  string version = 2;
+  repeated Statement statements = 3;
+}
+
+message CreatePolicyResponse {
+  Policy policy = 1;
+}
+
+message AttachPolicyToRoleRequest {
+  string policy_id = 1;
+  string role_id = 2;
+}
+
+message AttachPolicyToRoleResponse {
+  bool success = 1;
+}
+
+message AttachPolicyToUserRequest {
+  string policy_id = 1;
+  string user_id = 2;
+}
+
+message AttachPolicyToUserResponse {
+  bool success = 1;
+}
+
+// --- Health & Metrics ---
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;  // "SERVING" "NOT_SERVING"
+}
+
+message GetMetricsRequest {}
+
+message GetMetricsResponse {
+  Metrics metrics = 1;
+}
+
+// --- Social Login ---
+
+message SocialLoginRequest {
+  string provider = 1;  // "google", "github", "wechat" 等
+  string code = 2;      // 授权码
+  string redirect_uri = 3;
 }
