@@ -31,9 +31,31 @@ This repository contains the source code for the **Corporate Unified Business Ar
 └── Cargo.toml              # Workspace root
 ```
 
-## Getting Started
+## 🚀 快速开始
 
-1.  **Start Infrastructure**: `docker-compose up -d`
-2.  **Run Migrations**: `sqlx migrate run`
-3.  **Build All Services**: `cargo build --workspace`
-4.  **Run a Specific Service**: `cargo run -p auth-service`
+**新人推荐**: 请查看 **[快速开始指南 (QUICKSTART.md)](file:///Users/x/x/docs/QUICKSTART.md)** 获取详细的一键启动步骤。
+
+### 极简版（5 分钟）
+
+```bash
+docker-compose up -d          # 启动基础设施
+sqlx migrate run              # 数据库迁移
+cargo run -p auth-service &   # 启动后端
+./scripts/start.sh            # 启动网关
+```
+
+访问 http://localhost:8081 查看 Swagger UI。
+
+### 使用 Makefile（推荐）
+
+```bash
+make setup      # 初始化项目
+make run-auth   # 启动服务
+make help       # 查看所有命令
+```
+
+## 📚 文档
+
+- [快速开始指南](file:///Users/x/x/docs/QUICKSTART.md) - 新人必读
+- [测试账号](file:///Users/x/x/docs/test_accounts.md) - 前端测试凭据
+- [架构文档](file:///Users/x/x/docs/IDENTITY_PLATFORM_ARCHITECTURE.md)

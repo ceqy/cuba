@@ -1,15 +1,13 @@
 // ============================================================================
-// /finance/gl-journal-entry-service (版本 2.0)
-// 描述: 提供总账凭证的创建、查询和冲销功能，字段设计参考核心ERP的BKPF和BSEG表。
+// /finance/gl-journal-entry-service
+// 描述: 提供总账凭证的创建、查询和冲销功能，字段设计深度参考核心ERP的：
+//       ACDOCA (通用日记账条目), BKPF (会计凭证抬头), BSEG (会计凭证段),
+//       BSET (税务数据), BSEC (一次性账户)
 // ============================================================================
 
 syntax = "proto3";
 
-package enterprise.finance.gl;
-
-option java_package = "com.enterprise.finance.gl.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/finance/gl/v2;gl";
+package finance.gl;
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -19,25 +17,510 @@ import "common/common.proto";
 // ============================================================================
 
 service GeneralLedgerJournalEntryService {
+  // --------------------------------------------------------------------------
+  // 凭证创建与验证 (Journal Entry Creation & Validation)
+  // --------------------------------------------------------------------------
+
   // 创建一笔总账凭证
   rpc CreateJournalEntry(CreateJournalEntryRequest) returns (JournalEntryResponse);
+
+  // 批量创建总账凭证
+  rpc BatchCreateJournalEntries(BatchCreateJournalEntriesRequest) returns (BatchCreateJournalEntriesResponse);
+
+  // 验证凭证 (不实际过账，仅检查)
+  rpc ValidateJournalEntry(ValidateJournalEntryRequest) returns (ValidationResponse);
+
+  // 模拟过账 (Simulation) - 完整模拟但不实际提交
+  rpc SimulateJournalEntry(SimulateJournalEntryRequest) returns (SimulationResponse);
+
+  // --------------------------------------------------------------------------
+  // 凭证查询 (Journal Entry Query)
+  // --------------------------------------------------------------------------
 
   // 获取一笔总账凭证的详细信息
   rpc GetJournalEntry(GetJournalEntryRequest) returns (JournalEntryDetail);
 
+  // 查询总账凭证列表
+  rpc ListJournalEntries(ListJournalEntriesRequest) returns (ListJournalEntriesResponse);
+
+  // 按科目查询凭证
+  rpc GetJournalEntriesByAccount(GetJournalEntriesByAccountRequest) returns (ListJournalEntriesResponse);
+
+  // 查询凭证变更历史
+  rpc GetJournalEntryHistory(GetJournalEntryHistoryRequest) returns (JournalEntryHistoryResponse);
+
+  // --------------------------------------------------------------------------
+  // 凭证修改与管理 (Journal Entry Modification & Management)
+  // --------------------------------------------------------------------------
+
+  // 更新未过账的凭证
+  rpc UpdateJournalEntry(UpdateJournalEntryRequest) returns (JournalEntryResponse);
+
+  // 删除未过账的凭证
+  rpc DeleteJournalEntry(DeleteJournalEntryRequest) returns (JournalEntryResponse);
+
+  // 过账凭证 (将草稿状态的凭证正式过账)
+  rpc PostJournalEntry(PostJournalEntryRequest) returns (JournalEntryResponse);
+
+  // 取消凭证 (仅适用于未过账的凭证)
+  rpc CancelJournalEntry(CancelJournalEntryRequest) returns (JournalEntryResponse);
+
+  // 重置凭证 (Reset) - 重新打开已过账的凭证
+  rpc ResetJournalEntry(ResetJournalEntryRequest) returns (JournalEntryResponse);
+
+  // --------------------------------------------------------------------------
+  // 凭证冲销与调整 (Journal Entry Reversal & Adjustment)
+  // --------------------------------------------------------------------------
+
   // 冲销一笔总账凭证
   rpc ReverseJournalEntry(ReverseJournalEntryRequest) returns (JournalEntryResponse);
 
-  // 查询总账凭证列表
-  rpc ListJournalEntries(ListJournalEntriesRequest) returns (ListJournalEntriesResponse);
+  // 批量冲销凭证
+  rpc BatchReverseJournalEntries(BatchReverseJournalEntriesRequest) returns (BatchReverseJournalEntriesResponse);
+
+  // --------------------------------------------------------------------------
+  // 清账管理 (Clearing Management)
+  // --------------------------------------------------------------------------
+
+  // 清账未清项目
+  rpc ClearOpenItems(ClearOpenItemsRequest) returns (ClearOpenItemsResponse);
+
+  // 取消清账
+  rpc ResetClearing(ResetClearingRequest) returns (ResetClearingResponse);
+
+  // 查询未清项目
+  rpc ListOpenItems(ListOpenItemsRequest) returns (ListOpenItemsResponse);
+
+  // --------------------------------------------------------------------------
+  // 税务管理 (Tax Management)
+  // --------------------------------------------------------------------------
+
+  // 获取凭证税务详情
+  rpc GetJournalEntryTaxDetails(GetJournalEntryTaxDetailsRequest) returns (JournalEntryTaxDetailsResponse);
+
+  // 重新计算税额
+  rpc RecalculateTax(RecalculateTaxRequest) returns (RecalculateTaxResponse);
+
+  // --------------------------------------------------------------------------
+  // 支付管理 (Payment Management)
+  // --------------------------------------------------------------------------
+
+  // 获取凭证支付信息
+  rpc GetPaymentInformation(GetPaymentInformationRequest) returns (PaymentInformationResponse);
+
+  // 更新支付状态
+  rpc UpdatePaymentStatus(UpdatePaymentStatusRequest) returns (UpdatePaymentStatusResponse);
+
+  // --------------------------------------------------------------------------
+  // 附件管理 (Attachment Management)
+  // --------------------------------------------------------------------------
+
+  // 上传凭证附件
+  rpc UploadAttachment(UploadAttachmentRequest) returns (UploadAttachmentResponse);
+
+  // 下载凭证附件
+  rpc DownloadAttachment(DownloadAttachmentRequest) returns (DownloadAttachmentResponse);
+
+  // 列出凭证附件
+  rpc ListAttachments(ListAttachmentsRequest) returns (ListAttachmentsResponse);
+
+  // 删除凭证附件
+  rpc DeleteAttachment(DeleteAttachmentRequest) returns (DeleteAttachmentResponse);
+
+  // --------------------------------------------------------------------------
+  // 工作流与审批 (Workflow & Approval)
+  // --------------------------------------------------------------------------
+
+  // 提交凭证审批
+  rpc SubmitForApproval(SubmitForApprovalRequest) returns (SubmitForApprovalResponse);
+
+  // 审批凭证
+  rpc ApproveJournalEntry(ApproveJournalEntryRequest) returns (ApproveJournalEntryResponse);
+
+  // 拒绝凭证
+  rpc RejectJournalEntry(RejectJournalEntryRequest) returns (RejectJournalEntryResponse);
+
+  // 查询审批历史
+  rpc GetApprovalHistory(GetApprovalHistoryRequest) returns (ApprovalHistoryResponse);
+
+  // --------------------------------------------------------------------------
+  // 凭证导出与报表 (Export & Reporting)
+  // --------------------------------------------------------------------------
+
+  // 导出凭证 (支持多种格式)
+  rpc ExportJournalEntries(ExportJournalEntriesRequest) returns (ExportJournalEntriesResponse);
+
+  // 获取凭证统计信息
+  rpc GetJournalEntryStatistics(GetJournalEntryStatisticsRequest) returns (JournalEntryStatisticsResponse);
+
+  // 生成凭证打印预览
+  rpc GeneratePrintPreview(GeneratePrintPreviewRequest) returns (GeneratePrintPreviewResponse);
+
+  // --------------------------------------------------------------------------
+  // 凭证停放 (Document Parking)
+  // --------------------------------------------------------------------------
+
+  // 停放凭证 (保存草稿但不过账)
+  rpc ParkJournalEntry(ParkJournalEntryRequest) returns (ParkJournalEntryResponse);
+
+  // 查询停放凭证列表
+  rpc ListParkedJournalEntries(ListParkedJournalEntriesRequest) returns (ListParkedJournalEntriesResponse);
+
+  // 从停放凭证过账
+  rpc PostParkedJournalEntry(PostParkedJournalEntryRequest) returns (JournalEntryResponse);
+
+  // --------------------------------------------------------------------------
+  // 重复凭证与模板 (Recurring Entries & Templates)
+  // --------------------------------------------------------------------------
+
+  // 创建重复凭证
+  rpc CreateRecurringEntry(CreateRecurringEntryRequest) returns (RecurringEntryResponse);
+
+  // 执行重复凭证
+  rpc ExecuteRecurringEntry(ExecuteRecurringEntryRequest) returns (ExecuteRecurringEntryResponse);
+
+  // 查询重复凭证列表
+  rpc ListRecurringEntries(ListRecurringEntriesRequest) returns (ListRecurringEntriesResponse);
+
+  // 保存为凭证模板
+  rpc SaveAsTemplate(SaveAsTemplateRequest) returns (SaveAsTemplateResponse);
+
+  // 从模板创建凭证
+  rpc CreateFromTemplate(CreateFromTemplateRequest) returns (JournalEntryResponse);
+
+  // 查询凭证模板列表
+  rpc ListTemplates(ListTemplatesRequest) returns (ListTemplatesResponse);
+
+  // --------------------------------------------------------------------------
+  // 凭证链与对账 (Document Chain & Reconciliation)
+  // --------------------------------------------------------------------------
+
+  // 获取凭证链 (Follow-up Documents)
+  rpc GetDocumentChain(GetDocumentChainRequest) returns (DocumentChainResponse);
+
+  // 对账两组凭证
+  rpc ReconcileDocuments(ReconcileDocumentsRequest) returns (ReconcileDocumentsResponse);
+
+  // --------------------------------------------------------------------------
+  // 期末处理 (Period-End Processing)
+  // --------------------------------------------------------------------------
+
+  // 执行期末关账
+  rpc ExecutePeriodEndClose(ExecutePeriodEndCloseRequest) returns (PeriodEndCloseResponse);
+
+  // 汇兑差异重估
+  rpc RevaluateForeignCurrency(RevaluateForeignCurrencyRequest) returns (RevaluationResponse);
+
+  // 科目余额重分类
+  rpc ReclassifyAccounts(ReclassifyAccountsRequest) returns (ReclassificationResponse);
+
+  // 执行余额结转
+  rpc CarryForwardBalances(CarryForwardBalancesRequest) returns (CarryForwardBalancesResponse);
+
+  // --------------------------------------------------------------------------
+  // 批量输入会话 (Batch Input Session)
+  // --------------------------------------------------------------------------
+
+  // 创建批量输入会话
+  rpc CreateBatchInputSession(CreateBatchInputSessionRequest) returns (BatchInputSessionResponse);
+
+  // 处理批量输入会话
+  rpc ProcessBatchInputSession(ProcessBatchInputSessionRequest) returns (ProcessBatchInputSessionResponse);
+
+  // 查询批量输入会话状态
+  rpc GetBatchInputSessionStatus(GetBatchInputSessionStatusRequest) returns (BatchInputSessionStatusResponse);
+
+  // --------------------------------------------------------------------------
+  // 凭证拆分 (Document Splitting)
+  // --------------------------------------------------------------------------
+
+  // 获取凭证拆分详情
+  rpc GetDocumentSplitDetails(GetDocumentSplitDetailsRequest) returns (DocumentSplitDetailsResponse);
+
+  // 配置凭证拆分规则
+  rpc ConfigureDocumentSplitting(ConfigureDocumentSplittingRequest) returns (ConfigureDocumentSplittingResponse);
+
+  // --------------------------------------------------------------------------
+  // 并行会计 (Parallel Accounting)
+  // --------------------------------------------------------------------------
+
+  // 获取并行分类账数据
+  rpc GetParallelLedgerData(GetParallelLedgerDataRequest) returns (ParallelLedgerDataResponse);
+
+  // 调整并行分类账
+  rpc AdjustParallelLedger(AdjustParallelLedgerRequest) returns (AdjustParallelLedgerResponse);
+
+  // --------------------------------------------------------------------------
+  // 高级查询与分析 (Advanced Query & Analysis)
+  // --------------------------------------------------------------------------
+
+  // 科目余额查询
+  rpc GetAccountBalances(GetAccountBalancesRequest) returns (AccountBalancesResponse);
+
+  // 科目余额明细
+  rpc GetAccountLineItems(GetAccountLineItemsRequest) returns (AccountLineItemsResponse);
+
+  // 总账与辅助账对账
+  rpc ReconcileGLAndSubledger(ReconcileGLAndSubledgerRequest) returns (ReconciliationResponse);
+
+  // 生成凭证分析报表
+  rpc GenerateJournalAnalysis(GenerateJournalAnalysisRequest) returns (JournalAnalysisResponse);
 }
 
 // ============================================================================
 // 数据结构: JournalEntry (凭证)
 // ============================================================================
 
-// 凭证抬头信息 (参考: BKPF)
+// 凭证状态枚举
+enum JournalEntryStatus {
+  // 未知状态
+  JOURNAL_ENTRY_STATUS_UNSPECIFIED = 0;
+  // 草稿 (未保存到核心ERP)
+  JOURNAL_ENTRY_STATUS_DRAFT = 1;
+  // 已保存 (已保存但未过账)
+  JOURNAL_ENTRY_STATUS_SAVED = 2;
+  // 待审批
+  JOURNAL_ENTRY_STATUS_PENDING_APPROVAL = 3;
+  // 已过账
+  JOURNAL_ENTRY_STATUS_POSTED = 4;
+  // 已冲销
+  JOURNAL_ENTRY_STATUS_REVERSED = 5;
+  // 已取消
+  JOURNAL_ENTRY_STATUS_CANCELLED = 6;
+  // 错误 (过账失败)
+  JOURNAL_ENTRY_STATUS_ERROR = 7;
+}
+
+// 冲销类型枚举
+enum ReversalType {
+  // 未指定
+  REVERSAL_TYPE_UNSPECIFIED = 0;
+  // 完全冲销 (原: STGRD = '01')
+  REVERSAL_TYPE_FULL = 1;
+  // 部分冲销
+  REVERSAL_TYPE_PARTIAL = 2;
+  // 负值冲销 (负数记账)
+  REVERSAL_TYPE_NEGATIVE_POSTING = 3;
+  // 正值冲销 (零值法)
+  REVERSAL_TYPE_ZERO_POSTING = 4;
+}
+
+// 导出格式枚举
+enum ExportFormat {
+  // 未指定
+  EXPORT_FORMAT_UNSPECIFIED = 0;
+  // CSV 格式
+  EXPORT_FORMAT_CSV = 1;
+  // Excel 格式
+  EXPORT_FORMAT_EXCEL = 2;
+  // JSON 格式
+  EXPORT_FORMAT_JSON = 3;
+  // PDF 格式
+  EXPORT_FORMAT_PDF = 4;
+  // XML 格式
+  EXPORT_FORMAT_XML = 5;
+}
+
+// 特殊总账标识枚举 (原: KOART)
+enum SpecialGLIndicator {
+  // 未指定
+  SPECIAL_GL_UNSPECIFIED = 0;
+  // 空白 - 正常明细行
+  SPECIAL_GL_NORMAL = 1;
+  // A - 预付款 (Down Payment)
+  SPECIAL_GL_DOWN_PAYMENT = 2;
+  // B - 票据 (Bills of Exchange)
+  SPECIAL_GL_BILL_OF_EXCHANGE = 3;
+  // E - 担保 (Guarantee)
+  SPECIAL_GL_GUARANTEE = 4;
+  // F - 应收款融资 (Receivables Financing)
+  SPECIAL_GL_RECEIVABLES_FINANCING = 5;
+  // M - 物料 (Material)
+  SPECIAL_GL_MATERIAL = 6;
+  // S - 总账科目 (G/L Account)
+  SPECIAL_GL_GL_ACCOUNT = 7;
+  // D - 客户 (Customer)
+  SPECIAL_GL_CUSTOMER = 8;
+  // K - 供应商 (Vendor)
+  SPECIAL_GL_VENDOR = 9;
+}
+
+// 支付方式枚举
+enum PaymentMethod {
+  // 未指定
+  PAYMENT_METHOD_UNSPECIFIED = 0;
+  // 支票 (Check)
+  PAYMENT_METHOD_CHECK = 1;
+  // 银行转账 (Bank Transfer)
+  PAYMENT_METHOD_BANK_TRANSFER = 2;
+  // 电汇 (Wire Transfer)
+  PAYMENT_METHOD_WIRE = 3;
+  // 信用卡 (Credit Card)
+  PAYMENT_METHOD_CREDIT_CARD = 4;
+  // 现金 (Cash)
+  PAYMENT_METHOD_CASH = 5;
+  // ACH
+  PAYMENT_METHOD_ACH = 6;
+  // 承兑汇票 (Bill of Exchange)
+  PAYMENT_METHOD_BILL_OF_EXCHANGE = 7;
+}
+
+// 支付状态枚举
+enum PaymentStatus {
+  // 未指定
+  PAYMENT_STATUS_UNSPECIFIED = 0;
+  // 未支付
+  PAYMENT_STATUS_UNPAID = 1;
+  // 部分支付
+  PAYMENT_STATUS_PARTIALLY_PAID = 2;
+  // 已支付
+  PAYMENT_STATUS_PAID = 3;
+  // 支付中
+  PAYMENT_STATUS_IN_PROGRESS = 4;
+  // 支付失败
+  PAYMENT_STATUS_FAILED = 5;
+  // 已退款
+  PAYMENT_STATUS_REFUNDED = 6;
+}
+
+// 清账状态枚举
+enum ClearingStatus {
+  // 未指定
+  CLEARING_STATUS_UNSPECIFIED = 0;
+  // 未清 (Open)
+  CLEARING_STATUS_OPEN = 1;
+  // 已清 (Cleared)
+  CLEARING_STATUS_CLEARED = 2;
+  // 部分清账 (Partially Cleared)
+  CLEARING_STATUS_PARTIALLY_CLEARED = 3;
+  // 清账中
+  CLEARING_STATUS_IN_PROGRESS = 4;
+}
+
+// 过账码类型枚举 (原: BSCHL)
+enum PostingKeyType {
+  // 未指定
+  POSTING_KEY_TYPE_UNSPECIFIED = 0;
+  // 借方 (Debit)
+  POSTING_KEY_TYPE_DEBIT = 1;
+  // 贷方 (Credit)
+  POSTING_KEY_TYPE_CREDIT = 2;
+}
+
+// 重复凭证频率枚举
+enum RecurringFrequency {
+  // 未指定
+  RECURRING_FREQUENCY_UNSPECIFIED = 0;
+  // 每日
+  RECURRING_FREQUENCY_DAILY = 1;
+  // 每周
+  RECURRING_FREQUENCY_WEEKLY = 2;
+  // 每月
+  RECURRING_FREQUENCY_MONTHLY = 3;
+  // 每季度
+  RECURRING_FREQUENCY_QUARTERLY = 4;
+  // 每半年
+  RECURRING_FREQUENCY_SEMI_ANNUALLY = 5;
+  // 每年
+  RECURRING_FREQUENCY_ANNUALLY = 6;
+  // 自定义
+  RECURRING_FREQUENCY_CUSTOM = 7;
+}
+
+// 凭证来源枚举 (原: BSTAT)
+enum DocumentOrigin {
+  // 未指定
+  DOCUMENT_ORIGIN_UNSPECIFIED = 0;
+  // 手工输入
+  DOCUMENT_ORIGIN_MANUAL = 1;
+  // 批量输入
+  DOCUMENT_ORIGIN_BATCH_INPUT = 2;
+  // 接口导入
+  DOCUMENT_ORIGIN_INTERFACE = 3;
+  // 自动生成
+  DOCUMENT_ORIGIN_AUTOMATIC = 4;
+  // 重复凭证
+  DOCUMENT_ORIGIN_RECURRING = 5;
+  // 模板生成
+  DOCUMENT_ORIGIN_TEMPLATE = 6;
+  // 从其他系统传输
+  DOCUMENT_ORIGIN_TRANSFERRED = 7;
+  // 从停放凭证过账
+  DOCUMENT_ORIGIN_PARKED = 8;
+}
+
+// 凭证拆分方法枚举
+enum DocumentSplittingMethod {
+  // 未指定
+  DOCUMENT_SPLITTING_METHOD_UNSPECIFIED = 0;
+  // 不拆分
+  DOCUMENT_SPLITTING_METHOD_NONE = 1;
+  // 按利润中心拆分
+  DOCUMENT_SPLITTING_METHOD_PROFIT_CENTER = 2;
+  // 按业务范围拆分
+  DOCUMENT_SPLITTING_METHOD_BUSINESS_AREA = 3;
+  // 按分部拆分
+  DOCUMENT_SPLITTING_METHOD_SEGMENT = 4;
+  // 按功能范围拆分
+  DOCUMENT_SPLITTING_METHOD_FUNCTIONAL_AREA = 5;
+  // 组合拆分
+  DOCUMENT_SPLITTING_METHOD_COMBINED = 6;
+}
+
+// 期间状态枚举
+enum PeriodStatus {
+  // 未指定
+  PERIOD_STATUS_UNSPECIFIED = 0;
+  // 未打开
+  PERIOD_STATUS_NOT_OPENED = 1;
+  // 已打开 - 正常过账
+  PERIOD_STATUS_OPENED = 2;
+  // 只允许特定过账
+  PERIOD_STATUS_RESTRICTED = 3;
+  // 已关闭
+  PERIOD_STATUS_CLOSED = 4;
+  // 永久关闭
+  PERIOD_STATUS_PERMANENTLY_CLOSED = 5;
+}
+
+// 分类账类型枚举 (原: RLDNR)
+enum LedgerType {
+  // 未指定
+  LEDGER_TYPE_UNSPECIFIED = 0;
+  // 前导分类账 (Leading Ledger)
+  LEDGER_TYPE_LEADING = 1;
+  // 非前导分类账 (Non-Leading Ledger)
+  LEDGER_TYPE_NON_LEADING = 2;
+  // 扩展分类账 (Extension Ledger)
+  LEDGER_TYPE_EXTENSION = 3;
+}
+
+// 批量输入会话状态
+enum BatchInputSessionStatus {
+  // 未指定
+  BATCH_INPUT_SESSION_STATUS_UNSPECIFIED = 0;
+  // 创建中
+  BATCH_INPUT_SESSION_STATUS_CREATING = 1;
+  // 待处理
+  BATCH_INPUT_SESSION_STATUS_PENDING = 2;
+  // 处理中
+  BATCH_INPUT_SESSION_STATUS_PROCESSING = 3;
+  // 已完成
+  BATCH_INPUT_SESSION_STATUS_COMPLETED = 4;
+  // 部分完成
+  BATCH_INPUT_SESSION_STATUS_PARTIALLY_COMPLETED = 5;
+  // 失败
+  BATCH_INPUT_SESSION_STATUS_FAILED = 6;
+  // 已取消
+  BATCH_INPUT_SESSION_STATUS_CANCELLED = 7;
+}
+
+// 凭证抬头信息 (参考: BKPF, ACDOCA)
 message JournalEntryHeader {
+  // --------------------------------------------------------------------------
+  // 基本识别信息 (Basic Identification)
+  // --------------------------------------------------------------------------
+
   // 公司代码 (原: BUKRS)
   string company_code = 1;
   // 凭证类型 (原: BLART)
@@ -48,54 +531,647 @@ message JournalEntryHeader {
   google.protobuf.Timestamp posting_date = 4;
   // 会计期间 (原: MONAT)
   int32 fiscal_period = 5;
+  // 会计年度 (原: GJAHR)
+  int32 fiscal_year = 6;
+
+  // --------------------------------------------------------------------------
+  // 文本和参考信息 (Text & Reference)
+  // --------------------------------------------------------------------------
+
   // 凭证抬头文本 (原: BKTXT)
-  string header_text = 6;
+  string header_text = 7;
   // 参考凭证号 (原: XBLNR)
-  string reference_document = 7;
+  string reference_document = 8;
+  // 参考码 (原: XREF1_HD)
+  string reference_key_1 = 9;
+  // 参考码 2 (原: XREF2_HD)
+  string reference_key_2 = 10;
+
+  // --------------------------------------------------------------------------
+  // 货币和汇率 (Currency & Exchange Rate)
+  // --------------------------------------------------------------------------
+
   // 货币代码 (原: WAERS)
-  string currency = 8;
+  string currency = 11;
   // 汇率 (原: KURSF)
-  string exchange_rate = 9;
+  string exchange_rate = 12;
+  // 汇率类型 (原: KURST)
+  string exchange_rate_type = 13;
+  // 汇率日期 (原: WWERT)
+  google.protobuf.Timestamp exchange_rate_date = 14;
+  // 本位币 (原: HWAER)
+  string local_currency = 15;
+  // 第二本位币 (原: HWAE2)
+  string local_currency_2 = 16;
+  // 第三本位币 (原: HWAE3)
+  string local_currency_3 = 17;
+
+  // --------------------------------------------------------------------------
+  // 创建和修改信息 (Creation & Modification)
+  // --------------------------------------------------------------------------
+
   // 创建人 (原: USNAM)
-  string created_by = 10;
+  string created_by = 18;
+  // 输入日期 (原: CPUDT)
+  google.protobuf.Timestamp entry_date = 19;
+  // 输入时间 (原: CPUTM)
+  string entry_time = 20;
+  // 修改日期 (原: AEDAT)
+  google.protobuf.Timestamp changed_date = 21;
+  // 最后修改人 (原: AENAM)
+  string changed_by = 22;
+
+  // --------------------------------------------------------------------------
+  // 事务和业务信息 (Transaction & Business)
+  // --------------------------------------------------------------------------
+
   // 事务代码 (原: TCODE)
-  string transaction_code = 11;
+  string transaction_code = 23;
+  // 业务交易类型 (原: GLVOR)
+  string business_transaction = 24;
+  // 逻辑系统 (原: LOGSYS)
+  string logical_system = 25;
+  // 会计原则 (原: RLDNR)
+  string ledger = 26;
+  // 分类账组 (原: LDGRP)
+  string ledger_group = 27;
+
+  // --------------------------------------------------------------------------
+  // 跨公司和合并 (Intercompany & Consolidation)
+  // --------------------------------------------------------------------------
+
   // 跨公司编号 (原: BVORG)
-  string cross_company_number = 12;
+  string cross_company_number = 28;
+  // 交易货币 (原: BSTAT)
+  string transaction_currency = 29;
+  // 合并单位 (原: KOKRS)
+  string controlling_area = 30;
+
+  // --------------------------------------------------------------------------
+  // 状态和冲销信息 (Status & Reversal)
+  // --------------------------------------------------------------------------
+
+  // 凭证状态
+  JournalEntryStatus status = 31;
+  // 冲销凭证号 (原: STBLG)
+  string reversal_document_number = 32;
+  // 冲销会计年度 (原: STJAH)
+  int32 reversal_fiscal_year = 33;
+  // 冲销日期 (原: STGRD 不是日期，需要用其他字段)
+  google.protobuf.Timestamp reversal_date = 34;
+  // 冲销原因代码 (原: STGRD)
+  string reversal_reason_code = 35;
+
+  // --------------------------------------------------------------------------
+  // 打印和输出控制 (Print & Output Control)
+  // --------------------------------------------------------------------------
+
+  // 打印控制 (原: BRNCH)
+  string branch_account = 36;
+  // 发票收据 (原: XBLNR_ALT)
+  string invoice_receipt_date = 37;
+
+  // --------------------------------------------------------------------------
+  // 分类账特定信息 (Ledger Specific)
+  // --------------------------------------------------------------------------
+
+  // 参考凭证年度 (原: GJAHR - 参考凭证的)
+  int32 reference_fiscal_year = 38;
+  // 参考凭证编号 (原: BELNR - 参考凭证的)
+  string reference_document_number = 39;
+  // 参考凭证公司代码 (原: BUKRS - 参考凭证的)
+  string reference_company_code = 40;
+
+  // --------------------------------------------------------------------------
+  // 支付信息 (Payment Information)
+  // --------------------------------------------------------------------------
+
+  // 支付方式 (原: ZLSCH)
+  string payment_method_code = 41;
+  // 付款条件 (原: ZTERM)
+  string payment_terms = 42;
+  // 基准日期 (原: ZFBDT)
+  google.protobuf.Timestamp baseline_date = 43;
+  // 现金折扣基准日期 (原: ZBD1T)
+  int32 cash_discount_days_1 = 44;
+  // 现金折扣基准日期 2 (原: ZBD2T)
+  int32 cash_discount_days_2 = 45;
+  // 现金折扣百分比 1 (原: ZBD1P)
+  string cash_discount_percent_1 = 46;
+  // 现金折扣百分比 2 (原: ZBD2P)
+  string cash_discount_percent_2 = 47;
+  // 净支付期限 (原: ZBD3T)
+  int32 net_payment_terms_days = 48;
+
+  // --------------------------------------------------------------------------
+  // 税务信息 (Tax Information)
+  // --------------------------------------------------------------------------
+
+  // 税务日期 (原: VATDATE)
+  google.protobuf.Timestamp tax_reporting_date = 49;
+  // 税务确定日期 (原: TXS_DET_DATE)
+  google.protobuf.Timestamp tax_determination_date = 50;
+
+  // --------------------------------------------------------------------------
+  // 工作流和审批 (Workflow & Approval)
+  // --------------------------------------------------------------------------
+
+  // 审批状态
+  string approval_status = 51;
+  // 审批人
+  string approved_by = 52;
+  // 审批日期
+  google.protobuf.Timestamp approval_date = 53;
+  // 工作流实例ID
+  string workflow_instance_id = 54;
+
+  // --------------------------------------------------------------------------
+  // 其他控制字段 (Other Control Fields)
+  // --------------------------------------------------------------------------
+
+  // 反向凭证标识 (原: XREVERSAL)
+  bool is_reversal = 55;
+  // 停止付款标识 (原: XSTOV)
+  bool payment_block = 56;
+  // 财务会计冻结 (原: XSNET)
+  bool financial_accounting_lock = 57;
+  // 凭证停放标识 (原: XBLNR_LONG - 判断是否为停放凭证)
+  bool is_parked = 58;
+  // 停放人 (原: USNAM - 对于停放凭证)
+  string parked_by = 59;
+  // 停放日期
+  google.protobuf.Timestamp parked_date = 60;
+
+  // --------------------------------------------------------------------------
+  // 扩展字段 (Extension Fields)
+  // --------------------------------------------------------------------------
+
+  // 用户自定义字段 1-10
+  string custom_field_1 = 61;
+  string custom_field_2 = 62;
+  string custom_field_3 = 63;
+  string custom_field_4 = 64;
+  string custom_field_5 = 65;
+
+  // --------------------------------------------------------------------------
+  // 凭证来源和处理 (Document Origin & Processing)
+  // --------------------------------------------------------------------------
+
+  // 凭证来源
+  DocumentOrigin document_origin = 66;
+  // 原始系统
+  string source_system = 67;
+  // 原始凭证号
+  string source_document_number = 68;
+  // 接口ID
+  string interface_id = 69;
+  // 批量输入会话名称 (原: MAPPE)
+  string batch_input_session = 70;
+
+  // --------------------------------------------------------------------------
+  // 凭证拆分 (Document Splitting)
+  // --------------------------------------------------------------------------
+
+  // 凭证拆分方法
+  DocumentSplittingMethod splitting_method = 71;
+  // 凭证拆分激活标识
+  bool splitting_active = 72;
+  // 拆分规则
+  string splitting_rule = 73;
+  // 零余额清算标识 (原: AWTYP)
+  string zero_balance_indicator = 74;
+
+  // --------------------------------------------------------------------------
+  // 分类账和会计原则 (Ledger & Accounting Principles)
+  // --------------------------------------------------------------------------
+
+  // 分类账类型
+  LedgerType ledger_type = 75;
+  // 会计原则 (原: RLDNR) - 用于并行会计
+  repeated string accounting_principles = 76;
+  // 主分类账
+  string leading_ledger = 77;
+  // 分类账集团 (原: LDGRP)
+  string ledger_group_extended = 78;
+
+  // --------------------------------------------------------------------------
+  // 会计期间控制 (Period Control)
+  // --------------------------------------------------------------------------
+
+  // 特殊期间 (原: MONAT - 13-16为特殊期间)
+  int32 special_period = 79;
+  // 期间状态
+  PeriodStatus period_status = 80;
+  // 过账期间变式 (原: OB52)
+  string posting_period_variant = 81;
+
+  // --------------------------------------------------------------------------
+  // 预制凭证和初步过账 (Preliminary & Sample Posting)
+  // --------------------------------------------------------------------------
+
+  // 是否为预制凭证
+  bool is_preliminary = 82;
+  // 预制凭证标识
+  string preliminary_indicator = 83;
+  // 是否为样本凭证
+  bool is_sample = 84;
+  // 样本凭证ID
+  string sample_document_id = 85;
+
+  // --------------------------------------------------------------------------
+  // 凭证模板信息 (Template Information)
+  // --------------------------------------------------------------------------
+
+  // 模板ID
+  string template_id = 86;
+  // 模板名称
+  string template_name = 87;
+  // 是否从模板创建
+  bool created_from_template = 88;
+
+  // --------------------------------------------------------------------------
+  // 重复凭证信息 (Recurring Entry Information)
+  // --------------------------------------------------------------------------
+
+  // 是否为重复凭证
+  bool is_recurring = 89;
+  // 重复凭证ID
+  string recurring_entry_id = 90;
+  // 重复频率
+  RecurringFrequency recurring_frequency = 91;
+  // 首次执行日期
+  google.protobuf.Timestamp first_run_date = 92;
+  // 最后执行日期
+  google.protobuf.Timestamp last_run_date = 93;
+  // 下次执行日期
+  google.protobuf.Timestamp next_run_date = 94;
+  // 执行次数
+  int32 execution_count = 95;
+
+  // --------------------------------------------------------------------------
+  // 财务锁定和控制 (Financial Lock & Control)
+  // --------------------------------------------------------------------------
+
+  // 凭证已锁定
+  bool is_locked = 96;
+  // 锁定原因
+  string lock_reason = 97;
+  // 锁定人
+  string locked_by = 98;
+  // 锁定时间
+  google.protobuf.Timestamp locked_at = 99;
+  // 净额过账标识 (原: XNET)
+  bool net_posting = 100;
+
+  // --------------------------------------------------------------------------
+  // 汇总和平衡 (Summarization & Balance)
+  // --------------------------------------------------------------------------
+
+  // 凭证货币借方总额
+  string total_debit_doc_currency = 101;
+  // 凭证货币贷方总额
+  string total_credit_doc_currency = 102;
+  // 本位币借方总额
+  string total_debit_local_currency = 103;
+  // 本位币贷方总额
+  string total_credit_local_currency = 104;
+  // 凭证是否平衡
+  bool is_balanced = 105;
+  // 差额
+  string balance_difference = 106;
+
+  // --------------------------------------------------------------------------
+  // 集成和实时处理 (Integration & Real-time)
+  // --------------------------------------------------------------------------
+
+  // SAP Fiori应用ID
+  string fiori_app_id = 107;
+  // OData服务名称
+  string odata_service = 108;
+  // 实时集成标识
+  bool real_time_integration = 109;
+  // 异步处理标识
+  bool async_processing = 110;
+
+  // --------------------------------------------------------------------------
+  // ACDOCA 特定字段 (ACDOCA Specific Fields)
+  // --------------------------------------------------------------------------
+
+  // 记录类型 (原: RTYPE)
+  string record_type = 111;
+  // 版本 (原: VERS)
+  string version = 112;
+  // 分类账分组 (原: RBUKRS)
+  string ledger_company_code = 113;
+  // 对象类 (原: AWTYP)
+  string object_class = 114;
+  // 对象键 (原: AWKEY)
+  string object_key = 115;
+  // 来源分类账 (原: AWSYS)
+  string source_ledger = 116;
+
+  // --------------------------------------------------------------------------
+  // 附加扩展字段 (Additional Extension Fields)
+  // --------------------------------------------------------------------------
+
+  // 用户自定义字段 6-15
+  string custom_field_6 = 117;
+  string custom_field_7 = 118;
+  string custom_field_8 = 119;
+  string custom_field_9 = 120;
+  string custom_field_10 = 121;
+  string custom_field_11 = 122;
+  string custom_field_12 = 123;
+  string custom_field_13 = 124;
+  string custom_field_14 = 125;
+  string custom_field_15 = 126;
 }
 
-// 凭证行项目信息 (参考: BSEG)
+// 凭证行项目信息 (参考: BSEG, ACDOCA)
 message JournalEntryLineItem {
+  // --------------------------------------------------------------------------
+  // 基本识别信息 (Basic Identification)
+  // --------------------------------------------------------------------------
+
   // 行项目号 (原: BUZEI)
   int32 line_item_number = 1;
   // 记账码 (原: BSCHL)
   string posting_key = 2;
   // 借贷标识 (S-借, H-贷) (原: SHKZG)
   string debit_credit_indicator = 3;
+  // 特殊总账标识 (原: UMSKZ)
+  string special_gl_indicator_code = 4;
+  SpecialGLIndicator special_gl_indicator = 5;
+
+  // --------------------------------------------------------------------------
+  // 科目信息 (Account Information)
+  // --------------------------------------------------------------------------
+
   // 总账科目 (原: HKONT)
-  string gl_account = 4;
+  string gl_account = 6;
+  // 客户编号 (原: KUNNR)
+  string customer_number = 7;
+  // 供应商编号 (原: LIFNR)
+  string vendor_number = 8;
+  // 合作伙伴银行类型 (原: BVTYP)
+  string partner_bank_type = 9;
+  // 科目类型 (原: KOART) - S/D/K/M/A
+  string account_type = 10;
+
+  // --------------------------------------------------------------------------
+  // 金额信息 (Amount Information)
+  // --------------------------------------------------------------------------
+
   // 凭证货币金额 (原: WRBTR)
-  string amount_doc = 5;
+  string amount_doc = 11;
   // 本位币金额 (原: DMBTR)
-  string amount_local = 6;
+  string amount_local = 12;
+  // 第二本位币金额 (原: DMBE2)
+  string amount_local_2 = 13;
+  // 第三本位币金额 (原: DMBE3)
+  string amount_local_3 = 14;
+  // 集团货币金额 (原: GRPAM)
+  string amount_group_currency = 15;
+  // 交易货币金额 (原: PSWBT)
+  string amount_transaction_currency = 16;
+
+  // --------------------------------------------------------------------------
+  // 税务信息 (Tax Information)
+  // --------------------------------------------------------------------------
+
   // 税码 (原: MWSKZ)
-  string tax_code = 7;
+  string tax_code = 17;
+  // 税基金额 (原: TXBAS)
+  string tax_base_amount = 18;
+  // 税额 (原: WMWST)
+  string tax_amount = 19;
+  // 税管辖代码 (原: TXJCD)
+  string tax_jurisdiction_code = 20;
+  // 税率 (原: MWSTS)
+  string tax_rate = 21;
+
+  // --------------------------------------------------------------------------
+  // 成本核算维度 (Cost Accounting Dimensions)
+  // --------------------------------------------------------------------------
+
   // 成本中心 (原: KOSTL)
-  string cost_center = 8;
+  string cost_center = 22;
   // 利润中心 (原: PRCTR)
-  string profit_center = 9;
+  string profit_center = 23;
   // 业务范围 (原: GSBER)
-  string business_area = 10;
+  string business_area = 24;
   // 分部 (原: SEGMENT)
-  string segment = 11;
+  string segment = 25;
   // 功能范围 (原: FKBER)
-  string functional_area = 12;
+  string functional_area = 26;
+  // 内部订单 (原: AUFNR)
+  string internal_order = 27;
+  // WBS元素 (原: PS_PSP_PNR)
+  string wbs_element = 28;
+  // 项目 (原: PS_POSID)
+  string project = 29;
+
+  // --------------------------------------------------------------------------
+  // 财务管理维度 (Financial Management Dimensions)
+  // --------------------------------------------------------------------------
+
+  // 基金 (原: FONDS)
+  string fund = 30;
+  // 资金中心 (原: FISTL)
+  string funds_center = 31;
+  // 承诺项目 (原: FIPOS)
+  string commitment_item = 32;
+  // 功能区域 (原: FKBER_LONG)
+  string functional_area_long = 33;
+  // 拨款 (原: GRANT_NBR)
+  string grant_number = 34;
+  // 预算期间 (原: BUDGET_PD)
+  string budget_period = 35;
+
+  // --------------------------------------------------------------------------
+  // 文本和参考信息 (Text & Reference)
+  // --------------------------------------------------------------------------
+
   // 行项目文本 (原: SGTXT)
-  string item_text = 13;
+  string item_text = 36;
   // 分配号 (原: ZUONR)
-  string assignment = 14;
+  string assignment = 37;
+  // 参考码1 (原: XREF1)
+  string reference_key_1 = 38;
+  // 参考码2 (原: XREF2)
+  string reference_key_2 = 39;
+  // 参考码3 (原: XREF3)
+  string reference_key_3 = 40;
+
+  // --------------------------------------------------------------------------
+  // 物料和数量信息 (Material & Quantity)
+  // --------------------------------------------------------------------------
+
+  // 数量 (原: MENGE)
+  string quantity = 41;
+  // 基本计量单位 (原: MEINS)
+  string base_unit = 42;
+  // 物料编号 (原: MATNR)
+  string material_number = 43;
+  // 工厂 (原: WERKS)
+  string plant = 44;
+  // 存储地点 (原: LGORT)
+  string storage_location = 45;
+  // 评估范围 (原: BWTAR)
+  string valuation_type = 46;
+
+  // --------------------------------------------------------------------------
+  // 资产会计 (Asset Accounting)
+  // --------------------------------------------------------------------------
+
+  // 资产编号 (原: ANLN1)
+  string asset_number = 47;
+  // 资产子编号 (原: ANLN2)
+  string asset_sub_number = 48;
+  // 资产交易类型 (原: ANBWA)
+  string asset_transaction_type = 49;
+  // 资产值日期 (原: BZDAT)
+  google.protobuf.Timestamp asset_value_date = 50;
+
+  // --------------------------------------------------------------------------
+  // 支付和清账信息 (Payment & Clearing)
+  // --------------------------------------------------------------------------
+
+  // 价值日期 (原: VALUT)
+  google.protobuf.Timestamp value_date = 51;
+  // 到期日 (原: ZFBDT + ZTERM 计算得出)
+  google.protobuf.Timestamp due_date = 52;
+  // 基准日期 (原: ZFBDT)
+  google.protobuf.Timestamp baseline_date = 53;
+  // 支付条款 (原: ZTERM)
+  string payment_terms = 54;
+  // 支付方式 (原: ZLSPR)
+  string payment_method = 55;
+  // 支付封锁码 (原: ZLSPR)
+  string payment_block = 56;
+  // 清账凭证号 (原: AUGBL)
+  string clearing_document = 57;
+  // 清账日期 (原: AUGDT)
+  google.protobuf.Timestamp clearing_date = 58;
+  // 清账状态
+  ClearingStatus clearing_status = 59;
+
+  // --------------------------------------------------------------------------
+  // 银行信息 (Bank Information)
+  // --------------------------------------------------------------------------
+
+  // 公司代码银行账户 (原: HBKID)
+  string house_bank = 60;
+  // 账号ID (原: HKTID)
+  string account_id = 61;
+  // 银行国家 (原: BANKS)
+  string bank_country = 62;
+  // 银行代码 (原: BANKL)
+  string bank_key = 63;
+  // 银行账号 (原: BANKN)
+  string bank_account = 64;
+
+  // --------------------------------------------------------------------------
+  // 贸易伙伴和合并 (Trading Partner & Consolidation)
+  // --------------------------------------------------------------------------
+
   // 贸易伙伴 (原: VBUND)
-  string trading_partner = 15;
+  string trading_partner = 65;
+  // 合并贸易伙伴 (原: PRCTR_PARTNER)
+  string trading_partner_co = 66;
+  // 对方公司代码 (原: PARGB)
+  string partner_company_code = 67;
+
+  // --------------------------------------------------------------------------
+  // 预扣税 (Withholding Tax)
+  // --------------------------------------------------------------------------
+
+  // 预扣税类型 (原: QSSKZ)
+  string withholding_tax_type = 68;
+  // 预扣税代码 (原: QSSHB)
+  string withholding_tax_code = 69;
+  // 预扣税基数 (原: WT_QBSHB)
+  string withholding_tax_base = 70;
+  // 预扣税额 (原: WT_QSSHB)
+  string withholding_tax_amount = 71;
+
+  // --------------------------------------------------------------------------
+  // 发票和采购订单 (Invoice & Purchase Order)
+  // --------------------------------------------------------------------------
+
+  // 采购订单号 (原: EBELN)
+  string purchase_order = 72;
+  // 采购订单行项目 (原: EBELP)
+  string purchase_order_item = 73;
+  // 物料凭证 (原: LFBNR)
+  string material_document = 74;
+  // 物料凭证年度 (原: LFGJA)
+  int32 material_document_year = 75;
+  // 物料凭证行项目 (原: LFPOS)
+  string material_document_item = 76;
+
+  // --------------------------------------------------------------------------
+  // 销售和分销 (Sales & Distribution)
+  // --------------------------------------------------------------------------
+
+  // 销售订单 (原: VBEL2)
+  string sales_order = 77;
+  // 销售订单行项目 (原: VBELP)
+  string sales_order_item = 78;
+  // 客户组 (原: KDGRP)
+  string customer_group = 79;
+  // 销售组织 (原: VKORG)
+  string sales_organization = 80;
+  // 分销渠道 (原: VTWEG)
+  string distribution_channel = 81;
+  // 产品组 (原: SPART)
+  string division = 82;
+
+  // --------------------------------------------------------------------------
+  // 现金管理 (Cash Management)
+  // --------------------------------------------------------------------------
+
+  // 计划层 (原: PLANV)
+  string planning_level = 83;
+  // 计划日期 (原: FDTAG)
+  google.protobuf.Timestamp planning_date = 84;
+  // 现金管理项目 (原: FDLEV)
+  string cash_management_item = 85;
+
+  // --------------------------------------------------------------------------
+  // 控制字段 (Control Fields)
+  // --------------------------------------------------------------------------
+
+  // 行项目已过账标识
+  bool is_posted = 86;
+  // 行项目已清账标识
+  bool is_cleared = 87;
+  // 行项目停放标识
+  bool is_parked = 88;
+  // 冲销行项目标识
+  bool is_reversal = 89;
+  // 统计性记账 (原: KZBTR)
+  bool statistical_posting = 90;
+
+  // --------------------------------------------------------------------------
+  // 利息计算 (Interest Calculation)
+  // --------------------------------------------------------------------------
+
+  // 利息计算日期 (原: ZINKZ)
+  string interest_calculation_indicator = 91;
+  // 利息运行日期 (原: ZLSDAT)
+  google.protobuf.Timestamp last_interest_run_date = 92;
+
+  // --------------------------------------------------------------------------
+  // 扩展字段 (Extension Fields)
+  // --------------------------------------------------------------------------
+
+  // 用户自定义字段 1-10
+  string custom_field_1 = 93;
+  string custom_field_2 = 94;
+  string custom_field_3 = 95;
+  string custom_field_4 = 96;
+  string custom_field_5 = 97;
 }
 
 // 完整的凭证详情
@@ -106,8 +1182,236 @@ message JournalEntryDetail {
   JournalEntryHeader header = 2;
   // 凭证行项目列表
   repeated JournalEntryLineItem line_items = 3;
+  // 税务行项目列表
+  repeated TaxLineItem tax_items = 4;
+  // 一次性账户数据
+  repeated OneTimeAccountData one_time_accounts = 5;
+  // 附件列表
+  repeated AttachmentInfo attachments = 6;
+  // 审批历史
+  repeated ApprovalHistoryEntry approval_history = 7;
   // 审计信息
-  enterprise.common.AuditData audit_data = 4;
+  enterprise.common.AuditData audit_data = 8;
+}
+
+// --------------------------------------------------------------------------
+// 税务行项目 (参考: BSET - Tax Line Items)
+// --------------------------------------------------------------------------
+
+// 税务行项目信息
+message TaxLineItem {
+  // 凭证行项目号 (原: BUZEI)
+  int32 line_item_number = 1;
+  // 税码 (原: MWSKZ)
+  string tax_code = 2;
+  // 税率 (原: MWSTS)
+  string tax_rate = 3;
+  // 税基金额-凭证货币 (原: HWBAS)
+  string tax_base_amount_doc = 4;
+  // 税额-凭证货币 (原: HWSTE)
+  string tax_amount_doc = 5;
+  // 税基金额-本位币 (原: FWBAS)
+  string tax_base_amount_local = 6;
+  // 税额-本位币 (原: FWSTE)
+  string tax_amount_local = 7;
+  // 税务类型 (原: KTOSL) - 例如: VST (进项税), MWS (销项税)
+  string tax_type = 8;
+  // 税管辖代码 (原: TXJCD)
+  string tax_jurisdiction_code = 9;
+  // 税务国家 (原: LAND1)
+  string tax_country = 10;
+  // 借贷标识 (原: SHKZG)
+  string debit_credit_indicator = 11;
+  // 是否自动税 (原: XMWST)
+  bool is_auto_tax = 12;
+  // 税务日期 (原: TXS_DTE)
+  google.protobuf.Timestamp tax_date = 13;
+  // 税务凭证号 (原: TAX_DOC)
+  string tax_document_number = 14;
+}
+
+// --------------------------------------------------------------------------
+// 一次性账户数据 (参考: BSEC - One-Time Account Data)
+// --------------------------------------------------------------------------
+
+// 一次性客户/供应商数据
+message OneTimeAccountData {
+  // 凭证行项目号 (原: BUZEI)
+  int32 line_item_number = 1;
+  // 名称 (原: NAME1)
+  string name = 2;
+  // 名称2 (原: NAME2)
+  string name_2 = 3;
+  // 名称3 (原: NAME3)
+  string name_3 = 4;
+  // 名称4 (原: NAME4)
+  string name_4 = 5;
+  // 国家 (原: LAND1)
+  string country = 6;
+  // 城市 (原: ORT01)
+  string city = 7;
+  // 邮政编码 (原: PSTLZ)
+  string postal_code = 8;
+  // 街道 (原: STRAS)
+  string street = 9;
+  // 门牌号 (原: HOUSE_NUM1)
+  string house_number = 10;
+  // 地区 (原: REGIO)
+  string region = 11;
+  // 银行国家 (原: BANKS)
+  string bank_country = 12;
+  // 银行代码 (原: BANKL)
+  string bank_key = 13;
+  // 银行账号 (原: BANKN)
+  string bank_account = 14;
+  // 银行控制码 (原: BKONT)
+  string bank_control_key = 15;
+  // 账户持有人 (原: KOINH)
+  string account_holder = 16;
+  // IBAN
+  string iban = 17;
+  // SWIFT/BIC 代码
+  string swift_bic = 18;
+  // 税号 (原: STCEG)
+  string tax_number = 19;
+}
+
+// --------------------------------------------------------------------------
+// 支付信息 (Payment Information)
+// --------------------------------------------------------------------------
+
+// 支付信息
+message PaymentInformation {
+  // 凭证行项目号
+  int32 line_item_number = 1;
+  // 支付状态
+  PaymentStatus status = 2;
+  // 支付方式
+  PaymentMethod method = 3;
+  // 支付金额
+  string payment_amount = 4;
+  // 支付日期
+  google.protobuf.Timestamp payment_date = 5;
+  // 支付参考号
+  string payment_reference = 6;
+  // 银行交易ID
+  string bank_transaction_id = 7;
+  // 支付运行日期
+  google.protobuf.Timestamp payment_run_date = 8;
+  // 支付运行ID
+  string payment_run_id = 9;
+  // 支付方式补充 (原: ZLSCH)
+  string payment_method_supplement = 10;
+  // 支票编号
+  string check_number = 11;
+  // 付款人
+  string payer = 12;
+  // 收款人
+  string payee = 13;
+}
+
+// --------------------------------------------------------------------------
+// 清账信息 (Clearing Information)
+// --------------------------------------------------------------------------
+
+// 清账信息
+message ClearingInformation {
+  // 清账凭证号 (原: AUGBL)
+  string clearing_document = 1;
+  // 清账日期 (原: AUGDT)
+  google.protobuf.Timestamp clearing_date = 2;
+  // 清账会计年度
+  int32 clearing_fiscal_year = 3;
+  // 清账状态
+  ClearingStatus status = 4;
+  // 清账金额
+  string clearing_amount = 5;
+  // 未清余额
+  string open_amount = 6;
+  // 清账人
+  string cleared_by = 7;
+  // 清账行项目列表
+  repeated ClearingLineItem clearing_items = 8;
+}
+
+// 清账行项目
+message ClearingLineItem {
+  // 原始凭证号
+  string original_document_number = 1;
+  // 原始会计年度
+  int32 original_fiscal_year = 2;
+  // 原始行项目号
+  int32 original_line_item_number = 3;
+  // 清账金额
+  string clearing_amount = 4;
+  // 原始金额
+  string original_amount = 5;
+}
+
+// --------------------------------------------------------------------------
+// 附件信息 (Attachment Information)
+// --------------------------------------------------------------------------
+
+// 附件信息
+message AttachmentInfo {
+  // 附件ID
+  string attachment_id = 1;
+  // 文件名
+  string file_name = 2;
+  // 文件大小 (字节)
+  int64 file_size = 3;
+  // MIME 类型
+  string mime_type = 4;
+  // 文件描述
+  string description = 5;
+  // 上传人
+  string uploaded_by = 6;
+  // 上传时间
+  google.protobuf.Timestamp uploaded_at = 7;
+  // 文件URL (可选)
+  string file_url = 8;
+  // 文件哈希值 (用于完整性校验)
+  string file_hash = 9;
+}
+
+// --------------------------------------------------------------------------
+// 工作流与审批信息 (Workflow & Approval Information)
+// --------------------------------------------------------------------------
+
+// 审批历史记录
+message ApprovalHistoryEntry {
+  // 审批步骤ID
+  string approval_step_id = 1;
+  // 审批人
+  string approver = 2;
+  // 审批动作 (APPROVE, REJECT, DELEGATE)
+  string action = 3;
+  // 审批时间
+  google.protobuf.Timestamp approval_time = 4;
+  // 审批意见
+  string comments = 5;
+  // 审批级别
+  int32 approval_level = 6;
+}
+
+// 工作流信息
+message WorkflowInformation {
+  // 工作流实例ID
+  string workflow_instance_id = 1;
+  // 工作流定义ID
+  string workflow_definition_id = 2;
+  // 当前步骤
+  string current_step = 3;
+  // 工作流状态
+  string status = 4;
+  // 发起人
+  string initiator = 5;
+  // 发起时间
+  google.protobuf.Timestamp initiated_at = 6;
+  // 完成时间
+  google.protobuf.Timestamp completed_at = 7;
+  // 待审批人列表
+  repeated string pending_approvers = 8;
 }
 
 // ============================================================================
@@ -122,6 +1426,8 @@ message CreateJournalEntryRequest {
   repeated JournalEntryLineItem line_items = 2;
   // 是否为测试运行，仅检查不实际过账
   bool test_run = 3;
+  // 是否立即过账 (true: 创建并过账, false: 仅保存为草稿)
+  bool post_immediately = 4;
 }
 
 // 凭证操作响应
@@ -148,6 +1454,10 @@ message ReverseJournalEntryRequest {
   string reversal_reason = 2;
   // 冲销过账日期
   google.protobuf.Timestamp posting_date = 3;
+  // 冲销类型
+  ReversalType reversal_type = 4;
+  // 冲销原因代码
+  string reversal_reason_code = 5;
 }
 
 // 查询凭证请求
@@ -164,6 +1474,16 @@ message ListJournalEntriesRequest {
   string created_by = 5;
   // 分页请求
   enterprise.common.PaginationRequest pagination = 6;
+  // 凭证状态过滤
+  repeated JournalEntryStatus status_filter = 7;
+  // 总账科目
+  string gl_account = 8;
+  // 成本中心
+  string cost_center = 9;
+  // 利润中心
+  string profit_center = 10;
+  // 参考凭证号
+  string reference_document = 11;
 }
 
 // 查询凭证响应
@@ -186,4 +1506,1543 @@ message JournalEntrySummary {
   string header_text = 4;
   // 创建人
   string created_by = 5;
+  // 凭证状态
+  JournalEntryStatus status = 6;
+  // 货币代码
+  string currency = 7;
+  // 总金额
+  string total_amount = 8;
+  // 会计期间
+  int32 fiscal_period = 9;
+  // 参考凭证号
+  string reference_document = 10;
 }
+
+// --------------------------------------------------------------------------
+// 批量操作消息 (Batch Operations)
+// --------------------------------------------------------------------------
+
+// 批量创建凭证请求
+message BatchCreateJournalEntriesRequest {
+  // 要创建的凭证列表
+  repeated CreateJournalEntryRequest entries = 1;
+  // 是否为测试运行
+  bool test_run = 2;
+}
+
+// 批量创建凭证响应
+message BatchCreateJournalEntriesResponse {
+  // 批量操作结果统计
+  enterprise.common.BatchOperationResult result = 1;
+  // 各个凭证的响应详情
+  repeated JournalEntryResponse responses = 2;
+}
+
+// 批量冲销凭证请求
+message BatchReverseJournalEntriesRequest {
+  // 要冲销的凭证列表
+  repeated ReverseJournalEntryRequest entries = 1;
+}
+
+// 批量冲销凭证响应
+message BatchReverseJournalEntriesResponse {
+  // 批量操作结果统计
+  enterprise.common.BatchOperationResult result = 1;
+  // 各个凭证的响应详情
+  repeated JournalEntryResponse responses = 2;
+}
+
+// --------------------------------------------------------------------------
+// 更新与管理操作消息 (Update & Management Operations)
+// --------------------------------------------------------------------------
+
+// 更新凭证请求
+message UpdateJournalEntryRequest {
+  // 要更新的凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 更新的凭证抬头
+  JournalEntryHeader header = 2;
+  // 更新的凭证行项目列表
+  repeated JournalEntryLineItem line_items = 3;
+  // 指定要更新的字段掩码
+  repeated string update_mask = 4;
+}
+
+// 删除凭证请求
+message DeleteJournalEntryRequest {
+  // 要删除的凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+}
+
+// 过账凭证请求
+message PostJournalEntryRequest {
+  // 要过账的凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 过账日期 (可选，默认使用凭证中的过账日期)
+  google.protobuf.Timestamp posting_date = 2;
+}
+
+// 取消凭证请求
+message CancelJournalEntryRequest {
+  // 要取消的凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 取消原因
+  string cancellation_reason = 2;
+}
+
+// --------------------------------------------------------------------------
+// 验证操作消息 (Validation Operations)
+// --------------------------------------------------------------------------
+
+// 验证凭证请求
+message ValidateJournalEntryRequest {
+  // 凭证抬头
+  JournalEntryHeader header = 1;
+  // 凭证行项目列表
+  repeated JournalEntryLineItem line_items = 2;
+}
+
+// 验证响应
+message ValidationResponse {
+  // 验证是否通过
+  bool is_valid = 1;
+  // 验证消息列表 (错误、警告、信息)
+  repeated enterprise.common.ApiMessage messages = 2;
+  // 具体的验证错误详情
+  repeated ValidationError errors = 3;
+}
+
+// 验证错误详情
+message ValidationError {
+  // 错误字段 (例如: "header.company_code", "line_items[0].gl_account")
+  string field = 1;
+  // 错误代码
+  string error_code = 2;
+  // 错误描述
+  string error_message = 3;
+  // 严重程度 (E: Error, W: Warning)
+  string severity = 4;
+}
+
+// --------------------------------------------------------------------------
+// 按科目查询消息 (Query by Account)
+// --------------------------------------------------------------------------
+
+// 按科目查询凭证请求
+message GetJournalEntriesByAccountRequest {
+  // 公司代码 (必填)
+  string company_code = 1;
+  // 总账科目 (必填)
+  string gl_account = 2;
+  // 会计年度
+  int32 fiscal_year = 3;
+  // 过账日期范围
+  enterprise.common.DateRange posting_date_range = 4;
+  // 分页请求
+  enterprise.common.PaginationRequest pagination = 5;
+}
+
+// --------------------------------------------------------------------------
+// 导出操作消息 (Export Operations)
+// --------------------------------------------------------------------------
+
+// 导出凭证请求
+message ExportJournalEntriesRequest {
+  // 查询条件 (复用 ListJournalEntriesRequest 的过滤条件)
+  ListJournalEntriesRequest filter = 1;
+  // 导出格式
+  ExportFormat format = 2;
+  // 是否包含行项目详情
+  bool include_line_items = 3;
+  // 导出文件名 (可选)
+  string file_name = 4;
+}
+
+// 导出凭证响应
+message ExportJournalEntriesResponse {
+  // 导出是否成功
+  bool success = 1;
+  // 导出的文件内容 (Base64 编码)
+  bytes file_content = 2;
+  // 文件名
+  string file_name = 3;
+  // MIME 类型
+  string mime_type = 4;
+  // 导出的记录数
+  int32 exported_count = 5;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 6;
+}
+
+// --------------------------------------------------------------------------
+// 统计操作消息 (Statistics Operations)
+// --------------------------------------------------------------------------
+
+// 获取凭证统计信息请求
+message GetJournalEntryStatisticsRequest {
+  // 公司代码 (必填)
+  string company_code = 1;
+  // 会计年度
+  int32 fiscal_year = 2;
+  // 统计日期范围
+  enterprise.common.DateRange date_range = 3;
+  // 按字段分组统计 (例如: "document_type", "created_by", "fiscal_period")
+  repeated string group_by_fields = 4;
+}
+
+// 凭证统计信息响应
+message JournalEntryStatisticsResponse {
+  // 总凭证数
+  int64 total_count = 1;
+  // 已过账凭证数
+  int64 posted_count = 2;
+  // 草稿凭证数
+  int64 draft_count = 3;
+  // 已冲销凭证数
+  int64 reversed_count = 4;
+  // 按状态统计
+  repeated StatusStatistics status_stats = 5;
+  // 按凭证类型统计
+  repeated DocumentTypeStatistics document_type_stats = 6;
+  // 按会计期间统计
+  repeated FiscalPeriodStatistics fiscal_period_stats = 7;
+  // 按创建人统计
+  repeated CreatorStatistics creator_stats = 8;
+}
+
+// 按状态统计
+message StatusStatistics {
+  // 状态
+  JournalEntryStatus status = 1;
+  // 该状态的凭证数量
+  int64 count = 2;
+  // 该状态的总金额
+  string total_amount = 3;
+}
+
+// 按凭证类型统计
+message DocumentTypeStatistics {
+  // 凭证类型
+  string document_type = 1;
+  // 该类型的凭证数量
+  int64 count = 2;
+  // 该类型的总金额
+  string total_amount = 3;
+}
+
+// 按会计期间统计
+message FiscalPeriodStatistics {
+  // 会计期间
+  int32 fiscal_period = 1;
+  // 该期间的凭证数量
+  int64 count = 2;
+  // 该期间的总金额
+  string total_amount = 3;
+}
+
+// 按创建人统计
+message CreatorStatistics {
+  // 创建人
+  string created_by = 1;
+  // 该创建人的凭证数量
+  int64 count = 2;
+  // 该创建人的总金额
+  string total_amount = 3;
+}
+
+// --------------------------------------------------------------------------
+// 模拟与重置操作消息 (Simulation & Reset Operations)
+// --------------------------------------------------------------------------
+
+// 模拟过账请求
+message SimulateJournalEntryRequest {
+  // 凭证抬头
+  JournalEntryHeader header = 1;
+  // 凭证行项目列表
+  repeated JournalEntryLineItem line_items = 2;
+}
+
+// 模拟过账响应
+message SimulationResponse {
+  // 模拟是否成功
+  bool success = 1;
+  // 模拟结果消息
+  repeated enterprise.common.ApiMessage messages = 2;
+  // 模拟的凭证详情
+  JournalEntryDetail simulated_entry = 3;
+  // 预计的会计科目余额变化
+  repeated AccountBalanceChange balance_changes = 4;
+}
+
+// 科目余额变化
+message AccountBalanceChange {
+  // 总账科目
+  string gl_account = 1;
+  // 变化前余额
+  string balance_before = 2;
+  // 变化金额
+  string change_amount = 3;
+  // 变化后余额
+  string balance_after = 4;
+  // 借贷方向
+  string debit_credit_indicator = 5;
+}
+
+// 重置凭证请求
+message ResetJournalEntryRequest {
+  // 要重置的凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 重置原因
+  string reset_reason = 2;
+}
+
+// --------------------------------------------------------------------------
+// 历史查询消息 (History Query)
+// --------------------------------------------------------------------------
+
+// 获取凭证历史请求
+message GetJournalEntryHistoryRequest {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+}
+
+// 凭证历史响应
+message JournalEntryHistoryResponse {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 历史记录列表
+  repeated JournalEntryHistoryEntry history_entries = 2;
+}
+
+// 凭证历史记录
+message JournalEntryHistoryEntry {
+  // 变更时间
+  google.protobuf.Timestamp changed_at = 1;
+  // 变更人
+  string changed_by = 2;
+  // 变更类型 (CREATE, UPDATE, POST, REVERSE, CANCEL, etc.)
+  string change_type = 3;
+  // 变更描述
+  string change_description = 4;
+  // 旧值 (JSON格式)
+  string old_value = 5;
+  // 新值 (JSON格式)
+  string new_value = 6;
+  // 变更的字段名
+  string field_name = 7;
+}
+
+// --------------------------------------------------------------------------
+// 清账管理消息 (Clearing Management)
+// --------------------------------------------------------------------------
+
+// 清账未清项目请求
+message ClearOpenItemsRequest {
+  // 公司代码
+  string company_code = 1;
+  // 科目类型 (D-客户, K-供应商, S-总账)
+  string account_type = 2;
+  // 科目号
+  string account_number = 3;
+  // 要清账的行项目列表
+  repeated OpenItemToClear items_to_clear = 4;
+  // 清账日期
+  google.protobuf.Timestamp clearing_date = 5;
+}
+
+// 要清账的未清项目
+message OpenItemToClear {
+  // 凭证号
+  string document_number = 1;
+  // 会计年度
+  int32 fiscal_year = 2;
+  // 行项目号
+  int32 line_item_number = 3;
+  // 清账金额 (可选，用于部分清账)
+  string clearing_amount = 4;
+}
+
+// 清账响应
+message ClearOpenItemsResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 清账凭证引用
+  enterprise.common.SystemDocumentReference clearing_document_reference = 2;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+  // 清账详情
+  ClearingInformation clearing_info = 4;
+}
+
+// 取消清账请求
+message ResetClearingRequest {
+  // 清账凭证引用
+  enterprise.common.SystemDocumentReference clearing_document_reference = 1;
+  // 取消清账原因
+  string reset_reason = 2;
+}
+
+// 取消清账响应
+message ResetClearingResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 2;
+}
+
+// 查询未清项目请求
+message ListOpenItemsRequest {
+  // 公司代码
+  string company_code = 1;
+  // 科目类型
+  string account_type = 2;
+  // 科目号
+  string account_number = 3;
+  // 日期范围
+  enterprise.common.DateRange date_range = 4;
+  // 分页请求
+  enterprise.common.PaginationRequest pagination = 5;
+}
+
+// 查询未清项目响应
+message ListOpenItemsResponse {
+  // 未清项目列表
+  repeated OpenItemInfo open_items = 1;
+  // 分页响应
+  enterprise.common.PaginationResponse pagination = 2;
+  // 未清项目总金额
+  string total_open_amount = 3;
+}
+
+// 未清项目信息
+message OpenItemInfo {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 行项目号
+  int32 line_item_number = 2;
+  // 过账日期
+  google.protobuf.Timestamp posting_date = 3;
+  // 到期日
+  google.protobuf.Timestamp due_date = 4;
+  // 原始金额
+  string original_amount = 5;
+  // 未清余额
+  string open_amount = 6;
+  // 已清账金额
+  string cleared_amount = 7;
+  // 币种
+  string currency = 8;
+  // 参考凭证号
+  string reference_document = 9;
+  // 行项目文本
+  string item_text = 10;
+  // 逾期天数
+  int32 overdue_days = 11;
+}
+
+// --------------------------------------------------------------------------
+// 税务管理消息 (Tax Management)
+// --------------------------------------------------------------------------
+
+// 获取凭证税务详情请求
+message GetJournalEntryTaxDetailsRequest {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+}
+
+// 凭证税务详情响应
+message JournalEntryTaxDetailsResponse {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 税务行项目列表
+  repeated TaxLineItem tax_items = 2;
+  // 税务汇总
+  TaxSummary tax_summary = 3;
+}
+
+// 税务汇总
+message TaxSummary {
+  // 总税基金额
+  string total_tax_base = 1;
+  // 总税额
+  string total_tax_amount = 2;
+  // 按税码汇总
+  repeated TaxCodeSummary tax_code_summaries = 3;
+}
+
+// 按税码汇总
+message TaxCodeSummary {
+  // 税码
+  string tax_code = 1;
+  // 税率
+  string tax_rate = 2;
+  // 税基金额
+  string tax_base_amount = 3;
+  // 税额
+  string tax_amount = 4;
+}
+
+// 重新计算税额请求
+message RecalculateTaxRequest {
+  // 凭证引用 (对于已存在的凭证)
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 或者提供凭证数据 (对于新凭证)
+  JournalEntryHeader header = 2;
+  repeated JournalEntryLineItem line_items = 3;
+}
+
+// 重新计算税额响应
+message RecalculateTaxResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 重新计算的税务行项目
+  repeated TaxLineItem recalculated_tax_items = 2;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// --------------------------------------------------------------------------
+// 支付管理消息 (Payment Management)
+// --------------------------------------------------------------------------
+
+// 获取支付信息请求
+message GetPaymentInformationRequest {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 行项目号 (可选，不提供则返回所有行项目的支付信息)
+  int32 line_item_number = 2;
+}
+
+// 支付信息响应
+message PaymentInformationResponse {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 支付信息列表
+  repeated PaymentInformation payment_info = 2;
+}
+
+// 更新支付状态请求
+message UpdatePaymentStatusRequest {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 行项目号
+  int32 line_item_number = 2;
+  // 新的支付状态
+  PaymentStatus new_status = 3;
+  // 支付参考号
+  string payment_reference = 4;
+  // 支付日期
+  google.protobuf.Timestamp payment_date = 5;
+  // 支付金额
+  string payment_amount = 6;
+}
+
+// 更新支付状态响应
+message UpdatePaymentStatusResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 更新后的支付信息
+  PaymentInformation updated_payment_info = 2;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// --------------------------------------------------------------------------
+// 附件管理消息 (Attachment Management)
+// --------------------------------------------------------------------------
+
+// 上传附件请求
+message UploadAttachmentRequest {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 文件名
+  string file_name = 2;
+  // 文件内容 (Base64 编码)
+  bytes file_content = 3;
+  // MIME 类型
+  string mime_type = 4;
+  // 文件描述
+  string description = 5;
+}
+
+// 上传附件响应
+message UploadAttachmentResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 附件信息
+  AttachmentInfo attachment_info = 2;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 下载附件请求
+message DownloadAttachmentRequest {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 附件ID
+  string attachment_id = 2;
+}
+
+// 下载附件响应
+message DownloadAttachmentResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 附件信息
+  AttachmentInfo attachment_info = 2;
+  // 文件内容 (Base64 编码)
+  bytes file_content = 3;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 4;
+}
+
+// 列出附件请求
+message ListAttachmentsRequest {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+}
+
+// 列出附件响应
+message ListAttachmentsResponse {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 附件列表
+  repeated AttachmentInfo attachments = 2;
+}
+
+// 删除附件请求
+message DeleteAttachmentRequest {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 附件ID
+  string attachment_id = 2;
+}
+
+// 删除附件响应
+message DeleteAttachmentResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 2;
+}
+
+// --------------------------------------------------------------------------
+// 工作流与审批消息 (Workflow & Approval)
+// --------------------------------------------------------------------------
+
+// 提交审批请求
+message SubmitForApprovalRequest {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 审批流程ID (可选)
+  string workflow_definition_id = 2;
+  // 提交说明
+  string submission_comments = 3;
+}
+
+// 提交审批响应
+message SubmitForApprovalResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 工作流实例ID
+  string workflow_instance_id = 2;
+  // 待审批人列表
+  repeated string pending_approvers = 3;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 4;
+}
+
+// 审批凭证请求
+message ApproveJournalEntryRequest {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 工作流实例ID
+  string workflow_instance_id = 2;
+  // 审批意见
+  string approval_comments = 3;
+}
+
+// 审批凭证响应
+message ApproveJournalEntryResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 工作流是否完成
+  bool workflow_completed = 2;
+  // 下一步待审批人 (如果工作流未完成)
+  repeated string next_approvers = 3;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 4;
+}
+
+// 拒绝凭证请求
+message RejectJournalEntryRequest {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 工作流实例ID
+  string workflow_instance_id = 2;
+  // 拒绝原因
+  string rejection_reason = 3;
+}
+
+// 拒绝凭证响应
+message RejectJournalEntryResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 2;
+}
+
+// 获取审批历史请求
+message GetApprovalHistoryRequest {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+}
+
+// 审批历史响应
+message ApprovalHistoryResponse {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 工作流信息
+  WorkflowInformation workflow_info = 2;
+  // 审批历史记录
+  repeated ApprovalHistoryEntry approval_history = 3;
+}
+
+// --------------------------------------------------------------------------
+// 打印预览消息 (Print Preview)
+// --------------------------------------------------------------------------
+
+// 生成打印预览请求
+message GeneratePrintPreviewRequest {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 打印格式 (PDF, HTML, etc.)
+  ExportFormat format = 2;
+  // 打印模板ID (可选)
+  string template_id = 3;
+  // 是否包含附件
+  bool include_attachments = 4;
+}
+
+// 打印预览响应
+message GeneratePrintPreviewResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 打印内容 (Base64 编码)
+  bytes print_content = 2;
+  // MIME 类型
+  string mime_type = 3;
+  // 文件名
+  string file_name = 4;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 5;
+}
+
+// --------------------------------------------------------------------------
+// 凭证停放消息 (Document Parking)
+// --------------------------------------------------------------------------
+
+// 停放凭证请求
+message ParkJournalEntryRequest {
+  // 凭证抬头
+  JournalEntryHeader header = 1;
+  // 凭证行项目列表
+  repeated JournalEntryLineItem line_items = 2;
+  // 停放原因
+  string parking_reason = 3;
+}
+
+// 停放凭证响应
+message ParkJournalEntryResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 停放凭证引用
+  enterprise.common.SystemDocumentReference parked_document_reference = 2;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 查询停放凭证列表请求
+message ListParkedJournalEntriesRequest {
+  // 公司代码
+  string company_code = 1;
+  // 停放人
+  string parked_by = 2;
+  // 日期范围
+  enterprise.common.DateRange date_range = 3;
+  // 分页请求
+  enterprise.common.PaginationRequest pagination = 4;
+}
+
+// 查询停放凭证列表响应
+message ListParkedJournalEntriesResponse {
+  // 停放凭证列表
+  repeated ParkedJournalEntrySummary parked_entries = 1;
+  // 分页响应
+  enterprise.common.PaginationResponse pagination = 2;
+}
+
+// 停放凭证摘要
+message ParkedJournalEntrySummary {
+  // 停放凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 凭证日期
+  google.protobuf.Timestamp document_date = 2;
+  // 停放日期
+  google.protobuf.Timestamp parked_date = 3;
+  // 停放人
+  string parked_by = 4;
+  // 凭证抬头文本
+  string header_text = 5;
+  // 总金额
+  string total_amount = 6;
+  // 货币
+  string currency = 7;
+}
+
+// 从停放凭证过账请求
+message PostParkedJournalEntryRequest {
+  // 停放凭证引用
+  enterprise.common.SystemDocumentReference parked_document_reference = 1;
+  // 过账日期 (可选)
+  google.protobuf.Timestamp posting_date = 2;
+}
+
+// --------------------------------------------------------------------------
+// 重复凭证与模板消息 (Recurring Entries & Templates)
+// --------------------------------------------------------------------------
+
+// 创建重复凭证请求
+message CreateRecurringEntryRequest {
+  // 凭证抬头 (作为模板)
+  JournalEntryHeader header = 1;
+  // 凭证行项目列表 (作为模板)
+  repeated JournalEntryLineItem line_items = 2;
+  // 重复频率
+  RecurringFrequency frequency = 3;
+  // 首次执行日期
+  google.protobuf.Timestamp first_run_date = 4;
+  // 最后执行日期 (可选)
+  google.protobuf.Timestamp last_run_date = 5;
+  // 重复凭证名称
+  string recurring_entry_name = 6;
+  // 描述
+  string description = 7;
+}
+
+// 重复凭证响应
+message RecurringEntryResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 重复凭证ID
+  string recurring_entry_id = 2;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 执行重复凭证请求
+message ExecuteRecurringEntryRequest {
+  // 重复凭证ID
+  string recurring_entry_id = 1;
+  // 执行日期
+  google.protobuf.Timestamp execution_date = 2;
+  // 是否为测试运行
+  bool test_run = 3;
+}
+
+// 执行重复凭证响应
+message ExecuteRecurringEntryResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的凭证引用列表
+  repeated enterprise.common.SystemDocumentReference generated_documents = 2;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 查询重复凭证列表请求
+message ListRecurringEntriesRequest {
+  // 公司代码
+  string company_code = 1;
+  // 创建人
+  string created_by = 2;
+  // 分页请求
+  enterprise.common.PaginationRequest pagination = 3;
+}
+
+// 查询重复凭证列表响应
+message ListRecurringEntriesResponse {
+  // 重复凭证列表
+  repeated RecurringEntrySummary recurring_entries = 1;
+  // 分页响应
+  enterprise.common.PaginationResponse pagination = 2;
+}
+
+// 重复凭证摘要
+message RecurringEntrySummary {
+  // 重复凭证ID
+  string recurring_entry_id = 1;
+  // 名称
+  string name = 2;
+  // 频率
+  RecurringFrequency frequency = 3;
+  // 下次执行日期
+  google.protobuf.Timestamp next_run_date = 4;
+  // 执行次数
+  int32 execution_count = 5;
+  // 是否激活
+  bool is_active = 6;
+}
+
+// 保存为模板请求
+message SaveAsTemplateRequest {
+  // 凭证引用 (从现有凭证创建模板)
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 或者提供凭证数据
+  JournalEntryHeader header = 2;
+  repeated JournalEntryLineItem line_items = 3;
+  // 模板名称
+  string template_name = 4;
+  // 模板描述
+  string template_description = 5;
+  // 模板分类
+  string template_category = 6;
+}
+
+// 保存为模板响应
+message SaveAsTemplateResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 模板ID
+  string template_id = 2;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 从模板创建凭证请求
+message CreateFromTemplateRequest {
+  // 模板ID
+  string template_id = 1;
+  // 覆盖的字段 (JSON格式)
+  string field_overrides = 2;
+  // 是否立即过账
+  bool post_immediately = 3;
+}
+
+// 查询模板列表请求
+message ListTemplatesRequest {
+  // 模板分类
+  string template_category = 1;
+  // 创建人
+  string created_by = 2;
+  // 分页请求
+  enterprise.common.PaginationRequest pagination = 3;
+}
+
+// 查询模板列表响应
+message ListTemplatesResponse {
+  // 模板列表
+  repeated TemplateSummary templates = 1;
+  // 分页响应
+  enterprise.common.PaginationResponse pagination = 2;
+}
+
+// 模板摘要
+message TemplateSummary {
+  // 模板ID
+  string template_id = 1;
+  // 模板名称
+  string template_name = 2;
+  // 模板描述
+  string template_description = 3;
+  // 模板分类
+  string template_category = 4;
+  // 创建人
+  string created_by = 5;
+  // 创建时间
+  google.protobuf.Timestamp created_at = 6;
+  // 使用次数
+  int32 usage_count = 7;
+}
+
+// --------------------------------------------------------------------------
+// 凭证链与对账消息 (Document Chain & Reconciliation)
+// --------------------------------------------------------------------------
+
+// 获取凭证链请求
+message GetDocumentChainRequest {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 是否包括前置凭证
+  bool include_predecessors = 2;
+  // 是否包括后续凭证
+  bool include_successors = 3;
+}
+
+// 凭证链响应
+message DocumentChainResponse {
+  // 原始凭证引用
+  enterprise.common.SystemDocumentReference original_document = 1;
+  // 前置凭证列表
+  repeated DocumentChainNode predecessors = 2;
+  // 后续凭证列表
+  repeated DocumentChainNode successors = 3;
+}
+
+// 凭证链节点
+message DocumentChainNode {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 凭证类型
+  string document_type = 2;
+  // 凭证日期
+  google.protobuf.Timestamp document_date = 3;
+  // 金额
+  string amount = 4;
+  // 关系类型 (例如: "冲销", "参考", "清账")
+  string relationship_type = 5;
+}
+
+// 对账凭证请求
+message ReconcileDocumentsRequest {
+  // 公司代码
+  string company_code = 1;
+  // 科目号
+  string account_number = 2;
+  // 对账期间
+  enterprise.common.DateRange reconciliation_period = 3;
+  // 对账类型 (例如: "GL_SUBLEDGER", "INTERCOMPANY")
+  string reconciliation_type = 4;
+}
+
+// 对账凭证响应
+message ReconcileDocumentsResponse {
+  // 对账是否成功
+  bool success = 1;
+  // 对账结果
+  ReconciliationResult reconciliation_result = 2;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 对账结果
+message ReconciliationResult {
+  // 已匹配项目数
+  int32 matched_items_count = 1;
+  // 未匹配项目数
+  int32 unmatched_items_count = 2;
+  // 差异金额
+  string difference_amount = 3;
+  // 未匹配项目列表
+  repeated UnmatchedItem unmatched_items = 4;
+}
+
+// 未匹配项目
+message UnmatchedItem {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 行项目号
+  int32 line_item_number = 2;
+  // 金额
+  string amount = 3;
+  // 未匹配原因
+  string reason = 4;
+}
+
+// --------------------------------------------------------------------------
+// 期末处理消息 (Period-End Processing)
+// --------------------------------------------------------------------------
+
+// 执行期末关账请求
+message ExecutePeriodEndCloseRequest {
+  // 公司代码
+  string company_code = 1;
+  // 会计年度
+  int32 fiscal_year = 2;
+  // 会计期间
+  int32 fiscal_period = 3;
+  // 关账类型 (例如: "SOFT", "HARD")
+  string close_type = 4;
+}
+
+// 期末关账响应
+message PeriodEndCloseResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 期间状态
+  PeriodStatus period_status = 2;
+  // 关账任务列表
+  repeated PeriodEndTask tasks = 3;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 4;
+}
+
+// 期末任务
+message PeriodEndTask {
+  // 任务ID
+  string task_id = 1;
+  // 任务名称
+  string task_name = 2;
+  // 任务状态 (PENDING, RUNNING, COMPLETED, FAILED)
+  string status = 3;
+  // 完成百分比
+  int32 completion_percentage = 4;
+  // 任务描述
+  string description = 5;
+}
+
+// 汇兑差异重估请求
+message RevaluateForeignCurrencyRequest {
+  // 公司代码
+  string company_code = 1;
+  // 重估日期
+  google.protobuf.Timestamp revaluation_date = 2;
+  // 科目范围
+  repeated string gl_accounts = 3;
+  // 货币
+  repeated string currencies = 4;
+  // 是否为测试运行
+  bool test_run = 5;
+}
+
+// 重估响应
+message RevaluationResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 2;
+  // 重估结果列表
+  repeated RevaluationResult revaluation_results = 3;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 4;
+}
+
+// 重估结果
+message RevaluationResult {
+  // 科目号
+  string gl_account = 1;
+  // 货币
+  string currency = 2;
+  // 账面金额
+  string book_amount = 3;
+  // 重估后金额
+  string revalued_amount = 4;
+  // 汇兑差异
+  string exchange_difference = 5;
+}
+
+// 科目余额重分类请求
+message ReclassifyAccountsRequest {
+  // 公司代码
+  string company_code = 1;
+  // 会计年度
+  int32 fiscal_year = 2;
+  // 重分类规则ID
+  string reclassification_rule_id = 3;
+  // 是否为测试运行
+  bool test_run = 4;
+}
+
+// 重分类响应
+message ReclassificationResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 2;
+  // 重分类结果列表
+  repeated ReclassificationResult reclassification_results = 3;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 4;
+}
+
+// 重分类结果
+message ReclassificationResult {
+  // 源科目
+  string source_account = 1;
+  // 目标科目
+  string target_account = 2;
+  // 重分类金额
+  string amount = 3;
+  // 重分类原因
+  string reason = 4;
+}
+
+// 执行余额结转请求
+message CarryForwardBalancesRequest {
+  // 公司代码
+  string company_code = 1;
+  // 源会计年度
+  int32 source_fiscal_year = 2;
+  // 目标会计年度
+  int32 target_fiscal_year = 3;
+  // 科目范围
+  repeated string gl_accounts = 4;
+  // 是否为测试运行
+  bool test_run = 5;
+}
+
+// 余额结转响应
+message CarryForwardBalancesResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 2;
+  // 结转结果列表
+  repeated CarryForwardResult carry_forward_results = 3;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 4;
+}
+
+// 结转结果
+message CarryForwardResult {
+  // 科目号
+  string gl_account = 1;
+  // 结转金额
+  string amount = 2;
+  // 余额类型 (DEBIT, CREDIT)
+  string balance_type = 3;
+}
+
+// --------------------------------------------------------------------------
+// 批量输入会话消息 (Batch Input Session)
+// --------------------------------------------------------------------------
+
+// 创建批量输入会话请求
+message CreateBatchInputSessionRequest {
+  // 会话名称
+  string session_name = 1;
+  // 凭证列表
+  repeated CreateJournalEntryRequest entries = 2;
+  // 是否保留会话 (失败后可重新处理)
+  bool keep_session_on_error = 3;
+}
+
+// 批量输入会话响应
+message BatchInputSessionResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 会话ID
+  string session_id = 2;
+  // 会话状态
+  BatchInputSessionStatus status = 3;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 4;
+}
+
+// 处理批量输入会话请求
+message ProcessBatchInputSessionRequest {
+  // 会话ID
+  string session_id = 1;
+  // 处理模式 (FOREGROUND, BACKGROUND)
+  string processing_mode = 2;
+}
+
+// 处理批量输入会话响应
+message ProcessBatchInputSessionResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 处理结果
+  BatchInputProcessingResult processing_result = 2;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 批量输入处理结果
+message BatchInputProcessingResult {
+  // 总数
+  int32 total_count = 1;
+  // 成功数
+  int32 success_count = 2;
+  // 失败数
+  int32 failed_count = 3;
+  // 失败详情
+  repeated enterprise.common.ErrorDetail errors = 4;
+}
+
+// 查询批量输入会话状态请求
+message GetBatchInputSessionStatusRequest {
+  // 会话ID
+  string session_id = 1;
+}
+
+// 批量输入会话状态响应
+message BatchInputSessionStatusResponse {
+  // 会话ID
+  string session_id = 1;
+  // 会话状态
+  BatchInputSessionStatus status = 2;
+  // 处理进度
+  int32 progress_percentage = 3;
+  // 处理结果 (如果已完成)
+  BatchInputProcessingResult processing_result = 4;
+}
+
+// --------------------------------------------------------------------------
+// 凭证拆分消息 (Document Splitting)
+// --------------------------------------------------------------------------
+
+// 获取凭证拆分详情请求
+message GetDocumentSplitDetailsRequest {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+}
+
+// 凭证拆分详情响应
+message DocumentSplitDetailsResponse {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 拆分方法
+  DocumentSplittingMethod splitting_method = 2;
+  // 拆分结果列表
+  repeated DocumentSplitResult split_results = 3;
+}
+
+// 凭证拆分结果
+message DocumentSplitResult {
+  // 拆分维度 (例如: PROFIT_CENTER, BUSINESS_AREA)
+  string split_dimension = 1;
+  // 拆分值
+  string split_value = 2;
+  // 拆分金额
+  string split_amount = 3;
+  // 百分比
+  string percentage = 4;
+}
+
+// 配置凭证拆分规则请求
+message ConfigureDocumentSplittingRequest {
+  // 公司代码
+  string company_code = 1;
+  // 拆分方法
+  DocumentSplittingMethod splitting_method = 2;
+  // 拆分规则配置 (JSON格式)
+  string splitting_configuration = 3;
+}
+
+// 配置凭证拆分规则响应
+message ConfigureDocumentSplittingResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 2;
+}
+
+// --------------------------------------------------------------------------
+// 并行会计消息 (Parallel Accounting)
+// --------------------------------------------------------------------------
+
+// 获取并行分类账数据请求
+message GetParallelLedgerDataRequest {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 分类账列表 (可选，不提供则返回所有分类账)
+  repeated string ledgers = 2;
+}
+
+// 并行分类账数据响应
+message ParallelLedgerDataResponse {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 分类账数据列表
+  repeated LedgerData ledger_data = 2;
+}
+
+// 分类账数据
+message LedgerData {
+  // 分类账
+  string ledger = 1;
+  // 分类账类型
+  LedgerType ledger_type = 2;
+  // 会计原则
+  string accounting_principle = 3;
+  // 行项目列表
+  repeated JournalEntryLineItem line_items = 4;
+  // 总借方金额
+  string total_debit = 5;
+  // 总贷方金额
+  string total_credit = 6;
+}
+
+// 调整并行分类账请求
+message AdjustParallelLedgerRequest {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 目标分类账
+  string target_ledger = 2;
+  // 调整行项目
+  repeated JournalEntryLineItem adjustment_items = 3;
+}
+
+// 调整并行分类账响应
+message AdjustParallelLedgerResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 调整凭证引用
+  enterprise.common.SystemDocumentReference adjustment_document_reference = 2;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// --------------------------------------------------------------------------
+// 高级查询与分析消息 (Advanced Query & Analysis)
+// --------------------------------------------------------------------------
+
+// 科目余额查询请求
+message GetAccountBalancesRequest {
+  // 公司代码
+  string company_code = 1;
+  // 科目列表
+  repeated string gl_accounts = 2;
+  // 会计年度
+  int32 fiscal_year = 3;
+  // 会计期间 (可选)
+  int32 fiscal_period = 4;
+  // 分类账
+  string ledger = 5;
+}
+
+// 科目余额响应
+message AccountBalancesResponse {
+  // 科目余额列表
+  repeated AccountBalance account_balances = 1;
+}
+
+// 科目余额
+message AccountBalance {
+  // 科目号
+  string gl_account = 1;
+  // 科目名称
+  string account_name = 2;
+  // 期初余额
+  string opening_balance = 3;
+  // 借方总额
+  string total_debit = 4;
+  // 贷方总额
+  string total_credit = 5;
+  // 期末余额
+  string closing_balance = 6;
+  // 货币
+  string currency = 7;
+  // 借贷方向
+  string debit_credit_indicator = 8;
+}
+
+// 科目余额明细请求
+message GetAccountLineItemsRequest {
+  // 公司代码
+  string company_code = 1;
+  // 科目号
+  string gl_account = 2;
+  // 日期范围
+  enterprise.common.DateRange date_range = 3;
+  // 分页请求
+  enterprise.common.PaginationRequest pagination = 4;
+  // 是否只显示未清项目
+  bool open_items_only = 5;
+}
+
+// 科目余额明细响应
+message AccountLineItemsResponse {
+  // 科目号
+  string gl_account = 1;
+  // 行项目列表
+  repeated AccountLineItemDetail line_items = 2;
+  // 分页响应
+  enterprise.common.PaginationResponse pagination = 3;
+}
+
+// 科目行项目明细
+message AccountLineItemDetail {
+  // 凭证引用
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  // 行项目号
+  int32 line_item_number = 2;
+  // 过账日期
+  google.protobuf.Timestamp posting_date = 3;
+  // 凭证日期
+  google.protobuf.Timestamp document_date = 4;
+  // 金额
+  string amount = 5;
+  // 借贷标识
+  string debit_credit_indicator = 6;
+  // 行项目文本
+  string item_text = 7;
+  // 参考凭证号
+  string reference_document = 8;
+  // 清账状态
+  ClearingStatus clearing_status = 9;
+}
+
+// 总账与辅助账对账请求
+message ReconcileGLAndSubledgerRequest {
+  // 公司代码
+  string company_code = 1;
+  // 对账类型 (例如: "AR", "AP", "ASSET")
+  string subledger_type = 2;
+  // 对账期间
+  enterprise.common.DateRange reconciliation_period = 3;
+}
+
+// 对账响应 (复用)
+message ReconciliationResponse {
+  // 对账是否成功
+  bool success = 1;
+  // 对账结果
+  ReconciliationResult reconciliation_result = 2;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 生成凭证分析报表请求
+message GenerateJournalAnalysisRequest {
+  // 公司代码
+  string company_code = 1;
+  // 分析期间
+  enterprise.common.DateRange analysis_period = 2;
+  // 分析维度 (例如: ["ACCOUNT", "COST_CENTER", "PROFIT_CENTER"])
+  repeated string analysis_dimensions = 3;
+  // 报表格式
+  ExportFormat format = 4;
+}
+
+// 凭证分析报表响应
+message JournalAnalysisResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 报表内容 (Base64 编码)
+  bytes report_content = 2;
+  // MIME 类型
+  string mime_type = 3;
+  // 文件名
+  string file_name = 4;
+  // 分析摘要
+  JournalAnalysisSummary analysis_summary = 5;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 6;
+}
+
+// 凭证分析摘要
+message JournalAnalysisSummary {
+  // 分析期间的凭证总数
+  int64 total_entries = 1;
+  // 总借方金额
+  string total_debit = 2;
+  // 总贷方金额
+  string total_credit = 3;
+  // 按维度汇总
+  repeated DimensionSummary dimension_summaries = 4;
+}
+
+// 维度汇总
+message DimensionSummary {
+  // 维度名称
+  string dimension_name = 1;
+  // 维度值
+  string dimension_value = 2;
+  // 凭证数量
+  int64 entry_count = 3;
+  // 金额
+  string amount = 4;
+  // 百分比
+  string percentage = 5;
+}
+
