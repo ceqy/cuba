@@ -224,6 +224,11 @@ impl JournalEntry {
             .sum()
     }
 
+    /// 检查借贷是否平衡
+    pub fn is_balanced(&self) -> bool {
+        self.total_debit() == self.total_credit()
+    }
+
     /// 冲销凭证 (生成一个新的冲销凭证)
     pub fn reverse(
         &mut self, 

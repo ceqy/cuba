@@ -8,6 +8,9 @@ pub mod repository;
 pub mod rules;
 pub mod value_objects;
 
+#[cfg(test)]
+mod tests;
+
 pub use entities::*;
 pub use events::*;
 pub use rules::JournalEntryStatus;
