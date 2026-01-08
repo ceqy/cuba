@@ -1,29 +1,274 @@
-use cuba_core::Aggregate;
+//! Domain Entities for GL Service
+//!
+//! 聚合根和实体定义
+
+use chrono::{DateTime, NaiveDate, Utc};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 
-#[derive(Debug, Serialize, Deserialize)]
+use crate::domain::events::{DomainEvents, JournalEntryCreated, JournalEntryPosted};
+use crate::domain::rules::JournalEntryStatus;
+use crate::domain::value_objects::{
+    Account, CostObjects, DebitCreditIndicator, DocumentNumber, FiscalPeriod, 
+    JournalEntryId, MonetaryAmount, ValueError,
+};
+
+// ============================================================================
+// JournalEntry - 凭证聚合根
+// ============================================================================
+
+#[derive(Serialize, Deserialize)]
 pub struct JournalEntry {
-    pub id: Uuid,
-    pub document_number: String,
-    pub fiscal_year: i32,
+    // 标识
+    id: JournalEntryId,
+    document_number: Option<DocumentNumber>,
+    
+    // 抬头信息
+    header: JournalEntryHeader,
+    
+    // 行项目
+    lines: Vec<JournalEntryLine>,
+    
+    // 税务行项目
+    tax_items: Vec<TaxLineItem>,
+    
+    // 状态
+    status: JournalEntryStatus,
+    
+    // 乐观锁版本
+    version: u64,
+    
+    // 领域事件
+    #[serde(skip)]
+    events: DomainEvents,
+}
+
+impl JournalEntry {
+    /// 创建新的凭证草稿
+    pub fn create_draft(
+        company_code: String,
+        document_type: String,
+        document_date: NaiveDate,
+        posting_date: NaiveDate,
+        fiscal_period: FiscalPeriod,
+        currency: String,
+        created_by: Uuid,
+    ) -> Self {
+        let id = JournalEntryId::new();
+        let now = Utc::now();
+        
+        let header = JournalEntryHeader {
+            company_code: company_code.clone(),
+            document_type,
+            document_date,
+            posting_date,
+            fiscal_period,
+            currency,
+            exchange_rate: Decimal::ONE,
+            local_currency: "CNY".to_string(),
+            header_text: None,
+            reference_document: None,
+            ledger: "0L".to_string(),
+            created_by,
+            created_at: now,
+            updated_at: now,
+        };
+        
+        let mut entry = Self {
+            id,
+            document_number: None,
+            header,
+            lines: Vec::new(),
+            tax_items: Vec::new(),
+            status: JournalEntryStatus::Draft,
+            version: 1,
+            events: DomainEvents::new(),
+        };
+        
+        // 记录创建事件
+        entry.events.push(JournalEntryCreated {
+            journal_entry_id: *id.as_uuid(),
+            company_code,
+            document_number: String::new(),
+            fiscal_year: fiscal_period.year(),
+            created_by,
+            occurred_at: now,
+        });
+        
+        entry
+    }
+    
+    /// 添加行项目
+    pub fn add_line(&mut self, line: JournalEntryLine) -> Result<(), ValueError> {
+        if !self.status.is_editable() {
+            return Err(ValueError::InvalidAmount("Cannot modify non-draft entry".into()));
+        }
+        self.lines.push(line);
+        self.header.updated_at = Utc::now();
+        Ok(())
+    }
+    
+    /// 验证借贷平衡
+    pub fn validate_balance(&self) -> Result<(), ValueError> {
+        let amounts: Vec<MonetaryAmount> = self.lines.iter()
+            .map(|l| l.amount.clone())
+            .collect();
+        crate::domain::rules::validate_debit_credit_balance(&amounts)
+    }
+    
+    /// 过账凭证
+    pub fn post(&mut self, document_number: DocumentNumber, posted_by: Uuid) -> Result<(), ValueError> {
+        // 检查状态转换
+        if !self.status.can_transition_to(JournalEntryStatus::Posted) {
+            return Err(ValueError::InvalidAmount(
+                format!("Cannot post from status {:?}", self.status)
+            ));
+        }
+        
+        // 验证借贷平衡
+        self.validate_balance()?;
+        
+        // 更新状态
+        self.status = JournalEntryStatus::Posted;
+        self.document_number = Some(document_number.clone());
+        self.header.updated_at = Utc::now();
+        
+        // 记录事件
+        self.events.push(JournalEntryPosted {
+            journal_entry_id: *self.id.as_uuid(),
+            company_code: self.header.company_code.clone(),
+            document_number: document_number.number().to_string(),
+            fiscal_year: self.header.fiscal_period.year(),
+            posted_by,
+            posting_date: Utc::now(),
+            occurred_at: Utc::now(),
+        });
+        
+        Ok(())
+    }
+    
+    // Getters
+    pub fn id(&self) -> &JournalEntryId { &self.id }
+    pub fn document_number(&self) -> Option<&DocumentNumber> { self.document_number.as_ref() }
+    pub fn header(&self) -> &JournalEntryHeader { &self.header }
+    pub fn lines(&self) -> &[JournalEntryLine] { &self.lines }
+    pub fn status(&self) -> JournalEntryStatus { self.status }
+    pub fn version(&self) -> u64 { self.version }
+    
+    /// 获取并清空领域事件
+    pub fn take_events(&mut self) -> Vec<Box<dyn crate::domain::events::DomainEvent>> {
+        self.events.take()
+    }
+    
+    /// 计算借方合计
+    pub fn total_debit(&self) -> Decimal {
+        self.lines.iter()
+            .filter(|l| matches!(l.amount.dc_indicator(), DebitCreditIndicator::Debit))
+            .map(|l| l.amount.amount())
+            .sum()
+    }
+    
+    /// 计算贷方合计
+    pub fn total_credit(&self) -> Decimal {
+        self.lines.iter()
+            .filter(|l| matches!(l.amount.dc_indicator(), DebitCreditIndicator::Credit))
+            .map(|l| l.amount.amount())
+            .sum()
+    }
+}
+
+// ============================================================================
+// JournalEntryHeader - 凭证抬头
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JournalEntryHeader {
     pub company_code: String,
-    pub posting_date: DateTime<Utc>,
-    pub status: JournalEntryStatus,
+    pub document_type: String,
+    pub document_date: NaiveDate,
+    pub posting_date: NaiveDate,
+    pub fiscal_period: FiscalPeriod,
+    pub currency: String,
+    pub exchange_rate: Decimal,
+    pub local_currency: String,
+    pub header_text: Option<String>,
+    pub reference_document: Option<String>,
+    pub ledger: String,
+    pub created_by: Uuid,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
-impl Aggregate for JournalEntry {
-    type Id = Uuid;
-    fn id(&self) -> &Self::Id { &self.id }
-    fn version(&self) -> u64 { 1 }
-    fn take_events(&mut self) -> Vec<Box<dyn cuba_core::DomainEvent>> { vec![] }
+// ============================================================================
+// JournalEntryLine - 凭证行项目
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JournalEntryLine {
+    pub line_number: i32,
+    pub account: Account,
+    pub amount: MonetaryAmount,
+    pub amount_local: Option<Decimal>,
+    pub cost_objects: CostObjects,
+    pub line_text: Option<String>,
+    pub assignment: Option<String>,
+    pub tax_code: Option<String>,
+    pub clearing_status: ClearingStatus,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum JournalEntryStatus {
-    Draft,
-    Parked,
-    Posted,
-    Reversed,
+impl JournalEntryLine {
+    pub fn new(
+        line_number: i32,
+        account: Account,
+        amount: MonetaryAmount,
+    ) -> Self {
+        Self {
+            line_number,
+            account,
+            amount,
+            amount_local: None,
+            cost_objects: CostObjects::default(),
+            line_text: None,
+            assignment: None,
+            tax_code: None,
+            clearing_status: ClearingStatus::Open,
+        }
+    }
+    
+    pub fn with_cost_objects(mut self, cost_objects: CostObjects) -> Self {
+        self.cost_objects = cost_objects;
+        self
+    }
+    
+    pub fn with_text(mut self, text: &str) -> Self {
+        self.line_text = Some(text.to_string());
+        self
+    }
+}
+
+// ============================================================================
+// ClearingStatus - 清账状态
+// ============================================================================
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum ClearingStatus {
+    #[default]
+    Open,
+    PartiallyCleared,
+    Cleared,
+}
+
+// ============================================================================
+// TaxLineItem - 税务行项目
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TaxLineItem {
+    pub line_number: i32,
+    pub tax_code: String,
+    pub tax_rate: Decimal,
+    pub tax_base_amount: Decimal,
+    pub tax_amount: Decimal,
+    pub dc_indicator: DebitCreditIndicator,
 }
