@@ -8,9 +8,11 @@
 syntax = "proto3";
 
 package finance.gl;
+option go_package = "github.com/yourproject/finance/gl";
 
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/openapiv2.proto";
 import "common/common.proto";
 
 // ============================================================================
@@ -18,11 +20,23 @@ import "common/common.proto";
 // ============================================================================
 
 service GlJournalEntryService {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "处理日记账分录、凭证审批、结转清账及并行分类账等核心财务逻辑"
+    external_docs: {
+      url: "https://yourproject.com/docs/finance";
+      description: "财务服务详细文档";
+    }
+  };
+
   // 创建一笔总账凭证
   rpc CreateJournalEntry(CreateJournalEntryRequest) returns (JournalEntryResponse) {
     option (google.api.http) = {
       post: "/api/v1/finance/journal-entries"
       body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Journal Entry Core"
+      summary: "创建总帐凭证"
     };
   }
 
@@ -31,6 +45,10 @@ service GlJournalEntryService {
     option (google.api.http) = {
       post: "/api/v1/finance/journal-entries/batch"
       body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Batch Operations"
+      summary: "批量创建总账凭证"
     };
   }
 
@@ -52,7 +70,11 @@ service GlJournalEntryService {
   // 获取一笔总账凭证的详细信息
   rpc GetJournalEntry(GetJournalEntryRequest) returns (JournalEntryDetail) {
     option (google.api.http) = {
-      get: "/api/v1/finance/journal-entries/{journal-entry_id}"
+      get: "/api/v1/finance/journal-entries/{journal_entry_id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Journal Entry Core"
+      summary: "获取凭证详情"
     };
   }
 
@@ -60,6 +82,10 @@ service GlJournalEntryService {
   rpc ListJournalEntries(ListJournalEntriesRequest) returns (ListJournalEntriesResponse) {
     option (google.api.http) = {
       get: "/api/v1/finance/journal-entries"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Journal Entry Core"
+      summary: "查询总账凭证列表"
     };
   }
 
@@ -75,11 +101,15 @@ service GlJournalEntryService {
     option (google.api.http) = {
       get: "/api/v1/finance/journal-entry-history"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Reporting & Balances"
+      summary: "查询凭证变更历史"
+    };
   }
   // 更新未过账的凭证
   rpc UpdateJournalEntry(UpdateJournalEntryRequest) returns (JournalEntryResponse) {
     option (google.api.http) = {
-      put: "/api/v1/finance/journal-entries/{journal-entry_id}"
+      put: "/api/v1/finance/journal-entries/{journal_entry_id}"
       body: "*"
     };
   }
@@ -87,14 +117,14 @@ service GlJournalEntryService {
   // 删除未过账的凭证
   rpc DeleteJournalEntry(DeleteJournalEntryRequest) returns (JournalEntryResponse) {
     option (google.api.http) = {
-      delete: "/api/v1/finance/journal-entries/{journal-entry_id}"
+      delete: "/api/v1/finance/journal-entries/{journal_entry_id}"
     };
   }
 
   // 过账凭证 (将草稿状态的凭证正式过账)
   rpc PostJournalEntry(PostJournalEntryRequest) returns (JournalEntryResponse) {
     option (google.api.http) = {
-      post: "/api/v1/finance/journal-entries/{journal-entry_id}/post"
+      post: "/api/v1/finance/journal-entries/{journal_entry_id}/post"
       body: "*"
     };
   }
@@ -102,7 +132,7 @@ service GlJournalEntryService {
   // 取消凭证 (仅适用于未过账的凭证)
   rpc CancelJournalEntry(CancelJournalEntryRequest) returns (JournalEntryResponse) {
     option (google.api.http) = {
-      post: "/api/v1/finance/journal-entries/{journal-entry_id}/cancel"
+      post: "/api/v1/finance/journal-entries/{journal_entry_id}/cancel"
       body: "*"
     };
   }
@@ -110,14 +140,14 @@ service GlJournalEntryService {
   // 重置凭证 (Reset) - 重新打开已过账的凭证
   rpc ResetJournalEntry(ResetJournalEntryRequest) returns (JournalEntryResponse) {
     option (google.api.http) = {
-      post: "/api/v1/finance/journal-entries/{journal-entry_id}/reset"
+      post: "/api/v1/finance/journal-entries/{journal_entry_id}/reset"
       body: "*"
     };
   }
   // 冲销一笔总账凭证
   rpc ReverseJournalEntry(ReverseJournalEntryRequest) returns (JournalEntryResponse) {
     option (google.api.http) = {
-      post: "/api/v1/finance/journal-entries/{journal-entry_id}/reverse"
+      post: "/api/v1/finance/journal-entries/{journal_entry_id}/reverse"
       body: "*"
     };
   }
@@ -128,12 +158,20 @@ service GlJournalEntryService {
       post: "/api/v1/finance/batch/reverse-journal-entries"
       body: "*"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Batch Operations"
+      summary: "批量冲销凭证"
+    };
   }
   // 清账未清项目
   rpc ClearOpenItems(ClearOpenItemsRequest) returns (ClearOpenItemsResponse) {
     option (google.api.http) = {
       post: "/api/v1/finance/open-items/clear"
       body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Clearing & Reversal"
+      summary: "清账未清项目"
     };
   }
 
@@ -154,7 +192,7 @@ service GlJournalEntryService {
   // 获取凭证税务详情
   rpc GetJournalEntryTaxDetails(GetJournalEntryTaxDetailsRequest) returns (JournalEntryTaxDetailsResponse) {
     option (google.api.http) = {
-      get: "/api/v1/finance/journal-entry-tax-details/{journal-entry-tax-detail_id}"
+      get: "/api/v1/finance/journal-entry-tax-details/{journal_entry_tax_detail_id}"
     };
   }
 
@@ -168,14 +206,14 @@ service GlJournalEntryService {
   // 获取凭证支付信息
   rpc GetPaymentInformation(GetPaymentInformationRequest) returns (PaymentInformationResponse) {
     option (google.api.http) = {
-      get: "/api/v1/finance/payment-information/{payment-information_id}"
+      get: "/api/v1/finance/payment-information/{payment_information_id}"
     };
   }
 
   // 更新支付状态
   rpc UpdatePaymentStatus(UpdatePaymentStatusRequest) returns (UpdatePaymentStatusResponse) {
     option (google.api.http) = {
-      put: "/api/v1/finance/payment-status/{payment-statu_id}"
+      put: "/api/v1/finance/payment-status/{payment_status_id}"
       body: "*"
     };
   }
@@ -185,6 +223,10 @@ service GlJournalEntryService {
       post: "/api/v1/finance/attachments/upload"
       body: "*"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Attachments & Templates"
+      summary: "上传凭证附件"
+    };
   }
 
   // 下载凭证附件
@@ -193,12 +235,20 @@ service GlJournalEntryService {
       post: "/api/v1/finance/attachments/download"
       body: "*"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Attachments & Templates"
+      summary: "下载凭证附件"
+    };
   }
 
   // 列出凭证附件
   rpc ListAttachments(ListAttachmentsRequest) returns (ListAttachmentsResponse) {
     option (google.api.http) = {
       get: "/api/v1/finance/attachments"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Attachments & Templates"
+      summary: "列出凭证附件"
     };
   }
 
@@ -214,12 +264,16 @@ service GlJournalEntryService {
       post: "/api/v1/finance/for-approval/submit"
       body: "*"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Workflow & Approval"
+      summary: "提交凭证审批"
+    };
   }
 
   // 审批凭证
   rpc ApproveJournalEntry(ApproveJournalEntryRequest) returns (ApproveJournalEntryResponse) {
     option (google.api.http) = {
-      post: "/api/v1/finance/journal-entries/{journal-entry_id}/approve"
+      post: "/api/v1/finance/journal-entries/{journal_entry_id}/approve"
       body: "*"
     };
   }
@@ -227,7 +281,7 @@ service GlJournalEntryService {
   // 拒绝凭证
   rpc RejectJournalEntry(RejectJournalEntryRequest) returns (RejectJournalEntryResponse) {
     option (google.api.http) = {
-      post: "/api/v1/finance/journal-entries/{journal-entry_id}/reject"
+      post: "/api/v1/finance/journal-entries/{journal_entry_id}/reject"
       body: "*"
     };
   }
@@ -236,6 +290,10 @@ service GlJournalEntryService {
   rpc GetApprovalHistory(GetApprovalHistoryRequest) returns (ApprovalHistoryResponse) {
     option (google.api.http) = {
       get: "/api/v1/finance/approval-history"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Workflow & Approval"
+      summary: "查询审批历史"
     };
   }
   // 导出凭证 (支持多种格式)
@@ -274,12 +332,16 @@ service GlJournalEntryService {
     option (google.api.http) = {
       get: "/api/v1/finance/parked-journal-entries"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Parked Documents"
+      summary: "查询停放凭证列表"
+    };
   }
 
   // 从停放凭证过账
   rpc PostParkedJournalEntry(PostParkedJournalEntryRequest) returns (JournalEntryResponse) {
     option (google.api.http) = {
-      post: "/api/v1/finance/parked-journal-entries/{parked-journal-entry_id}/post"
+      post: "/api/v1/finance/parked-journal-entries/{parked_journal_entry_id}/post"
       body: "*"
     };
   }
@@ -288,6 +350,10 @@ service GlJournalEntryService {
     option (google.api.http) = {
       post: "/api/v1/finance/recurring-entries"
       body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Advanced Features"
+      summary: "创建重复凭证"
     };
   }
 
@@ -312,6 +378,10 @@ service GlJournalEntryService {
       post: "/api/v1/finance/as-template/save"
       body: "*"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Attachments & Templates"
+      summary: "保存为凭证模板"
+    };
   }
 
   // 从模板创建凭证
@@ -319,6 +389,10 @@ service GlJournalEntryService {
     option (google.api.http) = {
       post: "/api/v1/finance/from-template"
       body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Attachments & Templates"
+      summary: "从模板创建凭证"
     };
   }
 
@@ -331,7 +405,7 @@ service GlJournalEntryService {
   // 获取凭证链 (Follow-up Documents)
   rpc GetDocumentChain(GetDocumentChainRequest) returns (DocumentChainResponse) {
     option (google.api.http) = {
-      get: "/api/v1/finance/document-chains/{document-chain_id}"
+      get: "/api/v1/finance/document-chains/{document_chain_id}"
     };
   }
 
@@ -364,6 +438,10 @@ service GlJournalEntryService {
       post: "/api/v1/finance/accounts/reclassify"
       body: "*"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Clearing & Reversal"
+      summary: "科目余额重分类"
+    };
   }
 
   // 执行余额结转
@@ -372,12 +450,20 @@ service GlJournalEntryService {
       post: "/api/v1/finance/balances/carry-forward"
       body: "*"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Reporting & Balances"
+      summary: "执行余额结转"
+    };
   }
   // 创建批量输入会话
   rpc CreateBatchInputSession(CreateBatchInputSessionRequest) returns (BatchInputSessionResponse) {
     option (google.api.http) = {
       post: "/api/v1/finance/batch-sessions"
       body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Batch Operations"
+      summary: "创建批量输入会话"
     };
   }
 
@@ -387,18 +473,22 @@ service GlJournalEntryService {
       post: "/api/v1/finance/batch-sessions/process"
       body: "*"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Batch Operations"
+      summary: "处理批量输入会话"
+    };
   }
 
   // 查询批量输入会话状态
   rpc GetBatchInputSessionStatus(GetBatchInputSessionStatusRequest) returns (BatchInputSessionStatusResponse) {
     option (google.api.http) = {
-      get: "/api/v1/finance/batch-input-session-status/{batch-input-session-statu_id}"
+      get: "/api/v1/finance/batch-input-session-status/{batch_input_session_status_id}"
     };
   }
   // 获取凭证拆分详情
   rpc GetDocumentSplitDetails(GetDocumentSplitDetailsRequest) returns (DocumentSplitDetailsResponse) {
     option (google.api.http) = {
-      get: "/api/v1/finance/document-split-details/{document-split-detail_id}"
+      get: "/api/v1/finance/document-split-details/{document_split_detail_id}"
     };
   }
 
@@ -412,7 +502,7 @@ service GlJournalEntryService {
   // 获取并行分类账数据
   rpc GetParallelLedgerData(GetParallelLedgerDataRequest) returns (ParallelLedgerDataResponse) {
     option (google.api.http) = {
-      get: "/api/v1/finance/parallel-ledger-data/{parallel-ledger-data_id}"
+      get: "/api/v1/finance/parallel-ledger-data/{parallel_ledger_data_id}"
     };
   }
 
@@ -426,14 +516,14 @@ service GlJournalEntryService {
   // 科目余额查询
   rpc GetAccountBalances(GetAccountBalancesRequest) returns (AccountBalancesResponse) {
     option (google.api.http) = {
-      get: "/api/v1/finance/account-balances/{account-balance_id}"
+      get: "/api/v1/finance/account-balances/{account_balance_id}"
     };
   }
 
   // 科目余额明细
   rpc GetAccountLineItems(GetAccountLineItemsRequest) returns (AccountLineItemsResponse) {
     option (google.api.http) = {
-      get: "/api/v1/finance/account-line-items/{account-line-item_id}"
+      get: "/api/v1/finance/account-line-items/{account_line_item_id}"
     };
   }
 
@@ -1631,6 +1721,8 @@ message JournalEntryResponse {
 message GetJournalEntryRequest {
   // 核心ERP系统中的凭证引用
   common.SystemDocumentReference document_reference = 1;
+  // 总账凭证唯一标识 (REST 映射)
+  string journal_entry_id = 2;
 }
 
 // 冲销凭证请求
@@ -1645,6 +1737,8 @@ message ReverseJournalEntryRequest {
   ReversalType reversal_type = 4;
   // 冲销原因代码
   string reversal_reason_code = 5;
+  // 总账凭证唯一标识 (REST 映射)
+  string journal_entry_id = 6;
 }
 
 // 查询凭证请求
@@ -1753,12 +1847,16 @@ message UpdateJournalEntryRequest {
   repeated JournalEntryLineItem line_items = 3;
   // 指定要更新的字段掩码
   repeated string update_mask = 4;
+  // 总账凭证唯一标识 (REST 映射)
+  string journal_entry_id = 5;
 }
 
 // 删除凭证请求
 message DeleteJournalEntryRequest {
   // 要删除的凭证引用
   common.SystemDocumentReference document_reference = 1;
+  // 总账凭证唯一标识 (REST 映射)
+  string journal_entry_id = 2;
 }
 
 // 过账凭证请求
@@ -1767,6 +1865,8 @@ message PostJournalEntryRequest {
   common.SystemDocumentReference document_reference = 1;
   // 过账日期 (可选，默认使用凭证中的过账日期)
   google.protobuf.Timestamp posting_date = 2;
+  // 总账凭证唯一标识 (REST 映射)
+  string journal_entry_id = 3;
 }
 
 // 取消凭证请求
@@ -1775,6 +1875,8 @@ message CancelJournalEntryRequest {
   common.SystemDocumentReference document_reference = 1;
   // 取消原因
   string cancellation_reason = 2;
+  // 总账凭证唯一标识 (REST 映射)
+  string journal_entry_id = 3;
 }
 
 // --------------------------------------------------------------------------
@@ -1981,6 +2083,8 @@ message ResetJournalEntryRequest {
   common.SystemDocumentReference document_reference = 1;
   // 重置原因
   string reset_reason = 2;
+  // 总账凭证唯一标识 (REST 映射)
+  string journal_entry_id = 3;
 }
 
 // --------------------------------------------------------------------------
@@ -2067,6 +2171,8 @@ message ResetClearingRequest {
   common.SystemDocumentReference clearing_document_reference = 1;
   // 取消清账原因
   string reset_reason = 2;
+  // 清账唯一标识 (REST 映射)
+  string clearing_id = 3;
 }
 
 // 取消清账响应
@@ -2135,6 +2241,8 @@ message OpenItemInfo {
 message GetJournalEntryTaxDetailsRequest {
   // 凭证引用
   common.SystemDocumentReference document_reference = 1;
+  // 总账凭证税务详情唯一标识 (REST 映射)
+  string journal_entry_tax_detail_id = 2;
 }
 
 // 凭证税务详情响应
@@ -2198,6 +2306,8 @@ message GetPaymentInformationRequest {
   common.SystemDocumentReference document_reference = 1;
   // 行项目号 (可选，不提供则返回所有行项目的支付信息)
   int32 line_item_number = 2;
+  // 支付信息唯一标识 (REST 映射)
+  string payment_information_id = 3;
 }
 
 // 支付信息响应
@@ -2222,6 +2332,8 @@ message UpdatePaymentStatusRequest {
   google.protobuf.Timestamp payment_date = 5;
   // 支付金额
   string payment_amount = 6;
+  // 支付状态唯一标识 (REST 映射)
+  string payment_status_id = 100;
 }
 
 // 更新支付状态响应
@@ -2346,6 +2458,8 @@ message ApproveJournalEntryRequest {
   string workflow_instance_id = 2;
   // 审批意见
   string approval_comments = 3;
+  // 总账凭证唯一标识 (REST 映射)
+  string journal_entry_id = 4;
 }
 
 // 审批凭证响应
@@ -2368,6 +2482,8 @@ message RejectJournalEntryRequest {
   string workflow_instance_id = 2;
   // 拒绝原因
   string rejection_reason = 3;
+  // 总账凭证唯一标识 (REST 映射)
+  string journal_entry_id = 4;
 }
 
 // 拒绝凭证响应
@@ -2492,6 +2608,8 @@ message PostParkedJournalEntryRequest {
   common.SystemDocumentReference parked_document_reference = 1;
   // 过账日期 (可选)
   google.protobuf.Timestamp posting_date = 2;
+  // 停放凭证唯一标识 (REST 映射)
+  string parked_journal_entry_id = 3;
 }
 
 // --------------------------------------------------------------------------
@@ -2663,6 +2781,8 @@ message GetDocumentChainRequest {
   bool include_predecessors = 2;
   // 是否包括后续凭证
   bool include_successors = 3;
+  // 凭证链唯一标识 (REST 映射)
+  string document_chain_id = 4;
 }
 
 // 凭证链响应
@@ -2949,6 +3069,8 @@ message BatchInputProcessingResult {
 message GetBatchInputSessionStatusRequest {
   // 会话ID
   string session_id = 1;
+  // 会话状态唯一标识 (REST 映射)
+  string batch_input_session_status_id = 2;
 }
 
 // 批量输入会话状态响应
@@ -2971,6 +3093,8 @@ message BatchInputSessionStatusResponse {
 message GetDocumentSplitDetailsRequest {
   // 凭证引用
   common.SystemDocumentReference document_reference = 1;
+  // 凭证拆分详情唯一标识 (REST 映射)
+  string document_split_detail_id = 2;
 }
 
 // 凭证拆分详情响应
@@ -3023,6 +3147,8 @@ message GetParallelLedgerDataRequest {
   common.SystemDocumentReference document_reference = 1;
   // 分类账列表 (可选，不提供则返回所有分类账)
   repeated string ledgers = 2;
+  // 并行分类账数据唯一标识 (REST 映射)
+  string parallel_ledger_data_id = 3;
 }
 
 // 并行分类账数据响应
@@ -3085,6 +3211,8 @@ message GetAccountBalancesRequest {
   int32 fiscal_period = 4;
   // 分类账
   string ledger = 5;
+  // 科目余额唯一标识 (REST 映射)
+  string account_balance_id = 6;
 }
 
 // 科目余额响应
@@ -3125,6 +3253,8 @@ message GetAccountLineItemsRequest {
   common.PaginationRequest pagination = 4;
   // 是否只显示未清项目
   bool open_items_only = 5;
+  // 科目明细唯一标识 (REST 映射)
+  string account_line_item_id = 6;
 }
 
 // 科目余额明细响应

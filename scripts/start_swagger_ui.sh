@@ -12,11 +12,11 @@ docker run -d \
   --name swagger-ui \
   -p 8081:8080 \
   -e URLS="[
-    {url: 'http://localhost:8081/auth_service.swagger.json', name: 'Auth Service (认证服务)'},
-    {url: 'http://localhost:8081/gl_journal_entry.swagger.json', name: 'Finance Service (财务服务)'}
+    {url: 'http://localhost:8081/auth_service.openapi3.json', name: 'Auth Service (认证服务) - OpenAPI 3.0'},
+    {url: 'http://localhost:8081/gl_journal_entry.openapi3.json', name: 'Finance Service (财务服务) - OpenAPI 3.0'}
   ]" \
-  -v "$(pwd)/docs/auth/auth_service.swagger.json:/usr/share/nginx/html/auth_service.swagger.json:ro" \
-  -v "$(pwd)/docs/finance/gl_journal_entry.swagger.json:/usr/share/nginx/html/gl_journal_entry.swagger.json:ro" \
+  -v "$(pwd)/docs/auth/auth_service.openapi3.json:/usr/share/nginx/html/auth_service.openapi3.json:ro" \
+  -v "$(pwd)/docs/finance/gl_journal_entry.openapi3.json:/usr/share/nginx/html/gl_journal_entry.openapi3.json:ro" \
   swaggerapi/swagger-ui
 
 echo ""

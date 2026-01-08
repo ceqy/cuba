@@ -1,17 +1,31 @@
 syntax = "proto3";
 
 package auth;
+option go_package = "github.com/yourproject/auth";
+
 
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/openapiv2.proto";
 
 // 认证服务 - 用户身份验证与授权管理
 service AuthService {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "用户身份验证、双因素认证、RBAC 权限管理及租户管理服务"
+    external_docs: {
+      url: "https://yourproject.com/docs/auth";
+      description: "认证服务详细文档";
+    }
+  };
   // 用户注册
   rpc Register(RegisterRequest) returns (RegisterResponse) {
     option (google.api.http) = {
       post: "/api/v1/auth/register"
       body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity Management"
+      summary: "用户注册"
     };
   }
 
@@ -21,6 +35,10 @@ service AuthService {
       post: "/api/v1/auth/login"
       body: "*"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity Management"
+      summary: "用户登录"
+    };
   }
 
   // 用户登出
@@ -29,6 +47,10 @@ service AuthService {
       post: "/api/v1/auth/logout"
       body: "*"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity Management"
+      summary: "用户登出"
+    };
   }
 
   // 刷新令牌
@@ -36,6 +58,10 @@ service AuthService {
     option (google.api.http) = {
       post: "/api/v1/auth/refresh"
       body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity Management"
+      summary: "刷新令牌"
     };
   }
 
@@ -52,6 +78,10 @@ service AuthService {
     option (google.api.http) = {
       get: "/api/v1/auth/me"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity Management"
+      summary: "获取用户信息"
+    };
   }
 
   // --- RBAC 权限管理 ---
@@ -60,6 +90,10 @@ service AuthService {
     option (google.api.http) = {
       post: "/api/v1/roles"
       body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Role & Permission Management"
+      summary: "创建角色"
     };
   }
 
@@ -92,6 +126,10 @@ service AuthService {
       post: "/api/v1/auth/change-password"
       body: "*"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity Management"
+      summary: "修改密码"
+    };
   }
 
   // 重置密码（忘记密码流程）
@@ -99,6 +137,10 @@ service AuthService {
     option (google.api.http) = {
       post: "/api/v1/auth/reset-password"
       body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity Management"
+      summary: "重置密码（忘记密码流程）"
     };
   }
 
@@ -116,6 +158,10 @@ service AuthService {
       post: "/api/v1/auth/verify-email"
       body: "*"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity Management"
+      summary: "邮箱验证"
+    };
   }
 
   // 更新用户信息（昵称、头像等）
@@ -131,12 +177,20 @@ service AuthService {
     option (google.api.http) = {
       get: "/api/v1/roles"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Role & Permission Management"
+      summary: "列出角色（管理员用）"
+    };
   }
 
   // 列出所有权限（管理员用）
   rpc ListPermissions(ListPermissionsRequest) returns (ListPermissionsResponse) {
     option (google.api.http) = {
       get: "/api/v1/permissions"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Role & Permission Management"
+      summary: "列出所有权限（管理员用）"
     };
   }
 
@@ -187,6 +241,10 @@ service AuthService {
     option (google.api.http) = {
       post: "/api/v1/auth/2fa/enable"
       body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Security & 2FA"
+      summary: "启用双因素认证"
     };
   }
 

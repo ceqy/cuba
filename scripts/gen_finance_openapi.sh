@@ -64,9 +64,23 @@ EOF
     echo "✅ 已创建基础 OpenAPI 文档"
 }
 
+# 检查生成的文档并移动到预期位置
+if [ -f "docs/finance/gl/gl_journal_entry.swagger.json" ]; then
+    mv docs/finance/gl/gl_journal_entry.swagger.json docs/finance/gl_journal_entry.swagger.json
+    rmdir docs/finance/gl 2>/dev/null || true
+fi
+
 if [ -f "docs/finance/gl_journal_entry.swagger.json" ]; then
-    echo "✅ 财务服务 OpenAPI 文档: docs/finance/gl_journal_entry.swagger.json"
-    ls -lh docs/finance/gl_journal_entry.swagger.json
+    echo "✅ 财务服务 OpenAPI 2.0 文档: docs/finance/gl_journal_entry.swagger.json"
+    
+    echo "🔄 正在转换为 OpenAPI 3.0..."
+    npx -y swagger2openapi -o docs/finance/gl_journal_entry.openapi3.json docs/finance/gl_journal_entry.swagger.json
+    
+    echo "🏷️  正在添加标签描述..."
+    python3 scripts/add_tag_descriptions.py finance
+    
+    echo "✅ 财务服务 OpenAPI 3.0 文档: docs/finance/gl_journal_entry.openapi3.json"
+    ls -lh docs/finance/gl_journal_entry.openapi3.json
 else
     echo "❌ 文档生成失败"
     exit 1

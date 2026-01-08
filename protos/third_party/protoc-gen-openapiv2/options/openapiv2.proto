@@ -13,6 +13,10 @@ extend google.protobuf.FileOptions {
   Swagger openapiv2_swagger = 1042;
 }
 
+extend google.protobuf.ServiceOptions {
+  Tag openapiv2_tag = 1042;
+}
+
 extend google.protobuf.MethodOptions {
   Operation openapiv2_operation = 1042;
 }
