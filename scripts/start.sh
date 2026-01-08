@@ -18,7 +18,7 @@ sleep 3
 # 2. Envoy
 echo "  [2/3] Starting Envoy Transcoder..."
 docker run --rm -d --name envoy-transcoder \
-  -v "$(pwd)/protos/auth/auth_service.pb:/etc/envoy/auth_service.pb:ro" \
+  -v "$(pwd)/protos/combined_services.pb:/etc/envoy/combined_services.pb:ro" \
   -v "$(pwd)/deployments/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro" \
   -p 8080:8080 -p 9901:9901 \
   envoyproxy/envoy:v1.28-latest -c /etc/envoy/envoy.yaml
@@ -27,8 +27,9 @@ docker run --rm -d --name envoy-transcoder \
 echo "  [3/3] Starting Swagger UI..."
 docker run --rm -d --name swagger-ui \
   -p 8081:8080 \
-  -e SWAGGER_JSON=/docs/auth_service.swagger.json \
-  -v "$(pwd)/docs/auth:/docs" \
+  -e URLS="[{url:'/docs/auth/auth_service.openapi3.json',name:'Auth Service'},{url:'/docs/finance/gl_journal_entry.openapi3.json',name:'Finance GL Service'}]" \
+  -e PERSIST_AUTHORIZATION=true \
+  -v "$(pwd)/docs:/usr/share/nginx/html/docs" \
   swaggerapi/swagger-ui
 
 echo ""

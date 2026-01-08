@@ -47,7 +47,7 @@ static_resources:
                       proto_descriptor: "/etc/envoy/combined_services.pb"
                       services:
                         - "auth.AuthService"
-                        - "finance.gl.GeneralLedgerJournalEntryService"
+                        - "finance.gl.GlJournalEntryService"
                       print_options:
                         add_whitespace: true
                         always_print_primitive_fields: true
