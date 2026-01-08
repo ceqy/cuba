@@ -2,7 +2,8 @@
 resolver = "2"
 members = [
     "libs/*",
-    "apps/*",
+    "apps/*-service",
+    "apps/finance/*",
 ]
 
 [workspace.package]

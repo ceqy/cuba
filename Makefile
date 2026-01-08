@@ -24,6 +24,7 @@ help:
 	@echo "Services:"
 	@echo "  make run-auth       - Run auth-service"
 	@echo "  make run-sales      - Run sales-service"
+	@echo "  make run-gl         - Run gl-service (finance)"
 	@echo ""
 	@echo "Infrastructure:"
 	@echo "  make docker-up      - Start Docker containers"
@@ -76,8 +77,10 @@ run-auth:
 run-sales:
 	cargo run -p sales-service
 
-run-finance:
-	cargo run -p finance-service
+run-gl:
+	cargo run -p gl-service
+
+run-finance: run-gl
 
 # ===================
 # Infrastructure

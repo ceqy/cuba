@@ -15,10 +15,10 @@ protoc -I./protos -I./protos/third_party \
   --openapiv2_out=./docs \
   --openapiv2_opt logtostderr=true \
   --openapiv2_opt allow_delete_body=true \
-  protos/finance/gl_journal_entry_service.proto 2>&1 || {
+  protos/finance/gl/gl_journal_entry.proto 2>&1 || {
     echo "⚠️  OpenAPI 生成遇到问题，使用备用方案..."
     # 创建一个基础的 OpenAPI 文档
-    cat > docs/finance/gl_journal_entry_service.swagger.json << 'EOF'
+    cat > docs/finance/gl_journal_entry.swagger.json << 'EOF'
 {
   "swagger": "2.0",
   "info": {
@@ -64,9 +64,9 @@ EOF
     echo "✅ 已创建基础 OpenAPI 文档"
 }
 
-if [ -f "docs/finance/gl_journal_entry_service.swagger.json" ]; then
-    echo "✅ 财务服务 OpenAPI 文档: docs/finance/gl_journal_entry_service.swagger.json"
-    ls -lh docs/finance/gl_journal_entry_service.swagger.json
+if [ -f "docs/finance/gl_journal_entry.swagger.json" ]; then
+    echo "✅ 财务服务 OpenAPI 文档: docs/finance/gl_journal_entry.swagger.json"
+    ls -lh docs/finance/gl_journal_entry.swagger.json
 else
     echo "❌ 文档生成失败"
     exit 1

@@ -1364,7 +1364,7 @@ message JournalEntryLineItem {
 // 完整的凭证详情
 message JournalEntryDetail {
   // 核心ERP系统中的凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 凭证抬头
   JournalEntryHeader header = 2;
   // 凭证行项目列表
@@ -1378,7 +1378,7 @@ message JournalEntryDetail {
   // 审批历史
   repeated ApprovalHistoryEntry approval_history = 7;
   // 审计信息
-  enterprise.common.AuditData audit_data = 8;
+  common.AuditData audit_data = 8;
 }
 
 // --------------------------------------------------------------------------
@@ -1622,21 +1622,21 @@ message JournalEntryResponse {
   // 操作是否成功
   bool success = 1;
   // 核心ERP系统中的凭证引用 (如果成功)
-  enterprise.common.SystemDocumentReference document_reference = 2;
+  common.SystemDocumentReference document_reference = 2;
   // 从核心ERP返回的消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.ApiMessage messages = 3;
 }
 
 // 获取凭证请求
 message GetJournalEntryRequest {
   // 核心ERP系统中的凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
 }
 
 // 冲销凭证请求
 message ReverseJournalEntryRequest {
   // 要冲销的凭证引用
-  enterprise.common.SystemDocumentReference document_to_reverse = 1;
+  common.SystemDocumentReference document_to_reverse = 1;
   // 冲销原因
   string reversal_reason = 2;
   // 冲销过账日期
@@ -1654,13 +1654,13 @@ message ListJournalEntriesRequest {
   // 会计年度
   int32 fiscal_year = 2;
   // 过账日期范围
-  enterprise.common.DateRange posting_date_range = 3;
+  common.DateRange posting_date_range = 3;
   // 凭证类型
   string document_type = 4;
   // 创建人
   string created_by = 5;
   // 分页请求
-  enterprise.common.PaginationRequest pagination = 6;
+  common.PaginationRequest pagination = 6;
   // 凭证状态过滤
   repeated JournalEntryStatus status_filter = 7;
   // 总账科目
@@ -1678,13 +1678,13 @@ message ListJournalEntriesResponse {
   // 凭证摘要列表
   repeated JournalEntrySummary entries = 1;
   // 分页响应
-  enterprise.common.PaginationResponse pagination = 2;
+  common.PaginationResponse pagination = 2;
 }
 
 // 凭证摘要信息
 message JournalEntrySummary {
   // 核心ERP系统中的凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 凭证日期
   google.protobuf.Timestamp document_date = 2;
   // 过账日期
@@ -1720,7 +1720,7 @@ message BatchCreateJournalEntriesRequest {
 // 批量创建凭证响应
 message BatchCreateJournalEntriesResponse {
   // 批量操作结果统计
-  enterprise.common.BatchOperationResult result = 1;
+  common.BatchOperationResult result = 1;
   // 各个凭证的响应详情
   repeated JournalEntryResponse responses = 2;
 }
@@ -1734,7 +1734,7 @@ message BatchReverseJournalEntriesRequest {
 // 批量冲销凭证响应
 message BatchReverseJournalEntriesResponse {
   // 批量操作结果统计
-  enterprise.common.BatchOperationResult result = 1;
+  common.BatchOperationResult result = 1;
   // 各个凭证的响应详情
   repeated JournalEntryResponse responses = 2;
 }
@@ -1746,7 +1746,7 @@ message BatchReverseJournalEntriesResponse {
 // 更新凭证请求
 message UpdateJournalEntryRequest {
   // 要更新的凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 更新的凭证抬头
   JournalEntryHeader header = 2;
   // 更新的凭证行项目列表
@@ -1758,13 +1758,13 @@ message UpdateJournalEntryRequest {
 // 删除凭证请求
 message DeleteJournalEntryRequest {
   // 要删除的凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
 }
 
 // 过账凭证请求
 message PostJournalEntryRequest {
   // 要过账的凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 过账日期 (可选，默认使用凭证中的过账日期)
   google.protobuf.Timestamp posting_date = 2;
 }
@@ -1772,7 +1772,7 @@ message PostJournalEntryRequest {
 // 取消凭证请求
 message CancelJournalEntryRequest {
   // 要取消的凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 取消原因
   string cancellation_reason = 2;
 }
@@ -1794,7 +1794,7 @@ message ValidationResponse {
   // 验证是否通过
   bool is_valid = 1;
   // 验证消息列表 (错误、警告、信息)
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.ApiMessage messages = 2;
   // 具体的验证错误详情
   repeated ValidationError errors = 3;
 }
@@ -1824,9 +1824,9 @@ message GetJournalEntriesByAccountRequest {
   // 会计年度
   int32 fiscal_year = 3;
   // 过账日期范围
-  enterprise.common.DateRange posting_date_range = 4;
+  common.DateRange posting_date_range = 4;
   // 分页请求
-  enterprise.common.PaginationRequest pagination = 5;
+  common.PaginationRequest pagination = 5;
 }
 
 // --------------------------------------------------------------------------
@@ -1858,7 +1858,7 @@ message ExportJournalEntriesResponse {
   // 导出的记录数
   int32 exported_count = 5;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 6;
+  repeated common.ApiMessage messages = 6;
 }
 
 // --------------------------------------------------------------------------
@@ -1872,7 +1872,7 @@ message GetJournalEntryStatisticsRequest {
   // 会计年度
   int32 fiscal_year = 2;
   // 统计日期范围
-  enterprise.common.DateRange date_range = 3;
+  common.DateRange date_range = 3;
   // 按字段分组统计 (例如: "document_type", "created_by", "fiscal_period")
   repeated string group_by_fields = 4;
 }
@@ -1954,7 +1954,7 @@ message SimulationResponse {
   // 模拟是否成功
   bool success = 1;
   // 模拟结果消息
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.ApiMessage messages = 2;
   // 模拟的凭证详情
   JournalEntryDetail simulated_entry = 3;
   // 预计的会计科目余额变化
@@ -1978,7 +1978,7 @@ message AccountBalanceChange {
 // 重置凭证请求
 message ResetJournalEntryRequest {
   // 要重置的凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 重置原因
   string reset_reason = 2;
 }
@@ -1990,13 +1990,13 @@ message ResetJournalEntryRequest {
 // 获取凭证历史请求
 message GetJournalEntryHistoryRequest {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
 }
 
 // 凭证历史响应
 message JournalEntryHistoryResponse {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 历史记录列表
   repeated JournalEntryHistoryEntry history_entries = 2;
 }
@@ -2054,9 +2054,9 @@ message ClearOpenItemsResponse {
   // 操作是否成功
   bool success = 1;
   // 清账凭证引用
-  enterprise.common.SystemDocumentReference clearing_document_reference = 2;
+  common.SystemDocumentReference clearing_document_reference = 2;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.ApiMessage messages = 3;
   // 清账详情
   ClearingInformation clearing_info = 4;
 }
@@ -2064,7 +2064,7 @@ message ClearOpenItemsResponse {
 // 取消清账请求
 message ResetClearingRequest {
   // 清账凭证引用
-  enterprise.common.SystemDocumentReference clearing_document_reference = 1;
+  common.SystemDocumentReference clearing_document_reference = 1;
   // 取消清账原因
   string reset_reason = 2;
 }
@@ -2074,7 +2074,7 @@ message ResetClearingResponse {
   // 操作是否成功
   bool success = 1;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.ApiMessage messages = 2;
 }
 
 // 查询未清项目请求
@@ -2086,9 +2086,9 @@ message ListOpenItemsRequest {
   // 科目号
   string account_number = 3;
   // 日期范围
-  enterprise.common.DateRange date_range = 4;
+  common.DateRange date_range = 4;
   // 分页请求
-  enterprise.common.PaginationRequest pagination = 5;
+  common.PaginationRequest pagination = 5;
 }
 
 // 查询未清项目响应
@@ -2096,7 +2096,7 @@ message ListOpenItemsResponse {
   // 未清项目列表
   repeated OpenItemInfo open_items = 1;
   // 分页响应
-  enterprise.common.PaginationResponse pagination = 2;
+  common.PaginationResponse pagination = 2;
   // 未清项目总金额
   string total_open_amount = 3;
 }
@@ -2104,7 +2104,7 @@ message ListOpenItemsResponse {
 // 未清项目信息
 message OpenItemInfo {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 行项目号
   int32 line_item_number = 2;
   // 过账日期
@@ -2134,13 +2134,13 @@ message OpenItemInfo {
 // 获取凭证税务详情请求
 message GetJournalEntryTaxDetailsRequest {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
 }
 
 // 凭证税务详情响应
 message JournalEntryTaxDetailsResponse {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 税务行项目列表
   repeated TaxLineItem tax_items = 2;
   // 税务汇总
@@ -2172,7 +2172,7 @@ message TaxCodeSummary {
 // 重新计算税额请求
 message RecalculateTaxRequest {
   // 凭证引用 (对于已存在的凭证)
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 或者提供凭证数据 (对于新凭证)
   JournalEntryHeader header = 2;
   repeated JournalEntryLineItem line_items = 3;
@@ -2185,7 +2185,7 @@ message RecalculateTaxResponse {
   // 重新计算的税务行项目
   repeated TaxLineItem recalculated_tax_items = 2;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.ApiMessage messages = 3;
 }
 
 // --------------------------------------------------------------------------
@@ -2195,7 +2195,7 @@ message RecalculateTaxResponse {
 // 获取支付信息请求
 message GetPaymentInformationRequest {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 行项目号 (可选，不提供则返回所有行项目的支付信息)
   int32 line_item_number = 2;
 }
@@ -2203,7 +2203,7 @@ message GetPaymentInformationRequest {
 // 支付信息响应
 message PaymentInformationResponse {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 支付信息列表
   repeated PaymentInformation payment_info = 2;
 }
@@ -2211,7 +2211,7 @@ message PaymentInformationResponse {
 // 更新支付状态请求
 message UpdatePaymentStatusRequest {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 行项目号
   int32 line_item_number = 2;
   // 新的支付状态
@@ -2231,7 +2231,7 @@ message UpdatePaymentStatusResponse {
   // 更新后的支付信息
   PaymentInformation updated_payment_info = 2;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.ApiMessage messages = 3;
 }
 
 // --------------------------------------------------------------------------
@@ -2241,7 +2241,7 @@ message UpdatePaymentStatusResponse {
 // 上传附件请求
 message UploadAttachmentRequest {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 文件名
   string file_name = 2;
   // 文件内容 (Base64 编码)
@@ -2259,13 +2259,13 @@ message UploadAttachmentResponse {
   // 附件信息
   AttachmentInfo attachment_info = 2;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.ApiMessage messages = 3;
 }
 
 // 下载附件请求
 message DownloadAttachmentRequest {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 附件ID
   string attachment_id = 2;
 }
@@ -2279,19 +2279,19 @@ message DownloadAttachmentResponse {
   // 文件内容 (Base64 编码)
   bytes file_content = 3;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 4;
+  repeated common.ApiMessage messages = 4;
 }
 
 // 列出附件请求
 message ListAttachmentsRequest {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
 }
 
 // 列出附件响应
 message ListAttachmentsResponse {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 附件列表
   repeated AttachmentInfo attachments = 2;
 }
@@ -2299,7 +2299,7 @@ message ListAttachmentsResponse {
 // 删除附件请求
 message DeleteAttachmentRequest {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 附件ID
   string attachment_id = 2;
 }
@@ -2309,7 +2309,7 @@ message DeleteAttachmentResponse {
   // 操作是否成功
   bool success = 1;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.ApiMessage messages = 2;
 }
 
 // --------------------------------------------------------------------------
@@ -2319,7 +2319,7 @@ message DeleteAttachmentResponse {
 // 提交审批请求
 message SubmitForApprovalRequest {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 审批流程ID (可选)
   string workflow_definition_id = 2;
   // 提交说明
@@ -2335,13 +2335,13 @@ message SubmitForApprovalResponse {
   // 待审批人列表
   repeated string pending_approvers = 3;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 4;
+  repeated common.ApiMessage messages = 4;
 }
 
 // 审批凭证请求
 message ApproveJournalEntryRequest {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 工作流实例ID
   string workflow_instance_id = 2;
   // 审批意见
@@ -2357,13 +2357,13 @@ message ApproveJournalEntryResponse {
   // 下一步待审批人 (如果工作流未完成)
   repeated string next_approvers = 3;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 4;
+  repeated common.ApiMessage messages = 4;
 }
 
 // 拒绝凭证请求
 message RejectJournalEntryRequest {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 工作流实例ID
   string workflow_instance_id = 2;
   // 拒绝原因
@@ -2375,19 +2375,19 @@ message RejectJournalEntryResponse {
   // 操作是否成功
   bool success = 1;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.ApiMessage messages = 2;
 }
 
 // 获取审批历史请求
 message GetApprovalHistoryRequest {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
 }
 
 // 审批历史响应
 message ApprovalHistoryResponse {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 工作流信息
   WorkflowInformation workflow_info = 2;
   // 审批历史记录
@@ -2401,7 +2401,7 @@ message ApprovalHistoryResponse {
 // 生成打印预览请求
 message GeneratePrintPreviewRequest {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 打印格式 (PDF, HTML, etc.)
   ExportFormat format = 2;
   // 打印模板ID (可选)
@@ -2421,7 +2421,7 @@ message GeneratePrintPreviewResponse {
   // 文件名
   string file_name = 4;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 5;
+  repeated common.ApiMessage messages = 5;
 }
 
 // --------------------------------------------------------------------------
@@ -2443,9 +2443,9 @@ message ParkJournalEntryResponse {
   // 操作是否成功
   bool success = 1;
   // 停放凭证引用
-  enterprise.common.SystemDocumentReference parked_document_reference = 2;
+  common.SystemDocumentReference parked_document_reference = 2;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.ApiMessage messages = 3;
 }
 
 // 查询停放凭证列表请求
@@ -2455,9 +2455,9 @@ message ListParkedJournalEntriesRequest {
   // 停放人
   string parked_by = 2;
   // 日期范围
-  enterprise.common.DateRange date_range = 3;
+  common.DateRange date_range = 3;
   // 分页请求
-  enterprise.common.PaginationRequest pagination = 4;
+  common.PaginationRequest pagination = 4;
 }
 
 // 查询停放凭证列表响应
@@ -2465,13 +2465,13 @@ message ListParkedJournalEntriesResponse {
   // 停放凭证列表
   repeated ParkedJournalEntrySummary parked_entries = 1;
   // 分页响应
-  enterprise.common.PaginationResponse pagination = 2;
+  common.PaginationResponse pagination = 2;
 }
 
 // 停放凭证摘要
 message ParkedJournalEntrySummary {
   // 停放凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 凭证日期
   google.protobuf.Timestamp document_date = 2;
   // 停放日期
@@ -2489,7 +2489,7 @@ message ParkedJournalEntrySummary {
 // 从停放凭证过账请求
 message PostParkedJournalEntryRequest {
   // 停放凭证引用
-  enterprise.common.SystemDocumentReference parked_document_reference = 1;
+  common.SystemDocumentReference parked_document_reference = 1;
   // 过账日期 (可选)
   google.protobuf.Timestamp posting_date = 2;
 }
@@ -2523,7 +2523,7 @@ message RecurringEntryResponse {
   // 重复凭证ID
   string recurring_entry_id = 2;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.ApiMessage messages = 3;
 }
 
 // 执行重复凭证请求
@@ -2541,9 +2541,9 @@ message ExecuteRecurringEntryResponse {
   // 操作是否成功
   bool success = 1;
   // 生成的凭证引用列表
-  repeated enterprise.common.SystemDocumentReference generated_documents = 2;
+  repeated common.SystemDocumentReference generated_documents = 2;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.ApiMessage messages = 3;
 }
 
 // 查询重复凭证列表请求
@@ -2553,7 +2553,7 @@ message ListRecurringEntriesRequest {
   // 创建人
   string created_by = 2;
   // 分页请求
-  enterprise.common.PaginationRequest pagination = 3;
+  common.PaginationRequest pagination = 3;
 }
 
 // 查询重复凭证列表响应
@@ -2561,7 +2561,7 @@ message ListRecurringEntriesResponse {
   // 重复凭证列表
   repeated RecurringEntrySummary recurring_entries = 1;
   // 分页响应
-  enterprise.common.PaginationResponse pagination = 2;
+  common.PaginationResponse pagination = 2;
 }
 
 // 重复凭证摘要
@@ -2583,7 +2583,7 @@ message RecurringEntrySummary {
 // 保存为模板请求
 message SaveAsTemplateRequest {
   // 凭证引用 (从现有凭证创建模板)
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 或者提供凭证数据
   JournalEntryHeader header = 2;
   repeated JournalEntryLineItem line_items = 3;
@@ -2602,7 +2602,7 @@ message SaveAsTemplateResponse {
   // 模板ID
   string template_id = 2;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.ApiMessage messages = 3;
 }
 
 // 从模板创建凭证请求
@@ -2622,7 +2622,7 @@ message ListTemplatesRequest {
   // 创建人
   string created_by = 2;
   // 分页请求
-  enterprise.common.PaginationRequest pagination = 3;
+  common.PaginationRequest pagination = 3;
 }
 
 // 查询模板列表响应
@@ -2630,7 +2630,7 @@ message ListTemplatesResponse {
   // 模板列表
   repeated TemplateSummary templates = 1;
   // 分页响应
-  enterprise.common.PaginationResponse pagination = 2;
+  common.PaginationResponse pagination = 2;
 }
 
 // 模板摘要
@@ -2658,7 +2658,7 @@ message TemplateSummary {
 // 获取凭证链请求
 message GetDocumentChainRequest {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 是否包括前置凭证
   bool include_predecessors = 2;
   // 是否包括后续凭证
@@ -2668,7 +2668,7 @@ message GetDocumentChainRequest {
 // 凭证链响应
 message DocumentChainResponse {
   // 原始凭证引用
-  enterprise.common.SystemDocumentReference original_document = 1;
+  common.SystemDocumentReference original_document = 1;
   // 前置凭证列表
   repeated DocumentChainNode predecessors = 2;
   // 后续凭证列表
@@ -2678,7 +2678,7 @@ message DocumentChainResponse {
 // 凭证链节点
 message DocumentChainNode {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 凭证类型
   string document_type = 2;
   // 凭证日期
@@ -2696,7 +2696,7 @@ message ReconcileDocumentsRequest {
   // 科目号
   string account_number = 2;
   // 对账期间
-  enterprise.common.DateRange reconciliation_period = 3;
+  common.DateRange reconciliation_period = 3;
   // 对账类型 (例如: "GL_SUBLEDGER", "INTERCOMPANY")
   string reconciliation_type = 4;
 }
@@ -2708,7 +2708,7 @@ message ReconcileDocumentsResponse {
   // 对账结果
   ReconciliationResult reconciliation_result = 2;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.ApiMessage messages = 3;
 }
 
 // 对账结果
@@ -2726,7 +2726,7 @@ message ReconciliationResult {
 // 未匹配项目
 message UnmatchedItem {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 行项目号
   int32 line_item_number = 2;
   // 金额
@@ -2760,7 +2760,7 @@ message PeriodEndCloseResponse {
   // 关账任务列表
   repeated PeriodEndTask tasks = 3;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 4;
+  repeated common.ApiMessage messages = 4;
 }
 
 // 期末任务
@@ -2796,11 +2796,11 @@ message RevaluationResponse {
   // 操作是否成功
   bool success = 1;
   // 生成的凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 2;
+  common.SystemDocumentReference document_reference = 2;
   // 重估结果列表
   repeated RevaluationResult revaluation_results = 3;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 4;
+  repeated common.ApiMessage messages = 4;
 }
 
 // 重估结果
@@ -2834,11 +2834,11 @@ message ReclassificationResponse {
   // 操作是否成功
   bool success = 1;
   // 生成的凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 2;
+  common.SystemDocumentReference document_reference = 2;
   // 重分类结果列表
   repeated ReclassificationResult reclassification_results = 3;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 4;
+  repeated common.ApiMessage messages = 4;
 }
 
 // 重分类结果
@@ -2872,11 +2872,11 @@ message CarryForwardBalancesResponse {
   // 操作是否成功
   bool success = 1;
   // 生成的凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 2;
+  common.SystemDocumentReference document_reference = 2;
   // 结转结果列表
   repeated CarryForwardResult carry_forward_results = 3;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 4;
+  repeated common.ApiMessage messages = 4;
 }
 
 // 结转结果
@@ -2912,7 +2912,7 @@ message BatchInputSessionResponse {
   // 会话状态
   BatchInputSessionStatus status = 3;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 4;
+  repeated common.ApiMessage messages = 4;
 }
 
 // 处理批量输入会话请求
@@ -2930,7 +2930,7 @@ message ProcessBatchInputSessionResponse {
   // 处理结果
   BatchInputProcessingResult processing_result = 2;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.ApiMessage messages = 3;
 }
 
 // 批量输入处理结果
@@ -2942,7 +2942,7 @@ message BatchInputProcessingResult {
   // 失败数
   int32 failed_count = 3;
   // 失败详情
-  repeated enterprise.common.ErrorDetail errors = 4;
+  repeated common.ErrorDetail errors = 4;
 }
 
 // 查询批量输入会话状态请求
@@ -2970,13 +2970,13 @@ message BatchInputSessionStatusResponse {
 // 获取凭证拆分详情请求
 message GetDocumentSplitDetailsRequest {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
 }
 
 // 凭证拆分详情响应
 message DocumentSplitDetailsResponse {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 拆分方法
   DocumentSplittingMethod splitting_method = 2;
   // 拆分结果列表
@@ -3010,7 +3010,7 @@ message ConfigureDocumentSplittingResponse {
   // 操作是否成功
   bool success = 1;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.ApiMessage messages = 2;
 }
 
 // --------------------------------------------------------------------------
@@ -3020,7 +3020,7 @@ message ConfigureDocumentSplittingResponse {
 // 获取并行分类账数据请求
 message GetParallelLedgerDataRequest {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 分类账列表 (可选，不提供则返回所有分类账)
   repeated string ledgers = 2;
 }
@@ -3028,7 +3028,7 @@ message GetParallelLedgerDataRequest {
 // 并行分类账数据响应
 message ParallelLedgerDataResponse {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 分类账数据列表
   repeated LedgerData ledger_data = 2;
 }
@@ -3052,7 +3052,7 @@ message LedgerData {
 // 调整并行分类账请求
 message AdjustParallelLedgerRequest {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 目标分类账
   string target_ledger = 2;
   // 调整行项目
@@ -3064,9 +3064,9 @@ message AdjustParallelLedgerResponse {
   // 操作是否成功
   bool success = 1;
   // 调整凭证引用
-  enterprise.common.SystemDocumentReference adjustment_document_reference = 2;
+  common.SystemDocumentReference adjustment_document_reference = 2;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.ApiMessage messages = 3;
 }
 
 // --------------------------------------------------------------------------
@@ -3120,9 +3120,9 @@ message GetAccountLineItemsRequest {
   // 科目号
   string gl_account = 2;
   // 日期范围
-  enterprise.common.DateRange date_range = 3;
+  common.DateRange date_range = 3;
   // 分页请求
-  enterprise.common.PaginationRequest pagination = 4;
+  common.PaginationRequest pagination = 4;
   // 是否只显示未清项目
   bool open_items_only = 5;
 }
@@ -3134,13 +3134,13 @@ message AccountLineItemsResponse {
   // 行项目列表
   repeated AccountLineItemDetail line_items = 2;
   // 分页响应
-  enterprise.common.PaginationResponse pagination = 3;
+  common.PaginationResponse pagination = 3;
 }
 
 // 科目行项目明细
 message AccountLineItemDetail {
   // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.SystemDocumentReference document_reference = 1;
   // 行项目号
   int32 line_item_number = 2;
   // 过账日期
@@ -3166,7 +3166,7 @@ message ReconcileGLAndSubledgerRequest {
   // 对账类型 (例如: "AR", "AP", "ASSET")
   string subledger_type = 2;
   // 对账期间
-  enterprise.common.DateRange reconciliation_period = 3;
+  common.DateRange reconciliation_period = 3;
 }
 
 // 对账响应 (复用)
@@ -3176,7 +3176,7 @@ message ReconciliationResponse {
   // 对账结果
   ReconciliationResult reconciliation_result = 2;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.ApiMessage messages = 3;
 }
 
 // 生成凭证分析报表请求
@@ -3184,7 +3184,7 @@ message GenerateJournalAnalysisRequest {
   // 公司代码
   string company_code = 1;
   // 分析期间
-  enterprise.common.DateRange analysis_period = 2;
+  common.DateRange analysis_period = 2;
   // 分析维度 (例如: ["ACCOUNT", "COST_CENTER", "PROFIT_CENTER"])
   repeated string analysis_dimensions = 3;
   // 报表格式
@@ -3204,7 +3204,7 @@ message JournalAnalysisResponse {
   // 分析摘要
   JournalAnalysisSummary analysis_summary = 5;
   // 消息列表
-  repeated enterprise.common.ApiMessage messages = 6;
+  repeated common.ApiMessage messages = 6;
 }
 
 // 凭证分析摘要
