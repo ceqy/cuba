@@ -2,6 +2,9 @@
 //!
 //! 应用层服务，协调领域操作
 
+pub mod authorization;
+pub mod reports;
+
 use chrono::{Utc, NaiveDate};
 use std::sync::Arc;
 use tracing::{info, instrument};
