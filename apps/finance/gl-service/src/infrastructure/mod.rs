@@ -5,9 +5,11 @@
 pub mod cache;
 pub mod event_publisher;
 pub mod mapper;
+pub mod metrics;
 pub mod persistence;
 
 pub use cache::*;
 pub use event_publisher::*;
 pub use mapper::*;
+pub use metrics::*;
 pub use persistence::*;

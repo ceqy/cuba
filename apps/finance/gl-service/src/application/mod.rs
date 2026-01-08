@@ -3,6 +3,7 @@
 //! 应用层服务，协调领域操作
 
 pub mod authorization;
+pub mod batch;
 pub mod reports;
 
 use chrono::{Utc, NaiveDate};
