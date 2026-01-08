@@ -300,3 +300,23 @@ impl fmt::Display for FiscalPeriod {
         write!(f, "{}/{:02}", self.year, self.period)
     }
 }
+// ============================================================================
+// ReversalType - 冲销类型
+// ============================================================================
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ReversalType {
+    Full,            // 完全冲销 (借贷反转)
+    Partial,         // 部分冲销
+    NegativePosting, // 负数冲销 (红字冲销)
+}
+
+impl ReversalType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ReversalType::Full => "FULL",
+            ReversalType::Partial => "PARTIAL",
+            ReversalType::NegativePosting => "NEGATIVE",
+        }
+    }
+}

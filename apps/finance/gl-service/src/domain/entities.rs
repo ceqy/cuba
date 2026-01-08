@@ -7,7 +7,7 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::domain::events::{DomainEvents, JournalEntryCreated, JournalEntryPosted};
+use crate::domain::events::{DomainEvents, JournalEntryCreated, JournalEntryPosted, JournalEntryReversed};
 use crate::domain::rules::JournalEntryStatus;
 use crate::domain::value_objects::{
     Account, CostObjects, DebitCreditIndicator, DocumentNumber, FiscalPeriod, 
@@ -220,6 +220,74 @@ impl JournalEntry {
             .map(|l| l.amount.amount())
             .sum()
     }
+
+    /// 冲销凭证 (生成一个新的冲销凭证)
+    pub fn reverse(
+        &mut self, 
+        reversal_id: JournalEntryId, 
+        posted_by: Uuid, 
+        reversal_reason: &str,
+        reversal_date: NaiveDate
+    ) -> Result<Self, ValueError> {
+        // 只有已过账的凭证才能冲销
+        if self.status != JournalEntryStatus::Posted {
+            return Err(ValueError::InvalidAmount(
+                format!("Only posted entries can be reversed, current status: {:?}", self.status)
+            ));
+        }
+        
+        // 创建反向行项目
+        let reversed_lines: Vec<JournalEntryLine> = self.lines.iter()
+            .map(|l| l.reverse())
+            .collect();
+            
+        // 创建冲销凭证抬头
+        let mut reversal_header = self.header.clone();
+        reversal_header.posting_date = reversal_date;
+        reversal_header.created_by = posted_by;
+        reversal_header.created_at = Utc::now();
+        reversal_header.updated_at = Utc::now();
+        reversal_header.header_text = Some(format!("Rev: {}", reversal_reason));
+        reversal_header.reference_document = self.document_number.as_ref().map(|d| d.to_string());
+        
+        // 构建冲销凭证聚合根
+        let reversal_entry = JournalEntry::reconstruct(
+            reversal_id,
+            None,
+            reversal_header,
+            reversed_lines,
+            Vec::new(),
+            JournalEntryStatus::Draft,
+            1,
+        );
+        
+        // 更新原凭证状态
+        self.status = JournalEntryStatus::Reversed;
+        self.header.updated_at = Utc::now();
+        
+        // 记录冲销事件
+        self.events.push(JournalEntryReversed {
+            journal_entry_id: *self.id.as_uuid(),
+            reversal_document_id: *reversal_id.as_uuid(),
+            reversal_reason: reversal_reason.to_string(),
+            reversed_by: posted_by,
+            occurred_at: Utc::now(),
+        });
+        
+        Ok(reversal_entry)
+    }
+
+    /// 暂存凭证 (不强制校验平衡)
+    pub fn park(&mut self) -> Result<(), ValueError> {
+        if !self.status.can_transition_to(JournalEntryStatus::Parked) {
+            return Err(ValueError::InvalidAmount(
+                format!("Cannot park from status {:?}", self.status)
+            ));
+        }
+        self.status = JournalEntryStatus::Parked;
+        self.header.updated_at = Utc::now();
+        Ok(())
+    }
 }
 
 // ============================================================================
@@ -288,6 +356,28 @@ impl JournalEntryLine {
     pub fn with_text(mut self, text: &str) -> Self {
         self.line_text = Some(text.to_string());
         self
+    }
+
+    /// 生成反向行项目
+    pub fn reverse(&self) -> Self {
+        let mut reversed = self.clone();
+        let reversed_indicator = match self.amount.dc_indicator() {
+            DebitCreditIndicator::Debit => DebitCreditIndicator::Credit,
+            DebitCreditIndicator::Credit => DebitCreditIndicator::Debit,
+        };
+        
+        // 安全起见直接构造一个新的 MonetaryAmount
+        reversed.amount = MonetaryAmount::new(
+            self.amount.amount(),
+            self.amount.currency(),
+            reversed_indicator
+        ).expect("Flip D/C should always be valid");
+        
+        // 如果有本币金额，也需要同步标记？通常本币金额符号随借贷走，但在系统中 amount_local 存储的是绝对值
+        // 这里假设绝对值不变，仅靠 dc_indicator 区分
+        
+        reversed.clearing_status = ClearingStatus::Open;
+        reversed
     }
 }
 

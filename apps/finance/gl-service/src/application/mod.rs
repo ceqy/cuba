@@ -2,7 +2,7 @@
 //!
 //! 应用层服务，协调领域操作
 
-use chrono::NaiveDate;
+use chrono::{Utc, NaiveDate};
 use std::sync::Arc;
 use tracing::{info, instrument};
 use uuid::Uuid;
@@ -10,7 +10,7 @@ use uuid::Uuid;
 use crate::domain::entities::{JournalEntry, JournalEntryLine};
 use crate::domain::repository::{JournalEntryFilter, JournalEntryRepository, PagedResult, Pagination};
 use crate::domain::value_objects::{
-    Account, DebitCreditIndicator, DocumentNumber, FiscalPeriod, MonetaryAmount,
+    Account, DebitCreditIndicator, DocumentNumber, FiscalPeriod, MonetaryAmount, JournalEntryId,
 };
 use crate::domain::rules::JournalEntryStatus;
 
@@ -211,6 +211,70 @@ impl<R: JournalEntryRepository> JournalEntryService<R> {
             "Journal entry posted"
         );
 
+        Ok(entry)
+    }
+
+    /// 冲销凭证
+    #[instrument(skip(self))]
+    pub async fn reverse_journal_entry(
+        &self,
+        id: Uuid,
+        reversal_reason: &str,
+        reversal_date: Option<chrono::NaiveDate>,
+        posted_by: Uuid,
+    ) -> anyhow::Result<(JournalEntry, JournalEntry)> {
+        // 1. 获取原凭证
+        let mut original_entry = self.repository.find_by_id(&id).await?
+            .ok_or_else(|| anyhow::anyhow!("Original journal entry not found: {}", id))?;
+
+        // 2. 执行领域冲销逻辑，生成冲销凭证
+        let reversal_id = JournalEntryId::new();
+        let date = reversal_date.unwrap_or_else(|| Utc::now().naive_utc().date());
+        
+        let mut reversal_entry = original_entry.reverse(
+            reversal_id,
+            posted_by,
+            reversal_reason,
+            date
+        )?;
+
+        // 3. 为冲销凭证分配凭证号并过账
+        let company_code = reversal_entry.header().company_code.clone();
+        let fiscal_year = reversal_entry.header().fiscal_period.year();
+        let doc_number = self.repository.next_document_number(&company_code, fiscal_year).await?;
+        let document_number = DocumentNumber::new(&company_code, fiscal_year, &doc_number)?;
+        
+        reversal_entry.post(document_number, posted_by)?;
+
+        // 4. 持久化 (原凭证标记为已冲销，保存新的冲销凭证)
+        // TODO: 使用数据库事务保证原子性
+        self.repository.save(&mut original_entry).await?;
+        self.repository.save(&mut reversal_entry).await?;
+
+        info!(
+            original_id = %id,
+            reversal_id = %reversal_entry.id(),
+            "Journal entry reversed"
+        );
+
+        Ok((original_entry, reversal_entry))
+    }
+
+    /// 暂存凭证
+    #[instrument(skip(self))]
+    pub async fn park_journal_entry(
+        &self,
+        command: CreateJournalEntryCommand,
+    ) -> anyhow::Result<JournalEntry> {
+        // 1. 创建凭证对象 (初始为 Draft)
+        let mut entry = self.create_journal_entry(command).await?;
+        
+        // 2. 转换为暂存状态 (不需要验证平衡)
+        entry.park()?;
+        
+        // 3. 持久化
+        self.repository.save(&mut entry).await?;
+        
         Ok(entry)
     }
 }

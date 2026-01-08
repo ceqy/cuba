@@ -372,11 +372,39 @@ impl JournalEntryRepository for PgJournalEntryRepository {
 
     async fn next_document_number(
         &self,
-        _company_code: &str,
-        _fiscal_year: i32,
+        company_code: &str,
+        fiscal_year: i32,
     ) -> anyhow::Result<String> {
-        // In a real system, we would use a number range object or database sequence
-        let timestamp = Utc::now().timestamp_millis() % 10000000000;
-        Ok(format!("{:010}", timestamp))
+        let mut tx = self.pool.begin().await?;
+
+        // 尝试获取并更新序列号，使用 FOR UPDATE 保证并发安全
+        let row: Option<(i64,)> = sqlx::query_as(
+            "UPDATE document_sequences 
+             SET current_value = current_value + 1 
+             WHERE company_code = $1 AND fiscal_year = $2 AND document_type = 'SA' 
+             RETURNING current_value"
+        )
+        .bind(company_code)
+        .bind(fiscal_year)
+        .fetch_optional(&mut *tx)
+        .await?;
+
+        if let Some((next_val,)) = row {
+            tx.commit().await?;
+            Ok(next_val.to_string())
+        } else {
+            // 如果不存在，初始化一个默认值 (1000000000 + 1)
+            sqlx::query(
+                "INSERT INTO document_sequences (company_code, fiscal_year, document_type, current_value) 
+                 VALUES ($1, $2, 'SA', 1000000001)"
+            )
+            .bind(company_code)
+            .bind(fiscal_year)
+            .execute(&mut *tx)
+            .await?;
+            
+            tx.commit().await?;
+            Ok("1000000001".to_string())
+        }
     }
 }

@@ -161,23 +161,62 @@ impl GlJournalEntryService for GlJournalEntryServiceImpl {
 
     async fn reverse_journal_entry(
         &self,
-        _request: Request<ReverseJournalEntryRequest>,
+        request: Request<ReverseJournalEntryRequest>,
     ) -> Result<Response<JournalEntryResponse>, Status> {
-        Err(Status::unimplemented("not implemented"))
+        let req = request.into_inner();
+        let id_str = req.journal_entry_id;
+        let id = Uuid::parse_str(&id_str)
+            .map_err(|_| Status::invalid_argument("Invalid journal entry ID"))?;
+            
+        let reason = req.reversal_reason;
+        let posting_date = req.posting_date.map(|ts| {
+            chrono::NaiveDateTime::from_timestamp_opt(ts.seconds, ts.nanos as u32)
+                .map(|dt| dt.date())
+        }).flatten();
+
+        // TODO: Get user ID from metadata/context
+        let user_id = Uuid::nil();
+
+        let (_original, reversal) = self.service.reverse_journal_entry(
+            id,
+            &reason,
+            posting_date,
+            user_id
+        ).await.map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(mapper::map_to_response(&reversal)))
     }
 
     async fn park_journal_entry(
         &self,
-        _request: Request<ParkJournalEntryRequest>,
+        request: Request<ParkJournalEntryRequest>,
     ) -> Result<Response<ParkJournalEntryResponse>, Status> {
-        Err(Status::unimplemented("not implemented"))
+        let req = request.into_inner();
+        let command = mapper::map_park_request(req)
+            .map_err(|e| Status::invalid_argument(e.to_string()))?;
+
+        let entry = self.service.park_journal_entry(command).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(mapper::map_to_park_response(&entry)))
     }
 
     async fn post_parked_journal_entry(
         &self,
-        _request: Request<PostParkedJournalEntryRequest>,
+        request: Request<PostParkedJournalEntryRequest>,
     ) -> Result<Response<JournalEntryResponse>, Status> {
-        Err(Status::unimplemented("not implemented"))
+        let req = request.into_inner();
+        let id_str = req.parked_journal_entry_id;
+        let id = Uuid::parse_str(&id_str)
+            .map_err(|_| Status::invalid_argument("Invalid journal entry ID"))?;
+
+        // TODO: Get user ID from metadata/context
+        let user_id = Uuid::nil();
+
+        let entry = self.service.post_journal_entry(id, user_id).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(mapper::map_to_response(&entry)))
     }
 
     async fn get_journal_entry_history(

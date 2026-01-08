@@ -10,6 +10,7 @@ use prost_types::Timestamp;
 
 use crate::application::{CreateJournalEntryCommand, CreateLineItemCommand, UpdateJournalEntryCommand};
 use crate::proto::finance::gl::*;
+use crate::proto::common::SystemDocumentReference;
 use crate::domain::entities::{JournalEntry, JournalEntryHeader as DomainHeader, JournalEntryLine as DomainLine};
 use crate::domain::value_objects::{AccountType, DebitCreditIndicator};
 
@@ -98,6 +99,60 @@ pub fn map_update_request(
         header_text,
         lines,
     })
+}
+
+/// 将 ParkJournalEntryRequest 转换为 CreateJournalEntryCommand
+pub fn map_park_request(
+    request: ParkJournalEntryRequest,
+) -> anyhow::Result<CreateJournalEntryCommand> {
+    let header = request.header.ok_or_else(|| anyhow::anyhow!("Missing header in ParkJournalEntryRequest"))?;
+    
+    let line_items = request.line_items.into_iter().map(|line| {
+        let dc_indicator = if line.debit_credit_indicator == "H" { "H".to_string() } else { "S".to_string() };
+        let amount = Decimal::from_str(&line.amount_doc).unwrap_or_default();
+        CreateLineItemCommand {
+            gl_account: line.gl_account,
+            amount,
+            debit_credit: dc_indicator,
+            cost_center: if line.cost_center.is_empty() { None } else { Some(line.cost_center) },
+            profit_center: if line.profit_center.is_empty() { None } else { Some(line.profit_center) },
+            line_text: None,
+        }
+    }).collect();
+
+    Ok(CreateJournalEntryCommand {
+        company_code: header.company_code,
+        document_type: header.document_type,
+        document_date: chrono::NaiveDateTime::from_timestamp_opt(
+            header.document_date.as_ref().map(|ts| ts.seconds).unwrap_or(0),
+            header.document_date.as_ref().map(|ts| ts.nanos).unwrap_or(0) as u32
+        ).map(|dt| dt.date()).unwrap_or_else(|| Utc::now().naive_utc().date()),
+        posting_date: chrono::NaiveDateTime::from_timestamp_opt(
+            header.posting_date.as_ref().map(|ts| ts.seconds).unwrap_or(0),
+            header.posting_date.as_ref().map(|ts| ts.nanos).unwrap_or(0) as u32
+        ).map(|dt| dt.date()).unwrap_or_else(|| Utc::now().naive_utc().date()),
+        currency: header.currency,
+        header_text: if header.header_text.is_empty() { None } else { Some(header.header_text) },
+        lines: line_items,
+        created_by: Uuid::nil(), // TODO: Get from context
+        fiscal_year: header.fiscal_year,
+        fiscal_period: header.fiscal_period,
+    })
+}
+
+/// 将 JournalEntry 转换为 ParkJournalEntryResponse
+pub fn map_to_park_response(entry: &JournalEntry) -> ParkJournalEntryResponse {
+    ParkJournalEntryResponse {
+        success: true,
+        parked_document_reference: Some(SystemDocumentReference {
+            company_code: entry.header().company_code.clone(),
+            fiscal_year: entry.header().fiscal_period.year(),
+            document_number: entry.document_number().map(|d| d.number().to_string()).unwrap_or_default(),
+            document_type: entry.header().document_type.clone(),
+            document_category: String::new(),
+        }),
+        messages: Vec::new(),
+    }
 }
 
 /// 将 JournalEntry 转换为 JournalEntryResponse
