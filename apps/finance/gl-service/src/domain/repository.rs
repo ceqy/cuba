@@ -5,7 +5,7 @@
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use crate::domain::entities::JournalEntry;
+use crate::domain::entities::{JournalEntry, JournalEntryLine, ClearingDocument};
 use crate::domain::value_objects::DocumentNumber;
 use crate::domain::rules::JournalEntryStatus;
 
@@ -77,4 +77,10 @@ pub trait JournalEntryRepository: Send + Sync {
         company_code: &str,
         fiscal_year: i32,
     ) -> anyhow::Result<String>;
+
+    /// 批量查找行项目
+    async fn find_lines_by_ids(&self, ids: &[Uuid]) -> anyhow::Result<Vec<JournalEntryLine>>;
+
+    /// 保存清账凭证并更新关联行项目状态
+    async fn save_clearing_document(&self, clearing_doc: &ClearingDocument) -> anyhow::Result<()>;
 }

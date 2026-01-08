@@ -9,12 +9,12 @@ use uuid::Uuid;
 use chrono::{DateTime, Utc, NaiveDate};
 use rust_decimal::Decimal;
 
-use crate::domain::entities::{JournalEntry, JournalEntryHeader, JournalEntryLine, ClearingStatus};
+use crate::domain::entities::{JournalEntry, JournalEntryHeader, JournalEntryLine, ClearingStatus, TaxLineItem, ClearingDocument};
 use crate::domain::repository::{
     JournalEntryFilter, JournalEntryRepository, PagedResult, Pagination,
 };
 use crate::domain::value_objects::{
-    DocumentNumber, FiscalPeriod, JournalEntryId, Account, AccountType, MonetaryAmount, DebitCreditIndicator, CostObjects
+    DocumentNumber, FiscalPeriod, JournalEntryId, Account, AccountType, MonetaryAmount, DebitCreditIndicator, CostObjects, TaxType
 };
 use crate::domain::rules::JournalEntryStatus;
 
@@ -71,6 +71,17 @@ struct DbLine {
     tax_code: Option<String>,
 }
 
+#[derive(Debug, sqlx::FromRow)]
+struct DbTaxLine {
+    header_id: Uuid,
+    line_number: i32,
+    tax_code: String,
+    tax_type: String,
+    tax_rate: Decimal,
+    tax_amount_doc: Decimal,
+    debit_credit_indicator: String,
+}
+
 // ============================================================================
 // Repository Implementation
 // ============================================================================
@@ -82,6 +93,47 @@ pub struct PgJournalEntryRepository {
 impl PgJournalEntryRepository {
     pub fn new(pool: Arc<PgPool>) -> Self {
         Self { pool }
+    }
+
+    fn map_db_line_to_domain(&self, l: DbLine, currency: &str) -> anyhow::Result<JournalEntryLine> {
+        let acc_type = match l.account_type.as_str() {
+            "S" => AccountType::GeneralLedger,
+            "D" => AccountType::Customer,
+            "K" => AccountType::Vendor,
+            _ => AccountType::GeneralLedger,
+        };
+
+        let dc = DebitCreditIndicator::from_str(&l.debit_credit_indicator)
+            .ok_or_else(|| anyhow::anyhow!("Invalid D/C indicator in DB"))?;
+
+        let amount = MonetaryAmount::new(l.amount_doc_currency, currency, dc)
+            .map_err(|e| anyhow::anyhow!(e))?;
+
+        let account = match acc_type {
+            AccountType::Customer => Account::customer(&l.gl_account, l.customer_number.as_deref().unwrap_or(""))?,
+            AccountType::Vendor => Account::vendor(&l.gl_account, l.vendor_number.as_deref().unwrap_or(""))?,
+            _ => Account::gl_account(&l.gl_account)?,
+        };
+
+        Ok(JournalEntryLine {
+            line_number: l.line_number,
+            account,
+            amount,
+            amount_local: l.amount_local_currency,
+            cost_objects: CostObjects {
+                cost_center: l.cost_center,
+                profit_center: l.profit_center,
+                internal_order: l.internal_order,
+                wbs_element: l.wbs_element,
+                business_area: l.business_area,
+                functional_area: l.functional_area,
+                segment: l.segment,
+            },
+            line_text: l.line_text,
+            assignment: l.assignment,
+            tax_code: l.tax_code,
+            clearing_status: ClearingStatus::from_str(&l.clearing_status).unwrap_or_default(),
+        })
     }
 }
 
@@ -178,6 +230,32 @@ impl JournalEntryRepository for PgJournalEntryRepository {
             .await?;
         }
 
+        // 3. 保存税务行项目
+        sqlx::query("DELETE FROM journal_entry_tax WHERE header_id = $1")
+            .bind(entry.id().as_uuid())
+            .execute(&mut *tx)
+            .await?;
+
+        for tax in entry.tax_items() {
+            sqlx::query(
+                r#"
+                INSERT INTO journal_entry_tax (
+                    header_id, line_number, tax_code, tax_type, 
+                    tax_rate, tax_amount_doc, debit_credit_indicator
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                "#
+            )
+            .bind(entry.id().as_uuid())
+            .bind(tax.line_number)
+            .bind(&tax.tax_code)
+            .bind(tax.tax_type.as_str())
+            .bind(tax.tax_rate)
+            .bind(tax.tax_amount)
+            .bind(tax.dc_indicator.as_str())
+            .execute(&mut *tx)
+            .await?;
+        }
+
         tx.commit().await?;
         Ok(())
     }
@@ -214,47 +292,27 @@ impl JournalEntryRepository for PgJournalEntryRepository {
 
             let mut domain_lines = Vec::new();
             for l in lines {
-                let acc_type = match l.account_type.as_str() {
-                    "S" => AccountType::GeneralLedger,
-                    "D" => AccountType::Customer,
-                    "K" => AccountType::Vendor,
-                    "A" => AccountType::Asset,
-                    "M" => AccountType::Material,
-                    _ => AccountType::GeneralLedger,
-                };
+                domain_lines.push(self.map_db_line_to_domain(l, &h.currency)?);
+            }
 
-                let dc = DebitCreditIndicator::from_str(&l.debit_credit_indicator)
-                    .ok_or_else(|| anyhow::anyhow!("Invalid D/C indicator in DB"))?;
+            let tax_rows = sqlx::query_as::<_, DbTaxLine>(
+                "SELECT * FROM journal_entry_tax WHERE header_id = $1 ORDER BY line_number"
+            )
+            .bind(id)
+            .fetch_all(&*self.pool)
+            .await?;
 
-                let amount = MonetaryAmount::new(l.amount_doc_currency, &h.currency, dc)
-                    .map_err(|e| anyhow::anyhow!(e))?;
-
-                let account = match acc_type {
-                    AccountType::Customer => Account::customer(&l.gl_account, l.customer_number.as_deref().unwrap_or(""))?,
-                    AccountType::Vendor => Account::vendor(&l.gl_account, l.vendor_number.as_deref().unwrap_or(""))?,
-                    _ => Account::gl_account(&l.gl_account)?,
-                };
-
-                let line = JournalEntryLine {
-                    line_number: l.line_number,
-                    account,
-                    amount,
-                    amount_local: l.amount_local_currency,
-                    cost_objects: CostObjects {
-                        cost_center: l.cost_center,
-                        profit_center: l.profit_center,
-                        internal_order: l.internal_order,
-                        wbs_element: l.wbs_element,
-                        business_area: l.business_area,
-                        functional_area: l.functional_area,
-                        segment: l.segment,
-                    },
-                    line_text: l.line_text,
-                    assignment: l.assignment,
-                    tax_code: l.tax_code,
-                    clearing_status: ClearingStatus::from_str(&l.clearing_status).unwrap_or_default(),
-                };
-                domain_lines.push(line);
+            let mut domain_tax_items = Vec::new();
+            for t in tax_rows {
+                domain_tax_items.push(TaxLineItem {
+                    line_number: t.line_number,
+                    tax_code: t.tax_code,
+                    tax_type: TaxType::from_str(&t.tax_type).unwrap_or(TaxType::Input),
+                    tax_rate: t.tax_rate,
+                    tax_base_amount: Decimal::ZERO, // TODO
+                    tax_amount: t.tax_amount_doc,
+                    dc_indicator: DebitCreditIndicator::from_str(&t.debit_credit_indicator).unwrap_or(DebitCreditIndicator::Debit),
+                });
             }
 
             let status = JournalEntryStatus::from_str(&h.status).unwrap_or(JournalEntryStatus::Draft);
@@ -269,7 +327,7 @@ impl JournalEntryRepository for PgJournalEntryRepository {
                 doc_num,
                 domain_header,
                 domain_lines,
-                Vec::new(), // TODO: Tax items
+                domain_tax_items,
                 status,
                 h.version as u64,
             );
@@ -406,5 +464,76 @@ impl JournalEntryRepository for PgJournalEntryRepository {
             tx.commit().await?;
             Ok("1000000001".to_string())
         }
+    }
+
+    async fn find_lines_by_ids(&self, ids: &[Uuid]) -> anyhow::Result<Vec<JournalEntryLine>> {
+        let mut domain_lines = Vec::new();
+        for id in ids {
+            // 先获取行记录
+            let line: Option<DbLine> = sqlx::query_as(
+                "SELECT * FROM journal_entry_lines WHERE id = $1"
+            )
+            .bind(id)
+            .fetch_optional(&*self.pool)
+            .await?;
+            
+            if let Some(l) = line {
+                // 获取对应的凭证头以取得币种
+                let currency_row: Option<(String,)> = sqlx::query_as(
+                    "SELECT currency FROM journal_entry_headers WHERE id = $1"
+                )
+                .bind(&l.header_id)
+                .fetch_optional(&*self.pool)
+                .await?;
+                
+                let currency = currency_row.map(|(c,)| c).unwrap_or_else(|| "CNY".to_string());
+                domain_lines.push(self.map_db_line_to_domain(l, &currency)?);
+            }
+        }
+        Ok(domain_lines)
+    }
+
+    async fn save_clearing_document(&self, clearing_doc: &ClearingDocument) -> anyhow::Result<()> {
+        let mut tx = self.pool.begin().await?;
+
+        // 1. 保存清账抬头
+        sqlx::query(
+            "INSERT INTO clearing_documents (id, clearing_number, company_code, fiscal_year, clearing_date, clearing_amount, currency, clearing_type, created_by)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
+        )
+        .bind(clearing_doc.id)
+        .bind(&clearing_doc.clearing_number)
+        .bind(&clearing_doc.company_code)
+        .bind(clearing_doc.fiscal_year)
+        .bind(clearing_doc.clearing_date)
+        .bind(clearing_doc.clearing_amount)
+        .bind(&clearing_doc.currency)
+        .bind(&clearing_doc.clearing_type)
+        .bind(clearing_doc.created_by)
+        .execute(&mut *tx)
+        .await?;
+
+        // 2. 保存清账明细并更新原始行项目
+        for item in &clearing_doc.items {
+            sqlx::query(
+                "INSERT INTO clearing_items (clearing_document_id, journal_entry_line_id, cleared_amount)
+                 VALUES ($1, $2, $3)"
+            )
+            .bind(clearing_doc.id)
+            .bind(item.journal_entry_line_id)
+            .bind(item.cleared_amount)
+            .execute(&mut *tx)
+            .await?;
+
+            sqlx::query(
+                "UPDATE journal_entry_lines SET clearing_status = 'CLEARED' WHERE id = $1"
+            )
+            .bind(item.journal_entry_line_id)
+            .execute(&mut *tx)
+            .await?;
+        }
+
+        tx.commit().await?;
+        Ok(())
     }
 }

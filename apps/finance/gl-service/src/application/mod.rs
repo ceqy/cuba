@@ -11,6 +11,7 @@ use crate::domain::entities::{JournalEntry, JournalEntryLine};
 use crate::domain::repository::{JournalEntryFilter, JournalEntryRepository, PagedResult, Pagination};
 use crate::domain::value_objects::{
     Account, DebitCreditIndicator, DocumentNumber, FiscalPeriod, MonetaryAmount, JournalEntryId,
+    ExchangeRate,
 };
 use crate::domain::rules::JournalEntryStatus;
 
@@ -27,6 +28,7 @@ pub struct CreateJournalEntryCommand {
     pub header_text: Option<String>,
     pub lines: Vec<CreateLineItemCommand>,
     pub created_by: Uuid,
+    pub exchange_rate: Option<rust_decimal::Decimal>,
 }
 
 /// 更新凭证命令
@@ -48,9 +50,37 @@ pub struct CreateLineItemCommand {
     pub cost_center: Option<String>,
     pub profit_center: Option<String>,
     pub line_text: Option<String>,
+    pub tax_code: Option<String>,
+}
+
+/// 模拟税务服务
+pub struct MockTaxService;
+
+impl crate::domain::entities::TaxService for MockTaxService {
+    fn get_tax_info(&self, tax_code: &str) -> Option<(crate::domain::value_objects::TaxType, rust_decimal::Decimal)> {
+        use crate::domain::value_objects::TaxType;
+        use rust_decimal_macros::dec;
+        match tax_code {
+            "V1" | "J1" => Some((TaxType::Input, dec!(0.13))), // 13% 进项税
+            "V2" | "J2" => Some((TaxType::Input, dec!(0.09))), // 9% 进项税
+            "S1" | "X1" => Some((TaxType::Output, dec!(0.13))), // 13% 销项税
+            _ => None,
+        }
+    }
 }
 
 /// 凭证应用服务
+/// 清账命令
+#[derive(Debug)]
+pub struct ClearOpenItemsCommand {
+    pub company_code: String,
+    pub fiscal_year: i32,
+    pub line_ids: Vec<Uuid>,
+    pub clearing_date: NaiveDate,
+    pub currency: String,
+    pub created_by: Uuid,
+}
+
 pub struct JournalEntryService<R: JournalEntryRepository> {
     repository: Arc<R>,
 }
@@ -58,6 +88,52 @@ pub struct JournalEntryService<R: JournalEntryRepository> {
 impl<R: JournalEntryRepository> JournalEntryService<R> {
     pub fn new(repository: Arc<R>) -> Self {
         Self { repository }
+    }
+
+    /// 清账 (核销未清项)
+    #[instrument(skip(self))]
+    pub async fn clear_open_items(
+        &self,
+        command: ClearOpenItemsCommand,
+    ) -> anyhow::Result<crate::domain::entities::ClearingDocument> {
+        use crate::domain::entities::ClearingDocument;
+        
+        // 1. 查询所有待清行项目
+        let lines = self.repository.find_lines_by_ids(&command.line_ids).await?;
+        if lines.len() != command.line_ids.len() {
+            return Err(anyhow::anyhow!("Some line items not found"));
+        }
+
+        // 2. 创建清账凭证并添加明细
+        let mut clearing_doc = ClearingDocument::new(
+            command.company_code.clone(),
+            command.fiscal_year,
+            command.clearing_date,
+            command.currency.clone(),
+            command.created_by,
+        );
+
+        for line in lines {
+            if line.amount.currency() != command.currency {
+                return Err(anyhow::anyhow!("Currency mismatch for line {}", line.line_number));
+            }
+            // 简单添加，目前领域模型限制暂不强制传 UUID
+            clearing_doc.add_item(Uuid::nil(), line.amount.amount());
+        }
+
+        // 3. 验证平衡
+        if !clearing_doc.validate_balance() {
+            return Err(anyhow::anyhow!("Clearing document not balanced (sum != 0)"));
+        }
+
+        // 4. 获取清账凭证号
+        let clearing_number = self.repository.next_document_number(&command.company_code, command.fiscal_year).await?;
+        clearing_doc.clearing_number = format!("CL-{}", clearing_number);
+
+        // 5. 保存并更新状态
+        self.repository.save_clearing_document(&clearing_doc).await?;
+
+        Ok(clearing_doc)
     }
 
     /// 创建凭证草稿
@@ -80,6 +156,10 @@ impl<R: JournalEntryRepository> JournalEntryService<R> {
             cmd.created_by,
         );
 
+        if let Some(rate) = cmd.exchange_rate {
+            entry.header_mut().exchange_rate = rate;
+        }
+
         // 添加行项目
         for (idx, line_cmd) in cmd.lines.into_iter().enumerate() {
             let account = Account::gl_account(&line_cmd.gl_account)?;
@@ -91,6 +171,10 @@ impl<R: JournalEntryRepository> JournalEntryService<R> {
             
             if let Some(text) = line_cmd.line_text {
                 line = line.with_text(&text);
+            }
+
+            if let Some(tax_code) = &line_cmd.tax_code {
+                line = line.with_tax_code(tax_code);
             }
 
             entry.add_line(line)?;
@@ -199,7 +283,20 @@ impl<R: JournalEntryRepository> JournalEntryService<R> {
         let doc_number = self.repository.next_document_number(&company_code, fiscal_year).await?;
         let document_number = DocumentNumber::new(&company_code, fiscal_year, &doc_number)?;
 
-        // 过账
+        // 1. 计算税务 (如果已有税码)
+        let tax_service = MockTaxService;
+        entry.calculate_taxes(&tax_service)?;
+
+        // 2. 处理本位币转换 (如果汇率 > 0)
+        let rate_val = entry.header().exchange_rate;
+        if rate_val > rust_decimal::Decimal::ZERO {
+            let rate = ExchangeRate::new(rate_val)?;
+            for line in entry.lines_mut() {
+                line.apply_exchange_rate(rate);
+            }
+        }
+
+        // 3. 过账
         entry.post(document_number, posted_by)?;
 
         // 保存

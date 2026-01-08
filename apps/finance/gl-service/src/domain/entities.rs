@@ -11,7 +11,7 @@ use crate::domain::events::{DomainEvents, JournalEntryCreated, JournalEntryPoste
 use crate::domain::rules::JournalEntryStatus;
 use crate::domain::value_objects::{
     Account, CostObjects, DebitCreditIndicator, DocumentNumber, FiscalPeriod, 
-    JournalEntryId, MonetaryAmount, ValueError,
+    JournalEntryId, MonetaryAmount, ValueError, TaxType, ExchangeRate,
 };
 
 // ============================================================================
@@ -196,7 +196,10 @@ impl JournalEntry {
     pub fn id(&self) -> &JournalEntryId { &self.id }
     pub fn document_number(&self) -> Option<&DocumentNumber> { self.document_number.as_ref() }
     pub fn header(&self) -> &JournalEntryHeader { &self.header }
+    pub fn header_mut(&mut self) -> &mut JournalEntryHeader { &mut self.header }
     pub fn lines(&self) -> &[JournalEntryLine] { &self.lines }
+    pub fn lines_mut(&mut self) -> &mut [JournalEntryLine] { &mut self.lines }
+    pub fn tax_items(&self) -> &[TaxLineItem] { &self.tax_items }
     pub fn status(&self) -> JournalEntryStatus { self.status }
     pub fn version(&self) -> u64 { self.version }
     
@@ -288,6 +291,46 @@ impl JournalEntry {
         self.header.updated_at = Utc::now();
         Ok(())
     }
+
+    /// 计算并生成税务行项目 (基于业务行项目的税码)
+    pub fn calculate_taxes(&mut self, tax_service: &dyn TaxService) -> Result<(), ValueError> {
+        self.tax_items.clear();
+        let mut tax_map: std::collections::HashMap<String, (TaxType, Decimal, Decimal, DebitCreditIndicator)> = std::collections::HashMap::new();
+
+        for line in &self.lines {
+            if let Some(tax_code) = &line.tax_code {
+                if let Some((tax_type, rate)) = tax_service.get_tax_info(tax_code) {
+                    let base_amount = line.amount.amount();
+                    let tax_amount = (base_amount * rate).round_dp(2);
+                    
+                    let entry = tax_map.entry(tax_code.clone()).or_insert((
+                        tax_type,
+                        rate,
+                        Decimal::ZERO,
+                        line.amount.dc_indicator(),
+                    ));
+                    
+                    entry.2 += tax_amount;
+                }
+            }
+        }
+
+        let mut next_line_no = (self.lines.len() + 1) as i32;
+        for (tax_code, (tax_type, rate, total_tax, dc)) in tax_map {
+            self.tax_items.push(TaxLineItem {
+                line_number: next_line_no,
+                tax_code,
+                tax_type,
+                tax_rate: rate,
+                tax_base_amount: Decimal::ZERO, // TODO: Aggregate base amount if needed
+                tax_amount: total_tax,
+                dc_indicator: dc,
+            });
+            next_line_no += 1;
+        }
+
+        Ok(())
+    }
 }
 
 // ============================================================================
@@ -359,6 +402,16 @@ impl JournalEntryLine {
     }
 
     /// 生成反向行项目
+    pub fn with_tax_code(mut self, tax_code: &str) -> Self {
+        self.tax_code = Some(tax_code.to_string());
+        self
+    }
+
+    /// 应用汇率计算本币金额
+    pub fn apply_exchange_rate(&mut self, rate: ExchangeRate) {
+        self.amount_local = Some(rate.convert_to_local(self.amount.amount()));
+    }
+
     pub fn reverse(&self) -> Self {
         let mut reversed = self.clone();
         let reversed_indicator = match self.amount.dc_indicator() {
@@ -420,8 +473,79 @@ impl ClearingStatus {
 pub struct TaxLineItem {
     pub line_number: i32,
     pub tax_code: String,
+    pub tax_type: TaxType,
     pub tax_rate: Decimal,
     pub tax_base_amount: Decimal,
     pub tax_amount: Decimal,
     pub dc_indicator: DebitCreditIndicator,
+}
+
+// ============================================================================
+// TaxService - 税务服务接口
+// ============================================================================
+
+pub trait TaxService: Send + Sync {
+    /// 获取税率信息
+    fn get_tax_info(&self, tax_code: &str) -> Option<(TaxType, Decimal)>;
+}
+// ============================================================================
+// ClearingDocument - 清账凭证
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClearingDocument {
+    pub id: Uuid,
+    pub clearing_number: String,
+    pub company_code: String,
+    pub fiscal_year: i32,
+    pub clearing_date: NaiveDate,
+    pub clearing_amount: Decimal,
+    pub currency: String,
+    pub clearing_type: String,
+    pub items: Vec<ClearingItem>,
+    pub created_by: Uuid,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClearingItem {
+    pub journal_entry_line_id: Uuid,
+    pub cleared_amount: Decimal,
+}
+
+impl ClearingDocument {
+    pub fn new(
+        company_code: String,
+        fiscal_year: i32,
+        clearing_date: NaiveDate,
+        currency: String,
+        created_by: Uuid,
+    ) -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            clearing_number: String::new(), // To be assigned
+            company_code,
+            fiscal_year,
+            clearing_date,
+            clearing_amount: Decimal::ZERO,
+            currency,
+            clearing_type: "MANUAL".to_string(),
+            items: Vec::new(),
+            created_by,
+            created_at: Utc::now(),
+        }
+    }
+
+    pub fn add_item(&mut self, line_id: Uuid, amount: Decimal) {
+        self.items.push(ClearingItem {
+            journal_entry_line_id: line_id,
+            cleared_amount: amount,
+        });
+        self.clearing_amount += amount;
+    }
+
+    /// 验证清账平衡
+    pub fn validate_balance(&self) -> bool {
+        self.clearing_amount == Decimal::ZERO
+    }
 }

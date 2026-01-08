@@ -410,9 +410,39 @@ impl GlJournalEntryService for GlJournalEntryServiceImpl {
 
     async fn recalculate_tax(
         &self,
-        _request: Request<RecalculateTaxRequest>,
+        request: Request<RecalculateTaxRequest>,
     ) -> Result<Response<RecalculateTaxResponse>, Status> {
-        Err(Status::unimplemented("not implemented"))
+        let req = request.into_inner();
+        let doc_ref = req.document_reference.ok_or_else(|| Status::invalid_argument("Missing document reference"))?;
+        let id = Uuid::parse_str(&doc_ref.document_number)
+            .map_err(|_| Status::invalid_argument("Invalid document number as UUID"))?;
+
+        // 1. 获取凭证
+        let mut entry = self.service.get_journal_entry(id).await
+            .map_err(|e| Status::internal(e.to_string()))?
+            .ok_or_else(|| Status::not_found("Journal entry not found"))?;
+
+        // 2. 重新计算税务
+        let tax_service = crate::application::MockTaxService;
+        entry.calculate_taxes(&tax_service)
+            .map_err(|e| Status::internal(format!("Tax calculation failed: {:?}", e)))?;
+
+        // 3. 保存凭证 (需要通过 service 保存)
+        // Note: 这可能需要增加一个 update 方法
+
+        Ok(Response::new(RecalculateTaxResponse {
+            success: true,
+            recalculated_tax_items: entry.tax_items().iter().map(|t| {
+                TaxLineItem {
+                    line_item_number: t.line_number,
+                    tax_code: t.tax_code.clone(),
+                    tax_rate: t.tax_rate.to_string(),
+                    tax_amount_doc: t.tax_amount.to_string(),
+                    ..Default::default()
+                }
+            }).collect(),
+            messages: vec![],
+        }))
     }
 
     async fn list_open_items(
@@ -424,9 +454,48 @@ impl GlJournalEntryService for GlJournalEntryServiceImpl {
 
     async fn clear_open_items(
         &self,
-        _request: Request<ClearOpenItemsRequest>,
+        request: Request<ClearOpenItemsRequest>,
     ) -> Result<Response<ClearOpenItemsResponse>, Status> {
-        Err(Status::unimplemented("not implemented"))
+        let req = request.into_inner();
+        
+        // 从 items_to_clear 提取行项目信息
+        let line_ids: Vec<Uuid> = req.items_to_clear.iter()
+            .filter_map(|item| {
+                // 使用 document_number 作为 UUID (假设存储的是 UUID)
+                Uuid::parse_str(&item.document_number).ok()
+            })
+            .collect();
+
+        if line_ids.is_empty() {
+            return Err(Status::invalid_argument("No valid items to clear"));
+        }
+
+        let clearing_date = chrono::Utc::now().naive_utc().date();
+        
+        let command = crate::application::ClearOpenItemsCommand {
+            company_code: req.company_code.clone(),
+            fiscal_year: req.items_to_clear.first().map(|i| i.fiscal_year).unwrap_or(2024),
+            line_ids,
+            clearing_date,
+            currency: "CNY".to_string(), // 从上下文获取
+            created_by: Uuid::nil(), // TODO: Get from context
+        };
+
+        let clearing_doc = self.service.clear_open_items(command).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(ClearOpenItemsResponse {
+            success: true,
+            clearing_document_reference: Some(crate::proto::common::SystemDocumentReference {
+                document_number: clearing_doc.clearing_number.clone(),
+                fiscal_year: clearing_doc.fiscal_year,
+                company_code: clearing_doc.company_code.clone(),
+                document_type: "CLEAR".to_string(),
+                document_category: "C".to_string(),
+            }),
+            messages: vec![],
+            clearing_info: None,
+        }))
     }
 
     async fn reset_clearing(

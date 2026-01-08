@@ -46,6 +46,7 @@ pub fn map_create_request(
                 cost_center: if line.cost_center.is_empty() { None } else { Some(line.cost_center) },
                 profit_center: if line.profit_center.is_empty() { None } else { Some(line.profit_center) },
                 line_text: None,
+                tax_code: if line.tax_code.is_empty() { None } else { Some(line.tax_code) },
             }
         })
         .collect();
@@ -61,6 +62,7 @@ pub fn map_create_request(
         header_text: if header.header_text.is_empty() { None } else { Some(header.header_text) },
         lines,
         created_by,
+        exchange_rate: Decimal::from_str(&header.exchange_rate).ok(),
     })
 }
 
@@ -87,6 +89,7 @@ pub fn map_update_request(
                 cost_center: if line.cost_center.is_empty() { None } else { Some(line.cost_center) },
                 profit_center: if line.profit_center.is_empty() { None } else { Some(line.profit_center) },
                 line_text: None,
+                tax_code: if line.tax_code.is_empty() { None } else { Some(line.tax_code) },
             }
         }).collect();
         Some(items)
@@ -117,6 +120,7 @@ pub fn map_park_request(
             cost_center: if line.cost_center.is_empty() { None } else { Some(line.cost_center) },
             profit_center: if line.profit_center.is_empty() { None } else { Some(line.profit_center) },
             line_text: None,
+            tax_code: if line.tax_code.is_empty() { None } else { Some(line.tax_code) },
         }
     }).collect();
 
@@ -137,6 +141,7 @@ pub fn map_park_request(
         created_by: Uuid::nil(), // TODO: Get from context
         fiscal_year: header.fiscal_year,
         fiscal_period: header.fiscal_period,
+        exchange_rate: Decimal::from_str(&header.exchange_rate).ok(),
     })
 }
 
@@ -182,7 +187,7 @@ pub fn map_to_detail(entry: &JournalEntry) -> JournalEntryDetail {
         }),
         header: Some(map_header_to_proto(entry.header())),
         line_items: entry.lines().iter().map(map_line_to_proto).collect(),
-        tax_items: vec![], // TODO: map tax items
+        tax_items: entry.tax_items().iter().map(map_tax_line_to_proto).collect(),
         one_time_accounts: vec![],
         attachments: vec![],
         approval_history: vec![],
@@ -256,6 +261,19 @@ fn map_line_to_proto(l: &DomainLine) -> JournalEntryLineItem {
         internal_order: l.cost_objects.internal_order.clone().unwrap_or_default(),
         wbs_element: l.cost_objects.wbs_element.clone().unwrap_or_default(),
         tax_code: l.tax_code.clone().unwrap_or_default(),
+        ..Default::default()
+    }
+}
+
+fn map_tax_line_to_proto(t: &crate::domain::entities::TaxLineItem) -> TaxLineItem {
+    TaxLineItem {
+        line_item_number: t.line_number,
+        tax_code: t.tax_code.clone(),
+        tax_rate: t.tax_rate.to_string(),
+        tax_base_amount_doc: t.tax_base_amount.to_string(),
+        tax_amount_doc: t.tax_amount.to_string(),
+        tax_type: t.tax_type.as_str().to_string(),
+        debit_credit_indicator: t.dc_indicator.as_str().to_string(),
         ..Default::default()
     }
 }

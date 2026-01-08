@@ -320,3 +320,55 @@ impl ReversalType {
         }
     }
 }
+
+// ============================================================================
+// ExchangeRate - 汇率
+// ============================================================================
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExchangeRate(Decimal);
+
+impl ExchangeRate {
+    pub fn new(rate: Decimal) -> Result<Self, ValueError> {
+        if rate <= Decimal::ZERO {
+            return Err(ValueError::InvalidAmount("Exchange rate must be positive".into()));
+        }
+        Ok(Self(rate))
+    }
+
+    pub fn value(&self) -> Decimal {
+        self.0
+    }
+
+    /// 将外币金额转换为本币金额
+    pub fn convert_to_local(&self, amount: Decimal) -> Decimal {
+        (amount * self.0).round_dp(2)
+    }
+}
+
+// ============================================================================
+// TaxType - 税务类型
+// ============================================================================
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TaxType {
+    Input,  // VST - 进项税
+    Output, // MWS - 销项税
+}
+
+impl TaxType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            TaxType::Input => "VST",
+            TaxType::Output => "MWS",
+        }
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "VST" | "INPUT" => Some(TaxType::Input),
+            "MWS" | "OUTPUT" => Some(TaxType::Output),
+            _ => None,
+        }
+    }
+}
