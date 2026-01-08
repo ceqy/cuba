@@ -18,6 +18,12 @@ static_resources:
                     - name: backend
                       domains: ["*"]
                       routes:
+                        # 财务服务路由
+                        - match:
+                            prefix: "/api/v1/finance/"
+                          route:
+                            cluster: finance_service
+                        # 认证服务路由（兜底）
                         - match:
                             prefix: "/"
                           route:
@@ -38,15 +44,15 @@ static_resources:
                   - name: envoy.filters.http.grpc_json_transcoder
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_json_transcoder.v3.GrpcJsonTranscoder
-                      proto_descriptor: "/etc/envoy/auth_service.pb"
+                      proto_descriptor: "/etc/envoy/combined_services.pb"
                       services:
                         - "auth.AuthService"
+                        - "finance.gl.GeneralLedgerJournalEntryService"
                       print_options:
                         add_whitespace: true
                         always_print_primitive_fields: true
                         always_print_enums_as_ints: false
                         preserve_proto_field_names: true
-                      convert_grpc_status: true
                   - name: envoy.filters.http.router
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
@@ -71,6 +77,26 @@ static_resources:
                       # In Docker network: use service name
                       address: host.docker.internal
                       port_value: 50051
+
+    # 财务服务集群
+    - name: finance_service
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          explicit_http_config:
+            http2_protocol_options: {}
+      load_assignment:
+        cluster_name: finance_service
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      # 财务服务监听 50052 端口
+                      address: host.docker.internal
+                      port_value: 50052
 
 admin:
   address:

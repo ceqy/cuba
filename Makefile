@@ -76,6 +76,9 @@ run-auth:
 run-sales:
 	cargo run -p sales-service
 
+run-finance:
+	cargo run -p finance-service
+
 # ===================
 # Infrastructure
 # ===================

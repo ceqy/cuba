@@ -1,0 +1,2 @@
+server_addr: "0.0.0.0:50051"
+database_url: "postgres://postgres:postgres@localhost:5432/cuba_finance"

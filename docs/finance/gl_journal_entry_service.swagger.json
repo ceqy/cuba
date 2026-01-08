@@ -1,0 +1,41 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "General Ledger Journal Entry Service",
+    "description": "财务总账凭证服务 API - 提供凭证创建、查询、过账、冲销等核心功能",
+    "version": "1.0.0"
+  },
+  "host": "localhost:8080",
+  "basePath": "/",
+  "schemes": ["http"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "securityDefinitions": {
+    "bearer_auth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [{"bearer_auth": []}],
+  "paths": {
+    "/api/v1/finance/journal-entries": {
+      "get": {
+        "summary": "查询总账凭证列表",
+        "operationId": "ListJournalEntries",
+        "responses": {
+          "200": {"description": "成功"}
+        },
+        "tags": ["凭证管理"]
+      },
+      "post": {
+        "summary": "创建一笔总账凭证",
+        "operationId": "CreateJournalEntry",
+        "responses": {
+          "200": {"description": "成功"}
+        },
+        "tags": ["凭证管理"]
+      }
+    }
+  }
+}

@@ -5,7 +5,7 @@
 
 syntax = "proto3";
 
-package enterprise.common;
+package common;
 
 
 import "google/protobuf/timestamp.proto";
