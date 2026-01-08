@@ -17,7 +17,7 @@ tonic-reflection = "0.14"
 tonic-health = "0.14"
 
 # Database
-sqlx = { workspace = true, features = ["runtime-tokio", "postgres", "uuid", "chrono", "json"] }
+sqlx = { workspace = true, features = ["runtime-tokio", "postgres", "uuid", "chrono", "json", "rust_decimal"] }
 
 # Serialization
 serde.workspace = true
@@ -39,7 +39,7 @@ cuba-errors = { path = "../../../libs/cuba-errors" }
 cuba-database = { path = "../../../libs/cuba-database" }
 cuba-messaging = { path = "../../../libs/cuba-messaging" }
 cuba-telemetry = { path = "../../../libs/cuba-telemetry" }
-rust_decimal = { version = "1.39.0", features = ["serde"] }
+rust_decimal = { version = "1.39.0", features = ["serde", "db-postgres"] }
 
 [build-dependencies]
 tonic-prost-build.workspace = true

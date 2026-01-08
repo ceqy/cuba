@@ -35,7 +35,9 @@ async fn main() -> anyhow::Result<()> {
         config.server_addr = addr;
     }
     
-    if let Ok(db_url) = std::env::var("DATABASE_URL") {
+    if let Ok(db_url) = std::env::var("GL_DATABASE_URL") {
+        config.database_url = db_url;
+    } else if let Ok(db_url) = std::env::var("DATABASE_URL") {
         config.database_url = db_url;
     }
     
@@ -48,8 +50,19 @@ async fn main() -> anyhow::Result<()> {
         .await?;
     let pool = Arc::new(pool);
 
+    // 运行数据库迁移
+    info!("Running database migrations for cuba_finance_gl...");
+    sqlx::migrate!("./migrations")
+        .run(&*pool)
+        .await?;
+    info!("Database migrations completed");
+
+    // 初始化仓储和应用服务
+    let repository = Arc::new(crate::infrastructure::persistence::PgJournalEntryRepository::new(pool.clone()));
+    let journal_service = Arc::new(crate::application::JournalEntryService::new(repository));
+
     // 创建 gRPC 服务
-    let gl_service = GlJournalEntryServiceImpl::new(pool.clone());
+    let gl_service = GlJournalEntryServiceImpl::new(journal_service);
 
     // --- gRPC 反射服务 ---
     let reflection_service = tonic_reflection::server::Builder::configure()

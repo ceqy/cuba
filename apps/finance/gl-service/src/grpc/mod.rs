@@ -1,19 +1,22 @@
+use crate::application::JournalEntryService;
+use crate::infrastructure::PgJournalEntryRepository;
+use crate::infrastructure::mapper;
 use crate::proto::finance::gl::*;
 use crate::proto::finance::gl::gl_journal_entry_service_server::GlJournalEntryService;
 use sqlx::PgPool;
 use std::sync::Arc;
 use tonic::{Request, Response, Status};
+use uuid::Uuid;
 
 pub mod error;
 
 pub struct GlJournalEntryServiceImpl {
-    #[allow(dead_code)]
-    pool: Arc<PgPool>,
+    service: Arc<JournalEntryService<PgJournalEntryRepository>>,
 }
 
 impl GlJournalEntryServiceImpl {
-    pub fn new(pool: Arc<PgPool>) -> Self {
-        Self { pool }
+    pub fn new(service: Arc<JournalEntryService<PgJournalEntryRepository>>) -> Self {
+        Self { service }
     }
 }
 
@@ -21,44 +24,139 @@ impl GlJournalEntryServiceImpl {
 impl GlJournalEntryService for GlJournalEntryServiceImpl {
     async fn create_journal_entry(
         &self,
-        _request: Request<CreateJournalEntryRequest>,
+        request: Request<CreateJournalEntryRequest>,
     ) -> Result<Response<JournalEntryResponse>, Status> {
-        Err(Status::unimplemented("not implemented"))
+        let req = request.into_inner();
+        // TODO: Get user ID from metadata/context
+        let user_id = Uuid::nil();
+
+        let cmd = mapper::map_create_request(req, user_id)
+            .map_err(|e| Status::invalid_argument(e.to_string()))?;
+
+        let entry = self.service.create_journal_entry(cmd).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(mapper::map_to_response(&entry)))
     }
 
     async fn get_journal_entry(
         &self,
-        _request: Request<GetJournalEntryRequest>,
+        request: Request<GetJournalEntryRequest>,
     ) -> Result<Response<JournalEntryDetail>, Status> {
-        Err(Status::unimplemented("not implemented"))
+        let req = request.into_inner();
+        let id_str = req.journal_entry_id;
+        
+        let id = if id_str.is_empty() {
+            if let Some(doc_ref) = req.document_reference {
+                // Here we usually should allow lookup by company/year/number
+                // but for now we only support lookup by UUID (document_id is missing in doc_ref proto but number might be a UUID string)
+                Uuid::parse_str(&doc_ref.document_number)
+                    .map_err(|_| Status::invalid_argument("Invalid document number format, UUID expected"))?
+            } else {
+                return Err(Status::invalid_argument("Either journal_entry_id or document_reference is required"));
+            }
+        } else {
+            Uuid::parse_str(&id_str)
+                .map_err(|_| Status::invalid_argument("Invalid journal entry ID"))?
+        };
+
+        let entry = self.service.get_journal_entry(id).await
+            .map_err(|e| Status::internal(e.to_string()))?
+            .ok_or_else(|| Status::not_found("Journal entry not found"))?;
+
+        Ok(Response::new(mapper::map_to_detail(&entry)))
     }
 
     async fn list_journal_entries(
         &self,
-        _request: Request<ListJournalEntriesRequest>,
+        request: Request<ListJournalEntriesRequest>,
     ) -> Result<Response<ListJournalEntriesResponse>, Status> {
-        Err(Status::unimplemented("not implemented"))
+        let req = request.into_inner();
+        
+        let filter = crate::domain::repository::JournalEntryFilter {
+            company_code: if req.company_code.is_empty() { None } else { Some(req.company_code) },
+            fiscal_year: if req.fiscal_year == 0 { None } else { Some(req.fiscal_year) },
+            ..Default::default()
+        };
+
+        let pagination = crate::domain::repository::Pagination {
+            page: req.pagination.as_ref().map(|p| p.page as u32).unwrap_or(1),
+            page_size: req.pagination.as_ref().map(|p| p.page_size as u32).unwrap_or(20),
+        };
+
+        let result = self.service.list_journal_entries(filter, pagination).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        let total_count = result.total_count;
+        let total_pages = result.total_pages();
+        let page = result.page;
+        let page_size = result.page_size;
+        let entries = mapper::map_items_to_summary(result.items);
+
+        Ok(Response::new(ListJournalEntriesResponse {
+            entries,
+            pagination: Some(crate::proto::common::PaginationResponse {
+                current_page: page as i32,
+                page_size: page_size as i32,
+                total_items: total_count as i64,
+                total_pages: total_pages as i32,
+            }),
+        }))
     }
 
     async fn update_journal_entry(
         &self,
-        _request: Request<UpdateJournalEntryRequest>,
+        request: Request<UpdateJournalEntryRequest>,
     ) -> Result<Response<JournalEntryResponse>, Status> {
-        Err(Status::unimplemented("not implemented"))
+        let req = request.into_inner();
+        let cmd = mapper::map_update_request(req)
+            .map_err(|e| Status::invalid_argument(e.to_string()))?;
+
+        let entry = self.service.update_journal_entry(cmd).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(mapper::map_to_response(&entry)))
     }
 
     async fn delete_journal_entry(
         &self,
-        _request: Request<DeleteJournalEntryRequest>,
+        request: Request<DeleteJournalEntryRequest>,
     ) -> Result<Response<JournalEntryResponse>, Status> {
-        Err(Status::unimplemented("not implemented"))
+        let req = request.into_inner();
+        let id_str = req.journal_entry_id;
+        let id = Uuid::parse_str(&id_str)
+            .map_err(|_| Status::invalid_argument("Invalid journal entry ID"))?;
+
+        let entry = self.service.get_journal_entry(id).await
+            .map_err(|e| Status::internal(e.to_string()))?
+            .ok_or_else(|| Status::not_found("Journal entry not found"))?;
+
+        if !entry.status().is_editable() {
+            return Err(Status::failed_precondition("Cannot delete non-editable entry"));
+        }
+
+        self.service.delete_journal_entry(id).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(mapper::map_to_response(&entry)))
     }
 
     async fn post_journal_entry(
         &self,
-        _request: Request<PostJournalEntryRequest>,
+        request: Request<PostJournalEntryRequest>,
     ) -> Result<Response<JournalEntryResponse>, Status> {
-        Err(Status::unimplemented("not implemented"))
+        let req = request.into_inner();
+        let id_str = req.journal_entry_id;
+        let id = Uuid::parse_str(&id_str)
+            .map_err(|_| Status::invalid_argument("Invalid journal entry ID"))?;
+
+        // TODO: Get user ID from metadata/context
+        let user_id = Uuid::nil();
+
+        let entry = self.service.post_journal_entry(id, user_id).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(mapper::map_to_response(&entry)))
     }
 
     async fn reverse_journal_entry(

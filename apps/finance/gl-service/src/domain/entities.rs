@@ -45,6 +45,28 @@ pub struct JournalEntry {
 }
 
 impl JournalEntry {
+    /// 从持久化层重建聚合根
+    pub fn reconstruct(
+        id: JournalEntryId,
+        document_number: Option<DocumentNumber>,
+        header: JournalEntryHeader,
+        lines: Vec<JournalEntryLine>,
+        tax_items: Vec<TaxLineItem>,
+        status: JournalEntryStatus,
+        version: u64,
+    ) -> Self {
+        Self {
+            id,
+            document_number,
+            header,
+            lines,
+            tax_items,
+            status,
+            version,
+            events: DomainEvents::new(),
+        }
+    }
+
     /// 创建新的凭证草稿
     pub fn create_draft(
         company_code: String,
@@ -105,6 +127,28 @@ impl JournalEntry {
             return Err(ValueError::InvalidAmount("Cannot modify non-draft entry".into()));
         }
         self.lines.push(line);
+        self.header.updated_at = Utc::now();
+        Ok(())
+    }
+
+    /// 替换所有行项目
+    pub fn replace_lines(&mut self, lines: Vec<JournalEntryLine>) -> Result<(), ValueError> {
+        if !self.status.is_editable() {
+            return Err(ValueError::InvalidAmount("Cannot modify non-draft entry".into()));
+        }
+        self.lines = lines;
+        self.header.updated_at = Utc::now();
+        Ok(())
+    }
+
+    /// 更新抬头信息
+    pub fn update_header(&mut self, text: Option<String>, doc_date: Option<NaiveDate>, post_date: Option<NaiveDate>) -> Result<(), ValueError> {
+        if !self.status.is_editable() {
+            return Err(ValueError::InvalidAmount("Cannot modify non-draft entry".into()));
+        }
+        if let Some(t) = text { self.header.header_text = Some(t); }
+        if let Some(d) = doc_date { self.header.document_date = d; }
+        if let Some(p) = post_date { self.header.posting_date = p; }
         self.header.updated_at = Utc::now();
         Ok(())
     }
@@ -257,6 +301,25 @@ pub enum ClearingStatus {
     Open,
     PartiallyCleared,
     Cleared,
+}
+
+impl ClearingStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ClearingStatus::Open => "OPEN",
+            ClearingStatus::PartiallyCleared => "PARTIALLY_CLEARED",
+            ClearingStatus::Cleared => "CLEARED",
+        }
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "OPEN" => Some(ClearingStatus::Open),
+            "PARTIALLY_CLEARED" => Some(ClearingStatus::PartiallyCleared),
+            "CLEARED" => Some(ClearingStatus::Cleared),
+            _ => None,
+        }
+    }
 }
 
 // ============================================================================
