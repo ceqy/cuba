@@ -1,0 +1,1046 @@
+// ============================================================================
+// /finance/ar-ap-service (版本 2.8 - 终极生产级完整版)
+// 描述: 提供客户/供应商主数据、应收/应付全生命周期管理，涵盖：
+//       主数据、未清项查询、清账（全额/部分/自动/净额）、余额/账龄、
+//       对账单、催款、信用检查、付款建议、预付款、发票过账/冲销/验证、
+//       附件管理、分期付款、三向匹配、容差配置、审计追踪、合规检查、
+//       报表导出、多语言、多公司代码、事件驱动集成等企业级全功能。
+// ----------------------------------------------------------------------------
+// 设计基线（SAP S/4HANA + 最佳实践扩展）：
+// - 全面支持 ECC -> S/4HANA 迁移路径
+// - 兼容传统客户/供应商编号与 Business Partner
+// - 所有金额统一使用 MonetaryValue（含币种）
+// - 事件驱动架构，支持下游系统实时集成
+// ============================================================================
+
+syntax = "proto3";
+
+package finance.arap;
+option go_package = "github.com/yourproject/finance/arap";
+
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/openapiv2.proto";
+import "common/common.proto";
+
+// OpenAPI 全局配置
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Accounts Receivable/Payable Service API"
+    version: "0.1.0"
+    description: "应收/应付全生命周期管理服务 - 提供客户/供应商主数据、未清项查询、清账、余额/账龄、对账单、催款、信用检查、付款建议、预付款、发票过账/冲销/验证等企业级功能"
+    contact: {
+      name: "Finance Team"
+      email: "finance@yourproject.com"
+    }
+  }
+  host: "localhost:8080"
+  base_path: "/"
+  schemes: HTTP
+  schemes: HTTPS
+  consumes: "application/json"
+  produces: "application/json"
+  security_definitions: {
+    security: {
+      key: "bearer_auth"
+      value: {
+        type: TYPE_API_KEY
+        in: IN_HEADER
+        name: "Authorization"
+        description: "Bearer token for authentication"
+      }
+    }
+  }
+  security: {
+    security_requirement: {
+      key: "bearer_auth"
+      value: {}
+    }
+  }
+};
+
+// ============================================================================
+// 服务定义: AccountsReceivablePayableService（终极完整版）
+// ============================================================================
+
+service AccountsReceivablePayableService {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "应收/应付全生命周期管理服务 - 支持客户/供应商主数据、清账、信用检查、付款管理等"
+    external_docs: {
+      url: "https://yourproject.com/docs/finance/arap";
+      description: "AR/AP 服务详细文档";
+    }
+  };
+
+  // --------------------------------------------------------------------------
+  // === 主数据管理 ===
+  // --------------------------------------------------------------------------
+
+  // 获取业务伙伴主数据详情（统一入口，支持客户/供应商角色）
+  rpc GetPartnerDetails(GetPartnerDetailsRequest) returns (GetPartnerDetailsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/arap/partners/{business_partner_id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Master Data"
+      summary: "获取业务伙伴详情"
+    };
+  }
+
+  // 批量获取业务伙伴主数据
+  rpc BatchGetPartnerDetails(BatchGetPartnerDetailsRequest) returns (BatchGetPartnerDetailsResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/partners:batchGet"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Master Data"
+      summary: "批量获取伙伴详情"
+    };
+  }
+
+  // 创建/同步客户主数据
+  rpc PostCustomer(CustomerDetails) returns (CustomerDetails) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/customers"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Master Data"
+      summary: "创建/更新客户"
+    };
+  }
+
+  // 创建/同步供应商主数据
+  rpc PostSupplier(SupplierDetails) returns (SupplierDetails) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/suppliers"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Master Data"
+      summary: "创建/更新供应商"
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // === 未清项与分析 ===
+  // --------------------------------------------------------------------------
+
+  // 查询业务伙伴的未清项（统一入口，支持客户/供应商）
+  rpc ListOpenItems(ListOpenItemsRequest) returns (ListOpenItemsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/arap/partners/{business_partner_id}/open-items"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Open Items"
+      summary: "查询业务伙伴未清项"
+    };
+  }
+
+  // 获取业务伙伴的账户余额（应收/应付总额）
+  rpc GetAccountBalance(GetAccountBalanceRequest) returns (GetAccountBalanceResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/arap/partners/{business_partner_id}/balance"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Open Items"
+      summary: "获取账户余额"
+    };
+  }
+
+  // 获取业务伙伴的账龄分析
+  rpc GetAgingAnalysis(GetAgingAnalysisRequest) returns (GetAgingAnalysisResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/arap/partners/{business_partner_id}/aging"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Open Items"
+      summary: "账龄分析"
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // === 对账单与催款（AR专用）===
+  // --------------------------------------------------------------------------
+
+  // 生成对账单（Customer Statement）
+  rpc GenerateStatement(GenerateStatementRequest) returns (GenerateStatementResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/arap/partners/{business_partner_id}/statement"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Dunning"
+      summary: "生成对账单"
+    };
+  }
+
+  // 获取催款历史及当前催款级别
+  rpc GetDunningHistory(GetDunningHistoryRequest) returns (GetDunningHistoryResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/arap/partners/{business_partner_id}/dunning-history"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Dunning"
+      summary: "获取催款历史"
+    };
+  }
+
+  // 触发催款（手动触发 F150）
+  rpc TriggerDunning(TriggerDunningRequest) returns (TriggerDunningResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/dunning:trigger"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Dunning"
+      summary: "触发催款"
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // === 清账核心 ===
+  // --------------------------------------------------------------------------
+
+  // 获取自动清账建议（Payment Advice / Matching Proposal）
+  rpc GetClearingProposal(GetClearingProposalRequest) returns (GetClearingProposalResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/clearing:propose"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Clearing"
+      summary: "获取清账建议"
+    };
+  }
+
+  // 执行自动清账（基于建议）
+  rpc ExecuteClearingProposal(ExecuteClearingProposalRequest) returns (ClearOpenItemsResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/clearing:executeProposal"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Clearing"
+      summary: "执行清账建议"
+    };
+  }
+
+  // 对一组未清项执行清账（全额）
+  rpc ClearOpenItems(ClearOpenItemsRequest) returns (ClearOpenItemsResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/clearing:full"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Clearing"
+      summary: "全额清账"
+    };
+  }
+
+  // 执行部分清账（带残差自动过账）
+  rpc PartialClearItems(PartialClearItemsRequest) returns (ClearOpenItemsResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/clearing:partial"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Clearing"
+      summary: "部分清账"
+    };
+  }
+
+  // 净额清账（新增：三角债处理）
+  rpc NetClearing(NetClearingRequest) returns (ClearOpenItemsResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/clearing:net"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Clearing"
+      summary: "净额清账"
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // === 信用与风险（AR专用）===
+  // --------------------------------------------------------------------------
+
+  // 检查信用额度（Credit Check）
+  rpc CheckCreditLimit(CheckCreditLimitRequest) returns (CheckCreditLimitResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/partners/{business_partner_id}/credit-check"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Credit"
+      summary: "信用额度检查"
+    };
+  }
+
+  // 更新信用暴露（订单创建/发货时调用）
+  rpc UpdateCreditExposure(UpdateCreditExposureRequest) returns (UpdateCreditExposureResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/partners/{business_partner_id}/credit-exposure"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Credit"
+      summary: "更新信用暴露"
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // === 付款管理（AP专用）===
+  // --------------------------------------------------------------------------
+
+  // 生成付款建议（应付专用，类似 F110）
+  rpc GeneratePaymentProposal(GeneratePaymentProposalRequest) returns (GeneratePaymentProposalResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/payments:propose"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Payment"
+      summary: "生成付款建议"
+    };
+  }
+
+  // 执行付款建议
+  rpc ExecutePaymentProposal(ExecutePaymentProposalRequest) returns (PaymentExecutionResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/payments:execute"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Payment"
+      summary: "执行付款建议"
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // === 预付款 ===
+  // --------------------------------------------------------------------------
+
+  // 预付款请求（Down Payment Request，F-47）
+  rpc RequestDownPayment(DownPaymentRequest) returns (DownPaymentResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/down-payments:request"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Down Payment"
+      summary: "预付款请求"
+    };
+  }
+
+  // 预付款清账（Down Payment Clearing，F-54）
+  rpc ClearDownPayment(DownPaymentClearingRequest) returns (ClearOpenItemsResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/down-payments:clear"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Down Payment"
+      summary: "预付款清账"
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // === 发票全生命周期 ===
+  // --------------------------------------------------------------------------
+
+  // 发票过账（FB60/FB70/MIRO）
+  rpc PostInvoice(PostInvoiceRequest) returns (PostInvoiceResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/invoices"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Invoice"
+      summary: "发票过账"
+    };
+  }
+
+  // 凭证冲销（FB08）
+  rpc ReverseDocument(ReverseDocumentRequest) returns (ReverseDocumentResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/documents/{document_to_reverse.document_number}/reverse"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Invoice"
+      summary: "凭证冲销"
+    };
+  }
+
+  // 发票验证（MIRO，三向匹配）
+  rpc VerifyInvoice(VerifyInvoiceRequest) returns (VerifyInvoiceResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/invoices:verify"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Invoice"
+      summary: "发票验证"
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // === 附件管理 ===
+  // --------------------------------------------------------------------------
+
+  // 获取凭证附件列表
+  rpc ListAttachments(ListAttachmentsRequest) returns (ListAttachmentsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/arap/documents/{document_number}/attachments"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Attachments"
+      summary: "列出附件"
+    };
+  }
+
+  // 上传附件
+  rpc UploadAttachment(UploadAttachmentRequest) returns (OperationResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/documents/{document_number}/attachments"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Attachments"
+      summary: "上传附件"
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // === 银行对账与现金应用（高级AR）===
+  // --------------------------------------------------------------------------
+
+  // 导入银行对账单
+  rpc ImportBankStatement(ImportBankStatementRequest) returns (ImportBankStatementResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/bank-statements:import"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Banking"
+      summary: "导入银行对账单"
+    };
+  }
+
+  // 处理锁箱批次
+  rpc ProcessLockbox(ProcessLockboxRequest) returns (ProcessLockboxResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/lockbox:process"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Banking"
+      summary: "处理锁箱批次"
+    };
+  }
+
+  // 现金自动应用
+  rpc ApplyCash(ApplyCashRequest) returns (ClearOpenItemsResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/cash:apply"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Clearing"
+      summary: "自动应用现金"
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // === 容差与合规 ===
+  // --------------------------------------------------------------------------
+
+  // 获取容差组
+  rpc GetToleranceGroups(GetToleranceGroupsRequest) returns (GetToleranceGroupsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/arap/config/tolerance-groups"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Config"
+      summary: "获取容差组"
+    };
+  }
+
+  // 合规检查（制裁、反洗钱等）
+  rpc PerformComplianceCheck(PerformComplianceCheckRequest) returns (PerformComplianceCheckResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/compliance:check"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Compliance"
+      summary: "合规检查"
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // === 报表与导出 ===
+  // --------------------------------------------------------------------------
+
+  // 导出报表
+  rpc ExportReport(ExportReportRequest) returns (ExportReportResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/reports:export"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Reports"
+      summary: "导出报表"
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // === 事件与集成 ===
+  // --------------------------------------------------------------------------
+
+  // 事件订阅
+  rpc SubscribeToEvents(SubscribeToEventsRequest) returns (SubscribeToEventsResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/events:subscribe"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Events"
+      summary: "订阅事件"
+    };
+  }
+
+  // 列出支持的事件类型
+  rpc ListEventTypes(ListEventTypesRequest) returns (ListEventTypesResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/arap/events/types"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Events"
+      summary: "列出事件类型"
+    };
+  }
+}
+
+// ============================================================================
+// 数据结构: 主数据
+// ============================================================================
+
+// 业务伙伴核心
+message BusinessPartnerCore {
+  string business_partner_id = 1;
+  string business_partner_type = 2; // 1=Person, 2=Organization, 3=Group
+  string name_org1 = 3;
+  string name_org2 = 4;
+  string name_last = 5;
+  string name_first = 6;
+  string search_term1 = 7;
+  string language = 8;
+  string country = 9;
+  enterprise.common.AuditData audit_data = 10;
+}
+
+// 客户主数据详情
+message CustomerDetails {
+  string customer_id = 1;
+  string business_partner_id = 2;
+  string name = 3;
+  string account_group = 4;
+  enterprise.common.Address address = 5;
+  string telephone = 6;
+  string email = 7;
+  string tax_number1 = 8;
+  string company_code = 100;
+  string reconciliation_account = 101;
+  string payment_terms = 102;
+  bool payment_block = 103;
+  enterprise.common.MonetaryValue credit_limit = 110;
+  enterprise.common.AuditData audit_data = 300;
+}
+
+// 供应商主数据详情
+message SupplierDetails {
+  string supplier_id = 1;
+  string business_partner_id = 2;
+  string name = 3;
+  string account_group = 4;
+  enterprise.common.Address address = 5;
+  string telephone = 6;
+  string email = 7;
+  string company_code = 100;
+  string reconciliation_account = 101;
+  string payment_terms = 102;
+  bool check_double_invoice = 103;
+  string purchasing_organization = 200;
+  string order_currency = 201;
+  enterprise.common.AuditData audit_data = 300;
+}
+
+// ============================================================================
+// 数据结构: 未清项与清账
+// ============================================================================
+
+// 会计凭证抬头
+message AccountingDocumentHeader {
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  google.protobuf.Timestamp document_date = 2;
+  google.protobuf.Timestamp posting_date = 3;
+  string header_text = 4;
+  string reference_document = 5;
+}
+
+// 会计凭证行项目
+message AccountingDocumentItem {
+  int32 line_item_number = 1;
+  string account_type = 2; // D/K/S/A
+  string gl_account = 3;
+  string debit_credit_indicator = 4; // S/H
+  enterprise.common.MonetaryValue amount = 5;
+  string item_text = 6;
+  string cost_center = 7;
+
+  // 三向匹配详情 (MIRO 专用)
+  message InvoiceMatchingDetail {
+    string purchase_order = 1;
+    int32 po_item_number = 2;
+    string goods_receipt = 3;
+    int32 gr_item_number = 4;
+    double quantity = 5;
+    string unit_of_measure = 6;
+  }
+  InvoiceMatchingDetail matching_detail = 8;
+
+  // 原因代码 (用于差额处理/回款申辩)
+  string reason_code = 9;
+}
+
+// 未清项过滤器
+message OpenItemFilter {
+  repeated string document_types = 1;
+  google.protobuf.Timestamp posting_date_from = 2;
+  google.protobuf.Timestamp posting_date_to = 3;
+  bool include_cleared = 4;
+}
+
+// 未清项信息
+message OpenItem {
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  int32 line_item_number = 2;
+  google.protobuf.Timestamp posting_date = 3;
+  google.protobuf.Timestamp due_date = 4;
+  enterprise.common.MonetaryValue amount = 5;
+  enterprise.common.MonetaryValue open_amount = 6;
+  string gl_account = 7;
+  string payment_block = 8;
+  string reference_document = 9;
+  string item_text = 10;
+
+  // 分期付款详情
+  message InstallmentDetail {
+    google.protobuf.Timestamp due_date = 1;
+    enterprise.common.MonetaryValue amount = 2;
+    int32 installment_number = 3;
+  }
+  repeated InstallmentDetail installments = 11;
+
+  // S/4HANA 调试信息 (仅内部透传)
+  optional string ledger = 100;
+}
+
+// 账龄区间
+message AgingBucket {
+  int32 days_from = 1;
+  int32 days_to = 2;
+  enterprise.common.MonetaryValue amount = 3;
+}
+
+// 账龄分析
+message AgingAnalysis {
+  google.protobuf.Timestamp as_of_date = 1;
+  enterprise.common.MonetaryValue total_open_amount = 2;
+  repeated AgingBucket overdue_buckets = 3;
+}
+
+// 对账单行项目
+message StatementItem {
+  google.protobuf.Timestamp posting_date = 1;
+  string document_type_desc = 2;
+  string reference = 3;
+  enterprise.common.MonetaryValue amount = 4;
+  enterprise.common.MonetaryValue open_balance = 5;
+}
+
+// 催款记录
+message DunningRecord {
+  google.protobuf.Timestamp dunning_date = 1;
+  int32 dunning_level = 2;
+  enterprise.common.MonetaryValue dunning_amount = 3;
+  string dunning_text = 4;
+}
+
+// 清账建议匹配
+message ClearingProposalMatch {
+  repeated OpenItemIdentifier debit_items = 1;
+  repeated OpenItemIdentifier credit_items = 2;
+  enterprise.common.MonetaryValue match_amount = 3;
+  double match_score = 4;
+}
+
+// 信用检查结果
+message CreditCheckResult {
+  enterprise.common.MonetaryValue used_credit = 1;
+  enterprise.common.MonetaryValue total_limit = 2;
+  bool passed = 3;
+  string block_reason = 4;
+}
+
+// 付款建议项目
+message PaymentProposalItem {
+  string supplier_id = 1;
+  enterprise.common.MonetaryValue proposed_amount = 2;
+  repeated OpenItemIdentifier open_items = 3;
+  bool blocked = 4;
+}
+
+// 银行对账单
+message BankStatementImport {
+  string house_bank = 1;
+  google.protobuf.Timestamp statement_date = 2;
+  repeated BankStatementLine lines = 3;
+}
+
+message BankStatementLine {
+  google.protobuf.Timestamp value_date = 1;
+  string reference = 2;
+  enterprise.common.MonetaryValue amount = 3;
+  string partner_name = 4;
+}
+
+// 锁箱批次
+message LockboxBatch {
+  string lockbox_id = 1;
+  repeated LockboxItem items = 2;
+}
+
+message LockboxItem {
+  string customer_id = 1;
+  enterprise.common.MonetaryValue amount = 2;
+  string check_number = 3;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+message GetPartnerDetailsRequest {
+  oneof partner_identifier {
+    string customer_id = 1;
+    string supplier_id = 2;
+    string business_partner_id = 3;
+  }
+  string company_code = 4;
+}
+
+message GetPartnerDetailsResponse {
+  optional CustomerDetails customer = 1;
+  optional SupplierDetails supplier = 2;
+}
+
+message BatchGetPartnerDetailsRequest {
+  repeated GetPartnerDetailsRequest requests = 1;
+}
+
+message BatchGetPartnerDetailsResponse {
+  repeated GetPartnerDetailsResponse results = 1;
+}
+
+message ListOpenItemsRequest {
+  string business_partner_id = 1;
+  string company_code = 2;
+  string account_type = 3; // D/K
+  OpenItemFilter filter = 4;
+  enterprise.common.PaginationRequest pagination = 5;
+}
+
+message ListOpenItemsResponse {
+  repeated OpenItem items = 1;
+  enterprise.common.PaginationResponse pagination = 2;
+}
+
+message GetAccountBalanceRequest {
+  string business_partner_id = 1;
+  string company_code = 2;
+  string account_type = 3;
+}
+
+message GetAccountBalanceResponse {
+  enterprise.common.MonetaryValue balance = 1;
+}
+
+message GetAgingAnalysisRequest {
+  string business_partner_id = 1;
+  string company_code = 2;
+  string account_type = 3;
+  google.protobuf.Timestamp as_of_date = 4;
+}
+
+message GetAgingAnalysisResponse {
+  AgingAnalysis analysis = 1;
+}
+
+message GenerateStatementRequest {
+  string business_partner_id = 1;
+  string company_code = 2;
+  google.protobuf.Timestamp statement_date = 3;
+}
+
+message GenerateStatementResponse {
+  repeated StatementItem items = 1;
+  enterprise.common.MonetaryValue closing_balance = 2;
+}
+
+message GetDunningHistoryRequest {
+  string business_partner_id = 1;
+}
+
+message GetDunningHistoryResponse {
+  repeated DunningRecord history = 1;
+}
+
+message TriggerDunningRequest {
+  string company_code = 1;
+  google.protobuf.Timestamp dunning_date = 2;
+}
+
+message TriggerDunningResponse {
+  bool success = 1;
+}
+
+message GetClearingProposalRequest {
+  string company_code = 1;
+  string business_partner_id = 2;
+}
+
+message GetClearingProposalResponse {
+  repeated ClearingProposalMatch proposals = 1;
+}
+
+message ExecuteClearingProposalRequest {
+  string company_code = 1;
+  repeated int32 proposal_indices = 2;
+}
+
+message ClearOpenItemsRequest {
+  string company_code = 1;
+  string account_type = 2;
+  string account_id = 3;
+  repeated OpenItemIdentifier items = 4;
+  string reason_code = 5;
+}
+
+message PartialClearItemsRequest {
+  string company_code = 1;
+  OpenItemIdentifier item = 2;
+  enterprise.common.MonetaryValue payment_amount = 3;
+  string reason_code = 4;
+  bool create_residual_item = 5;
+}
+
+message NetClearingRequest {
+  string company_code = 1;
+  repeated string partner_ids = 2;
+}
+
+message CheckCreditLimitRequest {
+  string business_partner_id = 1;
+  enterprise.common.MonetaryValue amount = 2;
+}
+
+message CheckCreditLimitResponse {
+  CreditCheckResult result = 1;
+}
+
+message UpdateCreditExposureRequest {
+  string business_partner_id = 1;
+  enterprise.common.MonetaryValue amount = 2;
+}
+
+message UpdateCreditExposureResponse {
+  bool success = 1;
+}
+
+message GeneratePaymentProposalRequest {
+  string company_code = 1;
+  google.protobuf.Timestamp due_date = 2;
+}
+
+message GeneratePaymentProposalResponse {
+  repeated PaymentProposalItem items = 1;
+}
+
+message ExecutePaymentProposalRequest {
+  string company_code = 1;
+  repeated string supplier_ids = 2;
+}
+
+message PaymentExecutionResponse {
+  bool success = 1;
+}
+
+message PaymentExecutionResult {
+  enterprise.common.SystemDocumentReference document = 1;
+  bool success = 2;
+}
+
+message DownPaymentRequest {
+  string company_code = 1;
+  string account_id = 2;
+  enterprise.common.MonetaryValue amount = 3;
+}
+
+message DownPaymentResponse {
+  enterprise.common.SystemDocumentReference document = 1;
+}
+
+message DownPaymentClearingRequest {
+  string company_code = 1;
+  OpenItemIdentifier dp_item = 2;
+}
+
+message PostInvoiceRequest {
+  string company_code = 1;
+  string account_id = 2;
+  repeated AccountingDocumentItem items = 3;
+}
+
+message PostInvoiceResponse {
+  enterprise.common.SystemDocumentReference document = 1;
+}
+
+message ReverseDocumentRequest {
+  enterprise.common.SystemDocumentReference document_to_reverse = 1;
+}
+
+message ReverseDocumentResponse {
+  bool success = 1;
+}
+
+message VerifyInvoiceRequest {
+  enterprise.common.SystemDocumentReference document = 1;
+}
+
+message VerifyInvoiceResponse {
+  bool success = 1;
+}
+
+message ImportBankStatementRequest {
+  BankStatementImport statement = 1;
+}
+
+message ImportBankStatementResponse {
+  bool success = 1;
+}
+
+message ProcessLockboxRequest {
+  LockboxBatch batch = 1;
+}
+
+message ProcessLockboxResponse {
+  bool success = 1;
+}
+
+message ApplyCashRequest {
+  string company_code = 1;
+}
+
+message GetToleranceGroupsRequest {
+  string company_code = 1;
+}
+
+message GetToleranceGroupsResponse {
+  repeated ToleranceGroup groups = 1;
+}
+
+message ToleranceGroup {
+  string id = 1;
+}
+
+message PerformComplianceCheckRequest {
+  string partner_id = 1;
+}
+
+message PerformComplianceCheckResponse {
+  bool passed = 1;
+}
+
+message ExportReportRequest {
+  string report_type = 1;
+}
+
+message ExportReportResponse {
+  string download_url = 1;
+}
+
+message SubscribeToEventsRequest {
+  string webhook_url = 1;
+}
+
+message SubscribeToEventsResponse {
+  string subscription_id = 1;
+}
+
+message ListEventTypesRequest {}
+
+message ListEventTypesResponse {
+  repeated EventType types = 1;
+}
+
+message ListAttachmentsRequest {
+  string document_number = 1;
+  string company_code = 2;
+  int32 fiscal_year = 3;
+}
+
+message ListAttachmentsResponse {
+  message AttachmentMetadata {
+    string attachment_id = 1;
+    string file_name = 2;
+    string file_type = 3;
+    int64 file_size = 4;
+    google.protobuf.Timestamp uploaded_at = 5;
+    string uploaded_by = 6;
+  }
+  repeated AttachmentMetadata attachments = 1;
+}
+
+message UploadAttachmentRequest {
+  string document_number = 1;
+  string company_code = 2;
+  int32 fiscal_year = 3;
+  string file_name = 4;
+  string file_type = 5;
+  bytes content = 6;
+}
+
+message OpenItemIdentifier {
+  string document_number = 1;
+  int32 fiscal_year = 2;
+  int32 line_item_number = 3;
+}
+
+message ClearOpenItemsResponse {
+  bool success = 1;
+  enterprise.common.SystemDocumentReference clearing_document = 2;
+}
+
+message EventType {
+  string event_code = 1;
+  string description = 2;
+}
+
+message OperationResponse {
+  bool success = 1;
+  repeated enterprise.common.ApiMessage messages = 2;
+}

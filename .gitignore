@@ -72,3 +72,9 @@ config/*.dev.yaml
 .windsurf/
 archive/
 *.log
+
+# OpenAPI 中间文件
+*.swagger.json
+
+# Swagger UI 前端资源
+swagger-ui-bundle.js*
