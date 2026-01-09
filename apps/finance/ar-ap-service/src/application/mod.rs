@@ -1,5 +1,9 @@
 //! AR/AP Service - Application Module
 //!
-//! Application layer (use cases, commands, queries)
+//! Application layer (use cases, commands, services)
 
-// TODO: Implement application layer when needed
+pub mod commands;
+pub mod services;
+
+pub use commands::*;
+pub use services::*;
