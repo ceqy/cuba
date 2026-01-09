@@ -5,7 +5,7 @@
 
 syntax = "proto3";
 
-package common;
+package enterprise.common;
 option go_package = "github.com/yourproject/common";
 
 

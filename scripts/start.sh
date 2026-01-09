@@ -27,10 +27,11 @@ docker run --rm -d --name envoy-transcoder \
 echo "  [3/3] Starting Swagger UI..."
 docker run --rm -d --name swagger-ui \
   -p 8081:8080 \
-  -e URLS="[{url:'/docs/auth/auth_service.openapi3.json',name:'Auth Service'},{url:'/docs/finance/gl_journal_entry.openapi3.json',name:'Finance GL Service'}]" \
+  -e URLS="[{ \"url\": \"/docs/auth/auth_service.openapi3.json\", \"name\": \"Auth Service\" }, { \"url\": \"/docs/finance/gl/gl_journal_entry.openapi3.json\", \"name\": \"GL Service\" }, { \"url\": \"/docs/finance/ar_ap/ar_ap.openapi3.json\", \"name\": \"AR/AP Service\" }]" \
+  -e VALIDATOR_URL=none \
   -e PERSIST_AUTHORIZATION=true \
   -v "$(pwd)/docs:/usr/share/nginx/html/docs" \
-  swaggerapi/swagger-ui
+  swaggerapi/swagger-ui:v5.31.0
 
 echo ""
 echo "✅ All services started!"

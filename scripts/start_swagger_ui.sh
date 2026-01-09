@@ -12,12 +12,15 @@ docker run -d \
   --name swagger-ui \
   -p 8081:8080 \
   -e URLS="[
-    {url: 'http://localhost:8081/auth_service.openapi3.json', name: 'Auth Service (认证服务) - OpenAPI 3.0'},
-    {url: 'http://localhost:8081/gl_journal_entry.openapi3.json', name: 'Finance Service (财务服务) - OpenAPI 3.0'}
+    { \"url\": \"auth_service.openapi3.json\", \"name\": \"Auth Service (认证服务)\" },
+    { \"url\": \"gl_journal_entry.openapi3.json\", \"name\": \"GL Service (财务总账)\" },
+    { \"url\": \"ar_ap.openapi3.json\", \"name\": \"AR/AP Service (应收应付)\" }
   ]" \
+  -e VALIDATOR_URL=none \
   -v "$(pwd)/docs/auth/auth_service.openapi3.json:/usr/share/nginx/html/auth_service.openapi3.json:ro" \
   -v "$(pwd)/docs/finance/gl_journal_entry.openapi3.json:/usr/share/nginx/html/gl_journal_entry.openapi3.json:ro" \
-  swaggerapi/swagger-ui
+  -v "$(pwd)/docs/finance/ar_ap.openapi3.json:/usr/share/nginx/html/ar_ap.openapi3.json:ro" \
+  swaggerapi/swagger-ui:v5.31.0
 
 echo ""
 echo "✅ Swagger UI 已启动！"
@@ -27,6 +30,7 @@ echo "   http://localhost:8081"
 echo ""
 echo "📋 可用服务："
 echo "   - Auth Service (认证服务)"
-echo "   - Finance Service (财务服务)"
+echo "   - GL Service (财务总账)"
+echo "   - AR/AP Service (应收应付)"
 echo ""
 echo "💡 提示：在 Swagger UI 右上角可以切换不同的服务文档"
