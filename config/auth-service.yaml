@@ -1,3 +1,0 @@
-server_addr: "[::1]:50051"
-database_url: "postgres://postgres:postgres@localhost:5432/cuba_auth"
-kafka_brokers: "localhost:9092"

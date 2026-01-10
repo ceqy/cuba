@@ -1,9 +1,0 @@
-[package]
-name = "cuba-config"
-version.workspace = true
-edition.workspace = true
-
-[dependencies]
-config.workspace = true
-dotenvy.workspace = true
-serde.workspace = true
