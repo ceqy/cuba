@@ -119,6 +119,70 @@ enum JobStatus {
   JOB_STATUS_PARTIALLY_COMPLETED = 6;
 }
 
+// 凭证类型 (Procurement)
+enum DocumentType {
+  DOCUMENT_TYPE_UNSPECIFIED = 0;
+  // 标准采购订单 (NB)
+  DOCUMENT_TYPE_STANDARD_PO = 1;
+  // 采购合同 (WK)
+  DOCUMENT_TYPE_CONTRACT = 2;
+  // 报价请求 (AN)
+  DOCUMENT_TYPE_RFQ = 3;
+  // 计划协议 (LP)
+  DOCUMENT_TYPE_SCHEDULING_AGREEMENT = 4;
+  // 框架协议 (FO)
+  DOCUMENT_TYPE_FRAMEWORK_ORDER = 5;
+  // 寄售订单 (KB)
+  DOCUMENT_TYPE_CONSIGNMENT = 6;
+  // 转储订单 (UB)
+  DOCUMENT_TYPE_STOCK_TRANSPORT = 7;
+}
+
+// 项目类别 (Procurement)
+enum ItemCategory {
+  ITEM_CATEGORY_UNSPECIFIED = 0;
+  // 标准 (Standard)
+  ITEM_CATEGORY_STANDARD = 1;
+  // 限制 (Limit) - B
+  ITEM_CATEGORY_LIMIT = 2;
+  // 寄售 (Consignment) - K
+  ITEM_CATEGORY_CONSIGNMENT = 3;
+  // 外协加工 (Subcontracting) - L
+  ITEM_CATEGORY_SUBCONTRACTING = 4;
+  // 第三方 (Third-party) - S
+  ITEM_CATEGORY_THIRD_PARTY = 5;
+  // 服务 (Service) - D
+  ITEM_CATEGORY_SERVICE = 6;
+}
+
+// 审批状态 (Procurement)
+enum ReleaseStatus {
+  RELEASE_STATUS_UNSPECIFIED = 0;
+  // 未审批
+  RELEASE_STATUS_NOT_RELEASED = 1;
+  // 部分审批
+  RELEASE_STATUS_PARTIALLY_RELEASED = 2;
+  // 已审批 (Released)
+  RELEASE_STATUS_RELEASED = 3;
+  // 已冻结 (Blocked)
+  RELEASE_STATUS_BLOCKED = 4;
+  // 已拒绝 (Rejected)
+  RELEASE_STATUS_REJECTED = 5;
+}
+
+// 时间粒度 (Analytics)
+enum TimeGranularity {
+  TIME_GRANULARITY_UNSPECIFIED = 0;
+  // 按天
+  TIME_GRANULARITY_DAILY = 1;
+  // 按月
+  TIME_GRANULARITY_MONTHLY = 2;
+  // 按季度
+  TIME_GRANULARITY_QUARTERLY = 3;
+  // 按年
+  TIME_GRANULARITY_YEARLY = 4;
+}
+
 // ============================================================================
 // 基础数据类型
 // ============================================================================

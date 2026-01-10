@@ -23,11 +23,20 @@ service SourcingEventService {
   // 创建报价请求 (RFQ)
   rpc CreateRFQ(CreateRFQRequest) returns (RFQResponse);
 
+  // 发布 RFQ (New)
+  rpc PublishRFQ(PublishRFQRequest) returns (RFQResponse);
+
+  // 关闭 RFQ (New)
+  rpc CloseRFQ(CloseRFQRequest) returns (RFQResponse);
+
   // 获取RFQ详情
   rpc GetRFQ(GetRFQRequest) returns (RFQDetail);
 
   // 接收供应商报价
   rpc SubmitSupplierQuote(SubmitQuoteRequest) returns (QuoteResponse);
+
+  // 授予报价 (Award) (New)
+  rpc AwardQuote(AwardQuoteRequest) returns (QuoteResponse);
 
   // 获取供应商报价详情
   rpc GetSupplierQuote(GetQuoteRequest) returns (QuoteDetail);
@@ -51,6 +60,10 @@ message RFQDetail {
   repeated RFQItem items = 5;
   // 邀请的供应商列表
   repeated string invited_suppliers = 6;
+  // 凭证类型
+  enterprise.common.DocumentType document_type = 7;
+  // 状态
+  enterprise.common.ReleaseStatus status = 8;
 }
 
 // RFQ 项目
@@ -62,11 +75,11 @@ message RFQItem {
   // 描述
   string description = 3;
   // 需求数量
-  string quantity = 4;
-  // 单位
-  string unit = 5;
+  enterprise.common.QuantityValue quantity = 4;
   // 交货日期
-  google.protobuf.Timestamp delivery_date = 6;
+  google.protobuf.Timestamp delivery_date = 5;
+  // 项目类别
+  enterprise.common.ItemCategory item_category = 6;
 }
 
 // 供应商报价详情
@@ -81,6 +94,8 @@ message QuoteDetail {
   repeated QuoteItem items = 4;
   // 报价有效期
   google.protobuf.Timestamp validity_end_date = 5;
+  // 状态 (如: 已提交, 已授标, 已拒绝)
+  enterprise.common.ReleaseStatus status = 6;
 }
 
 // 报价项目
@@ -88,7 +103,7 @@ message QuoteItem {
   // RFQ项目号
   int32 rfq_item_number = 1;
   // 报价数量
-  string quantity = 2;
+  enterprise.common.QuantityValue quantity = 2;
   // 净价
   enterprise.common.MonetaryValue net_price = 3;
   // 备注
@@ -103,6 +118,21 @@ message QuoteItem {
 message CreateRFQRequest {
   // RFQ 详情
   RFQDetail rfq = 1;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
+}
+
+// 发布RFQ请求
+message PublishRFQRequest {
+  string rfq_number = 1;
+  enterprise.common.RequestContext context = 99;
+}
+
+// 关闭RFQ请求
+message CloseRFQRequest {
+  string rfq_number = 1;
+  string close_reason = 2;
+  enterprise.common.RequestContext context = 99;
 }
 
 // RFQ 响应
@@ -119,12 +149,25 @@ message RFQResponse {
 message GetRFQRequest {
   // RFQ 编号
   string rfq_number = 1;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 提交供应商报价请求
 message SubmitQuoteRequest {
   // 报价详情
   QuoteDetail quote = 1;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
+}
+
+// 授予报价请求
+message AwardQuoteRequest {
+  string quote_number = 1;
+  // 授予原因/备注
+  string award_note = 2;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 报价响应
@@ -141,4 +184,6 @@ message QuoteResponse {
 message GetQuoteRequest {
   // 报价单号
   string quote_number = 1;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }

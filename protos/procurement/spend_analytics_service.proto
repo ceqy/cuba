@@ -65,8 +65,12 @@ message SpendAnalysisRequest {
   repeated string company_codes = 2;
   // 采购组织过滤器
   repeated string purchasing_orgs = 3;
+  // 工厂过滤器
+  repeated string plants = 5;
   // 返回结果数量限制
   int32 top_n = 4;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 支出分析响应
@@ -79,10 +83,12 @@ message SpendAnalysisResponse {
 message SpendTrendRequest {
   // 时间范围
   enterprise.common.DateRange time_range = 1;
-  // 时间粒度 (MONTHLY, QUARTERLY, YEARLY)
-  string granularity = 2;
+  // 时间粒度
+  enterprise.common.TimeGranularity granularity = 2;
   // 过滤器
   SpendAnalysisRequest filters = 3;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 支出趋势响应

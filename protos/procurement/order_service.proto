@@ -23,6 +23,12 @@ service PurchaseOrderService {
   // 创建采购订单
   rpc CreatePurchaseOrder(CreatePurchaseOrderRequest) returns (PurchaseOrderResponse);
 
+  // 更新采购订单 (New)
+  rpc UpdatePurchaseOrder(UpdatePurchaseOrderRequest) returns (PurchaseOrderResponse);
+
+  // 取消采购订单 (New)
+  rpc CancelPurchaseOrder(CancelPurchaseOrderRequest) returns (PurchaseOrderResponse);
+
   // 获取采购订单详情
   rpc GetPurchaseOrder(GetPurchaseOrderRequest) returns (PurchaseOrderDetail);
 
@@ -40,7 +46,7 @@ service PurchaseOrderService {
 // 采购订单抬头 (参考: EKKO)
 message PurchaseOrderHeader {
   // 凭证类型 (原: BSART)
-  string document_type = 1;
+  enterprise.common.DocumentType document_type = 1;
   // 公司代码 (原: BUKRS)
   string company_code = 2;
   // 采购组织 (原: EKORG)
@@ -62,7 +68,7 @@ message PurchaseOrderHeader {
   // 完整交货标识 (原: AUTLF)
   bool complete_delivery = 11;
   // 审批标识 (原: FRGKE)
-  string release_indicator = 12;
+  enterprise.common.ReleaseStatus release_indicator = 12;
 }
 
 // 采购订单行项目 (参考: EKPO)
@@ -70,7 +76,7 @@ message PurchaseOrderItem {
   // 行项目号 (原: EBELP)
   int32 item_number = 1;
   // 项目类别 (原: PSTYP)
-  string item_category = 2;
+  enterprise.common.ItemCategory item_category = 2;
   // 物料编号 (原: MATNR)
   string material = 3;
   // 短文本 (原: TXZ01)
@@ -82,11 +88,9 @@ message PurchaseOrderItem {
   // 物料组 (原: MATKL)
   string material_group = 7;
   // 订单数量 (原: MENGE)
-  string quantity = 8;
-  // 订单单位 (原: MEINS)
-  string unit = 9;
+  enterprise.common.QuantityValue quantity = 8;
   // 净价 (原: NETPR)
-  string net_price = 10;
+  enterprise.common.MonetaryValue net_price = 10;
   // 价格单位 (原: PEINH)
   int32 price_unit = 11;
   // 基于收货的发票校验 (原: WEBRE)
@@ -110,9 +114,9 @@ message PurchaseOrderScheduleLine {
   // 交货日期 (原: EINDT)
   google.protobuf.Timestamp delivery_date = 2;
   // 计划数量 (原: MENGE)
-  string scheduled_quantity = 3;
+  enterprise.common.QuantityValue scheduled_quantity = 3;
   // 已收货数量 (原: WEMNG)
-  string goods_receipt_quantity = 4;
+  enterprise.common.QuantityValue goods_receipt_quantity = 4;
 }
 
 // 完整的采购订单详情
@@ -128,7 +132,7 @@ message PurchaseOrderDetail {
   // 审计信息
   enterprise.common.AuditData audit_data = 5;
   // 审批状态 (原: FRGZU)
-  string release_status = 6;
+  enterprise.common.ReleaseStatus release_status = 6;
 }
 
 // ============================================================================
@@ -143,6 +147,32 @@ message CreatePurchaseOrderRequest {
   repeated PurchaseOrderItem items = 2;
   // 订单计划行
   repeated PurchaseOrderScheduleLine schedule_lines = 3;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
+}
+
+// 更新采购订单请求
+message UpdatePurchaseOrderRequest {
+  // 采购订单号
+  string order_number = 1;
+  // 订单抬头
+  PurchaseOrderHeader header = 2;
+  // 订单行项目 (全量或增量，取决于实现策略)
+  repeated PurchaseOrderItem items = 3;
+  // 字段更新掩码
+  repeated string update_mask = 4;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
+}
+
+// 取消采购订单请求
+message CancelPurchaseOrderRequest {
+  // 采购订单号
+  string order_number = 1;
+  // 取消原因
+  string cancellation_reason = 2;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 采购订单响应
@@ -159,6 +189,8 @@ message PurchaseOrderResponse {
 message GetPurchaseOrderRequest {
   // 采购订单号
   string order_number = 1;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 查询采购订单请求
@@ -171,8 +203,16 @@ message ListPurchaseOrdersRequest {
   enterprise.common.DateRange order_date_range = 3;
   // 工厂
   string plant = 4;
+  // 采购组织
+  string purchasing_org = 5;
+  // 采购组
+  string purchasing_group = 7;
+  // 审批状态
+  enterprise.common.ReleaseStatus release_status = 8;
   // 分页请求
-  enterprise.common.PaginationRequest pagination = 5;
+  enterprise.common.PaginationRequest pagination = 98;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 查询采购订单响应
@@ -194,7 +234,7 @@ message PurchaseOrderSummary {
   // 净值
   enterprise.common.MonetaryValue net_value = 4;
   // 审批状态
-  string release_status = 5;
+  enterprise.common.ReleaseStatus release_status = 5;
 }
 
 // 审批采购订单请求
@@ -205,6 +245,8 @@ message ReleasePurchaseOrderRequest {
   string release_code = 2;
   // true为批准, false为拒绝
   bool approve = 3;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 审批采购订单响应
@@ -212,5 +254,5 @@ message ReleasePurchaseOrderResponse {
   // 操作是否成功
   bool success = 1;
   // 新的审批状态
-  string new_release_status = 2;
+  enterprise.common.ReleaseStatus new_release_status = 2;
 }

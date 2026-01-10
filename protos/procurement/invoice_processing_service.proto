@@ -29,8 +29,17 @@ service InvoiceProcessingService {
   // 过账已匹配或无差异的发票
   rpc PostInvoice(PostInvoiceRequest) returns (PostInvoiceResponse);
 
+  // 预制发票 (Park) - 暂存但不校验完整性
+  rpc ParkInvoice(ParkInvoiceRequest) returns (ParkInvoiceResponse);
+
+  // 冲销发票 (Reverse)
+  rpc ReverseInvoice(ReverseInvoiceRequest) returns (ReverseInvoiceResponse);
+
   // 获取发票详情
   rpc GetInvoice(GetInvoiceRequest) returns (InvoiceDetail);
+
+  // 获取发票处理状态 (异步查询)
+  rpc GetProcessingStatus(GetProcessingStatusRequest) returns (enterprise.common.JobInfo);
 }
 
 // ============================================================================
@@ -72,11 +81,11 @@ message InvoiceItem {
   // 短文本 (原: TXZ01)
   string short_text = 5;
   // 发票数量 (原: MENGE)
-  string quantity = 6;
+  enterprise.common.QuantityValue quantity = 6;
   // 单位 (原: MEINS)
   string unit = 7;
   // 金额 (原: WRBTR)
-  string amount = 8;
+  enterprise.common.MonetaryValue amount = 8;
   // 税码 (原: MWSKZ)
   string tax_code = 9;
   // 收货凭证 (原: LFBNR)
@@ -117,6 +126,8 @@ enum InvoiceProcessingStatus {
   PARKED = 6;
   // 已取消
   CANCELLED = 7;
+  // 已冲销
+  REVERSED = 8;
 }
 
 // ============================================================================
@@ -133,6 +144,8 @@ message ReceiveInvoiceRequest {
   bytes raw_document = 3;
   // 原始文件格式
   string document_format = 4;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 接收发票响应
@@ -141,12 +154,16 @@ message ReceiveInvoiceResponse {
   string internal_invoice_id = 1;
   // 当前状态
   InvoiceProcessingStatus status = 2;
+  // 异步处理作业ID (如果启用异步处理)
+  string job_id = 3;
 }
 
 // 匹配发票请求
 message MatchInvoiceRequest {
   // 内部发票ID
   string internal_invoice_id = 1;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 匹配发票响应
@@ -193,6 +210,8 @@ message PostInvoiceRequest {
   google.protobuf.Timestamp posting_date = 2;
   // 如果存在差异，是否接受差异并过账
   bool accept_variances = 3;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 过账发票响应
@@ -205,6 +224,42 @@ message PostInvoiceResponse {
   repeated enterprise.common.ApiMessage messages = 3;
 }
 
+// 预制发票请求
+message ParkInvoiceRequest {
+  // 发票抬头
+  InvoiceHeader header = 1;
+  // 发票行项目
+  repeated InvoiceItem items = 2;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
+}
+
+// 预制发票响应
+message ParkInvoiceResponse {
+  string internal_invoice_id = 1;
+  InvoiceProcessingStatus status = 2;
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 冲销发票请求
+message ReverseInvoiceRequest {
+  // 内部发票ID
+  string internal_invoice_id = 1;
+  // 冲销原因
+  string reversal_reason = 2;
+  // 冲销日期
+  google.protobuf.Timestamp reversal_date = 3;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
+}
+
+// 冲销发票响应
+message ReverseInvoiceResponse {
+  bool success = 1;
+  enterprise.common.SystemDocumentReference reversal_document = 2;
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
 // 获取发票请求
 message GetInvoiceRequest {
   oneof identifier {
@@ -213,4 +268,13 @@ message GetInvoiceRequest {
     // 核心ERP系统中的发票凭证引用
     enterprise.common.SystemDocumentReference document_reference = 2;
   }
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
+}
+
+// 获取处理状态请求
+message GetProcessingStatusRequest {
+  string job_id = 1;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
