@@ -308,6 +308,66 @@ enum FlowStatus {
   FLOW_STATUS_ON_HOLD = 8;
 }
 
+// --- Asset Management Specific Enums ---
+
+// EHS事件类别
+enum IncidentCategory {
+  INCIDENT_CATEGORY_UNSPECIFIED = 0;
+  INCIDENT_CATEGORY_SAFETY = 1;
+  INCIDENT_CATEGORY_ENVIRONMENTAL = 2;
+  INCIDENT_CATEGORY_HEALTH = 3;
+  INCIDENT_CATEGORY_SECURITY = 4;
+  INCIDENT_CATEGORY_QUALITY = 5;
+}
+
+// EHS事件状态
+enum IncidentStatus {
+  INCIDENT_STATUS_UNSPECIFIED = 0;
+  INCIDENT_STATUS_REPORTED = 1;
+  INCIDENT_STATUS_INVESTIGATING = 2;
+  INCIDENT_STATUS_CAPA_ASSIGNED = 3;
+  INCIDENT_STATUS_CLOSED = 4;
+  INCIDENT_STATUS_VOID = 5;
+}
+
+// 确认类型 (Maintenance)
+enum ConfirmationType {
+  CONFIRMATION_TYPE_UNSPECIFIED = 0;
+  CONFIRMATION_TYPE_PARTIAL = 1;
+  CONFIRMATION_TYPE_FINAL = 2;
+  CONFIRMATION_TYPE_AUTOMATIC = 3;
+}
+
+// 交通方式 (Geo)
+enum TravelMode {
+  TRAVEL_MODE_UNSPECIFIED = 0;
+  TRAVEL_MODE_DRIVING = 1;
+  TRAVEL_MODE_WALKING = 2;
+  TRAVEL_MODE_BICYCLING = 3;
+  TRAVEL_MODE_TRANSIT = 4;
+}
+
+// 资产健康状态 (Health)
+enum HealthStatus {
+  HEALTH_STATUS_UNSPECIFIED = 0;
+  HEALTH_STATUS_HEALTHY = 1;
+  HEALTH_STATUS_WARNING = 2;
+  HEALTH_STATUS_CRITICAL = 3;
+  HEALTH_STATUS_OFFLINE = 4;
+  HEALTH_STATUS_UNKNOWN = 5;
+}
+
+// 预测故障模式 (Health)
+enum FailureMode {
+  FAILURE_MODE_UNSPECIFIED = 0;
+  FAILURE_MODE_OVERHEAT = 1;
+  FAILURE_MODE_VIBRATION = 2;
+  FAILURE_MODE_LEAKAGE = 3;
+  FAILURE_MODE_WEAR = 4;
+  FAILURE_MODE_ELECTRICAL = 5;
+  FAILURE_MODE_SOFTWARE = 6;
+}
+
 // ============================================================================
 // 基础数据类型
 // ============================================================================

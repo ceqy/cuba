@@ -12,6 +12,7 @@ option java_multiple_files = true;
 option go_package = "github.com/enterprise-extensions/asset/geo/v2;geo";
 
 import "common/common.proto";
+import "google/protobuf/timestamp.proto";
 
 // ============================================================================
 // 服务定义: GeoService
@@ -20,12 +21,21 @@ import "common/common.proto";
 service GeoService {
   // 获取资产的最后已知位置
   rpc GetAssetLocation(GetAssetLocationRequest) returns (AssetLocation);
+  
+  // 更新资产位置 (New)
+  rpc UpdateAssetLocation(UpdateAssetLocationRequest) returns (UpdateLocationResponse);
 
   // 检查资产是否在指定的地理围栏内
   rpc CheckGeofence(CheckGeofenceRequest) returns (CheckGeofenceResponse);
+  
+  // 创建地理围栏 (New)
+  rpc CreateGeofence(CreateGeofenceRequest) returns (GeofenceResponse);
 
-  // 计算两个地理点之间的路线
-  rpc CalculateRoute(CalculateRouteRequest) returns (Route);
+  // 计算两个地理点之间的路线 - 异步
+  rpc CalculateRoute(CalculateRouteRequest) returns (enterprise.common.JobInfo);
+  
+  // 获取路线计算结果 (New)
+  rpc GetRouteResult(GetRouteResultRequest) returns (Route);
 }
 
 // ============================================================================
@@ -34,45 +44,35 @@ service GeoService {
 
 // 地理坐标
 message GeoPoint {
-  // 纬度
   double latitude = 1;
-  // 经度
   double longitude = 2;
 }
 
 // 资产位置
 message AssetLocation {
-  // 设备号或资产ID
   string asset_id = 1;
-  // 位置坐标
   GeoPoint location = 2;
-  // 时间戳
   google.protobuf.Timestamp timestamp = 3;
 }
 
-// 地理围栏 (以多边形定义)
+// 地理围栏
 message Geofence {
-  // 围栏ID
   string fence_id = 1;
-  // 定义围栏边界的顶点列表
-  repeated GeoPoint vertices = 2;
+  string name = 2;
+  repeated GeoPoint vertices = 3; // Polygon
+  string description = 4;
 }
 
 // 路线
 message Route {
-  // 总距离 (米)
   double distance_meters = 1;
-  // 预计行驶时间 (秒)
   int64 duration_seconds = 2;
-  // 路线步骤
   repeated RouteStep steps = 3;
 }
 
 // 路线步骤
 message RouteStep {
-  // 步骤指令 (例如, "Turn left on Main St")
   string instruction = 1;
-  // 步骤距离 (米)
   double distance_meters = 2;
 }
 
@@ -82,30 +82,54 @@ message RouteStep {
 
 // 获取资产位置请求
 message GetAssetLocationRequest {
-  // 资产ID
   string asset_id = 1;
+  enterprise.common.RequestContext context = 99;
+}
+
+message UpdateAssetLocationRequest {
+  string asset_id = 1;
+  GeoPoint location = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  enterprise.common.RequestContext context = 99;
+}
+
+message UpdateLocationResponse {
+  bool success = 1;
+  enterprise.common.ApiMessage message = 2;
 }
 
 // 检查地理围栏请求
 message CheckGeofenceRequest {
-  // 资产ID
   string asset_id = 1;
-  // 围栏ID
   string fence_id = 2;
+  enterprise.common.RequestContext context = 99;
 }
 
-// 检查地理围栏响应
 message CheckGeofenceResponse {
-  // 是否在围栏内
   bool is_inside = 1;
+}
+
+message CreateGeofenceRequest {
+  string name = 1;
+  repeated GeoPoint vertices = 2;
+  string description = 3;
+  enterprise.common.RequestContext context = 99;
+}
+
+message GeofenceResponse {
+  bool success = 1;
+  string fence_id = 2;
 }
 
 // 计算路线请求
 message CalculateRouteRequest {
-  // 起点
   GeoPoint start = 1;
-  // 终点
   GeoPoint end = 2;
-  // 交通方式 (DRIVING, WALKING, BICYCLING)
-  string travel_mode = 3;
+  enterprise.common.TravelMode travel_mode = 3;
+  enterprise.common.RequestContext context = 99;
+}
+
+message GetRouteResultRequest {
+  string job_id = 1;
+  enterprise.common.RequestContext context = 99;
 }

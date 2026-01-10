@@ -19,14 +19,20 @@ import "common/common.proto";
 // ============================================================================
 
 service IntelligentAssetHealthService {
-  // 接收资产的传感器数据
-  rpc IngestSensorData(IngestSensorDataRequest) returns (IngestSensorDataResponse);
+  // 接收资产的传感器数据 - 异步
+  rpc IngestSensorData(IngestSensorDataRequest) returns (enterprise.common.JobInfo);
 
   // 获取资产的当前健康状态
   rpc GetAssetHealthStatus(GetAssetHealthStatusRequest) returns (AssetHealthStatus);
 
   // 获取资产的预测性维护建议
   rpc GetPredictiveMaintenanceAlerts(GetPredictiveMaintenanceAlertsRequest) returns (GetPredictiveMaintenanceAlertsResponse);
+  
+  // 查询历史传感器数据 (New)
+  rpc ListSensorData(ListSensorDataRequest) returns (ListSensorDataResponse);
+  
+  // 创建资产健康模型 (New)
+  rpc CreateHealthModel(CreateHealthModelRequest) returns (HealthModelResponse);
 }
 
 // ============================================================================
@@ -35,43 +41,28 @@ service IntelligentAssetHealthService {
 
 // 传感器数据点
 message SensorDataPoint {
-  // 传感器ID
   string sensor_id = 1;
-  // 时间戳
   google.protobuf.Timestamp timestamp = 2;
-  // 测量值 (例如, 温度、振动)
   string value = 3;
-  // 单位
   string unit = 4;
 }
 
 // 资产健康状态
 message AssetHealthStatus {
-  // 设备号
   string equipment_number = 1;
-  // 整体健康得分 (例如, 0-100)
-  int32 overall_health_score = 2;
-  // 状态描述 (例如, HEALTHY, WARNING, CRITICAL)
-  string status_description = 3;
-  // 剩余使用寿命预测 (RUL)
+  int32 overall_health_score = 2; // 0-100
+  enterprise.common.HealthStatus status_description = 3;
   string remaining_useful_life = 4;
-  // 最后更新时间
   google.protobuf.Timestamp last_updated = 5;
 }
 
 // 预测性维护警报
 message PredictiveMaintenanceAlert {
-  // 警报ID
   string alert_id = 1;
-  // 设备号
   string equipment_number = 2;
-  // 预测的故障模式
-  string predicted_failure_mode = 3;
-  // 建议的行动
+  enterprise.common.FailureMode predicted_failure_mode = 3;
   string recommended_action = 4;
-  // 置信度
   double confidence_score = 5;
-  // 警报时间
   google.protobuf.Timestamp alert_time = 6;
 }
 
@@ -81,34 +72,50 @@ message PredictiveMaintenanceAlert {
 
 // 接收传感器数据请求
 message IngestSensorDataRequest {
-  // 设备号
   string equipment_number = 1;
-  // 数据点列表
   repeated SensorDataPoint data_points = 2;
-}
-
-// 接收传感器数据响应
-message IngestSensorDataResponse {
-  // 是否成功接收
-  bool success = 1;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 获取资产健康状态请求
 message GetAssetHealthStatusRequest {
-  // 设备号
   string equipment_number = 1;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 获取预测性维护警报请求
 message GetPredictiveMaintenanceAlertsRequest {
-  // 设备号 (可选, 如果为空则返回所有警报)
   string equipment_number = 1;
-  // 严重性级别过滤器
   string severity_level = 2;
+  enterprise.common.RequestContext context = 99;
 }
 
-// 获取预测性维护警报响应
 message GetPredictiveMaintenanceAlertsResponse {
-  // 警报列表
   repeated PredictiveMaintenanceAlert alerts = 1;
+}
+
+message ListSensorDataRequest {
+  string equipment_number = 1;
+  string sensor_id = 2;
+  enterprise.common.DateRange date_range = 3;
+  enterprise.common.PaginationRequest pagination = 98;
+  enterprise.common.RequestContext context = 99;
+}
+
+message ListSensorDataResponse {
+  repeated SensorDataPoint data_points = 1;
+  enterprise.common.PaginationResponse pagination = 2;
+}
+
+message CreateHealthModelRequest {
+  string equipment_number = 1;
+  string model_type = 2; // e.g. "LinearRegression", "NeuralNet"
+  repeated string features = 3;
+  enterprise.common.RequestContext context = 99;
+}
+
+message HealthModelResponse {
+  bool success = 1;
+  string model_id = 2;
+  repeated enterprise.common.ApiMessage messages = 3;
 }

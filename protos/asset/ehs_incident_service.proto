@@ -28,6 +28,12 @@ service EHSIncidentService {
 
   // 更新EHS事件状态或添加调查结果
   rpc UpdateIncident(UpdateIncidentRequest) returns (UpdateIncidentResponse);
+
+  // 关闭EHS事件 (New)
+  rpc CloseIncident(CloseIncidentRequest) returns (UpdateIncidentResponse);
+
+  // 查询事件列表 (New)
+  rpc ListIncidents(ListIncidentsRequest) returns (ListIncidentsResponse);
 }
 
 // ============================================================================
@@ -36,37 +42,23 @@ service EHSIncidentService {
 
 // EHS事件详情
 message IncidentDetail {
-  // 事件ID
   string incident_id = 1;
-  // 事件类别 (例如, Safety, Environmental, Health)
-  string category = 2;
-  // 事件标题
+  enterprise.common.IncidentCategory category = 2;
   string title = 3;
-  // 详细描述
   string description = 4;
-  // 事件发生的地点
   string location = 5;
-  // 事件发生时间
   google.protobuf.Timestamp incident_datetime = 6;
-  // 报告人
   string reported_by = 7;
-  // 当前状态 (例如, Reported, Under Investigation, Closed)
-  string status = 8;
-  // 调查结果
+  enterprise.common.IncidentStatus status = 8;
   repeated InvestigationFinding findings = 9;
 }
 
 // 调查结果
 message InvestigationFinding {
-  // 结果ID
   string finding_id = 1;
-  // 调查人
   string investigator = 2;
-  // 调查结果描述
   string description = 3;
-  // 根本原因分析
   string root_cause_analysis = 4;
-  // 纠正和预防措施 (CAPA)
   string corrective_and_preventive_actions = 5;
 }
 
@@ -76,40 +68,52 @@ message InvestigationFinding {
 
 // 报告事件请求
 message ReportIncidentRequest {
-  // 事件详情
   IncidentDetail incident = 1;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 报告事件响应
 message ReportIncidentResponse {
-  // 操作是否成功
   bool success = 1;
-  // 生成的事件ID
   string incident_id = 2;
-  // 从核心ERP返回的消息列表
   repeated enterprise.common.ApiMessage messages = 3;
 }
 
 // 获取事件请求
 message GetIncidentRequest {
-  // 事件ID
   string incident_id = 1;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 更新事件请求
 message UpdateIncidentRequest {
-  // 事件ID
   string incident_id = 1;
-  // 新的状态 (可选)
-  string new_status = 2;
-  // 新增的调查结果 (可选)
+  enterprise.common.IncidentStatus new_status = 2;
   InvestigationFinding new_finding = 3;
+  enterprise.common.RequestContext context = 99;
+}
+
+message CloseIncidentRequest {
+  string incident_id = 1;
+  string closure_comment = 2;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 更新事件响应
 message UpdateIncidentResponse {
-  // 操作是否成功
   bool success = 1;
-  // 从核心ERP返回的消息列表
   repeated enterprise.common.ApiMessage messages = 2;
+}
+
+message ListIncidentsRequest {
+  enterprise.common.DateRange date_range = 1;
+  enterprise.common.IncidentCategory category = 2;
+  enterprise.common.IncidentStatus status = 3;
+  enterprise.common.PaginationRequest pagination = 98;
+  enterprise.common.RequestContext context = 99;
+}
+
+message ListIncidentsResponse {
+  repeated IncidentDetail incidents = 1;
+  enterprise.common.PaginationResponse pagination = 2;
 }
