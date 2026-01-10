@@ -1,0 +1,358 @@
+syntax = "proto3";
+
+package finance.controlling.costcenter;
+
+
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/openapiv2.proto";
+import "common/common.proto";
+
+// ============================================================================
+// OpenAPI Configuration
+// ============================================================================
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Cost Center Allocation Service"
+    version: "1.0.0"
+    description: "Core features for SAP S/4HANA Universal Allocation: Execution, Reporting, and Cycle Management."
+    contact: {
+      name: "Finance Team"
+      email: "finance@enterprise.com"
+    }
+  }
+  host: "localhost:8080"
+  base_path: "/"
+  schemes: HTTP
+  schemes: HTTPS
+  consumes: "application/json"
+  produces: "application/json"
+  security_definitions: {
+    security: {
+      key: "bearer_auth"
+      value: {
+        type: TYPE_API_KEY
+        in: IN_HEADER
+        name: "Authorization"
+        description: "Bearer token for authentication"
+      }
+    }
+  }
+  security: {
+    security_requirement: {
+      key: "bearer_auth"
+      value: {}
+    }
+  }
+};
+
+// ============================================================================
+// Service Definition
+// ============================================================================
+
+service CostCenterAllocationService {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "Cost Center Allocation Service (Core)"
+  };
+
+  // --- Execution ---
+
+  // Execute or Simulate Allocation
+  rpc ExecuteCostCenterAllocation(ExecuteRequest) returns (ExecuteResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/controlling/costcenter/execute"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Execution (成本分配执行)"
+      summary: "执行成本分配"
+    };
+  }
+
+  // Batch Execute Allocations
+  rpc ExecuteAllocationBatch(BatchExecuteRequest) returns (BatchExecuteResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/controlling/costcenter/batch-execute"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Execution (成本分配执行)"
+      summary: "批量执行分配"
+    };
+  }
+
+  // Reverse Allocation Run
+  rpc ReverseAllocationRun(ReverseRequest) returns (ReverseResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/controlling/costcenter/reverse"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Execution (成本分配执行)"
+      summary: "冲销分配运行"
+    };
+  }
+
+  // --- Configuration ---
+
+  // Get Cycle Definition (with Segments)
+  rpc GetCycleDefinition(GetCycleDefinitionRequest) returns (CycleDefinition) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/controlling/costcenter/cycles/{cycle_id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Configuration (分配规则与循环)"
+      summary: "获取循环定义"
+    };
+  }
+
+  // Validate Cycle Rules
+  rpc ValidateCycleRules(ValidateRulesRequest) returns (ValidationResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/controlling/costcenter/validate"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Configuration (分配规则与循环)"
+      summary: "校验循环规则"
+    };
+  }
+
+  // --- Analytics & Integration ---
+
+  // Get Allocation Result (including flow visualization)
+  rpc GetAllocationResult(GetResultRequest) returns (AllocationResult) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/controlling/costcenter/results/{run_id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Analytics (分配分析与结果)"
+      summary: "获取分配结果"
+    };
+  }
+
+  // Get Allocation Overview (Dashboard)
+  rpc GetAllocationOverview(GetOverviewRequest) returns (AllocationOverview) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/controlling/costcenter/overview"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Analytics (分配分析与结果)"
+      summary: "获取分配概览"
+    };
+  }
+
+  // Import Allocation Values
+  rpc ImportAllocationValues(ImportRequest) returns (ImportResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/controlling/costcenter/import"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Integration (数据集成)"
+      summary: "导入分配值"
+    };
+  }
+
+  // Export to Analytics
+  rpc ExportToAnalytics(ExportRequest) returns (ExportResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/controlling/costcenter/export/{run_id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Integration (数据集成)"
+      summary: "导出分析数据"
+    };
+  }
+}
+
+// ============================================================================
+// Enums
+// ============================================================================
+
+enum AllocationType {
+  ALLOCATION_TYPE_UNSPECIFIED = 0;
+  DISTRIBUTION                = 1;
+  ASSESSMENT                  = 2;
+  INDIRECT_ACTIVITY           = 3;
+}
+
+enum RunMode {
+  RUN_MODE_UNSPECIFIED = 0;
+  REAL                 = 1;
+  SIMULATE             = 2;
+}
+
+enum TracingBasis {
+  TRACING_BASIS_UNSPECIFIED = 0;
+  FIXED_PERCENT             = 1;
+  FIXED_AMOUNT              = 2;
+  STAT_KEY_FIGURE           = 3;
+  ACTIVITY_QUANTITY         = 4;
+  FORMULA                   = 5;
+}
+
+// ============================================================================
+// Messages
+// ============================================================================
+
+message ExecuteRequest {
+  string controlling_area           = 1;
+  int32  fiscal_year                = 2;
+  int32  fiscal_period              = 3;
+  string cycle_id                   = 4;
+  string ledger                     = 5;
+  AllocationType type               = 6;
+  RunMode mode                      = 7;
+  bool   overwrite_existing         = 8;
+  google.protobuf.StringValue segment_id = 9;
+}
+
+message ExecuteResponse {
+  bool   success                    = 1;
+  string run_id                     = 2;
+  string execution_time             = 3;
+  repeated enterprise.common.ApiMessage messages = 4;
+  enterprise.common.MonetaryValue total_allocated = 5;
+}
+
+message BatchExecuteRequest {
+  repeated ExecuteRequest items     = 1;
+  bool   stop_on_error              = 2;
+}
+
+message BatchExecuteResponse {
+  string batch_id                   = 1;
+  int32  total_items                = 2;
+}
+
+message ReverseRequest {
+  string run_id                     = 1;
+  string reason                     = 2;
+  google.protobuf.Timestamp reversal_date = 3;
+}
+
+message ReverseResponse {
+  bool   success                    = 1;
+  string reversal_run_id            = 2;
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+message GetCycleDefinitionRequest {
+  string controlling_area           = 1;
+  string cycle_id                   = 2;
+}
+
+message CycleDefinition {
+  string cycle_id                   = 1;
+  string description                = 2;
+  repeated SegmentDefinition segments = 3;
+  google.protobuf.Timestamp valid_from = 4;
+  google.protobuf.Timestamp valid_to   = 5;
+}
+
+message CreateCycleRequest {
+  // Implicitly needed for internal APIs if ever exposed, but kept out of public RPCs for now.
+}
+
+message ValidateRulesRequest {
+  string controlling_area           = 1;
+  string cycle_id                   = 2;
+}
+
+message ValidationResponse {
+  bool   is_valid                   = 1;
+  repeated enterprise.common.ApiMessage findings = 2;
+}
+
+message GetResultRequest {
+  string run_id                     = 1;
+  bool   include_visualization      = 2;
+}
+
+message AllocationResult {
+  string run_id                     = 1;
+  repeated CostCenterFlow flows     = 2;
+  enterprise.common.MonetaryValue total_amount = 3;
+  // Metadata for simple visualization
+  repeated VisualizationNode nodes  = 4;
+  repeated VisualizationEdge edges  = 5;
+}
+
+message GetOverviewRequest {
+  string controlling_area           = 1;
+  int32  fiscal_year                = 2;
+  google.protobuf.Int32Value period = 3;
+}
+
+message AllocationOverview {
+  enterprise.common.MonetaryValue total_allocated = 1;
+  int32  total_runs                 = 2;
+  int32  success_runs               = 3;
+  int32  simulation_runs            = 4;
+}
+
+message ImportRequest {
+  string controlling_area           = 1;
+  bytes  content                    = 2;
+  string format                     = 3;
+}
+
+message ImportResponse {
+  bool   success                    = 1;
+  int32  rows_processed             = 2;
+  repeated enterprise.common.ApiMessage errors = 3;
+}
+
+message ExportRequest {
+  string run_id                     = 1;
+  string format                     = 2;
+}
+
+message ExportResponse {
+  bytes  content                    = 1;
+  string mime_type                  = 2;
+  string filename                   = 3;
+}
+
+// --- Sub-structures ---
+
+message SegmentDefinition {
+  string segment_id                 = 1;
+  string description                = 2;
+  repeated string sender_cost_centers = 3;
+  repeated ReceiverRule receivers   = 4;
+  TracingBasis basis                = 5;
+}
+
+message ReceiverRule {
+  repeated string cost_centers      = 1;
+  string target_cost_element        = 2;
+  map<string, float> fixed_ratios   = 3;
+  string tracing_factor_ref         = 4;
+}
+
+message CostCenterFlow {
+  string sender_cc                  = 1;
+  string sender_ce                  = 2;
+  string receiver_cc                = 3;
+  string receiver_ce                = 4;
+  enterprise.common.MonetaryValue amount = 5;
+  string segment_id                 = 6;
+}
+
+message VisualizationNode {
+  string id                         = 1;
+  string label                      = 2;
+  string type                       = 3; // 'sender' or 'receiver'
+  enterprise.common.MonetaryValue amount = 4;
+}
+
+message VisualizationEdge {
+  string source_id                  = 1;
+  string target_id                  = 2;
+  enterprise.common.MonetaryValue amount = 3;
+}

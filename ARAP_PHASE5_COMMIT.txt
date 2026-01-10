@@ -1,0 +1,146 @@
+feat(ar-ap): implement AR/AP Service Phase 5 - application layer
+
+## Summary
+Implemented application layer with service orchestration, command DTOs, and
+business logic for AR/AP operations.
+
+## Application Layer Components
+
+### Application Services (services.rs - 215 lines)
+
+**PartnerService:**
+- `get_partner_details()` - Retrieve business partner information
+- `create_customer()` - Create new customer account
+- `create_supplier()` - Create new supplier account
+- `list_customers_by_company()` - Query customers by company code
+- `list_suppliers_by_company()` - Query suppliers by company code
+
+**OpenItemsService:**
+- `list_open_items()` - List open items by partner and company
+- `get_account_balance()` - Calculate account balance
+- `get_overdue_items()` - Filter overdue items for a partner
+
+**CreditManagementService:**
+- `perform_credit_check()` - **Full business logic implementation**
+  - Retrieves customer credit limit
+  - Calculates current exposure from open items
+  - Determines check result (Pass/Warning/Fail)
+  - Applies business rules:
+    - FAIL: Balance exceeds credit limit
+    - WARNING: Utilization > 90% or no limit set
+    - PASS: Within acceptable range
+  - Persists credit check record
+
+**PaymentService:**
+- `create_payment_proposal()` - Create payment proposal
+- `approve_payment_proposal()` - Approve proposal for execution
+- `execute_payment_run()` - Execute payment run
+- `update_payment_run_status()` - Update run status
+
+### Command DTOs (commands.rs - 96 lines)
+
+**Partner Commands:**
+- `CreateCustomerCommand` - Customer creation intent
+- `CreateSupplierCommand` - Supplier creation intent
+
+**Credit Commands:**
+- `PerformCreditCheckCommand` - Credit check execution
+
+**Payment Commands:**
+- `CreatePaymentProposalCommand` - Payment proposal creation
+- `ApprovePaymentProposalCommand` - Proposal approval
+- `ExecutePaymentRunCommand` - Payment run execution
+
+**Clearing Commands:**
+- `CreateClearingCommand` - Clearing document creation
+
+**Dunning Commands:**
+- `CreateDunningCommand` - Dunning activity creation
+
+### Module Organization (mod.rs)
+- Exported commands and services
+- Clean public API surface
+
+## Business Logic Highlights
+
+### Credit Check Implementation
+```rust
+pub async fn perform_credit_check(&self, customer_id: &str, checked_by: Uuid) 
+    -> RepositoryResult<CreditCheck> 
+{
+    // 1. Fetch customer
+    let customer = self.customer_repo.find_by_id(customer_id).await?;
+    
+    // 2. Calculate exposure
+    let balance = self.open_items_repo.get_balance(...).await?;
+    
+    // 3. Apply business rules
+    let result = if balance > credit_limit {
+        CreditCheckResult::Fail
+    } else if utilization > 90% {
+        CreditCheckResult::Warning
+    } else {
+        CreditCheckResult::Pass
+    };
+    
+    // 4. Persist check record
+    self.credit_check_repo.save(&check).await?;
+    Ok(check)
+}
+```
+
+## Architecture Benefits
+
+**Service Layer Pattern:**
+- Orchestrates multiple repositories
+- Encapsulates business workflows
+- Transaction boundary candidates
+- Testable with mocked repositories
+
+**Command Pattern:**
+- Explicit user intentions
+- Validation-ready DTOs
+- Audit trail foundation
+- Easy serialization for messaging
+
+**Dependency Injection:**
+- Services accept repository traits
+- Supports testing and mocking
+- Decoupled from infrastructure
+
+## Integration Points
+
+**With Domain Layer:**
+- Uses domain entities and value objects
+- Enforces business invariants
+- Returns domain results
+
+**With Infrastructure Layer:**
+- Calls repository methods
+- Handles persistence errors
+- Manages transactions (future)
+
+**With gRPC Layer:**
+- Commands map to Proto requests
+- Services power RPC handlers
+- Results map to Proto responses
+
+## Code Quality
+- Full async/await support
+- Type-safe error handling
+- Comprehensive documentation
+- Single responsibility per service
+- Clean separation of concerns
+
+## Statistics
+- **Services**: 4 (215 lines)
+- **Commands**: 8 (96 lines)
+- **Total Application Layer**: 311 lines
+- **Public Methods**: 14
+
+## Next Steps
+- Phase 6: Extended gRPC methods
+- Phase 7: Integration testing
+
+---
+Part of AR/AP Service MVP - Application Layer Complete

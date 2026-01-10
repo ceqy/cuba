@@ -22,10 +22,7 @@ docker-compose up -d
 # 3. 运行数据库迁移
 sqlx migrate run
 
-# 4. 启动 Auth 服务（后端）
-cargo run -p auth-service &
-
-# 5. 启动网关和 Swagger UI
+# 4. 一键启动服务（Auth 后端 + 网关 + Swagger UI）
 ./scripts/start.sh
 ```
 

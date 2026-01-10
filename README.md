@@ -40,8 +40,7 @@ This repository contains the source code for the **Corporate Unified Business Ar
 ```bash
 docker-compose up -d          # 启动基础设施
 sqlx migrate run              # 数据库迁移
-cargo run -p auth-service &   # 启动后端
-./scripts/start.sh            # 启动网关
+./scripts/start.sh            # 一键启动服务（Auth + 网关 + Swagger）
 ```
 
 访问 http://localhost:8081 查看 Swagger UI。

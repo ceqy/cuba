@@ -3,7 +3,7 @@
     "info": {
         "title": "Accounts Receivable/Payable Service API",
         "description": "应收/应付全生命周期管理服务 - 提供客户/供应商主数据、未清项查询、清账、余额/账龄、对账单、催款、信用检查、付款建议、预付款、发票过账/冲销/验证等企业级功能",
-        "version": "5.31.0",
+        "version": "0.1.0",
         "contact": {
             "name": "Finance Team",
             "email": "finance@yourproject.com"

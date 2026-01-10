@@ -3,7 +3,7 @@
     "info": {
         "title": "General Ledger Service API",
         "description": "处理日记账分录、凭证审批、结转清账及并行分类账等核心财务逻辑",
-        "version": "5.31.0",
+        "version": "0.1.0",
         "contact": {
             "name": "Finance Team",
             "email": "finance@yourproject.com"

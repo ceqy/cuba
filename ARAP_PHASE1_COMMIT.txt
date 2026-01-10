@@ -1,0 +1,82 @@
+feat(ar-ap): implement AR/AP Service Phase 1 - project foundation
+
+## Summary
+Created foundational structure for AR/AP (Accounts Receivable/Payable) Service
+following the established DDD architecture pattern from GL Service.
+
+## Phase 1 Deliverables
+
+### Project Configuration
+- **Cargo.toml**: Dependencies aligned with GL Service
+- **build.rs**: Proto compilation configuration
+
+### Database Layer
+- **Migration 0001**: Core tables
+  - `business_partners` - Business partner master data
+  - `customers` - Customer accounts
+  - `suppliers` - Supplier accounts  
+  - `open_items` - Receivable/payable line items
+- Added indexes for performance
+- Created enums: `partner_type`, `account_type`
+
+### Domain Layer
+- **Entities**: BusinessPartner, Customer, Supplier, OpenItem, AccountBalance
+- **Repository Traits**: Define data access contracts
+- Business logic methods (e.g., `is_overdue()`, `display_name()`)
+
+### Infrastructure Layer
+- **PostgreSQL Repository**: Full CRUD implementation
+- **Row Mappers**: Database ↔ Domain conversions
+- Query optimizations for balance calculations
+
+### gRPC Service Layer (MVP - 5 Methods)
+1. `GetPartnerDetails` - Fetch business partner info
+2. `PostCustomer` - Create customer
+3. `PostSupplier` - Create supplier
+4. `ListOpenItems` - Query open items by partner
+5. `GetAccountBalance` - Calculate account balance
+
+### Application Entry
+- **main.rs**: Service bootstrap with:
+  - Database connection pooling
+  - Migration runner
+  - gRPC reflection
+  - Health checks
+  - Graceful shutdown
+
+## Directory Structure
+```
+apps/finance/ar-ap-service/
+├── Cargo.toml
+├── build.rs
+├── migrations/
+│   └── 0001_ar_ap_core.sql
+└── src/
+    ├── main.rs
+    ├── proto.rs
+    ├── application/mod.rs
+    ├── domain/
+    │   ├── mod.rs
+    │   ├── entities.rs
+    │   └── repository.rs
+    ├── infrastructure/
+    │   ├── mod.rs
+    │   ├── persistence.rs
+    │   └── mapper.rs
+    └── grpc/
+        ├── mod.rs
+        └── service.rs
+```
+
+## Status
+- ✅ Code structure complete
+- ⚠️  Build errors expected (Proto types need generation)
+- 📝 Remaining: 33 RPC methods for future phases
+
+## Next Steps
+- Phase 2: Complete database design
+- Phase 3: Implement remaining RPC methods
+- Phase 4: Integration testing
+
+---
+Part of AR/AP Service MVP implementation

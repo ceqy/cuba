@@ -1,0 +1,87 @@
+feat(ar-ap): implement AR/AP Service Phase 2 - comprehensive database design
+
+## Summary
+Extended database schema with enterprise-grade tables for clearing, credit management,
+payment processing, aging analysis, and banking features.
+
+## New Database Migrations
+
+### 0002_extended_tables.sql (8 Tables)
+- **clearing_history**: Clearing document headers
+- **clearing_items**: Line items for clearing operations
+- **credit_limit_history**: Credit limit change tracking
+- **credit_checks**: Credit check execution records
+- **payment_proposals**: Payment run proposals
+- **payment_proposal_items**: Proposal line items
+- **aging_snapshots**: Historical aging analysis snapshots
+- **dunning_history**: Customer dunning/collection records
+- **account_statements**: Account statement generation
+
+### 0003_bank_payments.sql (7 Tables)
+- **bank_master**: Bank master data
+- **partner_bank_accounts**: Partner banking details
+- **payment_runs**: Payment execution runs
+- **payment_run_items**: Individual payments in a run
+- **advance_payments**: Prepayments/advances
+- **advance_payment_applications**: Advance application tracking
+
+### 0004_views_functions.sql (Views & Functions)
+**Views:**
+- `v_partner_overview`: Unified partner view (customer + supplier)
+- `v_open_items_summary`: Aggregated open items
+- `v_aging_analysis`: Real-time aging buckets
+- `v_customer_credit_exposure`: Credit utilization tracking
+
+**Functions:**
+- `get_account_balance()`: Calculate partner balance
+- `get_days_overdue()`: Calculate overdue days
+- `calculate_payment_discount()`: Payment term discounts
+
+**Triggers:**
+- Auto-update open item clearing status
+- Auto-update advance payment balances
+
+## Database Features
+
+### Advanced Capabilities
+- ✅ Partial/full/automatic clearing support
+- ✅ Credit limit monitoring with history
+- ✅ Multi-level dunning process
+- ✅ Payment proposal workflow
+- ✅ Bank account management
+- ✅ Advance payment tracking
+- ✅ Real-time aging analysis
+- ✅ Audit trails for all transactions
+
+### Performance Optimizations
+- Strategic indexes on high-query columns
+- Materialized snapshots for historical reports
+- Efficient views for common aggregations
+
+### Data Integrity
+- Foreign key constraints
+- Check constraints for business rules
+- Triggers for automatic calculations
+- Enum types for controlled values
+
+## Database Statistics
+- **Total Tables**: 19 (4 core + 15 extended)
+- **Total Views**: 4
+- **Total Functions**: 3
+- **Total Triggers**: 2
+- **Total Indexes**: 25+
+
+## Design Principles
+- SAP S/4HANA aligned structure
+- Event-driven architecture ready
+- Multi-currency support
+- Multi-company code support
+- Full audit trail capability
+
+## Next Steps
+- Phase 3: Domain entities for new tables
+- Phase 4: Repository implementations
+- Phase 5: gRPC methods for extended features
+
+---
+Part of AR/AP Service MVP - Database Layer Complete
