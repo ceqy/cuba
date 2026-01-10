@@ -19,6 +19,12 @@ import "common/common.proto";
 // ============================================================================
 
 service KanbanService {
+  // 创建看板控制周期 (New)
+  rpc CreateKanbanControlCycle(CreateControlCycleRequest) returns (ControlCycleResponse);
+
+  // 更新看板控制周期 (New)
+  rpc UpdateKanbanControlCycle(UpdateControlCycleRequest) returns (ControlCycleResponse);
+
   // 获取看板控制周期详情
   rpc GetKanbanControlCycle(GetKanbanControlCycleRequest) returns (KanbanControlCycle);
 
@@ -46,9 +52,9 @@ message KanbanControlCycle {
   // 看板容器数量 (原: ANZPK)
   int32 number_of_kanbans = 5;
   // 每个看板的数量 (原: KANMNG)
-  string quantity_per_kanban = 6;
-  // 补货策略 (例如, In-house production, External procurement)
-  string replenishment_strategy = 7;
+  enterprise.common.QuantityValue quantity_per_kanban = 6;
+  // 补货策略
+  enterprise.common.ReplenishmentStrategy replenishment_strategy = 7;
 }
 
 // 看板容器
@@ -57,18 +63,40 @@ message KanbanContainer {
   string container_id = 1;
   // 控制周期编号
   string control_cycle_number = 2;
-  // 当前状态 (EMPTY, FULL, IN_TRANSIT) (原: PKBST)
-  string status = 3;
+  // 当前状态
+  enterprise.common.KanbanStatus status = 3;
 }
 
 // ============================================================================
 // RPC 消息定义
 // ============================================================================
 
+// 创建看板控制周期请求
+message CreateControlCycleRequest {
+  KanbanControlCycle control_cycle = 1;
+  enterprise.common.RequestContext context = 99;
+}
+
+// 更新看板控制周期请求
+message UpdateControlCycleRequest {
+  string control_cycle_number = 1;
+  KanbanControlCycle control_cycle = 2;
+  repeated string update_mask = 3;
+  enterprise.common.RequestContext context = 99;
+}
+
+// 控制周期响应
+message ControlCycleResponse {
+  bool success = 1;
+  string control_cycle_number = 2;
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
 // 获取看板控制周期请求
 message GetKanbanControlCycleRequest {
   // 控制周期编号
   string control_cycle_number = 1;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 更改看板状态请求
@@ -76,7 +104,9 @@ message ChangeKanbanStatusRequest {
   // 容器ID
   string container_id = 1;
   // 新的状态
-  string new_status = 2;
+  enterprise.common.KanbanStatus new_status = 2;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 更改看板状态响应
@@ -98,11 +128,17 @@ message ListKanbanContainersRequest {
   // 物料编号
   string material = 3;
   // 状态过滤器
-  string status = 4;
+  enterprise.common.KanbanStatus status = 4;
+  // 分页请求
+  enterprise.common.PaginationRequest pagination = 98;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 查询看板容器响应
 message ListKanbanContainersResponse {
   // 容器列表
   repeated KanbanContainer containers = 1;
+  // 分页响应
+  enterprise.common.PaginationResponse pagination = 2;
 }

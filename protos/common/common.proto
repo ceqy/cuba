@@ -17,207 +17,235 @@ import "google/protobuf/timestamp.proto";
 
 // 银行对账单格式
 enum BankStatementFormat {
-  // 未指定
   BANK_STATEMENT_FORMAT_UNSPECIFIED = 0;
-  // MT940 格式 (SWIFT 标准)
   BANK_STATEMENT_FORMAT_MT940 = 1;
-  // CAMT.053 格式 (ISO 20022)
   BANK_STATEMENT_FORMAT_CAMT053 = 2;
-  // BAI2 格式 (美国银行协会)
   BANK_STATEMENT_FORMAT_BAI2 = 3;
-  // OFX 格式 (Open Financial Exchange)
   BANK_STATEMENT_FORMAT_OFX = 4;
-  // CSV 自定义格式
   BANK_STATEMENT_FORMAT_CSV_CUSTOM = 5;
-  // 多行对账单格式
   BANK_STATEMENT_FORMAT_MULTI_CASH = 6;
 }
 
 // 账户类型
 enum AccountType {
-  // 未指定
   ACCOUNT_TYPE_UNSPECIFIED = 0;
-  // 客户账户 (D)
   ACCOUNT_TYPE_CUSTOMER = 1;
-  // 供应商账户 (K)
   ACCOUNT_TYPE_SUPPLIER = 2;
-  // 总账科目 (S)
   ACCOUNT_TYPE_GL = 3;
-  // 资产账户 (A)
   ACCOUNT_TYPE_ASSET = 4;
-  // 物料账户 (M)
   ACCOUNT_TYPE_MATERIAL = 5;
 }
 
 // 支付方式
 enum PaymentMethodType {
-  // 未指定
   PAYMENT_METHOD_TYPE_UNSPECIFIED = 0;
-  // SEPA 转账 (欧元区)
   PAYMENT_METHOD_TYPE_SEPA = 1;
-  // 银行电汇
   PAYMENT_METHOD_TYPE_WIRE = 2;
-  // 支票
   PAYMENT_METHOD_TYPE_CHECK = 3;
-  // ACH 转账 (美国)
   PAYMENT_METHOD_TYPE_ACH = 4;
-  // 信用卡
   PAYMENT_METHOD_TYPE_CREDIT_CARD = 5;
-  // 现金
   PAYMENT_METHOD_TYPE_CASH = 6;
-  // 承兑汇票
   PAYMENT_METHOD_TYPE_BILL_OF_EXCHANGE = 7;
-  // 直接借记
   PAYMENT_METHOD_TYPE_DIRECT_DEBIT = 8;
 }
 
 // 报表类型
 enum ReportType {
-  // 未指定
   REPORT_TYPE_UNSPECIFIED = 0;
-  // 账龄分析报表
   REPORT_TYPE_AGING_ANALYSIS = 1;
-  // 未清项报表
   REPORT_TYPE_OPEN_ITEMS = 2;
-  // 对账单
   REPORT_TYPE_STATEMENT = 3;
-  // 试算平衡表
   REPORT_TYPE_TRIAL_BALANCE = 4;
-  // 日记账报表
   REPORT_TYPE_JOURNAL = 5;
 }
 
 // 导入格式
 enum ImportFormat {
-  // 未指定
   IMPORT_FORMAT_UNSPECIFIED = 0;
-  // CSV 格式
   IMPORT_FORMAT_CSV = 1;
-  // Excel 格式
   IMPORT_FORMAT_EXCEL = 2;
-  // JSON 格式
   IMPORT_FORMAT_JSON = 3;
-  // XML 格式
   IMPORT_FORMAT_XML = 4;
 }
 
 // 异步作业状态
 enum JobStatus {
-  // 未指定
   JOB_STATUS_UNSPECIFIED = 0;
-  // 待处理
   JOB_STATUS_PENDING = 1;
-  // 运行中
   JOB_STATUS_RUNNING = 2;
-  // 已完成
   JOB_STATUS_COMPLETED = 3;
-  // 失败
   JOB_STATUS_FAILED = 4;
-  // 已取消
   JOB_STATUS_CANCELLED = 5;
-  // 部分完成
   JOB_STATUS_PARTIALLY_COMPLETED = 6;
 }
 
 // 凭证类型 (Procurement)
 enum DocumentType {
   DOCUMENT_TYPE_UNSPECIFIED = 0;
-  // 标准采购订单 (NB)
   DOCUMENT_TYPE_STANDARD_PO = 1;
-  // 采购合同 (WK)
   DOCUMENT_TYPE_CONTRACT = 2;
-  // 报价请求 (AN)
   DOCUMENT_TYPE_RFQ = 3;
-  // 计划协议 (LP)
   DOCUMENT_TYPE_SCHEDULING_AGREEMENT = 4;
-  // 框架协议 (FO)
   DOCUMENT_TYPE_FRAMEWORK_ORDER = 5;
-  // 寄售订单 (KB)
   DOCUMENT_TYPE_CONSIGNMENT = 6;
-  // 转储订单 (UB)
   DOCUMENT_TYPE_STOCK_TRANSPORT = 7;
 }
 
 // 项目类别 (Procurement)
 enum ItemCategory {
   ITEM_CATEGORY_UNSPECIFIED = 0;
-  // 标准 (Standard)
   ITEM_CATEGORY_STANDARD = 1;
-  // 限制 (Limit) - B
   ITEM_CATEGORY_LIMIT = 2;
-  // 寄售 (Consignment) - K
   ITEM_CATEGORY_CONSIGNMENT = 3;
-  // 外协加工 (Subcontracting) - L
   ITEM_CATEGORY_SUBCONTRACTING = 4;
-  // 第三方 (Third-party) - S
   ITEM_CATEGORY_THIRD_PARTY = 5;
-  // 服务 (Service) - D
   ITEM_CATEGORY_SERVICE = 6;
 }
 
 // 审批状态 (Procurement)
 enum ReleaseStatus {
   RELEASE_STATUS_UNSPECIFIED = 0;
-  // 未审批
   RELEASE_STATUS_NOT_RELEASED = 1;
-  // 部分审批
   RELEASE_STATUS_PARTIALLY_RELEASED = 2;
-  // 已审批 (Released)
   RELEASE_STATUS_RELEASED = 3;
-  // 已冻结 (Blocked)
   RELEASE_STATUS_BLOCKED = 4;
-  // 已拒绝 (Rejected)
   RELEASE_STATUS_REJECTED = 5;
 }
 
 // 时间粒度 (Analytics)
 enum TimeGranularity {
   TIME_GRANULARITY_UNSPECIFIED = 0;
-  // 按天
   TIME_GRANULARITY_DAILY = 1;
-  // 按月
   TIME_GRANULARITY_MONTHLY = 2;
-  // 按季度
   TIME_GRANULARITY_QUARTERLY = 3;
-  // 按年
   TIME_GRANULARITY_YEARLY = 4;
+}
+
+// 看板状态 (Kanban)
+enum KanbanStatus {
+  KANBAN_STATUS_UNSPECIFIED = 0;
+  // 空 (需要补货)
+  KANBAN_STATUS_EMPTY = 1;
+  // 满 (已补货)
+  KANBAN_STATUS_FULL = 2;
+  // 运输中
+  KANBAN_STATUS_IN_TRANSIT = 3;
+  // 等待中
+  KANBAN_STATUS_WAIT = 4;
+  // 错误
+  KANBAN_STATUS_ERROR = 5;
+  // 使用中
+  KANBAN_STATUS_IN_USE = 6;
+}
+
+// 工序/订单状态 (Production)
+enum OperationStatus {
+  OPERATION_STATUS_UNSPECIFIED = 0;
+  // 已创建
+  OPERATION_STATUS_CRTD = 1;
+  // 已下达
+  OPERATION_STATUS_REL = 2;
+  // 部分确认
+  OPERATION_STATUS_PCNF = 3;
+  // 已确认
+  OPERATION_STATUS_CNF = 4;
+  // 已交货
+  OPERATION_STATUS_DLV = 5;
+  // 技术性完成
+  OPERATION_STATUS_TECO = 6;
+  // 已关闭
+  OPERATION_STATUS_CLSD = 7;
+}
+
+// 订单状态 (Production)
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  ORDER_STATUS_CREATED = 1;
+  ORDER_STATUS_RELEASED = 2;
+  ORDER_STATUS_CONFIRMED = 3;
+  ORDER_STATUS_PARTIALLY_CONFIRMED = 4;
+  ORDER_STATUS_DELIVERED = 5;
+  ORDER_STATUS_TECO = 6; // Technically Completed
+  ORDER_STATUS_CLOSED = 7;
+  ORDER_STATUS_LOCKED = 8;
+  ORDER_STATUS_DELETED = 9;
+}
+
+// 补货策略 (Kanban/Production)
+enum ReplenishmentStrategy {
+  REPLENISHMENT_STRATEGY_UNSPECIFIED = 0;
+  // 内部生产
+  REPLENISHMENT_STRATEGY_IN_HOUSE = 1;
+  // 外部采购
+  REPLENISHMENT_STRATEGY_EXTERNAL = 2;
+  // 库存转储
+  REPLENISHMENT_STRATEGY_STOCK_TRANSFER = 3;
+  // 寄售
+  REPLENISHMENT_STRATEGY_CONSIGNMENT = 4;
+}
+
+// MRP 运行类型
+enum MRPRunType {
+  MRP_RUN_TYPE_UNSPECIFIED = 0;
+  // 净改变计划 (Net Change)
+  MRP_RUN_TYPE_NETCH = 1;
+  // 计划范围内净改变 (Net Change in Planning Horizon)
+  MRP_RUN_TYPE_NETPL = 2;
+  // 重新计划 (Regenerative Planning)
+  MRP_RUN_TYPE_NEUPL = 3;
+}
+
+// 检验批来源
+enum InspectionLotOrigin {
+  INSPECTION_LOT_ORIGIN_UNSPECIFIED = 0;
+  // 收货
+  INSPECTION_LOT_ORIGIN_GOODS_RECEIPT = 1;
+  // 生产
+  INSPECTION_LOT_ORIGIN_PRODUCTION = 2;
+  // 外协
+  INSPECTION_LOT_ORIGIN_SUB_CONTRACTING = 3;
+  // 库存转移
+  INSPECTION_LOT_ORIGIN_STOCK_TRANSFER = 4;
+  // 客户退货
+  INSPECTION_LOT_ORIGIN_CUSTOMER_RETURN = 5;
+}
+
+// 使用决策代码
+enum UsageDecision {
+  USAGE_DECISION_UNSPECIFIED = 0;
+  // 接受
+  USAGE_DECISION_ACCEPT = 1;
+  // 拒绝
+  USAGE_DECISION_REJECT = 2;
+  // 让步接收/有条件接受
+  USAGE_DECISION_CONDITIONAL = 3;
+  // 报废
+  USAGE_DECISION_SCRAP = 4;
+  // 返工
+  USAGE_DECISION_REWORK = 5;
 }
 
 // ============================================================================
 // 基础数据类型
 // ============================================================================
 
-// 金额值
-// 用于表示货币金额，将值定义为字符串以避免精度损失。
 message MonetaryValue {
-  // 货币代码 (ISO 4217), 例如 "USD", "CNY"
   string currency_code = 1; 
-  // 金额的字符串表示，例如 "12345.67"
   string value = 2;
 }
 
-// 数量值
-// 用于表示带有单位的数量。
 message QuantityValue {
-  // 单位代码 (ISO), 例如 "PCE" (件), "KG" (千克)
   string unit_code = 1;
-  // 数量的字符串表示，例如 "100.000"
   string value = 2;
 }
 
-// 日期范围
 message DateRange {
-  // 开始日期
   google.protobuf.Timestamp start_date = 1;
-  // 结束日期
   google.protobuf.Timestamp end_date = 2;
 }
 
-// 时间戳范围
 message TimestampRange {
-  // 开始时间戳
   google.protobuf.Timestamp start_time = 1;
-  // 结束时间戳
   google.protobuf.Timestamp end_time = 2;
 }
 
@@ -225,27 +253,17 @@ message TimestampRange {
 // 集合与分页
 // ============================================================================
 
-// 分页请求
 message PaginationRequest {
-  // 页码 (从1开始)
   int32 page = 1;
-  // 每页大小
   int32 page_size = 2;
-  // 排序字段
   string sort_by = 3;
-  // 是否降序
   bool descending = 4;
 }
 
-// 分页响应
 message PaginationResponse {
-  // 当前页码
   int32 current_page = 1;
-  // 每页大小
   int32 page_size = 2;
-  // 总记录数
   int64 total_items = 3;
-  // 总页数
   int32 total_pages = 4;
 }
 
@@ -253,19 +271,13 @@ message PaginationResponse {
 // 通用过滤器
 // ============================================================================
 
-// 状态过滤器
 message StatusFilter {
-  // 包含的状态列表
   repeated string include_statuses = 1;
-  // 排除的状态列表
   repeated string exclude_statuses = 2;
 }
 
-// 金额范围过滤器
 message AmountRangeFilter {
-  // 最小金额
   MonetaryValue min_amount = 1;
-  // 最大金额
   MonetaryValue max_amount = 2;
 }
 
@@ -273,65 +285,37 @@ message AmountRangeFilter {
 // 系统交互
 // ============================================================================
 
-// 系统凭证引用
-// 用于唯一标识核心ERP系统中生成的凭证。
 message SystemDocumentReference {
-  // 凭证编号 (原: BELNR, VBELN, MBLNR)
   string document_number = 1;
-  // 会计年度 (原: GJAHR, MJAHR)
   int32 fiscal_year = 2;
-  // 法人实体/公司代码 (原: BUKRS)
   string company_code = 3;
-  // 凭证类型 (原: BLART, AUART, BSART)
   string document_type = 4;
-  // 凭证类别 (原: VBTYP, BSTYP)
   string document_category = 5;
 }
 
-// API 调用消息
-// 用于包装从核心ERP系统API返回的消息。
 message ApiMessage {
-  // 消息类型 (E: Error, W: Warning, I: Info, S: Success)
   string type = 1;
-  // 消息代码或编号
   string code = 2;
-  // 消息文本
   string message = 3;
-  // 消息指向的目标字段或参数
   string target = 4;
 }
 
-// 审计数据
-// 记录数据的创建和修改信息。
 message AuditData {
-  // 创建人 (原: ERNAM)
   string created_by = 1;
-  // 创建时间 (原: ERDAT, ERZET)
   google.protobuf.Timestamp created_at = 2;
-  // 最后修改人 (原: AENAM)
   string changed_by = 3;
-  // 最后修改时间 (原: AEDAT)
   google.protobuf.Timestamp changed_at = 4;
 }
 
-// 错误详情
-// 用于在批量操作中返回具体某个项目的错误信息。
 message ErrorDetail {
-  // 失败的条目ID或索引
   string item_id = 1;
-  // 错误信息
   string error_message = 2;
-  // 错误码
   string error_code = 3;
 }
 
-// 批量操作结果
 message BatchOperationResult {
-  // 成功处理的总数
   int32 success_count = 1;
-  // 处理失败的总数
   int32 failure_count = 2;
-  // 失败条目的详细信息
   repeated ErrorDetail errors = 3;
 }
 
@@ -339,72 +323,72 @@ message BatchOperationResult {
 // 异步作业
 // ============================================================================
 
-// 异步作业信息
 message JobInfo {
-  // 作业ID
   string job_id = 1;
-  // 作业类型
   string job_type = 2;
-  // 作业状态
   JobStatus status = 3;
-  // 创建时间
   google.protobuf.Timestamp created_at = 4;
-  // 开始时间
   google.protobuf.Timestamp started_at = 5;
-  // 完成时间
   google.protobuf.Timestamp completed_at = 6;
-  // 进度百分比 (0-100)
   int32 progress_percentage = 7;
-  // 结果消息
   repeated ApiMessage messages = 8;
-  // 错误详情 (如果失败)
   string error_detail = 9;
+}
+
+// ============================================================================
+// 库存移动 (Manufacturing Shared)
+// ============================================================================
+
+message StockMovementHeader {
+  string document_date = 1;
+  string posting_date = 2;
+  string header_text = 3;
+}
+
+message StockMovementItem {
+  string material = 1;
+  string plant = 2;
+  string storage_location = 3;
+  string batch = 4;
+  string move_type = 5;
+  QuantityValue quantity = 6;
+  string cost_center = 7;
+  string order_number = 8;
+  string order_item = 9;
+}
+
+message StockMovementResponse {
+  bool success = 1;
+  string material_document_number = 2;
+  int32 material_document_year = 3;
+  repeated ApiMessage messages = 4;
 }
 
 // ============================================================================
 // 主数据片段
 // ============================================================================
 
-// 地址信息
-// 基于客户/供应商主数据地址结构。
 message Address {
-  // 国家代码 (ISO 3166-1), (原: LAND1)
   string country = 1;
-  // 省/州
   string region = 2;
-  // 城市 (原: ORT01)
   string city = 3;
-  // 邮政编码 (原: PSTLZ)
   string postal_code = 4;
-  // 街道地址 (原: STRAS)
   string street = 5;
-  // 门牌号
   string house_number = 6;
 }
 
 // ============================================================================
-// 请求上下文 (Request Context) - 统一请求元数据
+// 请求上下文 (Request Context)
 // ============================================================================
 
-// 请求上下文
-// 用于在所有RPC请求中传递统一的元数据，支持多租户、审计、幂等性等企业级特性。
 message RequestContext {
-  // 请求唯一标识 (UUID格式)，用于分布式追踪和日志关联
   string request_id = 1;
-  // 租户ID，用于多租户隔离
   string tenant_id = 2;
-  // 用户ID，发起请求的用户标识
   string user_id = 3;
-  // 用户角色列表，用于权限控制
   repeated string roles = 4;
-  // 幂等性键，确保写操作的幂等性
   string idempotency_key = 5;
-  // 区域设置 (例如: "zh-CN", "en-US")，用于国际化
   string locale = 6;
-  // 请求时间戳
   google.protobuf.Timestamp timestamp = 7;
-  // 请求来源系统标识
   string source_system = 8;
-  // 关联ID (用于跨服务调用链路追踪)
   string correlation_id = 9;
 }

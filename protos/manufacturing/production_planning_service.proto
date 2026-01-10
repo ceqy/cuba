@@ -20,8 +20,14 @@ import "common/common.proto";
 // ============================================================================
 
 service ProductionPlanningService {
-  // 运行物料需求计划 (MRP)
-  rpc RunMRP(RunMRPRequest) returns (RunMRPResponse);
+  // 运行物料需求计划 (MRP) - 异步
+  rpc RunMRP(RunMRPRequest) returns (enterprise.common.JobInfo);
+
+  // 模拟物料需求计划 (MRP) - 异步
+  rpc SimulateMRP(RunMRPRequest) returns (enterprise.common.JobInfo);
+
+  // 获取MRP运行状态
+  rpc GetMRPStatus(GetMRPStatusRequest) returns (enterprise.common.JobInfo);
 
   // 查询计划订单
   rpc ListPlannedOrders(ListPlannedOrdersRequest) returns (ListPlannedOrdersResponse);
@@ -46,9 +52,7 @@ message PlannedOrder {
   // 工厂 (原: PLWRK)
   string plant = 3;
   // 订单数量 (原: GSMNG)
-  string order_quantity = 4;
-  // 单位
-  string unit = 5;
+  enterprise.common.QuantityValue order_quantity = 4;
   // 订单开始日期 (原: PSTTR)
   google.protobuf.Timestamp order_start_date = 6;
   // 订单完成日期 (原: PEDTR)
@@ -70,24 +74,26 @@ message RunMRPRequest {
   // 要运行MRP的物料列表 (如果为空，则为全厂运行)
   repeated string materials = 2;
   // MRP运行类型 (e.g., NETCH, NETPL, NEUPL)
-  string run_type = 3;
-  // 是否为测试运行
+  enterprise.common.MRPRunType run_type = 3;
+  // 是否为测试运行 (Simulation)
   bool test_run = 4;
+  // 计划模式 (1=Adapt planning data, 2=Re-explode BOM, 3=Delete and recreate)
+  string planning_mode = 5;
+  // 调度模式 (1=Basic dates, 2=Lead time scheduling)
+  string scheduling_mode = 6;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
-// 运行MRP响应
-message RunMRPResponse {
-  // 操作是否成功
-  bool success = 1;
-  // MRP运行的ID或日志号
-  string run_id = 2;
-  // 从核心ERP返回的消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+// 获取MRP状态请求
+message GetMRPStatusRequest {
+  string job_id = 1;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 查询计划订单请求
 message ListPlannedOrdersRequest {
-  // 工厂
+  // 工厂 (必填)
   string plant = 1;
   // 物料编号
   string material = 2;
@@ -95,8 +101,12 @@ message ListPlannedOrdersRequest {
   string mrp_controller = 3;
   // 订单完成日期范围
   enterprise.common.DateRange finish_date_range = 4;
+  // 状态过滤器
+  repeated string status_filter = 5;
   // 分页请求
-  enterprise.common.PaginationRequest pagination = 5;
+  enterprise.common.PaginationRequest pagination = 98;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 查询计划订单响应
@@ -113,6 +123,10 @@ message ConvertPlannedOrderRequest {
   string planned_order_number = 1;
   // 要转换成的生产订单类型
   string production_order_type = 2;
+  // 转换数量 (如果部分转换)
+  enterprise.common.QuantityValue convert_quantity = 3;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 转换计划订单响应
@@ -133,6 +147,8 @@ message GetWorkCenterCapacityLoadRequest {
   string work_center = 2;
   // 评估周期
   enterprise.common.DateRange evaluation_period = 3;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 获取工作中心产能负荷响应
@@ -147,10 +163,10 @@ message GetWorkCenterCapacityLoadResponse {
 message CapacityLoadPeriod {
   // 时间段 (例如, "2026-W01")
   string time_period = 1;
-  // 可用产能 (例如, 小时)
-  string available_capacity = 2;
+  // 可用产能
+  enterprise.common.QuantityValue available_capacity = 2;
   // 已分配负荷
-  string load = 3;
+  enterprise.common.QuantityValue load = 3;
   // 负荷百分比
   string load_percentage = 4;
 }

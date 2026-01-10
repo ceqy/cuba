@@ -26,6 +26,9 @@ service ShopFloorExecutionService {
   // 对生产订单工序进行报工确认
   rpc ConfirmProductionOperation(ConfirmOperationRequest) returns (ConfirmOperationResponse);
 
+  // 取消报工确认 (New)
+  rpc CancelConfirmation(CancelConfirmationRequest) returns (CancelConfirmationResponse);
+
   // 为生产订单过账物料消耗 (发料)
   rpc PostMaterialConsumption(PostMaterialMovementRequest) returns (enterprise.common.StockMovementResponse);
 
@@ -48,17 +51,15 @@ message ProductionOrderDetail {
   // 工厂 (原: WERKS)
   string plant = 4;
   // 订单总数量 (原: GAMNG)
-  string total_quantity = 5;
+  enterprise.common.QuantityValue total_quantity = 5;
   // 已交付数量 (原: GMEIN)
-  string delivered_quantity = 6;
-  // 单位
-  string unit = 7;
+  enterprise.common.QuantityValue delivered_quantity = 6;
   // 基本开始日期 (原: GSTRP)
   google.protobuf.Timestamp basic_start_date = 8;
   // 基本完成日期 (原: GLTRP)
   google.protobuf.Timestamp basic_finish_date = 9;
-  // 订单状态 (例如, REL, PCNF, CNF, DLV)
-  string status = 10;
+  // 订单状态
+  enterprise.common.OrderStatus status = 10;
   // 生产订单工序列表
   repeated ProductionOperation operations = 11;
   // 生产订单组件列表
@@ -74,9 +75,9 @@ message ProductionOperation {
   // 工序描述 (原: LTXA1)
   string description = 3;
   // 已确认产量 (原: LMNGA)
-  string confirmed_yield = 4;
+  enterprise.common.QuantityValue confirmed_yield = 4;
   // 状态
-  string status = 5;
+  enterprise.common.OperationStatus status = 5;
 }
 
 // 生产订单组件 (参考: RESB)
@@ -86,11 +87,9 @@ message ProductionComponent {
   // 物料编号 (原: MATNR)
   string material = 2;
   // 需求数量 (原: BDMNG)
-  string requirement_quantity = 3;
+  enterprise.common.QuantityValue requirement_quantity = 3;
   // 已领料数量 (原: ENMNG)
-  string withdrawn_quantity = 4;
-  // 单位 (原: MEINS)
-  string unit = 5;
+  enterprise.common.QuantityValue withdrawn_quantity = 4;
   // 存储地点 (原: LGORT)
   string storage_location = 6;
   // 倒冲标识 (原: KZEAR)
@@ -105,6 +104,8 @@ message ProductionComponent {
 message GetProductionOrderRequest {
   // 生产订单号
   string order_number = 1;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 报工确认请求 (参考: AFRU)
@@ -114,17 +115,17 @@ message ConfirmOperationRequest {
   // 工序编号
   string operation_number = 2;
   // 确认的合格数量 (原: LMNGA)
-  string yield_quantity = 3;
+  enterprise.common.QuantityValue yield_quantity = 3;
   // 确认的报废数量 (原: XMNGA)
-  string scrap_quantity = 4;
-  // 单位
-  string unit = 5;
+  enterprise.common.QuantityValue scrap_quantity = 4;
   // 是否为最后一道工序确认 (原: AUERU)
   bool final_confirmation = 6;
   // 过账日期 (原: BUDAT)
   google.protobuf.Timestamp posting_date = 7;
   // 人员编号 (原: PERNR)
   string personnel_number = 8;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 报工确认响应
@@ -137,6 +138,23 @@ message ConfirmOperationResponse {
   repeated enterprise.common.ApiMessage messages = 3;
 }
 
+// 取消报工确认请求
+message CancelConfirmationRequest {
+  // 报工确认号
+  string confirmation_number = 1;
+  // 取消原因
+  string cancellation_reason = 2;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
+}
+
+// 取消报工确认响应
+message CancelConfirmationResponse {
+  bool success = 1;
+  string reversal_confirmation_number = 2;
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
 // 物料移动请求 (用于发料和收货)
 message PostMaterialMovementRequest {
   // 生产订单号
@@ -145,4 +163,6 @@ message PostMaterialMovementRequest {
   enterprise.common.StockMovementHeader header = 2;
   // 移动行项目
   repeated enterprise.common.StockMovementItem items = 3;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }

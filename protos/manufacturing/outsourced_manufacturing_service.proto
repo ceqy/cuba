@@ -20,6 +20,9 @@ import "common/common.proto";
 // ============================================================================
 
 service OutsourcedManufacturingService {
+  // 创建外协采购订单 (New)
+  rpc CreateSubcontractingOrder(CreateSubcontractingOrderRequest) returns (SubcontractingOrderResponse);
+
   // 获取外协采购订单详情
   rpc GetSubcontractingOrder(GetSubcontractingOrderRequest) returns (SubcontractingOrderDetail);
 
@@ -51,9 +54,9 @@ message SubcontractingItem {
   // 成品物料编号
   string finished_good_material = 2;
   // 订单数量
-  string order_quantity = 3;
+  enterprise.common.QuantityValue order_quantity = 3;
   // 已收货数量
-  string received_quantity = 4;
+  enterprise.common.QuantityValue received_quantity = 4;
   // 单位
   string unit = 5;
   // 需要提供的组件列表
@@ -65,9 +68,9 @@ message SubcontractingComponent {
   // 组件物料编号
   string component_material = 1;
   // 需求数量
-  string required_quantity = 2;
+  enterprise.common.QuantityValue required_quantity = 2;
   // 已发货数量
-  string issued_quantity = 3;
+  enterprise.common.QuantityValue issued_quantity = 3;
   // 单位
   string unit = 4;
 }
@@ -76,10 +79,37 @@ message SubcontractingComponent {
 // RPC 消息定义
 // ============================================================================
 
+// 创建外协订单请求
+message CreateSubcontractingOrderRequest {
+  string supplier = 1;
+  string company_code = 2;
+  string purchasing_org = 3;
+  string purchasing_group = 4;
+  repeated CreateSubcontractingItem items = 5;
+  enterprise.common.RequestContext context = 99;
+}
+
+message CreateSubcontractingItem {
+  string material = 1;
+  enterprise.common.QuantityValue quantity = 2;
+  string plant = 3;
+  google.protobuf.Timestamp delivery_date = 4;
+  // 组件列表 (可选，如果BOM未展开)
+  repeated SubcontractingComponent components = 5;
+}
+
+// 外协订单响应
+message SubcontractingOrderResponse {
+  bool success = 1;
+  string purchase_order_number = 2;
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
 // 获取外协订单请求
 message GetSubcontractingOrderRequest {
   // 采购订单号
   string purchase_order_number = 1;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 发送组件请求
@@ -90,6 +120,8 @@ message PostComponentsRequest {
   google.protobuf.Timestamp posting_date = 2;
   // 要发送的组件列表
   repeated ComponentIssuance items = 3;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 待发货的组件
@@ -99,9 +131,11 @@ message ComponentIssuance {
   // 组件物料编号
   string component_material = 2;
   // 发货数量
-  string quantity_to_issue = 3;
+  enterprise.common.QuantityValue quantity_to_issue = 3;
   // 单位
   string unit = 4;
+  // 批次
+  string batch = 5;
 }
 
 // 发送组件响应
@@ -120,6 +154,8 @@ message ReceiveFinishedGoodsRequest {
   google.protobuf.Timestamp posting_date = 2;
   // 要接收的成品列表
   repeated FinishedGoodReceipt items = 3;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
 }
 
 // 待接收的成品
@@ -127,9 +163,11 @@ message FinishedGoodReceipt {
   // 采购订单项目号
   int32 purchase_order_item = 1;
   // 接收数量
-  string quantity_to_receive = 2;
+  enterprise.common.QuantityValue quantity_to_receive = 2;
   // 单位
   string unit = 3;
+  // 批次 (接收到的成品批次)
+  string batch = 4;
 }
 
 // 接收成品响应
