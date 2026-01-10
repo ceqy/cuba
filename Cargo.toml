@@ -2,8 +2,7 @@
 resolver = "2"
 members = [
     "libs/*",
-    "apps/*-service",
-    "apps/finance/*",
+    "apps/*/*", # Support product-line grouping e.g. apps/fi/gl-service
 ]
 
 [workspace.package]
@@ -20,6 +19,7 @@ cuba-database = { path = "libs/cuba-database" }
 cuba-errors = { path = "libs/cuba-errors" }
 cuba-messaging = { path = "libs/cuba-messaging" }
 cuba-telemetry = { path = "libs/cuba-telemetry" }
+cuba-cqrs = { path = "libs/cuba-cqrs" }
 
 # Async
 tokio = { version = "1.49", features = ["full"] }
@@ -37,6 +37,7 @@ rust_decimal_macros = { version = "1.39" }
 # Messaging
 rdkafka = { version = "0.37", features = ["cmake-build"] }
 
+# gRPC
 # gRPC
 tonic = "0.14"
 tonic-prost = "0.14"
