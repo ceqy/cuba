@@ -1,0 +1,235 @@
+// ============================================================================
+// /supplychain/transportation-planning-service (版本 2.0)
+// 描述: 提供货运单的创建、计划和执行跟踪功能。
+//       字段设计参考核心ERP的 VTTK (货运抬头) 和 VTTP (货运项目) 表。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.supplychain.transportation;
+
+option java_package = "com.enterprise.supplychain.transportation.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/supplychain/transportation/v2;transportation";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+import "google/api/annotations.proto";
+
+// ============================================================================
+// 服务定义: TransportationPlanningService
+// ============================================================================
+
+service TransportationPlanningService {
+  // 基于交货单创建货运单 - 异步
+  rpc CreateShipment(CreateShipmentRequest) returns (enterprise.common.JobInfo) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/supplychain/shipment"
+
+      body: "*"
+
+    };
+
+  }
+
+  // 取消货运单 (New)
+  rpc CancelShipment(CancelShipmentRequest) returns (ShipmentResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/shipment/cancel"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
+
+  // 分配承运人 (New)
+  rpc AssignCarrier(AssignCarrierRequest) returns (ShipmentResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/carrier/assign"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
+
+  // 获取货运单详情
+  rpc GetShipment(GetShipmentRequest) returns (ShipmentDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/supplychain/shipment"
+
+
+    };
+
+
+  }
+  
+  // 查询货运单列表 (New)
+  rpc ListShipments(ListShipmentsRequest) returns (ListShipmentsResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      get: "/api/v1/supplychain/shipments"
+
+  
+    };
+
+  
+  }
+
+  // 更新货运状态 (例如, 计划、装载、发运、到达)
+  rpc UpdateShipmentStatus(UpdateShipmentStatusRequest) returns (ShipmentResponse) {
+
+
+    option (google.api.http) = {
+
+
+      put: "/api/v1/supplychain/shipment-status"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
+}
+
+// ============================================================================
+// 数据结构: Shipment (货运单)
+// ============================================================================
+
+// 货运单抬头 (参考: VTTK)
+message ShipmentHeader {
+  // 货运类型 (原: SHTYP)
+  enterprise.common.ShipmentType shipment_type = 1;
+  // 运输计划点 (原: TPLST)
+  string transportation_planning_point = 2;
+  // 承运人 (原: TDLDNR)
+  string carrier = 3;
+  // 总体状态 (原: STTRG)
+  enterprise.common.ShipmentStatus overall_status = 4;
+  // 计划出发日期 (原: DPTBG)
+  google.protobuf.Timestamp planned_departure_date = 5;
+  // 计划到达日期 (原: DATBG)
+  google.protobuf.Timestamp planned_arrival_date = 6;
+}
+
+// 货运单项目 (参考: VTTP)
+message ShipmentItem {
+  // 货运项目号 (原: TPNUM)
+  int32 item_number = 1;
+  // 交货单号 (原: VBELN)
+  string delivery_number = 2;
+  // 总重量 (原: GESZGew)
+  enterprise.common.QuantityValue total_weight = 3;
+  // 体积 (原: VOLUM)
+  enterprise.common.QuantityValue volume = 4;
+}
+
+// 完整的货运单详情
+message ShipmentDetail {
+  // 货运单号 (原: TKNUM)
+  string shipment_number = 1;
+  // 货运抬头
+  ShipmentHeader header = 2;
+  // 货运项目
+  repeated ShipmentItem items = 3;
+  // 审计信息
+  enterprise.common.AuditData audit_data = 4;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 创建货运单请求
+message CreateShipmentRequest {
+  // 货运类型
+  enterprise.common.ShipmentType shipment_type = 1;
+  // 要包含的交货单号列表
+  repeated string delivery_numbers = 2;
+  // 运输计划点
+  string transportation_planning_point = 3;
+  enterprise.common.RequestContext context = 99;
+}
+
+// 货运单响应
+message ShipmentResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 货运单号
+  string shipment_number = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+message CancelShipmentRequest {
+  string shipment_number = 1;
+  string cancellation_reason = 2;
+  enterprise.common.RequestContext context = 99;
+}
+
+message AssignCarrierRequest {
+  string shipment_number = 1;
+  string carrier_id = 2;
+  enterprise.common.RequestContext context = 99;
+}
+
+// 获取货运单请求
+message GetShipmentRequest {
+  // 货运单号
+  string shipment_number = 1;
+  enterprise.common.RequestContext context = 99;
+}
+
+// 更新货运状态请求
+message UpdateShipmentStatusRequest {
+  // 货运单号
+  string shipment_number = 1;
+  // 新的状态代码
+  enterprise.common.ShipmentStatus new_status = 2;
+  // 状态变更的日期和时间
+  google.protobuf.Timestamp status_change_datetime = 3;
+  // 位置信息 (GPS or Location Code)
+  string location = 4;
+  enterprise.common.RequestContext context = 99;
+}
+
+message ListShipmentsRequest {
+  string carrier = 1;
+  enterprise.common.ShipmentType shipment_type = 2;
+  enterprise.common.ShipmentStatus status = 3;
+  enterprise.common.DateRange departure_date_range = 4;
+  enterprise.common.PaginationRequest pagination = 98;
+  enterprise.common.RequestContext context = 99;
+}
+
+message ListShipmentsResponse {
+  repeated ShipmentDetail shipments = 1;
+  enterprise.common.PaginationResponse pagination = 2;
+}

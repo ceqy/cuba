@@ -1,0 +1,138 @@
+// ============================================================================
+// /procurement/supplier-portal-service (版本 2.0)
+// 描述: 为供应商提供自助服务功能，如查询订单、提交发票、更新主数据等。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.procurement.supplierportal;
+
+option java_package = "com.enterprise.procurement.supplierportal.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/procurement/supplierportal/v2;supplierportal";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+import "procurement/order_service.proto";
+import "procurement/invoice_processing_service.proto";
+import "google/api/annotations.proto";
+
+// ============================================================================
+// 服务定义: SupplierPortalService
+// ============================================================================
+
+service SupplierPortalService {
+  // 供应商查询其采购订单列表
+  rpc GetMyPurchaseOrders(ListSupplierPurchaseOrdersRequest) returns (enterprise.procurement.order.ListPurchaseOrdersResponse) {
+
+    option (google.api.http) = {
+
+      get: "/api/v1/procurement/my-purchase-orders"
+
+    };
+
+  }
+
+  // 供应商提交发票
+  rpc SubmitInvoice(enterprise.procurement.invoice.ReceiveInvoiceRequest) returns (enterprise.procurement.invoice.ReceiveInvoiceResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/invoice/submit"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
+
+  // 供应商查询其发票状态
+  rpc GetMyInvoiceStatus(GetSupplierInvoiceStatusRequest) returns (enterprise.procurement.invoice.InvoiceDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/procurement/my-invoice-status"
+
+
+    };
+
+
+  }
+
+  // 供应商请求更新其主数据（如地址、联系方式）
+  rpc RequestMasterDataUpdate(UpdateSupplierDataRequest) returns (UpdateSupplierDataResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/request-master-data-update"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 供应商查询采购订单请求
+message ListSupplierPurchaseOrdersRequest {
+  // 供应商ID (通常从上下文中获取，此处可作为过滤器或代理)
+  string supplier_id = 1;
+  // 订单日期范围
+  enterprise.common.DateRange order_date_range = 2;
+  // 订单状态过滤器
+  enterprise.common.ReleaseStatus status = 4;
+  // 采购组织
+  string purchasing_org = 5;
+  // 分页请求
+  enterprise.common.PaginationRequest pagination = 3;
+  // 请求上下文 (含当前登录供应商信息)
+  enterprise.common.RequestContext context = 99;
+}
+
+// 供应商查询发票状态请求
+message GetSupplierInvoiceStatusRequest {
+  // 供应商ID
+  string supplier_id = 1;
+  // 供应商的发票号
+  string supplier_invoice_number = 2;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
+}
+
+// 供应商更新主数据请求
+message UpdateSupplierDataRequest {
+  // 供应商ID
+  string supplier_id = 1;
+  // 要更新的地址信息
+  enterprise.common.Address new_address = 2;
+  // 要更新的电话号码
+  string new_telephone = 3;
+  // 请求上下文 (其中 userId/tenantId 标识操作主体，idempotency_key 确保幂等)
+  enterprise.common.RequestContext context = 99;
+}
+
+// 供应商更新主数据响应
+message UpdateSupplierDataResponse {
+  // 请求是否已成功提交
+  bool success = 1;
+  // 请求跟踪ID
+  string tracking_id = 2;
+  // 消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}

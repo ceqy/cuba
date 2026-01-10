@@ -1,0 +1,255 @@
+// ============================================================================
+// /procurement/contract-management-service (版本 2.0)
+// 描述: 提供采购合同的创建、管理和查询功能。
+//       字段设计参考核心ERP的采购合同表结构。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.procurement.contract;
+
+option java_package = "com.enterprise.procurement.contract.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/procurement/contract/v2;contract";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+import "google/api/annotations.proto";
+
+// ============================================================================
+// 服务定义: ContractManagementService
+// ============================================================================
+
+service ContractManagementService {
+  // 创建采购合同
+  rpc CreateContract(CreateContractRequest) returns (ContractResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/procurement/contract"
+
+      body: "*"
+
+    };
+
+  }
+
+  // 更新采购合同 (New)
+  rpc UpdateContract(UpdateContractRequest) returns (ContractResponse) {
+
+
+    option (google.api.http) = {
+
+
+      put: "/api/v1/procurement/contract"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
+
+  // 审批采购合同 (New)
+  rpc ApproveContract(ApproveContractRequest) returns (ContractResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/contract/approve"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
+
+  // 获取采购合同详情
+  rpc GetContract(GetContractRequest) returns (ContractDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/procurement/contract"
+
+
+    };
+
+
+  }
+
+  // 查询采购合同列表
+  rpc ListContracts(ListContractsRequest) returns (ListContractsResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/procurement/contracts"
+
+
+    };
+
+
+  }
+}
+
+// ============================================================================
+// 数据结构: Contract (合同)
+// ============================================================================
+
+// 合同抬头
+message ContractHeader {
+  // 公司代码
+  string company_code = 1;
+  // 凭证类型
+  enterprise.common.DocumentType document_type = 2;
+  // 供应商
+  string supplier = 3;
+  // 采购组织
+  string purchasing_org = 4;
+  // 采购组
+  string purchasing_group = 5;
+  // 有效期开始
+  google.protobuf.Timestamp validity_start = 6;
+  // 有效期结束
+  google.protobuf.Timestamp validity_end = 7;
+  // 目标金额
+  enterprise.common.MonetaryValue target_value = 8;
+  // 审批状态
+  enterprise.common.ReleaseStatus release_status = 9;
+}
+
+// 合同行项目
+message ContractItem {
+  // 行项目号
+  int32 item_number = 1;
+  // 物料编号
+  string material = 2;
+  // 短文本
+  string short_text = 3;
+  // 目标数量
+  enterprise.common.QuantityValue target_quantity = 4;
+  // 单位
+  string unit = 5;
+  // 净价
+  enterprise.common.MonetaryValue net_price = 6;
+  // 价格单位
+  int32 price_unit = 7;
+  // 工厂
+  string plant = 8;
+  // 项目类别
+  enterprise.common.ItemCategory item_category = 9;
+}
+
+// 完整的合同详情
+message ContractDetail {
+  // 合同号
+  string contract_number = 1;
+  // 合同抬头
+  ContractHeader header = 2;
+  // 合同行项目
+  repeated ContractItem items = 3;
+  // 审计信息
+  enterprise.common.AuditData audit_data = 4;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 创建合同请求
+message CreateContractRequest {
+  // 合同抬头
+  ContractHeader header = 1;
+  // 合同行项目
+  repeated ContractItem items = 2;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
+}
+
+// 更新合同请求
+message UpdateContractRequest {
+  string contract_number = 1;
+  ContractHeader header = 2;
+  repeated ContractItem items = 3;
+  repeated string update_mask = 4;
+  enterprise.common.RequestContext context = 99;
+}
+
+// 审批合同请求
+message ApproveContractRequest {
+  string contract_number = 1;
+  string approver_comment = 2;
+  bool approved = 3; // true for approve, false for reject
+  enterprise.common.RequestContext context = 99;
+}
+
+// 合同响应
+message ContractResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 合同号
+  string contract_number = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 获取合同请求
+message GetContractRequest {
+  // 合同号
+  string contract_number = 1;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
+}
+
+// 查询合同请求
+message ListContractsRequest {
+  // 供应商
+  string supplier = 1;
+  // 物料
+  string material = 2;
+  // 公司代码
+  string company_code = 3;
+  // 采购组织
+  string purchasing_org = 4;
+  // 工厂
+  string plant = 5;
+  // 状态
+  enterprise.common.ReleaseStatus status = 6;
+  // 有效期范围
+  enterprise.common.DateRange validity_date_range = 7;
+  // 分页请求
+  enterprise.common.PaginationRequest pagination = 98;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
+}
+
+// 查询合同响应
+message ListContractsResponse {
+  // 合同摘要列表
+  repeated ContractSummary contracts = 1;
+  // 分页响应
+  enterprise.common.PaginationResponse pagination = 2;
+}
+
+// 合同摘要
+message ContractSummary {
+  // 合同号
+  string contract_number = 1;
+  // 供应商
+  string supplier = 2;
+  // 有效期结束
+  google.protobuf.Timestamp validity_end = 3;
+  // 目标金额
+  enterprise.common.MonetaryValue target_value = 4;
+  // 状态
+  enterprise.common.ReleaseStatus status = 5;
+}

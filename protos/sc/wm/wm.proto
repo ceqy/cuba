@@ -1,0 +1,245 @@
+// ============================================================================
+// /supplychain/warehouse-operations-service (版本 2.0)
+// 描述: 提供仓库内部的物料移动功能，如创建和确认转储订单 (TO)。
+//       字段设计参考核心ERP的 LTAK (转储订单抬头) 和 LTAP (转储订单项目) 表。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.supplychain.warehouse;
+
+option java_package = "com.enterprise.supplychain.warehouse.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/supplychain/warehouse/v2;warehouse";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+import "google/api/annotations.proto";
+
+// ============================================================================
+// 服务定义: WarehouseOperationsService
+// ============================================================================
+
+service WarehouseOperationsService {
+  // 基于转储需求 (TR) 或其他参考凭证创建转储订单 (TO)
+  rpc CreateTransferOrder(CreateTransferOrderRequest) returns (TransferOrderResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/supplychain/transfer-order"
+
+      body: "*"
+
+    };
+
+  }
+
+  // 确认转储订单或其行项目
+  rpc ConfirmTransferOrder(ConfirmTransferOrderRequest) returns (ConfirmTransferOrderResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/transfer-order/confirm"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
+  
+  // 部分确认行项目 (New)
+  rpc PartialConfirmItem(PartialConfirmItemRequest) returns (ConfirmTransferOrderResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/supplychain/partial-confirm-item"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
+
+  // 获取转储订单详情
+  rpc GetTransferOrder(GetTransferOrderRequest) returns (TransferOrderDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/supplychain/transfer-order"
+
+
+    };
+
+
+  }
+  
+  // 打印转储订单标签 (New)
+  rpc PrintTransferOrderLabel(PrintLabelRequest) returns (PrintLabelResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/supplychain/print-transfer-order-label"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
+}
+
+// ============================================================================
+// 数据结构: TransferOrder (转储订单)
+// ============================================================================
+
+// 转储订单抬头 (参考: LTAK)
+message TransferOrderHeader {
+  // 仓库号 (原: LGNUM)
+  string warehouse_number = 1;
+  // 移动类型 (原: BWLVS)
+  enterprise.common.MovementType movement_type = 2;
+  // 参考凭证类型 (TR, Delivery, etc.) (原: BETYP)
+  string reference_document_type = 3;
+  // 参考凭证号 (原: BENUM)
+  string reference_document_number = 4;
+  // 创建人 (原: ERNAM)
+  string created_by = 5;
+}
+
+// 转储订单行项目 (参考: LTAP)
+message TransferOrderItem {
+  // 转储订单行项目号 (原: TAPOS)
+  int32 item_number = 1;
+  // 物料编号 (原: MATNR)
+  string material = 2;
+  // 目标数量 (原: NISTA)
+  enterprise.common.QuantityValue target_quantity = 3;
+  // 实际数量 (原: VISTA)
+  enterprise.common.QuantityValue actual_quantity = 4;
+  // 源存储类型 (原: VLTYP)
+  string source_storage_type = 6;
+  // 源存储仓位 (原: VLPLA)
+  string source_storage_bin = 7;
+  // 目标存储类型 (原: NLTYP)
+  string destination_storage_type = 8;
+  // 目标存储仓位 (原: NLPLA)
+  string destination_storage_bin = 9;
+  // 批次 (原: CHARG)
+  string batch = 10;
+  // 确认标识 (原: KQUIT)
+  bool confirmation_indicator = 11;
+}
+
+// 完整的转储订单详情
+message TransferOrderDetail {
+  // 转储订单号 (原: TANUM)
+  string transfer_order_number = 1;
+  // 抬头信息
+  TransferOrderHeader header = 2;
+  // 行项目列表
+  repeated TransferOrderItem items = 3;
+  // 审计信息
+  enterprise.common.AuditData audit_data = 4;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 创建转储订单请求
+message CreateTransferOrderRequest {
+  // 仓库号
+  string warehouse_number = 1;
+  // 移动类型
+  enterprise.common.MovementType movement_type = 2;
+  // 参考凭证号 (例如，转储需求号或交货单号)
+  string reference_document_number = 3;
+  enterprise.common.RequestContext context = 99;
+}
+
+// 转储订单响应
+message TransferOrderResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的转储订单号
+  string transfer_order_number = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 确认转储订单请求
+message ConfirmTransferOrderRequest {
+  // 仓库号
+  string warehouse_number = 1;
+  // 转储订单号
+  string transfer_order_number = 2;
+  // 要确认的行项目列表 (如果为空，则确认整个订单)
+  repeated ConfirmTransferOrderItem items_to_confirm = 3;
+  enterprise.common.RequestContext context = 99;
+}
+
+// 待确认的转储订单行项目
+message ConfirmTransferOrderItem {
+  // 行项目号
+  int32 item_number = 1;
+  // 确认的实际数量
+  enterprise.common.QuantityValue actual_quantity = 2;
+  // 差异数量
+  enterprise.common.QuantityValue difference_quantity = 3;
+}
+
+// 部分确认请求
+message PartialConfirmItemRequest {
+  string warehouse_number = 1;
+  string transfer_order_number = 2;
+  int32 item_number = 3;
+  enterprise.common.QuantityValue confirmed_quantity = 4;
+  enterprise.common.RequestContext context = 99;
+}
+
+// 确认转储订单响应
+message ConfirmTransferOrderResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 2;
+}
+
+// 获取转储订单请求
+message GetTransferOrderRequest {
+  // 仓库号
+  string warehouse_number = 1;
+  // 转储订单号
+  string transfer_order_number = 2;
+  enterprise.common.RequestContext context = 99;
+}
+
+// 打印标签请求
+message PrintLabelRequest {
+  string warehouse_number = 1;
+  string transfer_order_number = 2;
+  int32 item_number = 3;
+  string printer_id = 4;
+  enterprise.common.RequestContext context = 99;
+}
+
+message PrintLabelResponse {
+  bool success = 1;
+  string label_data = 2; // ZPL or PDF content
+}

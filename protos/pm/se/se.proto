@@ -1,0 +1,284 @@
+// ============================================================================
+// /procurement/sourcing-event-service (版本 2.0)
+// 描述: 管理寻源事件，如报价请求 (RFQ) 的创建、发布以及供应商报价的接收。
+//       字段设计参考核心ERP的 EKKO (RFQ抬头), EKPO (RFQ项目), EKKQ (报价抬头) 表。
+// ============================================================================
+
+syntax = "proto3";
+
+package enterprise.procurement.sourcing;
+
+option java_package = "com.enterprise.procurement.sourcing.v2";
+option java_multiple_files = true;
+option go_package = "github.com/enterprise-extensions/procurement/sourcing/v2;sourcing";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+import "google/api/annotations.proto";
+
+// ============================================================================
+// 服务定义: SourcingEventService
+// ============================================================================
+
+service SourcingEventService {
+  // 创建报价请求 (RFQ)
+  rpc CreateRFQ(CreateRFQRequest) returns (RFQResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/procurement/rfq"
+
+      body: "*"
+
+    };
+
+  }
+
+  // 发布 RFQ (New)
+  rpc PublishRFQ(PublishRFQRequest) returns (RFQResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/publish-rfq"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
+
+  // 关闭 RFQ (New)
+  rpc CloseRFQ(CloseRFQRequest) returns (RFQResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/close-rfq"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
+
+  // 获取RFQ详情
+  rpc GetRFQ(GetRFQRequest) returns (RFQDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/procurement/rfq"
+
+
+    };
+
+
+  }
+
+  // 接收供应商报价
+  rpc SubmitSupplierQuote(SubmitQuoteRequest) returns (QuoteResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/supplier-quote/submit"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
+
+  // 授予报价 (Award) (New)
+  rpc AwardQuote(AwardQuoteRequest) returns (QuoteResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/award-quote"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
+
+  // 获取供应商报价详情
+  rpc GetSupplierQuote(GetQuoteRequest) returns (QuoteDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/procurement/supplier-quote"
+
+
+    };
+
+
+  }
+}
+
+// ============================================================================
+// 数据结构: RFQ & Quote
+// ============================================================================
+
+// 报价请求 (RFQ) 详情
+message RFQDetail {
+  // RFQ 编号 (原: ANFNR)
+  string rfq_number = 1;
+  // 公司代码
+  string company_code = 2;
+  // 采购组织
+  string purchasing_org = 3;
+  // 报价截止日期 (原: ANGDT)
+  google.protobuf.Timestamp quote_deadline = 4;
+  // RFQ 项目列表
+  repeated RFQItem items = 5;
+  // 邀请的供应商列表
+  repeated string invited_suppliers = 6;
+  // 凭证类型
+  enterprise.common.DocumentType document_type = 7;
+  // 状态
+  enterprise.common.ReleaseStatus status = 8;
+}
+
+// RFQ 项目
+message RFQItem {
+  // 项目号
+  int32 item_number = 1;
+  // 物料编号
+  string material = 2;
+  // 描述
+  string description = 3;
+  // 需求数量
+  enterprise.common.QuantityValue quantity = 4;
+  // 交货日期
+  google.protobuf.Timestamp delivery_date = 5;
+  // 项目类别
+  enterprise.common.ItemCategory item_category = 6;
+}
+
+// 供应商报价详情
+message QuoteDetail {
+  // 报价单号 (由本服务生成)
+  string quote_number = 1;
+  // 参考的RFQ编号
+  string rfq_number = 2;
+  // 供应商编号
+  string supplier_id = 3;
+  // 报价项目列表
+  repeated QuoteItem items = 4;
+  // 报价有效期
+  google.protobuf.Timestamp validity_end_date = 5;
+  // 状态 (如: 已提交, 已授标, 已拒绝)
+  enterprise.common.ReleaseStatus status = 6;
+}
+
+// 报价项目
+message QuoteItem {
+  // RFQ项目号
+  int32 rfq_item_number = 1;
+  // 报价数量
+  enterprise.common.QuantityValue quantity = 2;
+  // 净价
+  enterprise.common.MonetaryValue net_price = 3;
+  // 备注
+  string notes = 4;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 创建RFQ请求
+message CreateRFQRequest {
+  // RFQ 详情
+  RFQDetail rfq = 1;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
+}
+
+// 发布RFQ请求
+message PublishRFQRequest {
+  string rfq_number = 1;
+  enterprise.common.RequestContext context = 99;
+}
+
+// 关闭RFQ请求
+message CloseRFQRequest {
+  string rfq_number = 1;
+  string close_reason = 2;
+  enterprise.common.RequestContext context = 99;
+}
+
+// RFQ 响应
+message RFQResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的RFQ编号
+  string rfq_number = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 获取RFQ请求
+message GetRFQRequest {
+  // RFQ 编号
+  string rfq_number = 1;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
+}
+
+// 提交供应商报价请求
+message SubmitQuoteRequest {
+  // 报价详情
+  QuoteDetail quote = 1;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
+}
+
+// 授予报价请求
+message AwardQuoteRequest {
+  string quote_number = 1;
+  // 授予原因/备注
+  string award_note = 2;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
+}
+
+// 报价响应
+message QuoteResponse {
+  // 操作是否成功
+  bool success = 1;
+  // 生成的报价单号
+  string quote_number = 2;
+  // 从核心ERP返回的消息列表
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+// 获取报价请求
+message GetQuoteRequest {
+  // 报价单号
+  string quote_number = 1;
+  // 请求上下文
+  enterprise.common.RequestContext context = 99;
+}
