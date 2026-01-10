@@ -16,7 +16,7 @@ option go_package = "github.com/enterprise/erp/protos/fi/tr;tr";
 
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
-import "protoc-gen-openapiv2/options/openapiv2.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 import "common/common.proto";
 
 // OpenAPI 全局配置
