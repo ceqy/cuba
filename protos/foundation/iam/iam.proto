@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package auth;
+package foundation.iam.v1;
 option go_package = "github.com/yourproject/auth";
 
 

@@ -159,13 +159,13 @@ if __name__ == "__main__":
     
     if service_type == "auth":
         add_tags_to_proto(
-            "protos/auth/auth_service.proto",
+            "protos/foundation/iam/iam.proto",
             AUTH_CATEGORIES,
             "AuthService"
         )
     elif service_type == "finance":
         add_tags_to_proto(
-            "protos/finance/gl/gl_journal_entry.proto",
+            "protos/finance/gl/gl.proto",
             FINANCE_CATEGORIES,
             "GlJournalEntryService"
         )

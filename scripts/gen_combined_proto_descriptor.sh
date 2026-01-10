@@ -8,8 +8,8 @@ echo "正在生成合并的 Proto Descriptor..."
 protoc -I./protos -I./protos/third_party \
   --include_imports --include_source_info \
   --descriptor_set_out=protos/combined_services.pb \
-  protos/auth/auth_service.proto \
-  protos/finance/gl_journal_entry_service.proto
+  protos/foundation/iam/iam.proto \
+  protos/finance/gl/gl.proto
 
 if [ -f "protos/combined_services.pb" ]; then
     echo "✅ 合并成功: protos/combined_services.pb"
