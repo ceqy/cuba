@@ -20,11 +20,20 @@ import "common/common.proto";
 // ============================================================================
 
 service BatchTraceabilityService {
-  // 向上追溯批次 (找到其来源)
-  rpc TraceUpstream(TraceRequest) returns (TraceabilityTree);
+  // 创建批次 (New)
+  rpc CreateBatch(CreateBatchRequest) returns (BatchResponse);
 
-  // 向下追溯批次 (找到其去向)
-  rpc TraceDownstream(TraceRequest) returns (TraceabilityTree);
+  // 向上追溯批次 (找到其来源) - 异步
+  rpc TraceUpstream(TraceRequest) returns (enterprise.common.JobInfo);
+
+  // 向下追溯批次 (找到其去向) - 异步
+  rpc TraceDownstream(TraceRequest) returns (enterprise.common.JobInfo);
+  
+  // 获取批次历史记录 (New)
+  rpc GetBatchHistory(GetBatchHistoryRequest) returns (BatchHistoryResponse);
+
+  // 获取追溯作业结果
+  rpc GetTraceResult(GetTraceResultRequest) returns (TraceabilityTree);
 }
 
 // ============================================================================
@@ -35,6 +44,8 @@ service BatchTraceabilityService {
 message TraceabilityTree {
   // 根节点
   TraceabilityNode root = 1;
+  // 树的生成时间
+  google.protobuf.Timestamp generated_at = 2;
 }
 
 // 追溯节点
@@ -46,18 +57,45 @@ message TraceabilityNode {
   // 工厂
   string plant = 3;
   // 节点类型 (例如, RAW_MATERIAL, FINISHED_GOOD, WIP)
-  string node_type = 4;
+  enterprise.common.NodeType node_type = 4;
   // 相关的文档 (例如, 生产订单, 采购订单, 交货单)
-  string reference_document = 5;
+  enterprise.common.SystemDocumentReference reference_document = 5;
   // 生产/收货日期
-  google.protobuf.Timestamp production_date = 6;
-  // 子节点 (对于向上追溯，是其组件；对于向下追溯，是其被用到的地方)
+  google.protobuf.Timestamp event_date = 6;
+  // 数量
+  enterprise.common.QuantityValue quantity = 8;
+  // 子节点
   repeated TraceabilityNode children = 7;
+}
+
+message BatchHistoryEvent {
+  google.protobuf.Timestamp event_time = 1;
+  string event_type = 2;
+  string user_id = 3;
+  string details = 4;
+  enterprise.common.SystemDocumentReference document = 5;
 }
 
 // ============================================================================
 // RPC 消息定义
 // ============================================================================
+
+// 创建批次请求
+message CreateBatchRequest {
+  string material = 1;
+  string plant = 2;
+  string origin_batch = 3; // For split batches or re-packaging
+  google.protobuf.Timestamp production_date = 4;
+  google.protobuf.Timestamp expiration_date = 5;
+  string supplier_batch = 6;
+  enterprise.common.RequestContext context = 99;
+}
+
+message BatchResponse {
+  bool success = 1;
+  string batch_number = 2;
+  repeated enterprise.common.ApiMessage messages = 3;
+}
 
 // 追溯请求
 message TraceRequest {
@@ -69,4 +107,21 @@ message TraceRequest {
   string plant = 3;
   // 追溯深度限制
   int32 depth_limit = 4;
+  enterprise.common.RequestContext context = 99;
+}
+
+message GetTraceResultRequest {
+  string job_id = 1;
+  enterprise.common.RequestContext context = 99;
+}
+
+message GetBatchHistoryRequest {
+  string material = 1;
+  string batch = 2;
+  string plant = 3;
+  enterprise.common.RequestContext context = 99;
+}
+
+message BatchHistoryResponse {
+  repeated BatchHistoryEvent events = 1;
 }

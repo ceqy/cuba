@@ -20,11 +20,20 @@ import "common/common.proto";
 // ============================================================================
 
 service TransportationPlanningService {
-  // 基于交货单创建货运单
-  rpc CreateShipment(CreateShipmentRequest) returns (ShipmentResponse);
+  // 基于交货单创建货运单 - 异步
+  rpc CreateShipment(CreateShipmentRequest) returns (enterprise.common.JobInfo);
+
+  // 取消货运单 (New)
+  rpc CancelShipment(CancelShipmentRequest) returns (ShipmentResponse);
+
+  // 分配承运人 (New)
+  rpc AssignCarrier(AssignCarrierRequest) returns (ShipmentResponse);
 
   // 获取货运单详情
   rpc GetShipment(GetShipmentRequest) returns (ShipmentDetail);
+  
+  // 查询货运单列表 (New)
+  rpc ListShipments(ListShipmentsRequest) returns (ListShipmentsResponse);
 
   // 更新货运状态 (例如, 计划、装载、发运、到达)
   rpc UpdateShipmentStatus(UpdateShipmentStatusRequest) returns (ShipmentResponse);
@@ -37,13 +46,13 @@ service TransportationPlanningService {
 // 货运单抬头 (参考: VTTK)
 message ShipmentHeader {
   // 货运类型 (原: SHTYP)
-  string shipment_type = 1;
+  enterprise.common.ShipmentType shipment_type = 1;
   // 运输计划点 (原: TPLST)
   string transportation_planning_point = 2;
   // 承运人 (原: TDLDNR)
   string carrier = 3;
   // 总体状态 (原: STTRG)
-  string overall_status = 4;
+  enterprise.common.ShipmentStatus overall_status = 4;
   // 计划出发日期 (原: DPTBG)
   google.protobuf.Timestamp planned_departure_date = 5;
   // 计划到达日期 (原: DATBG)
@@ -57,11 +66,9 @@ message ShipmentItem {
   // 交货单号 (原: VBELN)
   string delivery_number = 2;
   // 总重量 (原: GESZGew)
-  string total_weight = 3;
+  enterprise.common.QuantityValue total_weight = 3;
   // 体积 (原: VOLUM)
-  string volume = 4;
-  // 单位
-  string unit = 5;
+  enterprise.common.QuantityValue volume = 4;
 }
 
 // 完整的货运单详情
@@ -83,9 +90,12 @@ message ShipmentDetail {
 // 创建货运单请求
 message CreateShipmentRequest {
   // 货运类型
-  string shipment_type = 1;
+  enterprise.common.ShipmentType shipment_type = 1;
   // 要包含的交货单号列表
   repeated string delivery_numbers = 2;
+  // 运输计划点
+  string transportation_planning_point = 3;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 货运单响应
@@ -98,10 +108,23 @@ message ShipmentResponse {
   repeated enterprise.common.ApiMessage messages = 3;
 }
 
+message CancelShipmentRequest {
+  string shipment_number = 1;
+  string cancellation_reason = 2;
+  enterprise.common.RequestContext context = 99;
+}
+
+message AssignCarrierRequest {
+  string shipment_number = 1;
+  string carrier_id = 2;
+  enterprise.common.RequestContext context = 99;
+}
+
 // 获取货运单请求
 message GetShipmentRequest {
   // 货运单号
   string shipment_number = 1;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 更新货运状态请求
@@ -109,7 +132,24 @@ message UpdateShipmentStatusRequest {
   // 货运单号
   string shipment_number = 1;
   // 新的状态代码
-  string new_status_code = 2;
+  enterprise.common.ShipmentStatus new_status = 2;
   // 状态变更的日期和时间
   google.protobuf.Timestamp status_change_datetime = 3;
+  // 位置信息 (GPS or Location Code)
+  string location = 4;
+  enterprise.common.RequestContext context = 99;
+}
+
+message ListShipmentsRequest {
+  string carrier = 1;
+  enterprise.common.ShipmentType shipment_type = 2;
+  enterprise.common.ShipmentStatus status = 3;
+  enterprise.common.DateRange departure_date_range = 4;
+  enterprise.common.PaginationRequest pagination = 98;
+  enterprise.common.RequestContext context = 99;
+}
+
+message ListShipmentsResponse {
+  repeated ShipmentDetail shipments = 1;
+  enterprise.common.PaginationResponse pagination = 2;
 }

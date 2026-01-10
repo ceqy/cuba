@@ -25,9 +25,15 @@ service WarehouseOperationsService {
 
   // 确认转储订单或其行项目
   rpc ConfirmTransferOrder(ConfirmTransferOrderRequest) returns (ConfirmTransferOrderResponse);
+  
+  // 部分确认行项目 (New)
+  rpc PartialConfirmItem(PartialConfirmItemRequest) returns (ConfirmTransferOrderResponse);
 
   // 获取转储订单详情
   rpc GetTransferOrder(GetTransferOrderRequest) returns (TransferOrderDetail);
+  
+  // 打印转储订单标签 (New)
+  rpc PrintTransferOrderLabel(PrintLabelRequest) returns (PrintLabelResponse);
 }
 
 // ============================================================================
@@ -39,7 +45,7 @@ message TransferOrderHeader {
   // 仓库号 (原: LGNUM)
   string warehouse_number = 1;
   // 移动类型 (原: BWLVS)
-  string movement_type = 2;
+  enterprise.common.MovementType movement_type = 2;
   // 参考凭证类型 (TR, Delivery, etc.) (原: BETYP)
   string reference_document_type = 3;
   // 参考凭证号 (原: BENUM)
@@ -55,11 +61,9 @@ message TransferOrderItem {
   // 物料编号 (原: MATNR)
   string material = 2;
   // 目标数量 (原: NISTA)
-  string target_quantity = 3;
+  enterprise.common.QuantityValue target_quantity = 3;
   // 实际数量 (原: VISTA)
-  string actual_quantity = 4;
-  // 单位 (原: MEINS)
-  string unit = 5;
+  enterprise.common.QuantityValue actual_quantity = 4;
   // 源存储类型 (原: VLTYP)
   string source_storage_type = 6;
   // 源存储仓位 (原: VLPLA)
@@ -95,9 +99,10 @@ message CreateTransferOrderRequest {
   // 仓库号
   string warehouse_number = 1;
   // 移动类型
-  string movement_type = 2;
+  enterprise.common.MovementType movement_type = 2;
   // 参考凭证号 (例如，转储需求号或交货单号)
   string reference_document_number = 3;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 转储订单响应
@@ -118,6 +123,7 @@ message ConfirmTransferOrderRequest {
   string transfer_order_number = 2;
   // 要确认的行项目列表 (如果为空，则确认整个订单)
   repeated ConfirmTransferOrderItem items_to_confirm = 3;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 待确认的转储订单行项目
@@ -125,7 +131,18 @@ message ConfirmTransferOrderItem {
   // 行项目号
   int32 item_number = 1;
   // 确认的实际数量
-  string actual_quantity = 2;
+  enterprise.common.QuantityValue actual_quantity = 2;
+  // 差异数量
+  enterprise.common.QuantityValue difference_quantity = 3;
+}
+
+// 部分确认请求
+message PartialConfirmItemRequest {
+  string warehouse_number = 1;
+  string transfer_order_number = 2;
+  int32 item_number = 3;
+  enterprise.common.QuantityValue confirmed_quantity = 4;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 确认转储订单响应
@@ -142,4 +159,19 @@ message GetTransferOrderRequest {
   string warehouse_number = 1;
   // 转储订单号
   string transfer_order_number = 2;
+  enterprise.common.RequestContext context = 99;
+}
+
+// 打印标签请求
+message PrintLabelRequest {
+  string warehouse_number = 1;
+  string transfer_order_number = 2;
+  int32 item_number = 3;
+  string printer_id = 4;
+  enterprise.common.RequestContext context = 99;
+}
+
+message PrintLabelResponse {
+  bool success = 1;
+  string label_data = 2; // ZPL or PDF content
 }

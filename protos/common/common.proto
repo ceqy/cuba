@@ -89,6 +89,14 @@ enum DocumentType {
   DOCUMENT_TYPE_FRAMEWORK_ORDER = 5;
   DOCUMENT_TYPE_CONSIGNMENT = 6;
   DOCUMENT_TYPE_STOCK_TRANSPORT = 7;
+  DOCUMENT_TYPE_SALES_ORDER = 8;
+  DOCUMENT_TYPE_PURCHASE_ORDER = 9; // Added for generic PO reference
+  DOCUMENT_TYPE_DELIVERY = 10;
+  DOCUMENT_TYPE_INVOICE = 11;
+  DOCUMENT_TYPE_PAYMENT = 12;
+  DOCUMENT_TYPE_RESERVATION = 13;
+  DOCUMENT_TYPE_TRANSFER_ORDER = 14;
+  DOCUMENT_TYPE_SHIPMENT = 15;
 }
 
 // 项目类别 (Procurement)
@@ -225,6 +233,81 @@ enum UsageDecision {
   USAGE_DECISION_REWORK = 5;
 }
 
+// --- Supply Chain Specific Enums ---
+
+// 节点类型 (Traceability)
+enum NodeType {
+  NODE_TYPE_UNSPECIFIED = 0;
+  NODE_TYPE_RAW_MATERIAL = 1;
+  NODE_TYPE_WIP = 2;
+  NODE_TYPE_FINISHED_GOOD = 3;
+  NODE_TYPE_BATCH = 4;
+  NODE_TYPE_ORDER = 5;
+  NODE_TYPE_SUPPLIER = 6;
+  NODE_TYPE_CUSTOMER = 7;
+}
+
+// 预测模型 (Forecasting)
+enum ForecastModel {
+  FORECAST_MODEL_UNSPECIFIED = 0;
+  FORECAST_MODEL_MOVING_AVERAGE = 1;
+  FORECAST_MODEL_EXPONENTIAL_SMOOTHING = 2;
+  FORECAST_MODEL_ARIMA = 3;
+  FORECAST_MODEL_LINEAR_REGRESSION = 4;
+  FORECAST_MODEL_HOLT_WINTERS = 5;
+  FORECAST_MODEL_CROSTON = 6; // For intermittent demand
+  FORECAST_MODEL_MACHINE_LEARNING_ENSEMBLE = 7;
+}
+
+// 移动类型 (Inventory)
+enum MovementType {
+  MOVEMENT_TYPE_UNSPECIFIED = 0;
+  MOVEMENT_TYPE_GOODS_RECEIPT = 1; // 101
+  MOVEMENT_TYPE_GOODS_ISSUE = 2;   // 201, 261
+  MOVEMENT_TYPE_TRANSFER_POSTING = 3; // 301, 311
+  MOVEMENT_TYPE_STOCK_TRANSFER = 4; // 351, 641
+  MOVEMENT_TYPE_RETURN_DELIVERY = 5; // 122
+  MOVEMENT_TYPE_CANCELLATION = 6; // 102, 202
+}
+
+// 货运类型 (Transportation)
+enum ShipmentType {
+  SHIPMENT_TYPE_UNSPECIFIED = 0;
+  SHIPMENT_TYPE_ROAD = 1;
+  SHIPMENT_TYPE_RAIL = 2;
+  SHIPMENT_TYPE_AIR = 3;
+  SHIPMENT_TYPE_OCEAN = 4;
+  SHIPMENT_TYPE_MULTIMODAL = 5;
+  SHIPMENT_TYPE_PARCEL = 6;
+}
+
+// 货运状态 (Transportation)
+enum ShipmentStatus {
+  SHIPMENT_STATUS_UNSPECIFIED = 0;
+  SHIPMENT_STATUS_PLANNED = 1;
+  SHIPMENT_STATUS_CHECKED_IN = 2;
+  SHIPMENT_STATUS_LOADED = 3;
+  SHIPMENT_STATUS_DISPATCHED = 4;
+  SHIPMENT_STATUS_IN_TRANSIT = 5;
+  SHIPMENT_STATUS_ARRIVED = 6;
+  SHIPMENT_STATUS_DELIVERED = 7;
+  SHIPMENT_STATUS_COMPLETED = 8;
+  SHIPMENT_STATUS_CANCELLED = 9;
+}
+
+// 流程状态 (Visibility/Flow)
+enum FlowStatus {
+  FLOW_STATUS_UNSPECIFIED = 0;
+  FLOW_STATUS_CREATED = 1;
+  FLOW_STATUS_RELEASED = 2;
+  FLOW_STATUS_PROCESSED = 3;
+  FLOW_STATUS_PARTIALLY_FULFILLED = 4;
+  FLOW_STATUS_COMPLETED = 5;
+  FLOW_STATUS_CANCELLED = 6;
+  FLOW_STATUS_DELAYED = 7;
+  FLOW_STATUS_ON_HOLD = 8;
+}
+
 // ============================================================================
 // 基础数据类型
 // ============================================================================
@@ -350,7 +433,7 @@ message StockMovementItem {
   string plant = 2;
   string storage_location = 3;
   string batch = 4;
-  string move_type = 5;
+  MovementType move_type = 5;
   QuantityValue quantity = 6;
   string cost_center = 7;
   string order_number = 8;
