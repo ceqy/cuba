@@ -375,6 +375,15 @@ enum FailureMode {
   FAILURE_MODE_SOFTWARE = 6;
 }
 
+// 维护优先级
+enum MaintenancePriority {
+  MAINTENANCE_PRIORITY_UNSPECIFIED = 0;
+  MAINTENANCE_PRIORITY_VERY_HIGH = 1;
+  MAINTENANCE_PRIORITY_HIGH = 2;
+  MAINTENANCE_PRIORITY_MEDIUM = 3;
+  MAINTENANCE_PRIORITY_LOW = 4;
+}
+
 // --- Sales Domain Specific Enums ---
 
 // 销售订单类型

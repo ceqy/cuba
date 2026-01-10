@@ -1,7 +1,7 @@
 // ============================================================================
-// /events/events.proto (版本 2.1)
-// 描述: 定义了跨微服务通信的业务事件，遵循CloudEvents规范。
-//       所有事件都应包含足够的上下文信息，以减少消费者对生产者API的回调查询。
+// /events/events.proto (版本 2.2 - Production Ready)
+// 描述: 定义跨微服务通信的业务事件，遵循 CloudEvents 1.0 规范。
+//       整合了 Finance, SC, Manufacturing, Asset, HR 等全域事件。
 // ============================================================================
 
 syntax = "proto3";
@@ -14,255 +14,202 @@ option go_package = "github.com/enterprise-extensions/events/v2;events";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+// import "validate/validate.proto"; // 如果环境支持 PGV，可取消注释
 
 // ============================================================================
-// CloudEvent 包装器
+// CloudEvents 1.0 包装器
 // ============================================================================
 
-// CloudEvent 消息
-// 这是一个简化的CloudEvents包装器，用于承载具体的业务事件数据。
 message CloudEvent {
-  // 事件ID，唯一标识此事件实例
-  string id = 1;
-  // 事件源 (例如, urn:service:finance.gl)
-  string source = 2;
-  // 事件类型 (例如, enterprise.finance.gl.JournalEntryPosted)
-  string type = 3;
-  // 事件发生时间
-  google.protobuf.Timestamp time = 4;
-  // 事件主题 (例如, 凭证号、订单号)
-  string subject = 5;
-  // 数据内容类型 (固定为 application/protobuf)
-  string datacontenttype = 6;
-  // 具体的业务事件数据，根据type字段进行解析
+  string specversion = 1; // "1.0"
+  string id = 2;
+  string source = 3;      // urn:service:{domain}.{service}
+  string type = 4;        // enterprise.{domain}.{entity}.{action}Event
+  google.protobuf.Timestamp time = 5;
+  string subject = 6;
+  string datacontenttype = 7; // "application/protobuf"
+  string dataschema = 8;
+  string event_version = 9;   // Semver
+  
+  // Tracing
+  string trace_id = 10;
+  string span_id = 11;
+  string correlation_id = 12;
+  
+  // Tenant
+  string tenant_id = 13;
+  
+  map<string, string> extensions = 14;
+
+  // Payload OneOf
   oneof data {
-    JournalEntryPostedEvent journal_entry_posted = 10;
-    InvoicePostedEvent invoice_posted = 11;
-    PurchaseOrderReleasedEvent purchase_order_released = 20;
-    ContractCreatedEvent contract_created = 21;
-    SalesOrderCreatedEvent sales_order_created = 30;
-    DeliveryCreatedEvent delivery_created = 31;
-    ShipmentDispatchedEvent shipment_dispatched = 32;
-    StockChangedEvent stock_changed = 40;
-    ProductionOrderReleasedEvent production_order_released = 50;
-    ProductionConfirmationEvent production_confirmation = 51;
-    InspectionLotCreatedEvent inspection_lot_created = 52;
-    UsageDecisionMadeEvent usage_decision_made = 53;
-    MaintenanceNotificationCreatedEvent maintenance_notification_created = 60;
-    MaintenanceOrderReleasedEvent maintenance_order_released = 61;
+    // Finance (00-19)
+    JournalEntryPostedEvent journal_entry_posted = 20;
+    InvoicePostedEvent invoice_posted = 21; // New
+    
+    // Procurement (20-39)
+    PurchaseOrderReleasedEvent purchase_order_released = 22; // New
+
+    // Sales (40-59)
+    SalesOrderCreatedEvent sales_order_created = 23; // New
+    
+    // Inventory/SCM
+    StockChangedEvent stock_changed = 24; // New
+
+    // Manufacturing (50-69)
+    ProductionOrderReleasedEvent production_order_released = 25; // New
+    UsageDecisionMadeEvent usage_decision_made = 26;
+
+    // Asset Management (60-79)
+    MaintenanceNotificationCreatedEvent maintenance_notification_created = 27;
+    MaintenanceOrderReleasedEvent maintenance_order_released = 28;
+
+    // HR (80-89)
+    EmployeeSurveyCompletedEvent employee_survey_completed = 80;
+    
+    // Service (90-99)
+    ServiceOrderCompletedEvent service_order_completed = 81;
   }
 }
 
 // ============================================================================
-// 财务领域事件 (10-19)
+// 1. Finance Domain Events
 // ============================================================================
 
-// 总账凭证已过账事件
+// 总账凭证已过账
 message JournalEntryPostedEvent {
-  // 凭证引用
-  enterprise.common.SystemDocumentReference document_reference = 1;
-  // 凭证抬头文本
-  string header_text = 2;
-  // 总金额 (用于快速参考, 取所有借方或贷方金额之和)
-  enterprise.common.MonetaryValue total_amount = 3;
-  // 创建人
-  string created_by = 4;
+  string company_code = 1;
+  string fiscal_year = 2;
+  string document_number = 3;
+  google.protobuf.Timestamp posting_date = 4;
+  enterprise.common.MonetaryValue total_debit = 5;
+  enterprise.common.MonetaryValue total_credit = 6;
 }
 
-// 发票已过账事件
+// 发票已过账
 message InvoicePostedEvent {
-  // 发票凭证引用
-  enterprise.common.SystemDocumentReference invoice_document = 1;
-  // 对应的采购订单号
-  string purchase_order_number = 2;
-  // 供应商编号
-  string supplier_id = 3;
-  // 发票总金额
-  enterprise.common.MonetaryValue gross_amount = 4;
-  // 过账日期
-  google.protobuf.Timestamp posting_date = 5;
+  string company_code = 1;
+  string invoice_number = 2;
+  string fiscal_year = 3;
+  string customer_or_vendor_id = 4; // Check prefix (C/V) or context
+  enterprise.common.MonetaryValue invoice_amount = 5;
+  google.protobuf.Timestamp posting_date = 6;
+  string invoice_type = 7; // "AR_INVOICE" or "AP_INVOICE"
 }
 
 // ============================================================================
-// 采购领域事件 (20-29)
+// 2. Procurement Domain Events
 // ============================================================================
 
-// 采购订单已审批事件
+// 采购订单已下达
 message PurchaseOrderReleasedEvent {
-  // 采购订单号
-  string order_number = 1;
-  // 供应商编号
-  string supplier_id = 2;
-  // 订单净值
-  enterprise.common.MonetaryValue net_value = 3;
-  // 采购组织
-  string purchasing_org = 4;
-}
-
-// 采购合同已创建事件
-message ContractCreatedEvent {
-  // 合同号
-  string contract_number = 1;
-  // 供应商编号
-  string supplier_id = 2;
-  // 有效期结束日期
-  google.protobuf.Timestamp validity_end_date = 3;
-  // 合同目标总价值
-  enterprise.common.MonetaryValue target_value = 4;
+  string purchase_order_number = 1;
+  string vendor_id = 2;
+  google.protobuf.Timestamp order_date = 3;
+  enterprise.common.MonetaryValue total_value = 4;
+  string purchasing_org = 5;
+  string company_code = 6;
 }
 
 // ============================================================================
-// 销售与分销领域事件 (30-39)
+// 3. Sales Domain Events
 // ============================================================================
 
-// 销售订单已创建事件
+// 销售订单已创建
 message SalesOrderCreatedEvent {
-  // 销售订单号
-  string order_number = 1;
-  // 售达方
+  string sales_order_number = 1;
   string sold_to_party = 2;
-  // 订单净值
-  enterprise.common.MonetaryValue net_value = 3;
-  // 请求交货日期
-  google.protobuf.Timestamp requested_delivery_date = 4;
-  // 销售组织
+  google.protobuf.Timestamp order_date = 3;
+  enterprise.common.MonetaryValue net_value = 4;
   string sales_org = 5;
-}
-
-// 外向交货单已创建事件
-message DeliveryCreatedEvent {
-  // 交货单号
-  string delivery_number = 1;
-  // 参考的销售订单号
-  string sales_order_number = 2;
-  // 装运点
-  string shipping_point = 3;
-  // 计划的发货日期
-  google.protobuf.Timestamp planned_goods_issue_date = 4;
-}
-
-// 货运单已发运事件
-message ShipmentDispatchedEvent {
-  // 货运单号
-  string shipment_number = 1;
-  // 承运人
-  string carrier = 2;
-  // 实际出发日期
-  google.protobuf.Timestamp actual_departure_date = 3;
-  // 包含的交货单列表
-  repeated string delivery_numbers = 4;
+  enterprise.common.OrderType order_type = 6;
 }
 
 // ============================================================================
-// 供应链领域事件 (40-49)
+// 4. Supply Chain / Inventory Events
 // ============================================================================
 
-// 库存变更事件
+// 库存变更 (GR/GI/Transfer)
 message StockChangedEvent {
-  // 物料编号
   string material = 1;
-  // 工厂
   string plant = 2;
-  // 存储地点
   string storage_location = 3;
-  // 批次号
   string batch = 4;
-  // 新的非限制库存水平
-  string new_unrestricted_stock = 5;
-  // 单位
-  string unit = 6;
-  // 导致变更的物料凭证
-  enterprise.common.SystemDocumentReference material_document = 7;
-  // 移动类型
-  string movement_type = 8;
+  enterprise.common.MovementType movement_type = 5;
+  enterprise.common.QuantityValue quantity = 6;
+  string material_document = 7;
+  google.protobuf.Timestamp posting_date = 8;
 }
 
 // ============================================================================
-// 制造领域事件 (50-59)
+// 5. Manufacturing Domain Events
 // ============================================================================
 
-// 生产订单已下达事件
+// 生产订单已下达
 message ProductionOrderReleasedEvent {
-  // 生产订单号
   string order_number = 1;
-  // 物料编号
   string material = 2;
-  // 工厂
   string plant = 3;
-  // 订单数量
-  string quantity = 4;
-  // 基本完成日期
-  google.protobuf.Timestamp basic_finish_date = 5;
+  enterprise.common.QuantityValue target_quantity = 4;
+  google.protobuf.Timestamp scheduled_start = 5;
+  google.protobuf.Timestamp scheduled_finish = 6;
 }
 
-// 生产报工确认事件
-message ProductionConfirmationEvent {
-  // 确认号
-  string confirmation_number = 1;
-  // 生产订单号
-  string order_number = 2;
-  // 工序编号
-  string operation_number = 3;
-  // 确认的合格数量
-  string yield_quantity = 4;
-  // 是否为最后确认
-  bool is_final_confirmation = 5;
-}
-
-// 检验批已创建事件
-message InspectionLotCreatedEvent {
-  // 检验批号
-  string inspection_lot_number = 1;
-  // 物料编号
-  string material = 2;
-  // 工厂
-  string plant = 3;
-  // 检验批来源 (例如, 收货、生产)
-  string lot_origin = 4;
-  // 参考凭证 (例如, 物料凭证号、生产订单号)
-  string reference_document = 5;
-}
-
-// 已做使用决策事件
+// 质量使用决策已做出
 message UsageDecisionMadeEvent {
-  // 检验批号
   string inspection_lot_number = 1;
-  // 使用决策代码 (接受/拒绝)
-  string decision_code = 2;
-  // 决策人
-  string made_by = 3;
-  // 决策时间
-  google.protobuf.Timestamp decision_time = 4;
+  enterprise.common.InspectionLotOrigin lot_origin = 2;
+  enterprise.common.UsageDecision decision_code = 3;
+  string made_by = 4;
+  google.protobuf.Timestamp decision_time = 5;
+  string plant = 6;
+  string reference_document = 7;
 }
 
 // ============================================================================
-// 资产管理领域事件 (60-69)
+// 6. Asset Management Events
 // ============================================================================
 
-// 维护通知单已创建事件
+// 维护通知已创建
 message MaintenanceNotificationCreatedEvent {
-  // 通知单号
   string notification_number = 1;
-  // 通知单类型
-  string notification_type = 2;
-  // 设备号
+  string notification_type = 2; // "M1", "M2"
   string equipment_number = 3;
-  // 描述
   string description = 4;
-  // 优先级
-  string priority = 5;
+  enterprise.common.MaintenancePriority priority = 5;
 }
 
-// 维护订单已下达事件
+// 维护订单已下达
 message MaintenanceOrderReleasedEvent {
-  // 订单号
   string order_number = 1;
-  // 订单类型
   string order_type = 2;
-  // 设备号
   string equipment_number = 3;
-  // 描述
   string description = 4;
-  // 计划开始日期
   google.protobuf.Timestamp scheduled_start_date = 5;
+  string released_by = 6;
+}
+
+// ============================================================================
+// 7. HR Domain Events
+// ============================================================================
+
+// 员工调查已完成
+message EmployeeSurveyCompletedEvent {
+  string survey_id = 1;
+  string employee_id = 2;
+  google.protobuf.Timestamp completion_time = 3;
+  float average_score = 4;
+}
+
+// ============================================================================
+// 8. Service Domain Events
+// ============================================================================
+
+// 服务订单已完成
+message ServiceOrderCompletedEvent {
+  string order_number = 1;
+  string technician_id = 2;
+  google.protobuf.Timestamp completion_time = 3;
+  string customer_id = 4;
+  enterprise.common.ServiceOrderStatus final_status = 5;
 }
