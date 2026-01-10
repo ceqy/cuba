@@ -12,6 +12,114 @@ option go_package = "github.com/yourproject/common";
 import "google/protobuf/timestamp.proto";
 
 // ============================================================================
+// 枚举定义 (Enumerations)
+// ============================================================================
+
+// 银行对账单格式
+enum BankStatementFormat {
+  // 未指定
+  BANK_STATEMENT_FORMAT_UNSPECIFIED = 0;
+  // MT940 格式 (SWIFT 标准)
+  BANK_STATEMENT_FORMAT_MT940 = 1;
+  // CAMT.053 格式 (ISO 20022)
+  BANK_STATEMENT_FORMAT_CAMT053 = 2;
+  // BAI2 格式 (美国银行协会)
+  BANK_STATEMENT_FORMAT_BAI2 = 3;
+  // OFX 格式 (Open Financial Exchange)
+  BANK_STATEMENT_FORMAT_OFX = 4;
+  // CSV 自定义格式
+  BANK_STATEMENT_FORMAT_CSV_CUSTOM = 5;
+  // 多行对账单格式
+  BANK_STATEMENT_FORMAT_MULTI_CASH = 6;
+}
+
+// 账户类型
+enum AccountType {
+  // 未指定
+  ACCOUNT_TYPE_UNSPECIFIED = 0;
+  // 客户账户 (D)
+  ACCOUNT_TYPE_CUSTOMER = 1;
+  // 供应商账户 (K)
+  ACCOUNT_TYPE_SUPPLIER = 2;
+  // 总账科目 (S)
+  ACCOUNT_TYPE_GL = 3;
+  // 资产账户 (A)
+  ACCOUNT_TYPE_ASSET = 4;
+  // 物料账户 (M)
+  ACCOUNT_TYPE_MATERIAL = 5;
+}
+
+// 支付方式
+enum PaymentMethodType {
+  // 未指定
+  PAYMENT_METHOD_TYPE_UNSPECIFIED = 0;
+  // SEPA 转账 (欧元区)
+  PAYMENT_METHOD_TYPE_SEPA = 1;
+  // 银行电汇
+  PAYMENT_METHOD_TYPE_WIRE = 2;
+  // 支票
+  PAYMENT_METHOD_TYPE_CHECK = 3;
+  // ACH 转账 (美国)
+  PAYMENT_METHOD_TYPE_ACH = 4;
+  // 信用卡
+  PAYMENT_METHOD_TYPE_CREDIT_CARD = 5;
+  // 现金
+  PAYMENT_METHOD_TYPE_CASH = 6;
+  // 承兑汇票
+  PAYMENT_METHOD_TYPE_BILL_OF_EXCHANGE = 7;
+  // 直接借记
+  PAYMENT_METHOD_TYPE_DIRECT_DEBIT = 8;
+}
+
+// 报表类型
+enum ReportType {
+  // 未指定
+  REPORT_TYPE_UNSPECIFIED = 0;
+  // 账龄分析报表
+  REPORT_TYPE_AGING_ANALYSIS = 1;
+  // 未清项报表
+  REPORT_TYPE_OPEN_ITEMS = 2;
+  // 对账单
+  REPORT_TYPE_STATEMENT = 3;
+  // 试算平衡表
+  REPORT_TYPE_TRIAL_BALANCE = 4;
+  // 日记账报表
+  REPORT_TYPE_JOURNAL = 5;
+}
+
+// 导入格式
+enum ImportFormat {
+  // 未指定
+  IMPORT_FORMAT_UNSPECIFIED = 0;
+  // CSV 格式
+  IMPORT_FORMAT_CSV = 1;
+  // Excel 格式
+  IMPORT_FORMAT_EXCEL = 2;
+  // JSON 格式
+  IMPORT_FORMAT_JSON = 3;
+  // XML 格式
+  IMPORT_FORMAT_XML = 4;
+}
+
+// 异步作业状态
+enum JobStatus {
+  // 未指定
+  JOB_STATUS_UNSPECIFIED = 0;
+  // 待处理
+  JOB_STATUS_PENDING = 1;
+  // 运行中
+  JOB_STATUS_RUNNING = 2;
+  // 已完成
+  JOB_STATUS_COMPLETED = 3;
+  // 失败
+  JOB_STATUS_FAILED = 4;
+  // 已取消
+  JOB_STATUS_CANCELLED = 5;
+  // 部分完成
+  JOB_STATUS_PARTIALLY_COMPLETED = 6;
+}
+
+// ============================================================================
 // 基础数据类型
 // ============================================================================
 
@@ -59,6 +167,10 @@ message PaginationRequest {
   int32 page = 1;
   // 每页大小
   int32 page_size = 2;
+  // 排序字段
+  string sort_by = 3;
+  // 是否降序
+  bool descending = 4;
 }
 
 // 分页响应
@@ -71,6 +183,26 @@ message PaginationResponse {
   int64 total_items = 3;
   // 总页数
   int32 total_pages = 4;
+}
+
+// ============================================================================
+// 通用过滤器
+// ============================================================================
+
+// 状态过滤器
+message StatusFilter {
+  // 包含的状态列表
+  repeated string include_statuses = 1;
+  // 排除的状态列表
+  repeated string exclude_statuses = 2;
+}
+
+// 金额范围过滤器
+message AmountRangeFilter {
+  // 最小金额
+  MonetaryValue min_amount = 1;
+  // 最大金额
+  MonetaryValue max_amount = 2;
 }
 
 // ============================================================================
@@ -125,6 +257,8 @@ message ErrorDetail {
   string item_id = 1;
   // 错误信息
   string error_message = 2;
+  // 错误码
+  string error_code = 3;
 }
 
 // 批量操作结果
@@ -135,6 +269,32 @@ message BatchOperationResult {
   int32 failure_count = 2;
   // 失败条目的详细信息
   repeated ErrorDetail errors = 3;
+}
+
+// ============================================================================
+// 异步作业
+// ============================================================================
+
+// 异步作业信息
+message JobInfo {
+  // 作业ID
+  string job_id = 1;
+  // 作业类型
+  string job_type = 2;
+  // 作业状态
+  JobStatus status = 3;
+  // 创建时间
+  google.protobuf.Timestamp created_at = 4;
+  // 开始时间
+  google.protobuf.Timestamp started_at = 5;
+  // 完成时间
+  google.protobuf.Timestamp completed_at = 6;
+  // 进度百分比 (0-100)
+  int32 progress_percentage = 7;
+  // 结果消息
+  repeated ApiMessage messages = 8;
+  // 错误详情 (如果失败)
+  string error_detail = 9;
 }
 
 // ============================================================================
@@ -156,4 +316,31 @@ message Address {
   string street = 5;
   // 门牌号
   string house_number = 6;
+}
+
+// ============================================================================
+// 请求上下文 (Request Context) - 统一请求元数据
+// ============================================================================
+
+// 请求上下文
+// 用于在所有RPC请求中传递统一的元数据，支持多租户、审计、幂等性等企业级特性。
+message RequestContext {
+  // 请求唯一标识 (UUID格式)，用于分布式追踪和日志关联
+  string request_id = 1;
+  // 租户ID，用于多租户隔离
+  string tenant_id = 2;
+  // 用户ID，发起请求的用户标识
+  string user_id = 3;
+  // 用户角色列表，用于权限控制
+  repeated string roles = 4;
+  // 幂等性键，确保写操作的幂等性
+  string idempotency_key = 5;
+  // 区域设置 (例如: "zh-CN", "en-US")，用于国际化
+  string locale = 6;
+  // 请求时间戳
+  google.protobuf.Timestamp timestamp = 7;
+  // 请求来源系统标识
+  string source_system = 8;
+  // 关联ID (用于跨服务调用链路追踪)
+  string correlation_id = 9;
 }

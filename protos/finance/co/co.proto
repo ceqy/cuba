@@ -1,30 +1,37 @@
+// ============================================================================
+// /finance/controlling-service (版本 1.0 - 生产级 SAP CO 增强版)
+// 描述: 提供成本中心分配 (Cost Center Allocation) 执行、模拟与管理功能。
+//       支持分摊 (Distribution)、分配 (Assessment) 和 间接作业分配。
+// ----------------------------------------------------------------------------
+// 设计基线（SAP S/4HANA CO 模块）：
+// - 兼容 KSV5 (Distribution) 和 KSU5 (Assessment) 逻辑
+// - 支持多周期 (Cycle) 和 多段 (Segment) 执行
+// - 统一使用 MonetaryValue 表示金额
+// - 严格遵循 SAP 财务年度、期间和分配规则
+// ============================================================================
+
 syntax = "proto3";
 
-package finance.controlling.costcenter;
-
-
+package finance.co;
+option go_package = "github.com/yourproject/finance/co";
 
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/wrappers.proto";
 import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/openapiv2.proto";
 import "common/common.proto";
 
-// ============================================================================
-// OpenAPI Configuration
-// ============================================================================
-
+// OpenAPI 全局配置
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
-    title: "Cost Center Allocation Service"
+    title: "Cost Center Allocation Service API"
     version: "1.0.0"
-    description: "Core features for SAP S/4HANA Universal Allocation: Execution, Reporting, and Cycle Management."
+    description: "成本中心管理服务 - 提供成本分配、模拟及异步作业管理"
     contact: {
-      name: "Finance Team"
-      email: "finance@enterprise.com"
+      name: "Controlling Team"
+      email: "co-dev@yourproject.com"
     }
   }
-  host: "localhost:8080"
+  host: "localhost:8082"
   base_path: "/"
   schemes: HTTP
   schemes: HTTPS
@@ -50,309 +57,230 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 };
 
 // ============================================================================
-// Service Definition
+// 服务定义: CostCenterAllocationService
 // ============================================================================
 
 service CostCenterAllocationService {
   option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
-    description: "Cost Center Allocation Service (Core)"
+    description: "成本中心分配服务"
+    external_docs: {
+      url: "https://yourproject.com/docs/finance/co";
+      description: "CO 服务详细文档";
+    }
   };
 
-  // --- Execution ---
-
-  // Execute or Simulate Allocation
-  rpc ExecuteCostCenterAllocation(ExecuteRequest) returns (ExecuteResponse) {
+  // 执行成本中心分配 (异步模式 - 生产级)
+  rpc ExecuteAllocation(ExecuteRequest) returns (ExecuteResponse) {
     option (google.api.http) = {
-      post: "/api/v1/finance/controlling/costcenter/execute"
+      post: "/api/v1/finance/co/allocations:execute"
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Execution (成本分配执行)"
+      tags: "Allocation Execution"
       summary: "执行成本分配"
+      description: "启动一个异步作业来执行指定的分配循环"
     };
   }
 
-  // Batch Execute Allocations
-  rpc ExecuteAllocationBatch(BatchExecuteRequest) returns (BatchExecuteResponse) {
+  // 模拟成本中心分配
+  rpc SimulateAllocation(ExecuteRequest) returns (SimulationResponse) {
     option (google.api.http) = {
-      post: "/api/v1/finance/controlling/costcenter/batch-execute"
+      post: "/api/v1/finance/co/allocations:simulate"
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Execution (成本分配执行)"
-      summary: "批量执行分配"
+      tags: "Allocation Execution"
+      summary: "模拟成本分配"
     };
   }
 
-  // Reverse Allocation Run
-  rpc ReverseAllocationRun(ReverseRequest) returns (ReverseResponse) {
+  // 冲销成本中心分配 (异步模式)
+  rpc ReverseAllocation(ExecuteRequest) returns (ExecuteResponse) {
     option (google.api.http) = {
-      post: "/api/v1/finance/controlling/costcenter/reverse"
+      post: "/api/v1/finance/co/allocations:reverse"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Execution (成本分配执行)"
-      summary: "冲销分配运行"
-    };
   }
 
-  // --- Configuration ---
-
-  // Get Cycle Definition (with Segments)
-  rpc GetCycleDefinition(GetCycleDefinitionRequest) returns (CycleDefinition) {
+  // 批量执行分配 (异步模式)
+  rpc ExecuteAllocationBatch(ExecuteBatchRequest) returns (ExecuteResponse) {
     option (google.api.http) = {
-      get: "/api/v1/finance/controlling/costcenter/cycles/{cycle_id}"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Configuration (分配规则与循环)"
-      summary: "获取循环定义"
-    };
-  }
-
-  // Validate Cycle Rules
-  rpc ValidateCycleRules(ValidateRulesRequest) returns (ValidationResponse) {
-    option (google.api.http) = {
-      post: "/api/v1/finance/controlling/costcenter/validate"
+      post: "/api/v1/finance/co/allocations:batchExecute"
       body: "*"
     };
+  }
+
+  // 获取作业状态 (New)
+  rpc GetJobStatus(GetJobStatusRequest) returns (enterprise.common.JobInfo) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/co/jobs/{job_id}"
+    };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Configuration (分配规则与循环)"
-      summary: "校验循环规则"
+      tags: "Job Management"
+      summary: "获取作业状态"
     };
   }
 
-  // --- Analytics & Integration ---
+  // --------------------------------------------------------------------------
+  // === 周期与段管理 ===
+  // --------------------------------------------------------------------------
 
-  // Get Allocation Result (including flow visualization)
-  rpc GetAllocationResult(GetResultRequest) returns (AllocationResult) {
+  // 获取分配周期定义
+  rpc GetCycleDefinition(GetCycleRequest) returns (CycleDefinition) {
     option (google.api.http) = {
-      get: "/api/v1/finance/controlling/costcenter/results/{run_id}"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Analytics (分配分析与结果)"
-      summary: "获取分配结果"
+      get: "/api/v1/finance/co/cycles/{cycle_id}"
     };
   }
 
-  // Get Allocation Overview (Dashboard)
-  rpc GetAllocationOverview(GetOverviewRequest) returns (AllocationOverview) {
+  // 列出分配周期
+  rpc ListCycles(ListCyclesRequest) returns (ListCyclesResponse) {
     option (google.api.http) = {
-      get: "/api/v1/finance/controlling/costcenter/overview"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Analytics (分配分析与结果)"
-      summary: "获取分配概览"
-    };
-  }
-
-  // Import Allocation Values
-  rpc ImportAllocationValues(ImportRequest) returns (ImportResponse) {
-    option (google.api.http) = {
-      post: "/api/v1/finance/controlling/costcenter/import"
-      body: "*"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Integration (数据集成)"
-      summary: "导入分配值"
-    };
-  }
-
-  // Export to Analytics
-  rpc ExportToAnalytics(ExportRequest) returns (ExportResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/finance/controlling/costcenter/export/{run_id}"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Integration (数据集成)"
-      summary: "导出分析数据"
+      get: "/api/v1/finance/co/cycles"
     };
   }
 }
 
 // ============================================================================
-// Enums
+// 数据结构: 枚举
 // ============================================================================
 
+// 分配类型
 enum AllocationType {
   ALLOCATION_TYPE_UNSPECIFIED = 0;
-  DISTRIBUTION                = 1;
-  ASSESSMENT                  = 2;
-  INDIRECT_ACTIVITY           = 3;
+  DISTRIBUTION = 1;        // 分摊 (KSV) - 仅限初级成本要素
+  ASSESSMENT = 2;          // 分配 (KSU) - 使用次级成本要素
+  INDIRECT_ACTIVITY = 3;   // 间接作业分配
 }
 
-enum RunMode {
-  RUN_MODE_UNSPECIFIED = 0;
-  REAL                 = 1;
-  SIMULATE             = 2;
+// 执行模式
+enum ExecutionMode {
+  EXECUTION_MODE_UNSPECIFIED = 0;
+  ACTUAL = 1;              // 实际分配
+  PLAN = 2;                // 计划分配
 }
 
-enum TracingBasis {
-  TRACING_BASIS_UNSPECIFIED = 0;
-  FIXED_PERCENT             = 1;
-  FIXED_AMOUNT              = 2;
-  STAT_KEY_FIGURE           = 3;
-  ACTIVITY_QUANTITY         = 4;
-  FORMULA                   = 5;
+// 追踪基准类型
+enum TracingBaseType {
+  TRACING_BASE_UNSPECIFIED = 0;
+  FIXED_AMOUNTS = 1;       // 固定金额
+  FIXED_PERCENTAGES = 2;   // 固定百分比
+  FIXED_PORTIONS = 3;      // 固定份数
+  VARIABLE_PORTIONS = 4;   // 统计指标/可变份额
 }
 
 // ============================================================================
-// Messages
+// 数据结构: 周期与段定义
 // ============================================================================
 
+// 分配周期定义 (Cycle)
+message CycleDefinition {
+  string cycle_id = 1;
+  google.protobuf.Timestamp start_date = 2;
+  string description = 3;
+  AllocationType allocation_type = 4;
+  string controlling_area = 5;
+  ExecutionMode mode = 6;
+  bool is_active = 7;
+  repeated SegmentDefinition segments = 8;
+  enterprise.common.AuditData audit_data = 9;
+}
+
+// 分配段定义 (Segment)
+message SegmentDefinition {
+  string segment_name = 1;
+  string description = 2;
+  
+  // 发送者规则
+  string sender_rule = 3;   // Posted amounts, Fixed amounts, etc.
+  double sender_percentage = 4;
+  
+  // 接收者规则
+  TracingBaseType receiver_rule = 5;
+  string variable_portion_type = 6; // 统计指标代码 e.g. "SKF_001"
+  
+  // 选择标准 (Sender/Receiver)
+  SelectionCriteria senders = 7;
+  SelectionCriteria receivers = 8;
+  
+  // 成本要素/次级科目
+  string cost_element = 9;
+}
+
+// 选择标准
+message SelectionCriteria {
+  repeated string cost_centers = 1;
+  repeated string cost_elements = 2;
+  repeated string business_processes = 3;
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 执行请求
 message ExecuteRequest {
-  string controlling_area           = 1;
-  int32  fiscal_year                = 2;
-  int32  fiscal_period              = 3;
-  string cycle_id                   = 4;
-  string ledger                     = 5;
-  AllocationType type               = 6;
-  RunMode mode                      = 7;
-  bool   overwrite_existing         = 8;
-  google.protobuf.StringValue segment_id = 9;
+  string controlling_area = 1;
+  int32 fiscal_year = 2;
+  int32 fiscal_period = 3;
+  string cycle_id = 4;
+  google.protobuf.Timestamp posting_date = 5;
+  bool test_run = 6;
+  string run_text = 7;
+  enterprise.common.RequestContext context = 99;
 }
 
+// 执行响应 (异步模式)
 message ExecuteResponse {
-  bool   success                    = 1;
-  string run_id                     = 2;
-  string execution_time             = 3;
-  repeated enterprise.common.ApiMessage messages = 4;
-  enterprise.common.MonetaryValue total_allocated = 5;
+  string job_id = 1;
+  enterprise.common.JobStatus initial_status = 2;
+  enterprise.common.RequestContext context = 99;
 }
 
-message BatchExecuteRequest {
-  repeated ExecuteRequest items     = 1;
-  bool   stop_on_error              = 2;
+// 批量执行请求
+message ExecuteBatchRequest {
+  string controlling_area = 1;
+  int32 fiscal_year = 2;
+  int32 fiscal_period = 3;
+  repeated string cycle_ids = 4;
+  bool test_run = 5;
+  enterprise.common.RequestContext context = 99;
 }
 
-message BatchExecuteResponse {
-  string batch_id                   = 1;
-  int32  total_items                = 2;
-}
-
-message ReverseRequest {
-  string run_id                     = 1;
-  string reason                     = 2;
-  google.protobuf.Timestamp reversal_date = 3;
-}
-
-message ReverseResponse {
-  bool   success                    = 1;
-  string reversal_run_id            = 2;
+// 模拟响应
+message SimulationResponse {
+  bool success = 1;
+  repeated AllocationResult results = 2;
   repeated enterprise.common.ApiMessage messages = 3;
 }
 
-message GetCycleDefinitionRequest {
-  string controlling_area           = 1;
-  string cycle_id                   = 2;
-}
-
-message CycleDefinition {
-  string cycle_id                   = 1;
-  string description                = 2;
-  repeated SegmentDefinition segments = 3;
-  google.protobuf.Timestamp valid_from = 4;
-  google.protobuf.Timestamp valid_to   = 5;
-}
-
-message CreateCycleRequest {
-  // Implicitly needed for internal APIs if ever exposed, but kept out of public RPCs for now.
-}
-
-message ValidateRulesRequest {
-  string controlling_area           = 1;
-  string cycle_id                   = 2;
-}
-
-message ValidationResponse {
-  bool   is_valid                   = 1;
-  repeated enterprise.common.ApiMessage findings = 2;
-}
-
-message GetResultRequest {
-  string run_id                     = 1;
-  bool   include_visualization      = 2;
-}
-
+// 分配结果 (明细)
 message AllocationResult {
-  string run_id                     = 1;
-  repeated CostCenterFlow flows     = 2;
-  enterprise.common.MonetaryValue total_amount = 3;
-  // Metadata for simple visualization
-  repeated VisualizationNode nodes  = 4;
-  repeated VisualizationEdge edges  = 5;
-}
-
-message GetOverviewRequest {
-  string controlling_area           = 1;
-  int32  fiscal_year                = 2;
-  google.protobuf.Int32Value period = 3;
-}
-
-message AllocationOverview {
-  enterprise.common.MonetaryValue total_allocated = 1;
-  int32  total_runs                 = 2;
-  int32  success_runs               = 3;
-  int32  simulation_runs            = 4;
-}
-
-message ImportRequest {
-  string controlling_area           = 1;
-  bytes  content                    = 2;
-  string format                     = 3;
-}
-
-message ImportResponse {
-  bool   success                    = 1;
-  int32  rows_processed             = 2;
-  repeated enterprise.common.ApiMessage errors = 3;
-}
-
-message ExportRequest {
-  string run_id                     = 1;
-  string format                     = 2;
-}
-
-message ExportResponse {
-  bytes  content                    = 1;
-  string mime_type                  = 2;
-  string filename                   = 3;
-}
-
-// --- Sub-structures ---
-
-message SegmentDefinition {
-  string segment_id                 = 1;
-  string description                = 2;
-  repeated string sender_cost_centers = 3;
-  repeated ReceiverRule receivers   = 4;
-  TracingBasis basis                = 5;
-}
-
-message ReceiverRule {
-  repeated string cost_centers      = 1;
-  string target_cost_element        = 2;
-  map<string, float> fixed_ratios   = 3;
-  string tracing_factor_ref         = 4;
-}
-
-message CostCenterFlow {
-  string sender_cc                  = 1;
-  string sender_ce                  = 2;
-  string receiver_cc                = 3;
-  string receiver_ce                = 4;
+  string segment_name = 1;
+  string sender_cost_center = 2;
+  string receiver_cost_center = 3;
+  string cost_element = 4;
   enterprise.common.MonetaryValue amount = 5;
-  string segment_id                 = 6;
+  string currency = 6;
 }
 
-message VisualizationNode {
-  string id                         = 1;
-  string label                      = 2;
-  string type                       = 3; // 'sender' or 'receiver'
-  enterprise.common.MonetaryValue amount = 4;
+// 查询请求
+message GetCycleRequest {
+  string cycle_id = 1;
+  enterprise.common.RequestContext context = 99;
 }
 
-message VisualizationEdge {
-  string source_id                  = 1;
-  string target_id                  = 2;
-  enterprise.common.MonetaryValue amount = 3;
+message ListCyclesRequest {
+  string controlling_area = 1;
+  enterprise.common.PaginationRequest pagination = 98;
+  enterprise.common.RequestContext context = 99;
+}
+
+message ListCyclesResponse {
+  repeated CycleDefinition cycles = 1;
+  enterprise.common.PaginationResponse pagination = 2;
+}
+
+message GetJobStatusRequest {
+  string job_id = 1;
+  enterprise.common.RequestContext context = 99;
 }

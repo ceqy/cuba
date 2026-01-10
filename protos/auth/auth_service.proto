@@ -7,6 +7,7 @@ option go_package = "github.com/yourproject/auth";
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/openapiv2.proto";
+import "common/common.proto";
 
 // OpenAPI 全局配置 (Golden Standard)
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
@@ -601,7 +602,7 @@ message Metrics {
   int64 failed_logins_last_hour = 4;
 }
 
-// 列表查询通用分页
+// 列表查询通用分页 (DEPRECATED: Use enterprise.common.PaginationRequest)
 message PageRequest {
   int32 page = 1;
   int32 page_size = 2;
@@ -615,6 +616,20 @@ message PageResponse {
   int32 page_size = 3;
 }
 
+// --- 过滤器 (New) ---
+
+message AuditFilter {
+  repeated string actions = 1;
+  enterprise.common.DateRange date_range = 2;
+  string ip_address = 3;
+}
+
+message UserFilter {
+  repeated string statuses = 1;
+  repeated string roles = 2;
+  enterprise.common.DateRange created_range = 3;
+}
+
 // --- 认证相关 RPC ---
 
 // 用户注册请求
@@ -623,6 +638,7 @@ message RegisterRequest {
   string username = 2;  // 用户名
   string email = 3;     // 邮箱
   string password = 4;  // 密码
+  string idempotency_key = 100;      // 幂等性支持
 }
 
 // 用户注册响应
@@ -635,6 +651,7 @@ message LoginRequest {
   string tenant_id = 1;              // 可选，支持多租户登录
   string username = 2;  // 用户名
   string password = 3;  // 密码
+  string idempotency_key = 100;
 }
 
 // 登录响应
@@ -700,6 +717,7 @@ message GetUserInfoResponse {
 message ChangePasswordRequest {
   string old_password = 1;
   string new_password = 2;
+  string idempotency_key = 100;
 }
 
 message ChangePasswordResponse {
@@ -721,6 +739,7 @@ message SendPasswordResetTokenResponse {
 message ResetPasswordRequest {
   string token = 1;      // 重置令牌
   string new_password = 2;
+  string idempotency_key = 100;
 }
 
 message ResetPasswordResponse {
@@ -743,7 +762,7 @@ message UpdateUserProfileRequest {
   string user_id = 1;
   string display_name = 2;
   string avatar_url = 3;  // 新增字段建议
-  // 可扩展其他非敏感字段
+  string idempotency_key = 100;
 }
 
 message UpdateUserProfileResponse {
@@ -785,12 +804,13 @@ message GetAuditLogsRequest {
   string tenant_id = 2;
   google.protobuf.Timestamp start_time = 3;
   google.protobuf.Timestamp end_time = 4;
-  PageRequest pagination = 5;
+  enterprise.common.PaginationRequest pagination = 98;
+  AuditFilter filter = 97;
 }
 
 message GetAuditLogsResponse {
   repeated AuditLog logs = 1;
-  PageResponse pagination = 2;
+  enterprise.common.PaginationResponse pagination = 98;
 }
 
 // 列出会话
@@ -825,6 +845,7 @@ message UpdateUserStatusResponse {
 message BulkCreateUsersRequest {
   repeated RegisterRequest users = 1;
   string tenant_id = 2;
+  string idempotency_key = 100;
 }
 
 message BulkCreateUsersResponse {
@@ -837,12 +858,13 @@ message ListUsersRequest {
   string tenant_id = 1;
   string role_id = 2;                // 可选过滤角色
   string search = 3;                 // 模糊搜索 username/email/display_name
-  PageRequest pagination = 4;
+  enterprise.common.PaginationRequest pagination = 98;
+  UserFilter filter = 97;
 }
 
 message ListUsersResponse {
   repeated UserInfo users = 1;
-  PageResponse pagination = 2;
+  enterprise.common.PaginationResponse pagination = 98;
 }
 
 // --- RBAC 管理 RPC ---
@@ -851,6 +873,7 @@ message ListUsersResponse {
 message CreateRoleRequest {
   string name = 1;        // 角色名称
   string description = 2; // 角色描述
+  string idempotency_key = 100;
 }
 
 // 创建角色响应
@@ -892,22 +915,22 @@ message GetUserPermissionsResponse {
 
 // 列出角色
 message ListRolesRequest {
-  PageRequest pagination = 1;
+  enterprise.common.PaginationRequest pagination = 98;
 }
 
 message ListRolesResponse {
   repeated Role roles = 1;
-  PageResponse pagination = 2;
+  enterprise.common.PaginationResponse pagination = 98;
 }
 
 // 列出权限
 message ListPermissionsRequest {
-  PageRequest pagination = 1;
+  enterprise.common.PaginationRequest pagination = 98;
 }
 
 message ListPermissionsResponse {
   repeated Permission permissions = 1;
-  PageResponse pagination = 2;
+  enterprise.common.PaginationResponse pagination = 98;
 }
 
 // 删除角色
@@ -991,6 +1014,7 @@ message CreateClientRequest {
   repeated string redirect_uris = 2;
   repeated string grant_types = 3;
   repeated string scopes = 4;
+  string idempotency_key = 100;
 }
 
 message CreateClientResponse {
@@ -998,12 +1022,12 @@ message CreateClientResponse {
 }
 
 message ListClientsRequest {
-  PageRequest pagination = 1;
+  enterprise.common.PaginationRequest pagination = 98;
 }
 
 message ListClientsResponse {
   repeated Client clients = 1;
-  PageResponse pagination = 2;
+  enterprise.common.PaginationResponse pagination = 98;
 }
 
 // --- API Key ---
@@ -1012,6 +1036,7 @@ message CreateAPIKeyRequest {
   string name = 1;
   repeated string scopes = 2;
   google.protobuf.Timestamp expires_at = 3;  // 可选
+  string idempotency_key = 100;
 }
 
 message CreateAPIKeyResponse {
@@ -1020,12 +1045,12 @@ message CreateAPIKeyResponse {
 }
 
 message ListAPIKeysRequest {
-  PageRequest pagination = 1;
+  enterprise.common.PaginationRequest pagination = 98;
 }
 
 message ListAPIKeysResponse {
   repeated APIKey keys = 1;
-  PageResponse pagination = 2;
+  enterprise.common.PaginationResponse pagination = 98;
 }
 
 message RevokeAPIKeyRequest {
@@ -1065,6 +1090,7 @@ message CreatePolicyRequest {
   string name = 1;
   string version = 2;
   repeated Statement statements = 3;
+  string idempotency_key = 100;
 }
 
 message CreatePolicyResponse {
@@ -1106,12 +1132,12 @@ message DeletePolicyResponse {
 }
 
 message ListPoliciesRequest {
-  PageRequest pagination = 1;
+  enterprise.common.PaginationRequest pagination = 98;
 }
 
 message ListPoliciesResponse {
   repeated Policy policies = 1;
-  PageResponse pagination = 2;
+  enterprise.common.PaginationResponse pagination = 98;
 }
 
 // --- Health & Metrics ---

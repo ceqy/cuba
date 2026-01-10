@@ -1,126 +1,256 @@
 // ============================================================================
-// /finance/treasury-services (版本 2.0)
-// 描述: 提供资金管理相关功能，如银行对账单处理和支付运行。
+// /finance/treasury-service (版本 1.5 - 生产级完整版)
+// 描述: 提供银行对账单处理、付款运行执行及与其相关的生命周期管理功能。
+// ----------------------------------------------------------------------------
+// 设计基线：
+// - 支持多格式对账单导入 (MT940, CAMT.053, etc.)
+// - 支持异步付款运行执行 (类似 SAP F110)
+// - 统一使用 enterprise.common 基础类型
 // ============================================================================
 
 syntax = "proto3";
 
-package enterprise.finance.treasury;
-
-option java_package = "com.enterprise.finance.treasury.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/finance/treasury/v2;treasury";
+package finance.treasury;
+option go_package = "github.com/yourproject/finance/treasury";
 
 import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/openapiv2.proto";
 import "common/common.proto";
+
+// OpenAPI 全局配置
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Treasury Service API"
+    version: "1.0.0"
+    description: "资金管理服务 - 提供银行对账单处理与付款运行管理"
+    contact: {
+      name: "Treasury Team"
+      email: "treasury@yourproject.com"
+    }
+  }
+  host: "localhost:8083"
+  base_path: "/"
+  schemes: HTTP
+  schemes: HTTPS
+  consumes: "application/json"
+  produces: "application/json"
+  security_definitions: {
+    security: {
+      key: "bearer_auth"
+      value: {
+        type: TYPE_API_KEY
+        in: IN_HEADER
+        name: "Authorization"
+        description: "Bearer token for authentication"
+      }
+    }
+  }
+  security: {
+    security_requirement: {
+      key: "bearer_auth"
+      value: {}
+    }
+  }
+};
 
 // ============================================================================
 // 服务定义: TreasuryService
 // ============================================================================
 
 service TreasuryService {
-  // 导入并处理电子银行对账单
-  rpc ProcessBankStatement(ProcessBankStatementRequest) returns (ProcessBankStatementResponse);
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "资金管理服务"
+  };
 
-  // 执行自动支付程序
-  rpc ExecutePaymentRun(ExecutePaymentRunRequest) returns (ExecutePaymentRunResponse);
+  // --------------------------------------------------------------------------
+  // === 银行对账单管理 ===
+  // --------------------------------------------------------------------------
 
-  // 获取支付运行的详情
-  rpc GetPaymentRunDetails(GetPaymentRunDetailsRequest) returns (PaymentRunDetails);
+  // 处理银行对账单 (异步模式)
+  rpc ProcessBankStatement(ProcessBankStatementRequest) returns (enterprise.common.JobInfo) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/treasury/bank-statements:process"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Bank Statement"
+      summary: "处理银行对账单"
+    };
+  }
+
+  // 获取银行对账单详情
+  rpc GetBankStatementDetail(GetBankStatementRequest) returns (BankStatementDetail) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/treasury/bank-statements/{statement_id}"
+    };
+  }
+
+  // 查询银行对账单列表
+  rpc ListBankStatements(ListBankStatementsRequest) returns (ListBankStatementsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/treasury/bank-statements"
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // === 付款运行管理 (Payment Run / F110) ===
+  // --------------------------------------------------------------------------
+
+  // 执行付款运行 (异步模式)
+  rpc ExecutePaymentRun(ExecutePaymentRunRequest) returns (enterprise.common.JobInfo) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/treasury/payment-runs:execute"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Payment Run"
+      summary: "执行付款运行"
+    };
+  }
+
+  // 取消付款运行
+  rpc CancelPaymentRun(CancelPaymentRunRequest) returns (enterprise.common.JobInfo) {
+    option (google.api.http) = {
+      delete: "/api/v1/finance/treasury/payment-runs/{run_id}"
+    };
+  }
+
+  // 获取付款运行详情
+  rpc GetPaymentRunStatus(GetPaymentRunRequest) returns (PaymentRunDetail) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/treasury/payment-runs/{run_id}"
+    };
+  }
+
+  // 查询付款运行列表
+  rpc ListPaymentRuns(ListPaymentRunsRequest) returns (ListPaymentRunsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/treasury/payment-runs"
+    };
+  }
+
+  // 获取作业状态 (通用)
+  rpc GetJobStatus(GetJobStatusRequest) returns (enterprise.common.JobInfo) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/treasury/jobs/{job_id}"
+    };
+  }
 }
 
 // ============================================================================
-// RPC 消息定义
+// 数据结构: 消息定义
 // ============================================================================
 
-// 处理银行对账单请求
 message ProcessBankStatementRequest {
-  // 公司代码
   string company_code = 1;
-  // 银行对账单的原始数据 (例如 MT940, CAMT.053 格式)
   bytes raw_statement_data = 2;
-  // 对账单格式
-  string statement_format = 3;
+  enterprise.common.BankStatementFormat statement_format = 3;
+  enterprise.common.RequestContext context = 99;
 }
 
-// 处理银行对账单响应
-message ProcessBankStatementResponse {
-  // 操作是否成功
-  bool success = 1;
-  // 对账单ID
-  string statement_id = 2;
-  // 生成的过账日志ID
-  string posting_log_id = 3;
-  // 从核心ERP返回的消息列表
-  repeated enterprise.common.ApiMessage messages = 4;
+message GetBankStatementRequest {
+  string statement_id = 1;
+  enterprise.common.RequestContext context = 99;
 }
 
-// 执行支付运行请求
+message BankStatementDetail {
+  string statement_id = 1;
+  string company_code = 2;
+  enterprise.common.BankStatementFormat format = 3;
+  repeated BankStatementTransaction transactions = 4;
+  enterprise.common.AuditData audit_data = 5;
+}
+
+message BankStatementTransaction {
+  string transaction_id = 1;
+  google.protobuf.Timestamp value_date = 2;
+  enterprise.common.MonetaryValue amount = 3;
+  string memo = 4;
+  string partner_name = 5;
+}
+
+message ListBankStatementsRequest {
+  string company_code = 1;
+  enterprise.common.DateRange date_range = 2;
+  enterprise.common.PaginationRequest pagination = 98;
+  enterprise.common.RequestContext context = 99;
+}
+
+message ListBankStatementsResponse {
+  repeated BankStatementSummary statements = 1;
+  enterprise.common.PaginationResponse pagination = 2;
+}
+
+message BankStatementSummary {
+  string statement_id = 1;
+  google.protobuf.Timestamp statement_date = 2;
+  string company_code = 3;
+}
+
 message ExecutePaymentRunRequest {
-  // 运行ID (日期和标识)
   string run_id = 1;
-  // 过账日期
   google.protobuf.Timestamp posting_date = 2;
-  // 支付运行参数
   PaymentRunParameters parameters = 3;
+  enterprise.common.RequestContext context = 99;
 }
 
-// 支付运行参数
+message CancelPaymentRunRequest {
+  string run_id = 1;
+  enterprise.common.RequestContext context = 99;
+}
+
 message PaymentRunParameters {
-  // 公司代码
   repeated string company_codes = 1;
-  // 付款方式
-  repeated string payment_methods = 2;
-  // 下一个付款日期
-  google.protobuf.Timestamp next_payment_date = 3;
-  // 供应商列表
-  repeated string suppliers = 4;
-  // 客户列表
-  repeated string customers = 5;
+  repeated enterprise.common.PaymentMethodType payment_methods = 2;
+  google.protobuf.Timestamp next_posting_date = 3;
+  repeated string vendor_range = 4;
 }
 
-// 执行支付运行响应
-message ExecutePaymentRunResponse {
-  // 操作是否成功
-  bool success = 1;
-  // 运行ID
-  string run_id = 2;
-  // 从核心ERP返回的消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+message GetPaymentRunRequest {
+  string run_id = 1;
+  enterprise.common.RequestContext context = 99;
 }
 
-// 获取支付运行详情请求
-message GetPaymentRunDetailsRequest {
-    // 运行ID
-    string run_id = 1;
+message PaymentRunDetail {
+  string run_id = 1;
+  enterprise.common.JobStatus status = 2;
+  repeated PaymentDocument paid_documents = 3;
+  repeated PaymentException exceptions = 4;
+  enterprise.common.AuditData audit_data = 5;
 }
 
-// 支付运行详情
-message PaymentRunDetails {
-    // 运行ID
-    string run_id = 1;
-    // 支付的凭证列表
-    repeated PaymentDocument payments = 2;
-    // 异常或未支付的项目列表
-    repeated PaymentException exceptions = 3;
-}
-
-// 已支付的凭证信息
 message PaymentDocument {
-    // 账户编号 (供应商或客户)
-    string account_id = 1;
-    // 支付的凭证号
-    string document_number = 2;
-    // 支付金额
-    enterprise.common.MonetaryValue paid_amount = 3;
+  enterprise.common.SystemDocumentReference document_reference = 1;
+  enterprise.common.MonetaryValue amount = 2;
+  string payee_name = 3;
 }
 
-// 支付异常信息
 message PaymentException {
-    // 账户编号
-    string account_id = 1;
-    // 未支付的凭证号
-    string document_number = 2;
-    // 异常原因
-    string reason = 3;
+  string document_number = 1;
+  string reason = 2;
+  string error_code = 3;
+}
+
+message ListPaymentRunsRequest {
+  string company_code = 1;
+  enterprise.common.DateRange date_range = 2;
+  enterprise.common.PaginationRequest pagination = 98;
+  enterprise.common.RequestContext context = 99;
+}
+
+message ListPaymentRunsResponse {
+  repeated PaymentRunSummary payment_runs = 1;
+  enterprise.common.PaginationResponse pagination = 2;
+}
+
+message PaymentRunSummary {
+  string run_id = 1;
+  google.protobuf.Timestamp run_date = 2;
+  enterprise.common.JobStatus status = 3;
+}
+
+message GetJobStatusRequest {
+  string job_id = 1;
+  enterprise.common.RequestContext context = 99;
 }
