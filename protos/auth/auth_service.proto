@@ -873,7 +873,7 @@ message ListUsersResponse {
 message CreateRoleRequest {
   string name = 1;        // 角色名称
   string description = 2; // 角色描述
-  string idempotency_key = 100;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 创建角色响应
@@ -885,6 +885,7 @@ message CreateRoleResponse {
 message AssignRoleToUserRequest {
   string user_id = 1;  // 用户ID
   string role_id = 2;  // 角色ID
+  enterprise.common.RequestContext context = 99;
 }
 
 // 分配角色给用户响应
@@ -896,6 +897,7 @@ message AssignRoleToUserResponse {
 message AddPermissionToRoleRequest {
   string role_id = 1;       // 角色ID
   string permission_id = 2; // 权限ID
+  enterprise.common.RequestContext context = 99;
 }
 
 // 添加权限到角色响应
@@ -1065,7 +1067,7 @@ message RevokeAPIKeyResponse {
 
 message SSOLoginRequest {
   // SSO 特定参数，如 SAML Assertion 等
-  string provider = 1;
+  enterprise.common.AuthProvider provider = 1;
   string assertion = 2;
 }
 
@@ -1090,7 +1092,7 @@ message CreatePolicyRequest {
   string name = 1;
   string version = 2;
   repeated Statement statements = 3;
-  string idempotency_key = 100;
+  enterprise.common.RequestContext context = 99;
 }
 
 message CreatePolicyResponse {
@@ -1100,6 +1102,7 @@ message CreatePolicyResponse {
 message AttachPolicyToRoleRequest {
   string policy_id = 1;
   string role_id = 2;
+  enterprise.common.RequestContext context = 99;
 }
 
 message AttachPolicyToRoleResponse {
@@ -1109,6 +1112,7 @@ message AttachPolicyToRoleResponse {
 message AttachPolicyToUserRequest {
   string policy_id = 1;
   string user_id = 2;
+  enterprise.common.RequestContext context = 99;
 }
 
 message AttachPolicyToUserResponse {
@@ -1157,7 +1161,7 @@ message GetMetricsResponse {
 // --- Social Login ---
 
 message SocialLoginRequest {
-  string provider = 1;  // "google", "github", "wechat" 等
+  enterprise.common.AuthProvider provider = 1;
   string code = 2;      // 授权码
   string redirect_uri = 3;
 }

@@ -20,6 +20,12 @@ import "common/common.proto";
 // ============================================================================
 
 service TalentAcquisitionService {
+  // 创建职位申请 (New)
+  rpc CreateJobApplication(CreateJobApplicationRequest) returns (JobApplicationResponse);
+  
+  // 提交简历 (New)
+  rpc SubmitResume(SubmitResumeRequest) returns (JobApplicationResponse);
+
   // 获取职位申请列表
   rpc ListJobApplications(ListJobApplicationsRequest) returns (ListJobApplicationsResponse);
 
@@ -28,6 +34,9 @@ service TalentAcquisitionService {
 
   // 更新职位申请状态
   rpc UpdateJobApplicationStatus(UpdateJobApplicationStatusRequest) returns (UpdateJobApplicationStatusResponse);
+  
+  // 安排面试 (New)
+  rpc ScheduleInterview(ScheduleInterviewRequest) returns (ScheduleInterviewResponse);
 }
 
 // ============================================================================
@@ -36,104 +45,120 @@ service TalentAcquisitionService {
 
 // 职位申请详情
 message JobApplicationDetail {
-  // 申请ID
   string application_id = 1;
-  // 职位ID
   string requisition_id = 2;
-  // 职位名称
   string requisition_title = 3;
-  // 候选人信息
   CandidateInfo candidate = 4;
-  // 申请状态 (例如, New, In-Process, Hired, Rejected)
-  string status = 5;
-  // 申请日期
+  enterprise.common.ApplicationStatus status = 5;
   google.protobuf.Timestamp application_date = 6;
-  // 附件列表 (简历、求职信等)
   repeated ApplicationAttachment attachments = 7;
+  repeated InterviewSchedule interviews = 8;
+  enterprise.common.AuditData audit_data = 9;
 }
 
 // 候选人信息
 message CandidateInfo {
-  // 候选人ID
   string candidate_id = 1;
-  // 姓
   string first_name = 2;
-  // 名
   string last_name = 3;
-  // 邮箱
   string email = 4;
-  // 电话
   string phone = 5;
+  string resume_url = 6;
 }
 
 // 申请附件
 message ApplicationAttachment {
-  // 附件ID
   string attachment_id = 1;
-  // 文件名
   string file_name = 2;
-  // 附件类型 (CV, CoverLetter)
   string attachment_type = 3;
+  string url = 4;
+}
+
+// 面试安排
+message InterviewSchedule {
+  string interview_id = 1;
+  enterprise.common.InterviewType interview_type = 2;
+  google.protobuf.Timestamp scheduled_time = 3;
+  string interviewer_id = 4;
+  string location = 5;
+  string notes = 6;
 }
 
 // ============================================================================
 // RPC 消息定义
 // ============================================================================
 
+message CreateJobApplicationRequest {
+  string requisition_id = 1;
+  CandidateInfo candidate = 2;
+  enterprise.common.RequestContext context = 99;
+}
+
+message SubmitResumeRequest {
+  string requisition_id = 1;
+  string candidate_email = 2;
+  string resume_url = 3;
+  enterprise.common.RequestContext context = 99;
+}
+
+message JobApplicationResponse {
+  bool success = 1;
+  string application_id = 2;
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
 // 查询职位申请请求
 message ListJobApplicationsRequest {
-  // 职位ID
   string requisition_id = 1;
-  // 申请状态
-  string status = 2;
-  // 申请日期范围
+  enterprise.common.ApplicationStatus status = 2;
   enterprise.common.DateRange application_date_range = 3;
-  // 分页请求
-  enterprise.common.PaginationRequest pagination = 4;
+  enterprise.common.PaginationRequest pagination = 98;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 查询职位申请响应
 message ListJobApplicationsResponse {
-  // 申请摘要列表
   repeated JobApplicationSummary applications = 1;
-  // 分页响应
   enterprise.common.PaginationResponse pagination = 2;
 }
 
 // 职位申请摘要
 message JobApplicationSummary {
-  // 申请ID
   string application_id = 1;
-  // 职位名称
   string requisition_title = 2;
-  // 候选人姓名
   string candidate_name = 3;
-  // 申请状态
-  string status = 4;
-  // 申请日期
+  enterprise.common.ApplicationStatus status = 4;
   google.protobuf.Timestamp application_date = 5;
 }
 
 // 获取职位申请详情请求
 message GetJobApplicationRequest {
-  // 申请ID
   string application_id = 1;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 更新职位申请状态请求
 message UpdateJobApplicationStatusRequest {
-  // 申请ID
   string application_id = 1;
-  // 新的状态
-  string new_status = 2;
-  // 备注
+  enterprise.common.ApplicationStatus new_status = 2;
   string notes = 3;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 更新职位申请状态响应
 message UpdateJobApplicationStatusResponse {
-  // 操作是否成功
   bool success = 1;
-  // 从核心ERP返回的消息列表
   repeated enterprise.common.ApiMessage messages = 2;
+}
+
+message ScheduleInterviewRequest {
+  string application_id = 1;
+  InterviewSchedule interview = 2;
+  enterprise.common.RequestContext context = 99;
+}
+
+message ScheduleInterviewResponse {
+  bool success = 1;
+  string interview_id = 2;
+  repeated enterprise.common.ApiMessage messages = 3;
 }
