@@ -8,6 +8,8 @@ syntax = "proto3";
 
 package sc.df.v1;
 
+option go_package = "github.com/enterprise/erp/protos/sc/df;df";
+
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";

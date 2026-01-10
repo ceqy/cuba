@@ -8,6 +8,8 @@ syntax = "proto3";
 
 package sc.bt.v1;
 
+option go_package = "github.com/enterprise/erp/protos/sc/bt;bt";
+
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";

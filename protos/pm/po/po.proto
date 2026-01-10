@@ -8,6 +8,8 @@ syntax = "proto3";
 
 package pm.po.v1;
 
+option go_package = "github.com/enterprise/erp/protos/pm/po;po";
+
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";

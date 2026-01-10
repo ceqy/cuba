@@ -8,6 +8,8 @@ syntax = "proto3";
 
 package mf.kb.v1;
 
+option go_package = "github.com/enterprise/erp/protos/mf/kb;kb";
+
 
 import "common/common.proto";
 import "google/api/annotations.proto";

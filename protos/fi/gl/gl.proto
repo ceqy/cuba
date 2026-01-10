@@ -15,6 +15,8 @@ syntax = "proto3";
 
 package fi.gl.v1;
 
+option go_package = "github.com/enterprise/erp/protos/fi/gl;gl";
+
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/openapiv2.proto";

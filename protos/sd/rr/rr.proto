@@ -8,6 +8,8 @@ syntax = "proto3";
 
 package sd.rr.v1;
 
+option go_package = "github.com/enterprise/erp/protos/sd/rr;rr";
+
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";

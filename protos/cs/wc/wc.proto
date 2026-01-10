@@ -7,6 +7,8 @@ syntax = "proto3";
 
 package cs.wc.v1;
 
+option go_package = "github.com/enterprise/erp/protos/cs/wc;wc";
+
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";

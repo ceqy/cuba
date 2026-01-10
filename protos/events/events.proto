@@ -8,6 +8,8 @@ syntax = "proto3";
 
 package events.v1;
 
+option go_package = "github.com/enterprise/erp/protos/events;events";
+
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";

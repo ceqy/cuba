@@ -7,6 +7,8 @@ syntax = "proto3";
 
 package hr.ex.v1;
 
+option go_package = "github.com/enterprise/erp/protos/hr/ex;ex";
+
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";

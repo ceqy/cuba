@@ -8,6 +8,8 @@ syntax = "proto3";
 
 package pm.sa.v1;
 
+option go_package = "github.com/enterprise/erp/protos/pm/sa;sa";
+
 
 import "common/common.proto";
 import "google/api/annotations.proto";

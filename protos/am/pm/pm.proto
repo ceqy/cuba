@@ -9,6 +9,8 @@ syntax = "proto3";
 
 package am.pm.v1;
 
+option go_package = "github.com/enterprise/erp/protos/am/pm;pm";
+
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";

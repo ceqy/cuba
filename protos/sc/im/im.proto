@@ -12,6 +12,8 @@ syntax = "proto3";
 
 package sc.im.v1;
 
+option go_package = "github.com/enterprise/erp/protos/sc/im;im";
+
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";

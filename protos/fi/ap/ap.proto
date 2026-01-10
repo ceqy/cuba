@@ -17,6 +17,8 @@ syntax = "proto3";
 
 package fi.ap.v1;
 
+option go_package = "github.com/enterprise/erp/protos/fi/ap;ap";
+
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
 import "common/common.proto";

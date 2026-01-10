@@ -7,6 +7,8 @@ syntax = "proto3";
 
 package am.gs.v1;
 
+option go_package = "github.com/enterprise/erp/protos/am/gs;gs";
+
 
 import "common/common.proto";
 import "google/protobuf/timestamp.proto";

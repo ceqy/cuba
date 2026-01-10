@@ -8,6 +8,8 @@ syntax = "proto3";
 
 package cs.fd.v1;
 
+option go_package = "github.com/enterprise/erp/protos/cs/fd;fd";
+
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";

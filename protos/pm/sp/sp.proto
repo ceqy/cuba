@@ -7,11 +7,13 @@ syntax = "proto3";
 
 package pm.sp.v1;
 
+option go_package = "github.com/enterprise/erp/protos/pm/sp;sp";
+
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
-import "procurement/order_service.proto";
-import "procurement/invoice_processing_service.proto";
+import "pm/po/po.proto";
+import "pm/iv/iv.proto";
 import "google/api/annotations.proto";
 
 // ============================================================================
@@ -20,7 +22,7 @@ import "google/api/annotations.proto";
 
 service SupplierPortalService {
   // 供应商查询其采购订单列表
-  rpc GetMyPurchaseOrders(ListSupplierPurchaseOrdersRequest) returns (enterprise.procurement.order.ListPurchaseOrdersResponse) {
+  rpc GetMyPurchaseOrders(ListSupplierPurchaseOrdersRequest) returns (pm.po.v1.ListPurchaseOrdersResponse) {
 
     option (google.api.http) = {
 
@@ -31,7 +33,7 @@ service SupplierPortalService {
   }
 
   // 供应商提交发票
-  rpc SubmitInvoice(enterprise.procurement.invoice.ReceiveInvoiceRequest) returns (enterprise.procurement.invoice.ReceiveInvoiceResponse) {
+  rpc SubmitInvoice(pm.iv.v1.ReceiveInvoiceRequest) returns (pm.iv.v1.ReceiveInvoiceResponse) {
 
 
     option (google.api.http) = {
@@ -49,7 +51,7 @@ service SupplierPortalService {
   }
 
   // 供应商查询其发票状态
-  rpc GetMyInvoiceStatus(GetSupplierInvoiceStatusRequest) returns (enterprise.procurement.invoice.InvoiceDetail) {
+  rpc GetMyInvoiceStatus(GetSupplierInvoiceStatusRequest) returns (pm.iv.v1.InvoiceDetail) {
 
 
     option (google.api.http) = {
