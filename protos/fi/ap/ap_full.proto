@@ -15,8 +15,7 @@
 
 syntax = "proto3";
 
-package finance.arap;
-option go_package = "github.com/yourproject/finance/arap";
+package fi.ap.v1;
 
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
@@ -551,7 +550,7 @@ message BusinessPartnerCore {
   string search_term1 = 7;
   string language = 8;
   string country = 9;
-  enterprise.common.AuditData audit_data = 10;
+  common.v1.AuditData audit_data = 10;
 }
 
 // 客户主数据详情
@@ -560,7 +559,7 @@ message CustomerDetails {
   string business_partner_id = 2;
   string name = 3;
   string account_group = 4;
-  enterprise.common.Address address = 5;
+  common.v1.Address address = 5;
   string telephone = 6;
   string email = 7;
   string tax_number1 = 8;
@@ -568,8 +567,8 @@ message CustomerDetails {
   string reconciliation_account = 101;
   string payment_terms = 102;
   bool payment_block = 103;
-  enterprise.common.MonetaryValue credit_limit = 110;
-  enterprise.common.AuditData audit_data = 300;
+  common.v1.MonetaryValue credit_limit = 110;
+  common.v1.AuditData audit_data = 300;
 }
 
 // 供应商主数据详情
@@ -578,7 +577,7 @@ message SupplierDetails {
   string business_partner_id = 2;
   string name = 3;
   string account_group = 4;
-  enterprise.common.Address address = 5;
+  common.v1.Address address = 5;
   string telephone = 6;
   string email = 7;
   string company_code = 100;
@@ -587,7 +586,7 @@ message SupplierDetails {
   bool check_double_invoice = 103;
   string purchasing_organization = 200;
   string order_currency = 201;
-  enterprise.common.AuditData audit_data = 300;
+  common.v1.AuditData audit_data = 300;
 }
 
 // ============================================================================
@@ -596,7 +595,7 @@ message SupplierDetails {
 
 // 会计凭证抬头
 message AccountingDocumentHeader {
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.v1.SystemDocumentReference document_reference = 1;
   google.protobuf.Timestamp document_date = 2;
   google.protobuf.Timestamp posting_date = 3;
   string header_text = 4;
@@ -606,10 +605,10 @@ message AccountingDocumentHeader {
 // 会计凭证行项目
 message AccountingDocumentItem {
   int32 line_item_number = 1;
-  enterprise.common.AccountType account_type = 2; // ENUM
+  common.v1.AccountType account_type = 2; // ENUM
   string gl_account = 3;
   string debit_credit_indicator = 4; // S/H
-  enterprise.common.MonetaryValue amount = 5;
+  common.v1.MonetaryValue amount = 5;
   string item_text = 6;
   string cost_center = 7;
 
@@ -631,20 +630,20 @@ message AccountingDocumentItem {
 // 未清项过滤器
 message OpenItemFilter {
   repeated string document_types = 1;
-  enterprise.common.DateRange posting_date_range = 2;
-  enterprise.common.StatusFilter status_filter = 3;
+  common.v1.DateRange posting_date_range = 2;
+  common.v1.StatusFilter status_filter = 3;
   bool include_cleared = 4;
-  enterprise.common.AmountRangeFilter amount_range = 5;
+  common.v1.AmountRangeFilter amount_range = 5;
 }
 
 // 未清项信息
 message OpenItem {
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.v1.SystemDocumentReference document_reference = 1;
   int32 line_item_number = 2;
   google.protobuf.Timestamp posting_date = 3;
   google.protobuf.Timestamp due_date = 4;
-  enterprise.common.MonetaryValue amount = 5;
-  enterprise.common.MonetaryValue open_amount = 6;
+  common.v1.MonetaryValue amount = 5;
+  common.v1.MonetaryValue open_amount = 6;
   string gl_account = 7;
   string payment_block = 8;
   string reference_document = 9;
@@ -653,7 +652,7 @@ message OpenItem {
   // 分期付款详情
   message InstallmentDetail {
     google.protobuf.Timestamp due_date = 1;
-    enterprise.common.MonetaryValue amount = 2;
+    common.v1.MonetaryValue amount = 2;
     int32 installment_number = 3;
   }
   repeated InstallmentDetail installments = 11;
@@ -666,13 +665,13 @@ message OpenItem {
 message AgingBucket {
   int32 days_from = 1;
   int32 days_to = 2;
-  enterprise.common.MonetaryValue amount = 3;
+  common.v1.MonetaryValue amount = 3;
 }
 
 // 账龄分析
 message AgingAnalysis {
   google.protobuf.Timestamp as_of_date = 1;
-  enterprise.common.MonetaryValue total_open_amount = 2;
+  common.v1.MonetaryValue total_open_amount = 2;
   repeated AgingBucket overdue_buckets = 3;
 }
 
@@ -681,15 +680,15 @@ message StatementItem {
   google.protobuf.Timestamp posting_date = 1;
   string document_type_desc = 2;
   string reference = 3;
-  enterprise.common.MonetaryValue amount = 4;
-  enterprise.common.MonetaryValue open_balance = 5;
+  common.v1.MonetaryValue amount = 4;
+  common.v1.MonetaryValue open_balance = 5;
 }
 
 // 催款记录
 message DunningRecord {
   google.protobuf.Timestamp dunning_date = 1;
   int32 dunning_level = 2;
-  enterprise.common.MonetaryValue dunning_amount = 3;
+  common.v1.MonetaryValue dunning_amount = 3;
   string dunning_text = 4;
 }
 
@@ -697,14 +696,14 @@ message DunningRecord {
 message ClearingProposalMatch {
   repeated OpenItemIdentifier debit_items = 1;
   repeated OpenItemIdentifier credit_items = 2;
-  enterprise.common.MonetaryValue match_amount = 3;
+  common.v1.MonetaryValue match_amount = 3;
   double match_score = 4;
 }
 
 // 信用检查结果
 message CreditCheckResult {
-  enterprise.common.MonetaryValue used_credit = 1;
-  enterprise.common.MonetaryValue total_limit = 2;
+  common.v1.MonetaryValue used_credit = 1;
+  common.v1.MonetaryValue total_limit = 2;
   bool passed = 3;
   string block_reason = 4;
 }
@@ -712,7 +711,7 @@ message CreditCheckResult {
 // 付款建议项目
 message PaymentProposalItem {
   string supplier_id = 1;
-  enterprise.common.MonetaryValue proposed_amount = 2;
+  common.v1.MonetaryValue proposed_amount = 2;
   repeated OpenItemIdentifier open_items = 3;
   bool blocked = 4;
 }
@@ -722,13 +721,13 @@ message BankStatementImport {
   string house_bank = 1;
   google.protobuf.Timestamp statement_date = 2;
   repeated BankStatementLine lines = 3;
-  enterprise.common.BankStatementFormat format = 4;
+  common.v1.BankStatementFormat format = 4;
 }
 
 message BankStatementLine {
   google.protobuf.Timestamp value_date = 1;
   string reference = 2;
-  enterprise.common.MonetaryValue amount = 3;
+  common.v1.MonetaryValue amount = 3;
   string partner_name = 4;
 }
 
@@ -740,7 +739,7 @@ message LockboxBatch {
 
 message LockboxItem {
   string customer_id = 1;
-  enterprise.common.MonetaryValue amount = 2;
+  common.v1.MonetaryValue amount = 2;
   string check_number = 3;
 }
 
@@ -755,7 +754,7 @@ message GetPartnerDetailsRequest {
     string business_partner_id = 3;
   }
   string company_code = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message GetPartnerDetailsResponse {
@@ -765,7 +764,7 @@ message GetPartnerDetailsResponse {
 
 message BatchGetPartnerDetailsRequest {
   repeated GetPartnerDetailsRequest requests = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message BatchGetPartnerDetailsResponse {
@@ -775,34 +774,34 @@ message BatchGetPartnerDetailsResponse {
 message ListOpenItemsRequest {
   string business_partner_id = 1;
   string company_code = 2;
-  enterprise.common.AccountType account_type = 3; // ENUM
+  common.v1.AccountType account_type = 3; // ENUM
   OpenItemFilter filter = 100;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message ListOpenItemsResponse {
   repeated OpenItem items = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 message GetAccountBalanceRequest {
   string business_partner_id = 1;
   string company_code = 2;
-  enterprise.common.AccountType account_type = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.AccountType account_type = 3;
+  common.v1.RequestContext context = 99;
 }
 
 message GetAccountBalanceResponse {
-  enterprise.common.MonetaryValue balance = 1;
+  common.v1.MonetaryValue balance = 1;
 }
 
 message GetAgingAnalysisRequest {
   string business_partner_id = 1;
   string company_code = 2;
-  enterprise.common.AccountType account_type = 3;
+  common.v1.AccountType account_type = 3;
   google.protobuf.Timestamp as_of_date = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message GetAgingAnalysisResponse {
@@ -813,17 +812,17 @@ message GenerateStatementRequest {
   string business_partner_id = 1;
   string company_code = 2;
   google.protobuf.Timestamp statement_date = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message GenerateStatementResponse {
   repeated StatementItem items = 1;
-  enterprise.common.MonetaryValue closing_balance = 2;
+  common.v1.MonetaryValue closing_balance = 2;
 }
 
 message GetDunningHistoryRequest {
   string business_partner_id = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message GetDunningHistoryResponse {
@@ -833,7 +832,7 @@ message GetDunningHistoryResponse {
 message TriggerDunningRequest {
   string company_code = 1;
   google.protobuf.Timestamp dunning_date = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message TriggerDunningResponse {
@@ -843,7 +842,7 @@ message TriggerDunningResponse {
 message GetClearingProposalRequest {
   string company_code = 1;
   string business_partner_id = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message GetClearingProposalResponse {
@@ -853,37 +852,37 @@ message GetClearingProposalResponse {
 message ExecuteClearingProposalRequest {
   string company_code = 1;
   repeated int32 proposal_indices = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ClearOpenItemsRequest {
   string company_code = 1;
-  enterprise.common.AccountType account_type = 2;
+  common.v1.AccountType account_type = 2;
   string account_id = 3;
   repeated OpenItemIdentifier items = 4;
   string reason_code = 5;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message PartialClearItemsRequest {
   string company_code = 1;
   OpenItemIdentifier item = 2;
-  enterprise.common.MonetaryValue payment_amount = 3;
+  common.v1.MonetaryValue payment_amount = 3;
   string reason_code = 4;
   bool create_residual_item = 5;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message NetClearingRequest {
   string company_code = 1;
   repeated string partner_ids = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message CheckCreditLimitRequest {
   string business_partner_id = 1;
-  enterprise.common.MonetaryValue amount = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.MonetaryValue amount = 2;
+  common.v1.RequestContext context = 99;
 }
 
 message CheckCreditLimitResponse {
@@ -892,8 +891,8 @@ message CheckCreditLimitResponse {
 
 message UpdateCreditExposureRequest {
   string business_partner_id = 1;
-  enterprise.common.MonetaryValue amount = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.MonetaryValue amount = 2;
+  common.v1.RequestContext context = 99;
 }
 
 message UpdateCreditExposureResponse {
@@ -903,7 +902,7 @@ message UpdateCreditExposureResponse {
 message GeneratePaymentProposalRequest {
   string company_code = 1;
   google.protobuf.Timestamp due_date = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message GeneratePaymentProposalResponse {
@@ -913,7 +912,7 @@ message GeneratePaymentProposalResponse {
 message ExecutePaymentProposalRequest {
   string company_code = 1;
   repeated string supplier_ids = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message PaymentExecutionResponse {
@@ -921,41 +920,41 @@ message PaymentExecutionResponse {
 }
 
 message PaymentExecutionResult {
-  enterprise.common.SystemDocumentReference document = 1;
+  common.v1.SystemDocumentReference document = 1;
   bool success = 2;
 }
 
 message DownPaymentRequest {
   string company_code = 1;
   string account_id = 2;
-  enterprise.common.MonetaryValue amount = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.MonetaryValue amount = 3;
+  common.v1.RequestContext context = 99;
 }
 
 message DownPaymentResponse {
-  enterprise.common.SystemDocumentReference document = 1;
+  common.v1.SystemDocumentReference document = 1;
 }
 
 message DownPaymentClearingRequest {
   string company_code = 1;
   OpenItemIdentifier dp_item = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message PostInvoiceRequest {
   string company_code = 1;
   string account_id = 2;
   repeated AccountingDocumentItem items = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message PostInvoiceResponse {
-  enterprise.common.SystemDocumentReference document = 1;
+  common.v1.SystemDocumentReference document = 1;
 }
 
 message ReverseDocumentRequest {
-  enterprise.common.SystemDocumentReference document_to_reverse = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.SystemDocumentReference document_to_reverse = 1;
+  common.v1.RequestContext context = 99;
 }
 
 message ReverseDocumentResponse {
@@ -963,8 +962,8 @@ message ReverseDocumentResponse {
 }
 
 message VerifyInvoiceRequest {
-  enterprise.common.SystemDocumentReference document = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.SystemDocumentReference document = 1;
+  common.v1.RequestContext context = 99;
 }
 
 message VerifyInvoiceResponse {
@@ -973,7 +972,7 @@ message VerifyInvoiceResponse {
 
 message ImportBankStatementRequest {
   BankStatementImport statement = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ImportBankStatementResponse {
@@ -982,7 +981,7 @@ message ImportBankStatementResponse {
 
 message ProcessLockboxRequest {
   LockboxBatch batch = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ProcessLockboxResponse {
@@ -991,12 +990,12 @@ message ProcessLockboxResponse {
 
 message ApplyCashRequest {
   string company_code = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message GetToleranceGroupsRequest {
   string company_code = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message GetToleranceGroupsResponse {
@@ -1009,7 +1008,7 @@ message ToleranceGroup {
 
 message PerformComplianceCheckRequest {
   string partner_id = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message PerformComplianceCheckResponse {
@@ -1017,8 +1016,8 @@ message PerformComplianceCheckResponse {
 }
 
 message ExportReportRequest {
-  enterprise.common.ReportType report_type = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.ReportType report_type = 1;
+  common.v1.RequestContext context = 99;
 }
 
 message ExportReportResponse {
@@ -1027,7 +1026,7 @@ message ExportReportResponse {
 
 message SubscribeToEventsRequest {
   string webhook_url = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message SubscribeToEventsResponse {
@@ -1035,7 +1034,7 @@ message SubscribeToEventsResponse {
 }
 
 message ListEventTypesRequest {
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ListEventTypesResponse {
@@ -1046,7 +1045,7 @@ message ListAttachmentsRequest {
   string document_number = 1;
   string company_code = 2;
   int32 fiscal_year = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ListAttachmentsResponse {
@@ -1068,7 +1067,7 @@ message UploadAttachmentRequest {
   string file_name = 4;
   string file_type = 5;
   bytes content = 6;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message OpenItemIdentifier {
@@ -1079,7 +1078,7 @@ message OpenItemIdentifier {
 
 message ClearOpenItemsResponse {
   bool success = 1;
-  enterprise.common.SystemDocumentReference clearing_document = 2;
+  common.v1.SystemDocumentReference clearing_document = 2;
 }
 
 message EventType {
@@ -1089,7 +1088,7 @@ message EventType {
 
 message OperationResponse {
   bool success = 1;
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
 }
 
 // UpdatePartnerDetails Request (New)
@@ -1099,5 +1098,5 @@ message UpdatePartnerDetailsRequest {
     CustomerDetails customer = 2;
     SupplierDetails supplier = 3;
   }
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }

@@ -5,11 +5,8 @@
 
 syntax = "proto3";
 
-package enterprise.service.warranty;
+package cs.wc.v1;
 
-option java_package = "com.enterprise.service.warranty.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/service/warranty/v2;warranty";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -100,7 +97,7 @@ service WarrantyClaimsService {
   }
 
   // 裁定保修索赔 (批准/拒绝) - 异步
-  rpc AdjudicateClaim(AdjudicateClaimRequest) returns (enterprise.common.JobInfo) {
+  rpc AdjudicateClaim(AdjudicateClaimRequest) returns (common.v1.JobInfo) {
 
 
     option (google.api.http) = {
@@ -147,8 +144,8 @@ message ClaimDetail {
   string product_or_equipment_id = 3;
   google.protobuf.Timestamp failure_date = 4;
   string failure_description = 5;
-  enterprise.common.MonetaryValue claimed_amount = 6;
-  enterprise.common.ClaimStatus status = 7;
+  common.v1.MonetaryValue claimed_amount = 6;
+  common.v1.ClaimStatus status = 7;
   AdjudicationResult adjudication = 8;
   repeated string attachment_urls = 9;
 }
@@ -157,7 +154,7 @@ message ClaimDetail {
 message AdjudicationResult {
   string adjudicated_by = 1;
   google.protobuf.Timestamp adjudication_date = 2;
-  enterprise.common.MonetaryValue approved_amount = 3;
+  common.v1.MonetaryValue approved_amount = 3;
   string notes = 4;
 }
 
@@ -168,60 +165,60 @@ message AdjudicationResult {
 // 创建索赔请求
 message CreateClaimRequest {
   ClaimDetail claim = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message UpdateClaimRequest {
   string claim_id = 1;
   ClaimDetail claim = 2;
   repeated string update_mask = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 索赔响应
 message ClaimResponse {
   bool success = 1;
   string claim_id = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 // 获取索赔请求
 message GetClaimRequest {
   string claim_id = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ListClaimsRequest {
   string customer_id = 1;
   string product_id = 2;
-  enterprise.common.DateRange date_range = 3;
-  enterprise.common.ClaimStatus status_filter = 4;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.DateRange date_range = 3;
+  common.v1.ClaimStatus status_filter = 4;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message ListClaimsResponse {
   repeated ClaimDetail claims = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 message AddEvidenceAttachmentRequest {
   string claim_id = 1;
   string attachment_url = 2;
   string description = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 裁定索赔请求
 message AdjudicateClaimRequest {
   string claim_id = 1;
-  enterprise.common.ClaimStatus new_status = 2;
+  common.v1.ClaimStatus new_status = 2;
   AdjudicationResult result = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message CloseClaimRequest {
   string claim_id = 1;
   string closure_reason = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }

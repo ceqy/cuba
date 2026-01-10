@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.supplychain.transportation;
+package sc.tp.v1;
 
-option java_package = "com.enterprise.supplychain.transportation.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/supplychain/transportation/v2;transportation";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -22,7 +19,7 @@ import "google/api/annotations.proto";
 
 service TransportationPlanningService {
   // 基于交货单创建货运单 - 异步
-  rpc CreateShipment(CreateShipmentRequest) returns (enterprise.common.JobInfo) {
+  rpc CreateShipment(CreateShipmentRequest) returns (common.v1.JobInfo) {
 
     option (google.api.http) = {
 
@@ -126,13 +123,13 @@ service TransportationPlanningService {
 // 货运单抬头 (参考: VTTK)
 message ShipmentHeader {
   // 货运类型 (原: SHTYP)
-  enterprise.common.ShipmentType shipment_type = 1;
+  common.v1.ShipmentType shipment_type = 1;
   // 运输计划点 (原: TPLST)
   string transportation_planning_point = 2;
   // 承运人 (原: TDLDNR)
   string carrier = 3;
   // 总体状态 (原: STTRG)
-  enterprise.common.ShipmentStatus overall_status = 4;
+  common.v1.ShipmentStatus overall_status = 4;
   // 计划出发日期 (原: DPTBG)
   google.protobuf.Timestamp planned_departure_date = 5;
   // 计划到达日期 (原: DATBG)
@@ -146,9 +143,9 @@ message ShipmentItem {
   // 交货单号 (原: VBELN)
   string delivery_number = 2;
   // 总重量 (原: GESZGew)
-  enterprise.common.QuantityValue total_weight = 3;
+  common.v1.QuantityValue total_weight = 3;
   // 体积 (原: VOLUM)
-  enterprise.common.QuantityValue volume = 4;
+  common.v1.QuantityValue volume = 4;
 }
 
 // 完整的货运单详情
@@ -160,7 +157,7 @@ message ShipmentDetail {
   // 货运项目
   repeated ShipmentItem items = 3;
   // 审计信息
-  enterprise.common.AuditData audit_data = 4;
+  common.v1.AuditData audit_data = 4;
 }
 
 // ============================================================================
@@ -170,12 +167,12 @@ message ShipmentDetail {
 // 创建货运单请求
 message CreateShipmentRequest {
   // 货运类型
-  enterprise.common.ShipmentType shipment_type = 1;
+  common.v1.ShipmentType shipment_type = 1;
   // 要包含的交货单号列表
   repeated string delivery_numbers = 2;
   // 运输计划点
   string transportation_planning_point = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 货运单响应
@@ -185,26 +182,26 @@ message ShipmentResponse {
   // 货运单号
   string shipment_number = 2;
   // 从核心ERP返回的消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 message CancelShipmentRequest {
   string shipment_number = 1;
   string cancellation_reason = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message AssignCarrierRequest {
   string shipment_number = 1;
   string carrier_id = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 获取货运单请求
 message GetShipmentRequest {
   // 货运单号
   string shipment_number = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 更新货运状态请求
@@ -212,24 +209,24 @@ message UpdateShipmentStatusRequest {
   // 货运单号
   string shipment_number = 1;
   // 新的状态代码
-  enterprise.common.ShipmentStatus new_status = 2;
+  common.v1.ShipmentStatus new_status = 2;
   // 状态变更的日期和时间
   google.protobuf.Timestamp status_change_datetime = 3;
   // 位置信息 (GPS or Location Code)
   string location = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ListShipmentsRequest {
   string carrier = 1;
-  enterprise.common.ShipmentType shipment_type = 2;
-  enterprise.common.ShipmentStatus status = 3;
-  enterprise.common.DateRange departure_date_range = 4;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.ShipmentType shipment_type = 2;
+  common.v1.ShipmentStatus status = 3;
+  common.v1.DateRange departure_date_range = 4;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message ListShipmentsResponse {
   repeated ShipmentDetail shipments = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }

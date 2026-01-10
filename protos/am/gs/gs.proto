@@ -5,11 +5,8 @@
 
 syntax = "proto3";
 
-package enterprise.asset.geo;
+package am.gs.v1;
 
-option java_package = "com.enterprise.asset.geo.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/asset/geo/v2;geo";
 
 import "common/common.proto";
 import "google/protobuf/timestamp.proto";
@@ -86,7 +83,7 @@ service GeoService {
   }
 
   // 计算两个地理点之间的路线 - 异步
-  rpc CalculateRoute(CalculateRouteRequest) returns (enterprise.common.JobInfo) {
+  rpc CalculateRoute(CalculateRouteRequest) returns (common.v1.JobInfo) {
 
 
     option (google.api.http) = {
@@ -164,26 +161,26 @@ message RouteStep {
 // 获取资产位置请求
 message GetAssetLocationRequest {
   string asset_id = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message UpdateAssetLocationRequest {
   string asset_id = 1;
   GeoPoint location = 2;
   google.protobuf.Timestamp timestamp = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message UpdateLocationResponse {
   bool success = 1;
-  enterprise.common.ApiMessage message = 2;
+  common.v1.ApiMessage message = 2;
 }
 
 // 检查地理围栏请求
 message CheckGeofenceRequest {
   string asset_id = 1;
   string fence_id = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message CheckGeofenceResponse {
@@ -194,7 +191,7 @@ message CreateGeofenceRequest {
   string name = 1;
   repeated GeoPoint vertices = 2;
   string description = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message GeofenceResponse {
@@ -206,11 +203,11 @@ message GeofenceResponse {
 message CalculateRouteRequest {
   GeoPoint start = 1;
   GeoPoint end = 2;
-  enterprise.common.TravelMode travel_mode = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.TravelMode travel_mode = 3;
+  common.v1.RequestContext context = 99;
 }
 
 message GetRouteResultRequest {
   string job_id = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }

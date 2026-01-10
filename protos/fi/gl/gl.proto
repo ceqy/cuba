@@ -13,8 +13,7 @@
 
 syntax = "proto3";
 
-package finance.gl;
-option go_package = "github.com/yourproject/finance/gl";
+package fi.gl.v1;
 
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
@@ -376,7 +375,7 @@ message JournalEntryHeader {
   DocumentOrigin origin = 11;          // 来源系统
   string logical_system = 12;          // 逻辑系统 (AWSYS)
   string ledger_group = 13;             // 分类账组 (LDGRP)
-  enterprise.common.AuditData audit = 14; 
+  common.v1.AuditData audit = 14; 
 }
 
 // 凭证行项目 (类似 SAP ACDOCA / BSEG 表)
@@ -385,13 +384,13 @@ message JournalEntryLineItem {
   string posting_key = 2;              // 过账码 (BSCHL)
   string debit_credit_indicator = 3;   // 借贷标识 (SHKZG: S=Debit, H=Credit)
   string gl_account = 4;               // 总账科目 (HKONT)
-  enterprise.common.AccountType account_type = 5; // 账户类型 (KOART)
+  common.v1.AccountType account_type = 5; // 账户类型 (KOART)
   string business_partner = 6;         // 业务伙伴 (KUNNR/LIFNR)
   
   // 金额相关
-  enterprise.common.MonetaryValue amount_in_local_currency = 7;
-  enterprise.common.MonetaryValue amount_in_document_currency = 8;
-  enterprise.common.MonetaryValue amount_in_group_currency = 9;
+  common.v1.MonetaryValue amount_in_local_currency = 7;
+  common.v1.MonetaryValue amount_in_document_currency = 8;
+  common.v1.MonetaryValue amount_in_group_currency = 9;
   
   // 成本对象
   string cost_center = 10;             // 成本中心 (KOSTL)
@@ -413,15 +412,15 @@ message JournalEntryLineItem {
   google.protobuf.Timestamp clearing_date = 20;
 
   // 数量
-  enterprise.common.QuantityValue quantity = 21;
+  common.v1.QuantityValue quantity = 21;
 }
 
 // 凭证税行
 message TaxLineItem {
   int32 line_item_number = 1;
   string tax_code = 2;
-  enterprise.common.MonetaryValue tax_base_amount = 3;
-  enterprise.common.MonetaryValue tax_amount = 4;
+  common.v1.MonetaryValue tax_base_amount = 3;
+  common.v1.MonetaryValue tax_amount = 4;
 }
 
 // 凭证详情 (聚合对象)
@@ -430,7 +429,7 @@ message JournalEntryDetail {
   repeated JournalEntryLineItem line_items = 2;
   repeated TaxLineItem tax_items = 3;
   JournalEntryStatus status = 4;
-  enterprise.common.SystemDocumentReference document_reference = 5;
+  common.v1.SystemDocumentReference document_reference = 5;
   ClearingInformation clearing_info = 6;
   PaymentInformation payment_info = 7;
   WorkflowInformation workflow_info = 8;
@@ -446,108 +445,108 @@ message CreateJournalEntryRequest {
   repeated JournalEntryLineItem line_items = 2;
   bool test_run = 3;
   bool post_immediately = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message JournalEntryResponse {
   bool success = 1;
-  enterprise.common.SystemDocumentReference document_reference = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  common.v1.SystemDocumentReference document_reference = 2;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 message GetJournalEntryRequest {
   string journal_entry_id = 1;
-  enterprise.common.SystemDocumentReference document_reference = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.SystemDocumentReference document_reference = 2;
+  common.v1.RequestContext context = 99;
 }
 
 message ReverseJournalEntryRequest {
   string journal_entry_id = 1;
-  enterprise.common.SystemDocumentReference document_to_reverse = 2;
+  common.v1.SystemDocumentReference document_to_reverse = 2;
   string reversal_reason = 3;
   google.protobuf.Timestamp posting_date = 4;
   ReversalType reversal_type = 5;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ListJournalEntriesRequest {
   string company_code = 1;
   int32 fiscal_year = 2;
-  enterprise.common.DateRange posting_date_range = 3;
+  common.v1.DateRange posting_date_range = 3;
   string document_type = 4;
   string created_by = 5;
   repeated JournalEntryStatus status_filter = 6;
   string gl_account = 7;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message ListJournalEntriesResponse {
   repeated JournalEntrySummary entries = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 message JournalEntrySummary {
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.v1.SystemDocumentReference document_reference = 1;
   google.protobuf.Timestamp document_date = 2;
   google.protobuf.Timestamp posting_date = 3;
   string header_text = 4;
   JournalEntryStatus status = 5;
-  enterprise.common.MonetaryValue total_amount = 6;
+  common.v1.MonetaryValue total_amount = 6;
 }
 
 message BatchCreateJournalEntriesRequest {
   repeated CreateJournalEntryRequest entries = 1;
   bool test_run = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message BatchCreateJournalEntriesResponse {
-  enterprise.common.BatchOperationResult result = 1;
+  common.v1.BatchOperationResult result = 1;
   repeated JournalEntryResponse responses = 2;
 }
 
 message UpdateJournalEntryRequest {
   string journal_entry_id = 1;
-  enterprise.common.SystemDocumentReference document_reference = 2;
+  common.v1.SystemDocumentReference document_reference = 2;
   JournalEntryHeader header = 3;
   repeated string update_mask = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message DeleteJournalEntryRequest {
   string journal_entry_id = 1;
-  enterprise.common.SystemDocumentReference document_reference = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.SystemDocumentReference document_reference = 2;
+  common.v1.RequestContext context = 99;
 }
 
 message PostJournalEntryRequest {
   string journal_entry_id = 1;
-  enterprise.common.SystemDocumentReference document_reference = 2;
+  common.v1.SystemDocumentReference document_reference = 2;
   google.protobuf.Timestamp posting_date = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ValidateJournalEntryRequest {
   JournalEntryHeader header = 1;
   repeated JournalEntryLineItem line_items = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ValidationResponse {
   bool is_valid = 1;
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
 }
 
 message SimulateJournalEntryRequest {
   JournalEntryHeader header = 1;
   repeated JournalEntryLineItem line_items = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message SimulationResponse {
   bool success = 1;
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
   JournalEntryDetail simulated_entry = 3;
 }
 
@@ -555,44 +554,44 @@ message ParkJournalEntryRequest {
   JournalEntryHeader header = 1;
   repeated JournalEntryLineItem line_items = 2;
   string parking_reason = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ParkJournalEntryResponse {
   bool success = 1;
-  enterprise.common.SystemDocumentReference parked_document_reference = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  common.v1.SystemDocumentReference parked_document_reference = 2;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 message ClearOpenItemsRequest {
   string company_code = 1;
-  enterprise.common.AccountType account_type = 2;
+  common.v1.AccountType account_type = 2;
   string account_number = 3;
   repeated OpenItemToClear items_to_clear = 4;
   google.protobuf.Timestamp clearing_date = 5;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message OpenItemToClear {
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.v1.SystemDocumentReference document_reference = 1;
   int32 line_item_number = 2;
-  enterprise.common.MonetaryValue clearing_amount = 3;
+  common.v1.MonetaryValue clearing_amount = 3;
 }
 
 message ClearOpenItemsResponse {
   bool success = 1;
-  enterprise.common.SystemDocumentReference clearing_document_reference = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  common.v1.SystemDocumentReference clearing_document_reference = 2;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 message GetParallelLedgerDataRequest {
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.v1.SystemDocumentReference document_reference = 1;
   repeated string ledgers = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ParallelLedgerDataResponse {
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.v1.SystemDocumentReference document_reference = 1;
   repeated LedgerData ledger_data = 2;
 }
 
@@ -607,57 +606,57 @@ message CarryForwardBalancesRequest {
   int32 source_fiscal_year = 2;
   int32 target_fiscal_year = 3;
   bool test_run = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message CarryForwardBalancesResponse {
   bool success = 1;
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
 }
 
 message ExecutePeriodEndCloseRequest {
   string company_code = 1;
   int32 fiscal_year = 2;
   int32 fiscal_period = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message PeriodEndCloseResponse {
   bool success = 1;
   PeriodStatus period_status = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 message CreateBatchInputSessionRequest {
   string session_name = 1;
   repeated CreateJournalEntryRequest entries = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message BatchInputSessionResponse {
   bool success = 1;
   string session_id = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 message GetAccountLineItemsRequest {
   string company_code = 1;
   string gl_account = 2;
-  enterprise.common.DateRange date_range = 3;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.DateRange date_range = 3;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message AccountLineItemsResponse {
   string gl_account = 1;
   repeated JournalEntryLineItem line_items = 2;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 3;
 }
 
 message GeneratePrintPreviewRequest {
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.v1.SystemDocumentReference document_reference = 1;
   ExportFormat format = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message GeneratePrintPreviewResponse {
@@ -673,13 +672,13 @@ message ClearingInformation {
   string clearing_document = 1;
   google.protobuf.Timestamp clearing_date = 2;
   ClearingStatus status = 3;
-  enterprise.common.MonetaryValue clearing_amount = 4;
+  common.v1.MonetaryValue clearing_amount = 4;
 }
 
 message PaymentInformation {
   PaymentStatus status = 1;
-  enterprise.common.PaymentMethodType method = 2;
-  enterprise.common.MonetaryValue payment_amount = 3;
+  common.v1.PaymentMethodType method = 2;
+  common.v1.MonetaryValue payment_amount = 3;
   google.protobuf.Timestamp payment_date = 4;
   string payment_reference = 5;
 }
@@ -701,11 +700,11 @@ message WorkflowInformation {
 
 message BatchReverseJournalEntriesRequest {
   repeated ReverseJournalEntryRequest entries = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message BatchReverseJournalEntriesResponse {
-  enterprise.common.BatchOperationResult result = 1;
+  common.v1.BatchOperationResult result = 1;
   repeated JournalEntryResponse responses = 2;
 }
 
@@ -713,11 +712,11 @@ message RevaluateForeignCurrencyRequest {
   string company_code = 1;
   google.protobuf.Timestamp revaluation_date = 2;
   bool test_run = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message RevaluationResponse {
   bool success = 1;
-  enterprise.common.SystemDocumentReference document_reference = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  common.v1.SystemDocumentReference document_reference = 2;
+  repeated common.v1.ApiMessage messages = 3;
 }

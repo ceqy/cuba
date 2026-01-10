@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.supplychain.traceability;
+package sc.bt.v1;
 
-option java_package = "com.enterprise.supplychain.traceability.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/supplychain/traceability/v2;traceability";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -35,7 +32,7 @@ service BatchTraceabilityService {
   }
 
   // 向上追溯批次 (找到其来源) - 异步
-  rpc TraceUpstream(TraceRequest) returns (enterprise.common.JobInfo) {
+  rpc TraceUpstream(TraceRequest) returns (common.v1.JobInfo) {
 
 
     option (google.api.http) = {
@@ -53,7 +50,7 @@ service BatchTraceabilityService {
   }
 
   // 向下追溯批次 (找到其去向) - 异步
-  rpc TraceDownstream(TraceRequest) returns (enterprise.common.JobInfo) {
+  rpc TraceDownstream(TraceRequest) returns (common.v1.JobInfo) {
 
 
     option (google.api.http) = {
@@ -122,13 +119,13 @@ message TraceabilityNode {
   // 工厂
   string plant = 3;
   // 节点类型 (例如, RAW_MATERIAL, FINISHED_GOOD, WIP)
-  enterprise.common.NodeType node_type = 4;
+  common.v1.NodeType node_type = 4;
   // 相关的文档 (例如, 生产订单, 采购订单, 交货单)
-  enterprise.common.SystemDocumentReference reference_document = 5;
+  common.v1.SystemDocumentReference reference_document = 5;
   // 生产/收货日期
   google.protobuf.Timestamp event_date = 6;
   // 数量
-  enterprise.common.QuantityValue quantity = 8;
+  common.v1.QuantityValue quantity = 8;
   // 子节点
   repeated TraceabilityNode children = 7;
 }
@@ -138,7 +135,7 @@ message BatchHistoryEvent {
   string event_type = 2;
   string user_id = 3;
   string details = 4;
-  enterprise.common.SystemDocumentReference document = 5;
+  common.v1.SystemDocumentReference document = 5;
 }
 
 // ============================================================================
@@ -153,13 +150,13 @@ message CreateBatchRequest {
   google.protobuf.Timestamp production_date = 4;
   google.protobuf.Timestamp expiration_date = 5;
   string supplier_batch = 6;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message BatchResponse {
   bool success = 1;
   string batch_number = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 // 追溯请求
@@ -172,19 +169,19 @@ message TraceRequest {
   string plant = 3;
   // 追溯深度限制
   int32 depth_limit = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message GetTraceResultRequest {
   string job_id = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message GetBatchHistoryRequest {
   string material = 1;
   string batch = 2;
   string plant = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message BatchHistoryResponse {

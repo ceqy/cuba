@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.supplychain.forecasting;
+package sc.df.v1;
 
-option java_package = "com.enterprise.supplychain.forecasting.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/supplychain/forecasting/v2;forecasting";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -22,7 +19,7 @@ import "google/api/annotations.proto";
 
 service DemandForecastingService {
   // 生成需求预测 - 异步
-  rpc GenerateForecast(GenerateForecastRequest) returns (enterprise.common.JobInfo) {
+  rpc GenerateForecast(GenerateForecastRequest) returns (common.v1.JobInfo) {
 
     option (google.api.http) = {
 
@@ -121,7 +118,7 @@ message ForecastPlan {
   // 预测周期
   repeated ForecastPeriod periods = 5;
   // 使用的模型
-  enterprise.common.ForecastModel model_used = 6;
+  common.v1.ForecastModel model_used = 6;
   // 创建时间
   google.protobuf.Timestamp created_at = 7;
 }
@@ -133,11 +130,11 @@ message ForecastPeriod {
   // 周期结束日期
   google.protobuf.Timestamp end_date = 2;
   // 预测数量
-  enterprise.common.QuantityValue forecasted_quantity = 3;
+  common.v1.QuantityValue forecasted_quantity = 3;
   // 置信区间下限
-  enterprise.common.QuantityValue confidence_lower_bound = 4;
+  common.v1.QuantityValue confidence_lower_bound = 4;
   // 置信区间上限
-  enterprise.common.QuantityValue confidence_upper_bound = 5;
+  common.v1.QuantityValue confidence_upper_bound = 5;
 }
 
 // ============================================================================
@@ -151,38 +148,38 @@ message GenerateForecastRequest {
   // 工厂
   string plant = 2;
   // 历史数据期间
-  enterprise.common.DateRange historical_period = 3;
+  common.v1.DateRange historical_period = 3;
   // 预测期间
-  enterprise.common.DateRange forecast_period = 4;
+  common.v1.DateRange forecast_period = 4;
   // 预测模型
-  enterprise.common.ForecastModel forecast_model = 5;
-  enterprise.common.RequestContext context = 99;
+  common.v1.ForecastModel forecast_model = 5;
+  common.v1.RequestContext context = 99;
 }
 
 // 获取预测请求
 message GetForecastRequest {
   // 计划ID
   string plan_id = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message UpdateForecastPlanRequest {
   string plan_id = 1;
   repeated ForecastPeriod modified_periods = 2;
   string reason_code = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ForecastPlanResponse {
   bool success = 1;
   string plan_id = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 message CompareForecastVersionsRequest {
   string plan_id_base = 1;
   string plan_id_compare = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ForecastComparisonResponse {
@@ -192,10 +189,10 @@ message ForecastComparisonResponse {
 }
 
 message PeriodDifference {
-  enterprise.common.DateRange period = 1;
-  enterprise.common.QuantityValue quantity_base = 2;
-  enterprise.common.QuantityValue quantity_compare = 3;
-  enterprise.common.QuantityValue variance = 4;
+  common.v1.DateRange period = 1;
+  common.v1.QuantityValue quantity_base = 2;
+  common.v1.QuantityValue quantity_compare = 3;
+  common.v1.QuantityValue variance = 4;
   double variance_percentage = 5;
 }
 
@@ -207,7 +204,7 @@ message TransferForecastRequest {
   string requirement_plan_version = 2;
   // 是否激活需求
   bool activate_requirements = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 传输预测响应
@@ -215,5 +212,5 @@ message TransferForecastResponse {
   // 操作是否成功
   bool success = 1;
   // 从核心ERP返回的消息列表
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
 }

@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.sales.analytics;
+package sd.an.v1;
 
-option java_package = "com.enterprise.sales.analytics.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/sales/analytics/v2;analytics";
 
 import "common/common.proto";
 import "google/api/annotations.proto";
@@ -62,7 +59,7 @@ service SalesAnalyticsService {
   }
   
   // 导出销售报表 - 异步
-  rpc ExportSalesReport(ExportSalesReportRequest) returns (enterprise.common.JobInfo) {
+  rpc ExportSalesReport(ExportSalesReportRequest) returns (common.v1.JobInfo) {
 
   
     option (google.api.http) = {
@@ -88,7 +85,7 @@ service SalesAnalyticsService {
 message SalesDimension {
   string id = 1; // 维度ID (例如, 客户ID或产品ID)
   string name = 2;
-  enterprise.common.MonetaryValue revenue = 3;
+  common.v1.MonetaryValue revenue = 3;
   string quantity_sold = 4;
   string unit = 5;
 }
@@ -96,7 +93,7 @@ message SalesDimension {
 // 时间序列数据点
 message TimeSeriesDataPoint {
   string period = 1;
-  enterprise.common.MonetaryValue revenue = 2;
+  common.v1.MonetaryValue revenue = 2;
 }
 
 // ============================================================================
@@ -105,11 +102,11 @@ message TimeSeriesDataPoint {
 
 // 销售分析请求
 message SalesAnalysisRequest {
-  enterprise.common.DateRange time_range = 1;
+  common.v1.DateRange time_range = 1;
   repeated string sales_orgs = 2;
   repeated string distribution_channels = 3;
   int32 top_n = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 销售分析响应
@@ -119,10 +116,10 @@ message SalesAnalysisResponse {
 
 // 销售趋势请求
 message SalesTrendRequest {
-  enterprise.common.DateRange time_range = 1;
-  enterprise.common.TimeGranularity granularity = 2;
+  common.v1.DateRange time_range = 1;
+  common.v1.TimeGranularity granularity = 2;
   SalesAnalysisRequest filters = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 销售趋势响应
@@ -131,9 +128,9 @@ message SalesTrendResponse {
 }
 
 message ExportSalesReportRequest {
-  enterprise.common.DateRange time_range = 1;
+  common.v1.DateRange time_range = 1;
   repeated string sales_orgs = 2;
-  enterprise.common.ReportType report_type = 3;
+  common.v1.ReportType report_type = 3;
   string export_format = 4; // e.g. CSV, PDF
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }

@@ -1,7 +1,6 @@
 syntax = "proto3";
 
-package auth;
-option go_package = "github.com/yourproject/auth";
+package iam.v1;
 
 
 import "google/protobuf/timestamp.proto";
@@ -602,7 +601,7 @@ message Metrics {
   int64 failed_logins_last_hour = 4;
 }
 
-// 列表查询通用分页 (DEPRECATED: Use enterprise.common.PaginationRequest)
+// 列表查询通用分页 (DEPRECATED: Use common.v1.PaginationRequest)
 message PageRequest {
   int32 page = 1;
   int32 page_size = 2;
@@ -620,14 +619,14 @@ message PageResponse {
 
 message AuditFilter {
   repeated string actions = 1;
-  enterprise.common.DateRange date_range = 2;
+  common.v1.DateRange date_range = 2;
   string ip_address = 3;
 }
 
 message UserFilter {
   repeated string statuses = 1;
   repeated string roles = 2;
-  enterprise.common.DateRange created_range = 3;
+  common.v1.DateRange created_range = 3;
 }
 
 // --- 认证相关 RPC ---
@@ -804,13 +803,13 @@ message GetAuditLogsRequest {
   string tenant_id = 2;
   google.protobuf.Timestamp start_time = 3;
   google.protobuf.Timestamp end_time = 4;
-  enterprise.common.PaginationRequest pagination = 98;
+  common.v1.PaginationRequest pagination = 98;
   AuditFilter filter = 97;
 }
 
 message GetAuditLogsResponse {
   repeated AuditLog logs = 1;
-  enterprise.common.PaginationResponse pagination = 98;
+  common.v1.PaginationResponse pagination = 98;
 }
 
 // 列出会话
@@ -858,13 +857,13 @@ message ListUsersRequest {
   string tenant_id = 1;
   string role_id = 2;                // 可选过滤角色
   string search = 3;                 // 模糊搜索 username/email/display_name
-  enterprise.common.PaginationRequest pagination = 98;
+  common.v1.PaginationRequest pagination = 98;
   UserFilter filter = 97;
 }
 
 message ListUsersResponse {
   repeated UserInfo users = 1;
-  enterprise.common.PaginationResponse pagination = 98;
+  common.v1.PaginationResponse pagination = 98;
 }
 
 // --- RBAC 管理 RPC ---
@@ -873,7 +872,7 @@ message ListUsersResponse {
 message CreateRoleRequest {
   string name = 1;        // 角色名称
   string description = 2; // 角色描述
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 创建角色响应
@@ -885,7 +884,7 @@ message CreateRoleResponse {
 message AssignRoleToUserRequest {
   string user_id = 1;  // 用户ID
   string role_id = 2;  // 角色ID
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 分配角色给用户响应
@@ -897,7 +896,7 @@ message AssignRoleToUserResponse {
 message AddPermissionToRoleRequest {
   string role_id = 1;       // 角色ID
   string permission_id = 2; // 权限ID
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 添加权限到角色响应
@@ -917,22 +916,22 @@ message GetUserPermissionsResponse {
 
 // 列出角色
 message ListRolesRequest {
-  enterprise.common.PaginationRequest pagination = 98;
+  common.v1.PaginationRequest pagination = 98;
 }
 
 message ListRolesResponse {
   repeated Role roles = 1;
-  enterprise.common.PaginationResponse pagination = 98;
+  common.v1.PaginationResponse pagination = 98;
 }
 
 // 列出权限
 message ListPermissionsRequest {
-  enterprise.common.PaginationRequest pagination = 98;
+  common.v1.PaginationRequest pagination = 98;
 }
 
 message ListPermissionsResponse {
   repeated Permission permissions = 1;
-  enterprise.common.PaginationResponse pagination = 98;
+  common.v1.PaginationResponse pagination = 98;
 }
 
 // 删除角色
@@ -1024,12 +1023,12 @@ message CreateClientResponse {
 }
 
 message ListClientsRequest {
-  enterprise.common.PaginationRequest pagination = 98;
+  common.v1.PaginationRequest pagination = 98;
 }
 
 message ListClientsResponse {
   repeated Client clients = 1;
-  enterprise.common.PaginationResponse pagination = 98;
+  common.v1.PaginationResponse pagination = 98;
 }
 
 // --- API Key ---
@@ -1047,12 +1046,12 @@ message CreateAPIKeyResponse {
 }
 
 message ListAPIKeysRequest {
-  enterprise.common.PaginationRequest pagination = 98;
+  common.v1.PaginationRequest pagination = 98;
 }
 
 message ListAPIKeysResponse {
   repeated APIKey keys = 1;
-  enterprise.common.PaginationResponse pagination = 98;
+  common.v1.PaginationResponse pagination = 98;
 }
 
 message RevokeAPIKeyRequest {
@@ -1067,7 +1066,7 @@ message RevokeAPIKeyResponse {
 
 message SSOLoginRequest {
   // SSO 特定参数，如 SAML Assertion 等
-  enterprise.common.AuthProvider provider = 1;
+  common.v1.AuthProvider provider = 1;
   string assertion = 2;
 }
 
@@ -1092,7 +1091,7 @@ message CreatePolicyRequest {
   string name = 1;
   string version = 2;
   repeated Statement statements = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message CreatePolicyResponse {
@@ -1102,7 +1101,7 @@ message CreatePolicyResponse {
 message AttachPolicyToRoleRequest {
   string policy_id = 1;
   string role_id = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message AttachPolicyToRoleResponse {
@@ -1112,7 +1111,7 @@ message AttachPolicyToRoleResponse {
 message AttachPolicyToUserRequest {
   string policy_id = 1;
   string user_id = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message AttachPolicyToUserResponse {
@@ -1136,12 +1135,12 @@ message DeletePolicyResponse {
 }
 
 message ListPoliciesRequest {
-  enterprise.common.PaginationRequest pagination = 98;
+  common.v1.PaginationRequest pagination = 98;
 }
 
 message ListPoliciesResponse {
   repeated Policy policies = 1;
-  enterprise.common.PaginationResponse pagination = 98;
+  common.v1.PaginationResponse pagination = 98;
 }
 
 // --- Health & Metrics ---
@@ -1161,7 +1160,7 @@ message GetMetricsResponse {
 // --- Social Login ---
 
 message SocialLoginRequest {
-  enterprise.common.AuthProvider provider = 1;
+  common.v1.AuthProvider provider = 1;
   string code = 2;      // 授权码
   string redirect_uri = 3;
 }

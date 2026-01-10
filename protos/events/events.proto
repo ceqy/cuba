@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.events;
+package events.v1;
 
-option java_package = "com.enterprise.events.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/events/v2;events";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -108,8 +105,8 @@ message JournalEntryPostedEvent {
   string fiscal_year = 2;
   string document_number = 3;
   google.protobuf.Timestamp posting_date = 4;
-  enterprise.common.MonetaryValue total_debit = 5;
-  enterprise.common.MonetaryValue total_credit = 6;
+  common.v1.MonetaryValue total_debit = 5;
+  common.v1.MonetaryValue total_credit = 6;
 }
 
 // 发票已过账
@@ -118,7 +115,7 @@ message InvoicePostedEvent {
   string invoice_number = 2;
   string fiscal_year = 3;
   string customer_or_vendor_id = 4;
-  enterprise.common.MonetaryValue invoice_amount = 5;
+  common.v1.MonetaryValue invoice_amount = 5;
   google.protobuf.Timestamp posting_date = 6;
   string invoice_type = 7; // "AR_INVOICE" or "AP_INVOICE"
 }
@@ -128,7 +125,7 @@ message PaymentReceivedEvent {
   string company_code = 1;
   string payment_reference = 2;
   string customer_id = 3;
-  enterprise.common.MonetaryValue amount = 4;
+  common.v1.MonetaryValue amount = 4;
   google.protobuf.Timestamp clear_date = 5;
 }
 
@@ -138,7 +135,7 @@ message CostSettlementEvent {
   string settlement_document = 2;
   string sender_object = 3;
   string receiver_object = 4;
-  enterprise.common.MonetaryValue settlement_amount = 5;
+  common.v1.MonetaryValue settlement_amount = 5;
 }
 
 // 资产折旧已计提
@@ -146,7 +143,7 @@ message AssetDepreciatedEvent {
   string company_code = 1;
   string asset_number = 2;
   string fiscal_period = 3;
-  enterprise.common.MonetaryValue amount = 4;
+  common.v1.MonetaryValue amount = 4;
 }
 
 // ============================================================================
@@ -158,7 +155,7 @@ message PurchaseOrderReleasedEvent {
   string purchase_order_number = 1;
   string vendor_id = 2;
   google.protobuf.Timestamp order_date = 3;
-  enterprise.common.MonetaryValue total_value = 4;
+  common.v1.MonetaryValue total_value = 4;
   string purchasing_org = 5;
   string company_code = 6;
 }
@@ -169,14 +166,14 @@ message ContractSignedEvent {
   string vendor_id = 2;
   google.protobuf.Timestamp valid_from = 3;
   google.protobuf.Timestamp valid_to = 4;
-  enterprise.common.MonetaryValue target_value = 5;
+  common.v1.MonetaryValue target_value = 5;
 }
 
 // 寻源事件已完成
 message SourcingEventCompletedEvent {
   string sourcing_id = 1;
   string winning_bidder = 2;
-  enterprise.common.MonetaryValue final_amount = 3;
+  common.v1.MonetaryValue final_amount = 3;
   string invitation_id = 4;
 }
 
@@ -197,16 +194,16 @@ message SalesOrderCreatedEvent {
   string sales_order_number = 1;
   string sold_to_party = 2;
   google.protobuf.Timestamp order_date = 3;
-  enterprise.common.MonetaryValue net_value = 4;
+  common.v1.MonetaryValue net_value = 4;
   string sales_org = 5;
-  enterprise.common.OrderType order_type = 6;
+  common.v1.OrderType order_type = 6;
 }
 
 // 收入已确认
 message RevenueRecognizedEvent {
   string sales_order_number = 1;
   string fiscal_period = 2;
-  enterprise.common.MonetaryValue amount = 3;
+  common.v1.MonetaryValue amount = 3;
   string recognition_method = 4;
 }
 
@@ -214,7 +211,7 @@ message RevenueRecognizedEvent {
 message PricingUpdatedEvent {
   string material = 1;
   string sales_org = 2;
-  enterprise.common.MonetaryValue new_price = 3;
+  common.v1.MonetaryValue new_price = 3;
   google.protobuf.Timestamp effective_from = 4;
 }
 
@@ -228,8 +225,8 @@ message StockChangedEvent {
   string plant = 2;
   string storage_location = 3;
   string batch = 4;
-  enterprise.common.MovementType movement_type = 5;
-  enterprise.common.QuantityValue quantity = 6;
+  common.v1.MovementType movement_type = 5;
+  common.v1.QuantityValue quantity = 6;
   string material_document = 7;
   google.protobuf.Timestamp posting_date = 8;
 }
@@ -264,13 +261,13 @@ message ProductionOrderReleasedEvent {
   string order_number = 1;
   string material = 2;
   string plant = 3;
-  enterprise.common.QuantityValue target_quantity = 4;
+  common.v1.QuantityValue target_quantity = 4;
 }
 
 // 质量使用决策已做出
 message UsageDecisionMadeEvent {
   string inspection_lot_number = 1;
-  enterprise.common.UsageDecision decision_code = 2;
+  common.v1.UsageDecision decision_code = 2;
 }
 
 // 看板信号切换
@@ -283,7 +280,7 @@ message KanbanSignalEvent {
 message WorkOrderCompletedEvent {
   string order_number = 1;
   string operation_number = 2;
-  enterprise.common.QuantityValue yield_quantity = 3;
+  common.v1.QuantityValue yield_quantity = 3;
 }
 
 // ============================================================================
@@ -373,7 +370,7 @@ message WarrantyClaimFiledEvent {
 // 服务合同计费已生成
 message ContractBilledEvent {
   string contract_number = 1;
-  enterprise.common.MonetaryValue amount = 2;
+  common.v1.MonetaryValue amount = 2;
 }
 
 // ============================================================================

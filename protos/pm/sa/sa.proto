@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.procurement.analytics;
+package pm.sa.v1;
 
-option java_package = "com.enterprise.procurement.analytics.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/procurement/analytics/v2;analytics";
 
 import "common/common.proto";
 import "google/api/annotations.proto";
@@ -73,7 +70,7 @@ message SpendDimension {
   // 维度名称
   string name = 2;
   // 支出金额
-  enterprise.common.MonetaryValue spend_amount = 3;
+  common.v1.MonetaryValue spend_amount = 3;
   // 订单/发票数量
   int64 document_count = 4;
 }
@@ -83,7 +80,7 @@ message TimeSeriesDataPoint {
   // 时间点 (例如, "2026-01")
   string period = 1;
   // 该时间点的支出金额
-  enterprise.common.MonetaryValue spend_amount = 2;
+  common.v1.MonetaryValue spend_amount = 2;
 }
 
 // ============================================================================
@@ -93,7 +90,7 @@ message TimeSeriesDataPoint {
 // 支出分析请求
 message SpendAnalysisRequest {
   // 时间范围
-  enterprise.common.DateRange time_range = 1;
+  common.v1.DateRange time_range = 1;
   // 公司代码过滤器
   repeated string company_codes = 2;
   // 采购组织过滤器
@@ -103,7 +100,7 @@ message SpendAnalysisRequest {
   // 返回结果数量限制
   int32 top_n = 4;
   // 请求上下文
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 支出分析响应
@@ -115,13 +112,13 @@ message SpendAnalysisResponse {
 // 支出趋势请求
 message SpendTrendRequest {
   // 时间范围
-  enterprise.common.DateRange time_range = 1;
+  common.v1.DateRange time_range = 1;
   // 时间粒度
-  enterprise.common.TimeGranularity granularity = 2;
+  common.v1.TimeGranularity granularity = 2;
   // 过滤器
   SpendAnalysisRequest filters = 3;
   // 请求上下文
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 支出趋势响应

@@ -15,7 +15,7 @@
 
 syntax = "proto3";
 
-package enterprise.finance.arap;
+package fi.ap.v1;
 
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
@@ -357,7 +357,7 @@ message BusinessPartnerCore {
   string search_term1 = 7;
   string language = 8;
   string country = 9;
-  enterprise.common.AuditData audit_data = 10;
+  common.v1.AuditData audit_data = 10;
 }
 
 // 客户主数据详情
@@ -366,7 +366,7 @@ message CustomerDetails {
   string business_partner_id = 2;
   string name = 3;
   string account_group = 4;
-  enterprise.common.Address address = 5;
+  common.v1.Address address = 5;
   string telephone = 6;
   string email = 7;
   string tax_number1 = 8;
@@ -374,8 +374,8 @@ message CustomerDetails {
   string reconciliation_account = 101;
   string payment_terms = 102;
   bool payment_block = 103;
-  enterprise.common.MonetaryValue credit_limit = 110;
-  enterprise.common.AuditData audit_data = 300;
+  common.v1.MonetaryValue credit_limit = 110;
+  common.v1.AuditData audit_data = 300;
 }
 
 // 供应商主数据详情
@@ -384,7 +384,7 @@ message SupplierDetails {
   string business_partner_id = 2;
   string name = 3;
   string account_group = 4;
-  enterprise.common.Address address = 5;
+  common.v1.Address address = 5;
   string telephone = 6;
   string email = 7;
   string company_code = 100;
@@ -393,7 +393,7 @@ message SupplierDetails {
   bool check_double_invoice = 103;
   string purchasing_organization = 200;
   string order_currency = 201;
-  enterprise.common.AuditData audit_data = 300;
+  common.v1.AuditData audit_data = 300;
 }
 
 // ============================================================================
@@ -402,7 +402,7 @@ message SupplierDetails {
 
 // 会计凭证抬头
 message AccountingDocumentHeader {
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.v1.SystemDocumentReference document_reference = 1;
   google.protobuf.Timestamp document_date = 2;
   google.protobuf.Timestamp posting_date = 3;
   string header_text = 4;
@@ -415,7 +415,7 @@ message AccountingDocumentItem {
   string account_type = 2; // D/K/S/A
   string gl_account = 3;
   string debit_credit_indicator = 4; // S/H
-  enterprise.common.MonetaryValue amount = 5;
+  common.v1.MonetaryValue amount = 5;
   string item_text = 6;
   string cost_center = 7;
 
@@ -444,12 +444,12 @@ message OpenItemFilter {
 
 // 未清项信息
 message OpenItem {
-  enterprise.common.SystemDocumentReference document_reference = 1;
+  common.v1.SystemDocumentReference document_reference = 1;
   int32 line_item_number = 2;
   google.protobuf.Timestamp posting_date = 3;
   google.protobuf.Timestamp due_date = 4;
-  enterprise.common.MonetaryValue amount = 5;
-  enterprise.common.MonetaryValue open_amount = 6;
+  common.v1.MonetaryValue amount = 5;
+  common.v1.MonetaryValue open_amount = 6;
   string gl_account = 7;
   string payment_block = 8;
   string reference_document = 9;
@@ -458,7 +458,7 @@ message OpenItem {
   // 分期付款详情
   message InstallmentDetail {
     google.protobuf.Timestamp due_date = 1;
-    enterprise.common.MonetaryValue amount = 2;
+    common.v1.MonetaryValue amount = 2;
     int32 installment_number = 3;
   }
   repeated InstallmentDetail installments = 11;
@@ -471,13 +471,13 @@ message OpenItem {
 message AgingBucket {
   int32 days_from = 1;
   int32 days_to = 2;
-  enterprise.common.MonetaryValue amount = 3;
+  common.v1.MonetaryValue amount = 3;
 }
 
 // 账龄分析
 message AgingAnalysis {
   google.protobuf.Timestamp as_of_date = 1;
-  enterprise.common.MonetaryValue total_open_amount = 2;
+  common.v1.MonetaryValue total_open_amount = 2;
   repeated AgingBucket overdue_buckets = 3;
 }
 
@@ -486,15 +486,15 @@ message StatementItem {
   google.protobuf.Timestamp posting_date = 1;
   string document_type_desc = 2;
   string reference = 3;
-  enterprise.common.MonetaryValue amount = 4;
-  enterprise.common.MonetaryValue open_balance = 5;
+  common.v1.MonetaryValue amount = 4;
+  common.v1.MonetaryValue open_balance = 5;
 }
 
 // 催款记录
 message DunningRecord {
   google.protobuf.Timestamp dunning_date = 1;
   int32 dunning_level = 2;
-  enterprise.common.MonetaryValue dunning_amount = 3;
+  common.v1.MonetaryValue dunning_amount = 3;
   string dunning_text = 4;
 }
 
@@ -502,14 +502,14 @@ message DunningRecord {
 message ClearingProposalMatch {
   repeated OpenItemIdentifier debit_items = 1;
   repeated OpenItemIdentifier credit_items = 2;
-  enterprise.common.MonetaryValue match_amount = 3;
+  common.v1.MonetaryValue match_amount = 3;
   double match_score = 4;
 }
 
 // 信用检查结果
 message CreditCheckResult {
-  enterprise.common.MonetaryValue used_credit = 1;
-  enterprise.common.MonetaryValue total_limit = 2;
+  common.v1.MonetaryValue used_credit = 1;
+  common.v1.MonetaryValue total_limit = 2;
   bool passed = 3;
   string block_reason = 4;
 }
@@ -517,7 +517,7 @@ message CreditCheckResult {
 // 付款建议项目
 message PaymentProposalItem {
   string supplier_id = 1;
-  enterprise.common.MonetaryValue proposed_amount = 2;
+  common.v1.MonetaryValue proposed_amount = 2;
   repeated OpenItemIdentifier open_items = 3;
   bool blocked = 4;
 }
@@ -532,7 +532,7 @@ message BankStatementImport {
 message BankStatementLine {
   google.protobuf.Timestamp value_date = 1;
   string reference = 2;
-  enterprise.common.MonetaryValue amount = 3;
+  common.v1.MonetaryValue amount = 3;
   string partner_name = 4;
 }
 
@@ -544,7 +544,7 @@ message LockboxBatch {
 
 message LockboxItem {
   string customer_id = 1;
-  enterprise.common.MonetaryValue amount = 2;
+  common.v1.MonetaryValue amount = 2;
   string check_number = 3;
 }
 
@@ -579,12 +579,12 @@ message ListOpenItemsRequest {
   string company_code = 2;
   string account_type = 3; // D/K
   OpenItemFilter filter = 4;
-  enterprise.common.PaginationRequest pagination = 5;
+  common.v1.PaginationRequest pagination = 5;
 }
 
 message ListOpenItemsResponse {
   repeated OpenItem items = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 message GetAccountBalanceRequest {
@@ -594,7 +594,7 @@ message GetAccountBalanceRequest {
 }
 
 message GetAccountBalanceResponse {
-  enterprise.common.MonetaryValue balance = 1;
+  common.v1.MonetaryValue balance = 1;
 }
 
 message GetAgingAnalysisRequest {
@@ -616,7 +616,7 @@ message GenerateStatementRequest {
 
 message GenerateStatementResponse {
   repeated StatementItem items = 1;
-  enterprise.common.MonetaryValue closing_balance = 2;
+  common.v1.MonetaryValue closing_balance = 2;
 }
 
 message GetDunningHistoryRequest {
@@ -661,7 +661,7 @@ message ClearOpenItemsRequest {
 message PartialClearItemsRequest {
   string company_code = 1;
   OpenItemIdentifier item = 2;
-  enterprise.common.MonetaryValue payment_amount = 3;
+  common.v1.MonetaryValue payment_amount = 3;
   string reason_code = 4;
   bool create_residual_item = 5;
 }
@@ -673,7 +673,7 @@ message NetClearingRequest {
 
 message CheckCreditLimitRequest {
   string business_partner_id = 1;
-  enterprise.common.MonetaryValue amount = 2;
+  common.v1.MonetaryValue amount = 2;
 }
 
 message CheckCreditLimitResponse {
@@ -682,7 +682,7 @@ message CheckCreditLimitResponse {
 
 message UpdateCreditExposureRequest {
   string business_partner_id = 1;
-  enterprise.common.MonetaryValue amount = 2;
+  common.v1.MonetaryValue amount = 2;
 }
 
 message UpdateCreditExposureResponse {
@@ -708,18 +708,18 @@ message PaymentExecutionResponse {
 }
 
 message PaymentExecutionResult {
-  enterprise.common.SystemDocumentReference document = 1;
+  common.v1.SystemDocumentReference document = 1;
   bool success = 2;
 }
 
 message DownPaymentRequest {
   string company_code = 1;
   string account_id = 2;
-  enterprise.common.MonetaryValue amount = 3;
+  common.v1.MonetaryValue amount = 3;
 }
 
 message DownPaymentResponse {
-  enterprise.common.SystemDocumentReference document = 1;
+  common.v1.SystemDocumentReference document = 1;
 }
 
 message DownPaymentClearingRequest {
@@ -734,11 +734,11 @@ message PostInvoiceRequest {
 }
 
 message PostInvoiceResponse {
-  enterprise.common.SystemDocumentReference document = 1;
+  common.v1.SystemDocumentReference document = 1;
 }
 
 message ReverseDocumentRequest {
-  enterprise.common.SystemDocumentReference document_to_reverse = 1;
+  common.v1.SystemDocumentReference document_to_reverse = 1;
 }
 
 message ReverseDocumentResponse {
@@ -746,7 +746,7 @@ message ReverseDocumentResponse {
 }
 
 message VerifyInvoiceRequest {
-  enterprise.common.SystemDocumentReference document = 1;
+  common.v1.SystemDocumentReference document = 1;
 }
 
 message VerifyInvoiceResponse {
@@ -850,7 +850,7 @@ message OpenItemIdentifier {
 
 message ClearOpenItemsResponse {
   bool success = 1;
-  enterprise.common.SystemDocumentReference clearing_document = 2;
+  common.v1.SystemDocumentReference clearing_document = 2;
 }
 
 message EventType {
@@ -860,5 +860,5 @@ message EventType {
 
 message OperationResponse {
   bool success = 1;
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
 }

@@ -5,11 +5,8 @@
 
 syntax = "proto3";
 
-package enterprise.hr.experience;
+package hr.ex.v1;
 
-option java_package = "com.enterprise.hr.experience.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/hr/experience/v2;experience";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -21,7 +18,7 @@ import "google/api/annotations.proto";
 
 service EmployeeExperienceService {
   // 发起一个员工调查 - 异步
-  rpc LaunchSurvey(LaunchSurveyRequest) returns (enterprise.common.JobInfo) {
+  rpc LaunchSurvey(LaunchSurveyRequest) returns (common.v1.JobInfo) {
 
     option (google.api.http) = {
 
@@ -140,16 +137,16 @@ message Survey {
   string title = 2;
   repeated SurveyQuestion questions = 3;
   string target_audience = 4;
-  enterprise.common.DateR ange active_period = 5;
-  enterprise.common.SurveyStatus status = 6;
-  enterprise.common.AuditData audit_data = 7;
+  common.v1.DateRange active_period = 5;
+  common.v1.SurveyStatus status = 6;
+  common.v1.AuditData audit_data = 7;
 }
 
 // 调查问题
 message SurveyQuestion {
   string question_id = 1;
   string text = 2;
-  enterprise.common.QuestionType question_type = 3;
+  common.v1.QuestionType question_type = 3;
   repeated string options = 4;
 }
 
@@ -176,7 +173,7 @@ message Recognition {
   string message = 4;
   string company_value_aligned = 5;
   google.protobuf.Timestamp recognition_time = 6;
-  enterprise.common.RecognitionStatus status = 7;
+  common.v1.RecognitionStatus status = 7;
 }
 
 // ============================================================================
@@ -186,20 +183,20 @@ message Recognition {
 // 发起调查请求
 message LaunchSurveyRequest {
   Survey survey = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ListSurveysRequest {
-  enterprise.common.SurveyStatus status_filter = 1;
-  enterprise.common.DateRange date_range = 2;
+  common.v1.SurveyStatus status_filter = 1;
+  common.v1.DateRange date_range = 2;
   string target_audience = 3;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message ListSurveysResponse {
   repeated Survey surveys = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 // 提交调查回复请求
@@ -207,7 +204,7 @@ message SubmitSurveyResponseRequest {
   string survey_id = 1;
   string respondent_employee_id = 2;
   repeated SurveyAnswer answers = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 调查回复
@@ -219,45 +216,45 @@ message SurveyAnswer {
 // 提交调查回复响应
 message SubmitSurveyResponseResponse {
   bool success = 1;
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
 }
 
 // 获取调查分析请求
 message GetSurveyAnalyticsRequest {
   string survey_id = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 给予认可请求
 message GiveRecognitionRequest {
   Recognition recognition = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 给予认可响应
 message GiveRecognitionResponse {
   bool success = 1;
   string recognition_id = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 message ListRecognitionsRequest {
   string employee_id = 1;
-  enterprise.common.DateRange date_range = 2;
-  enterprise.common.RecognitionStatus status_filter = 3;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.DateRange date_range = 2;
+  common.v1.RecognitionStatus status_filter = 3;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message ListRecognitionsResponse {
   repeated Recognition recognitions = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 message GetRecognitionFeedRequest {
   string department = 1;
   int32 limit = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message GetRecognitionFeedResponse {

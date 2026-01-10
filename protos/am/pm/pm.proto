@@ -7,11 +7,8 @@
 
 syntax = "proto3";
 
-package enterprise.asset.maintenance;
+package am.pm.v1;
 
-option java_package = "com.enterprise.asset.maintenance.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/asset/maintenance/v2;maintenance";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -285,7 +282,7 @@ message MaintenanceNotification {
   string breakdown_duration_unit = 13;
   
   string priority = 14;
-  enterprise.common.OrderStatus status = 15;
+  common.v1.OrderStatus status = 15;
 }
 
 // 维护订单详情 (参考: AUFK, AFKO)
@@ -315,8 +312,8 @@ message MaintenanceOrderDetail {
   google.protobuf.Timestamp actual_finish_date = 19;
   
   string currency = 20;
-  enterprise.common.MonetaryValue estimated_total_cost = 21;
-  enterprise.common.MonetaryValue actual_total_cost = 22;
+  common.v1.MonetaryValue estimated_total_cost = 21;
+  common.v1.MonetaryValue actual_total_cost = 22;
   
   repeated MaintenanceOperation operations = 23;
   repeated MaintenanceOrderComponent components = 24;
@@ -336,9 +333,9 @@ message MaintenanceOperation {
   string planned_work_duration = 8;
   string actual_work_duration = 9;
   string work_unit = 10;
-  enterprise.common.QuantityValue quantity = 11;
+  common.v1.QuantityValue quantity = 11;
   
-  enterprise.common.OperationStatus system_status = 13;
+  common.v1.OperationStatus system_status = 13;
 }
 
 // 维护订单组件 (参考: RESB)
@@ -347,13 +344,13 @@ message MaintenanceOrderComponent {
   string material = 2;
   string material_description = 3;
   
-  enterprise.common.QuantityValue requirement_quantity = 4;
-  enterprise.common.QuantityValue withdrawn_quantity = 5;
+  common.v1.QuantityValue requirement_quantity = 4;
+  common.v1.QuantityValue withdrawn_quantity = 5;
   
   string plant = 7;
   string storage_location = 8;
   string batch = 9;
-  enterprise.common.ItemCategory item_category = 10;
+  common.v1.ItemCategory item_category = 10;
   google.protobuf.Timestamp requirement_date = 11;
   bool backflush_indicator = 12;
 }
@@ -365,7 +362,7 @@ message MaintenanceOrderComponent {
 // 创建维护通知单请求
 message CreateNotificationRequest {
   MaintenanceNotification notification = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 更新维护通知单请求
@@ -373,32 +370,32 @@ message UpdateNotificationRequest {
   string notification_number = 1;
   MaintenanceNotification notification = 2;
   repeated string update_mask = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ReleaseNotificationRequest {
   string notification_number = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 通知单响应
 message NotificationResponse {
   bool success = 1;
   string notification_number = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 message ListNotificationsRequest {
   string equipment_number = 1;
-  enterprise.common.DateRange date_range = 2;
+  common.v1.DateRange date_range = 2;
   string status_filter = 3;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message ListNotificationsResponse {
   repeated MaintenanceNotification notifications = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 // 创建维护订单请求
@@ -409,7 +406,7 @@ message CreateMaintenanceOrderRequest {
   string equipment_number = 4;
   string functional_location = 5;
   string planning_plant = 6;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 更新维护订单请求
@@ -420,82 +417,82 @@ message UpdateMaintenanceOrderRequest {
   google.protobuf.Timestamp basic_finish_date = 4;
   repeated MaintenanceOperation operations = 5;
   repeated MaintenanceOrderComponent components = 6;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 下达维护订单请求
 message ReleaseMaintenanceOrderRequest {
   string order_number = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message CancelMaintenanceOrderRequest {
   string order_number = 1;
   string cancellation_reason = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 技术性完成订单请求
 message CompleteMaintenanceOrderRequest {
   string order_number = 1;
   google.protobuf.Timestamp reference_date = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 维护订单响应
 message MaintenanceOrderResponse {
   bool success = 1;
   string order_number = 2;
-  enterprise.common.OrderStatus status = 3;
-  repeated enterprise.common.ApiMessage messages = 4;
+  common.v1.OrderStatus status = 3;
+  repeated common.v1.ApiMessage messages = 4;
 }
 
 // 获取维护订单请求
 message GetMaintenanceOrderRequest {
   string order_number = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ListOrdersRequest {
   string equipment_number = 1;
-  enterprise.common.DateRange date_range = 2;
+  common.v1.DateRange date_range = 2;
   string status_filter = 3;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message ListOrdersResponse {
   repeated MaintenanceOrderDetail orders = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 // 确认维护订单工序请求
 message ConfirmMaintenanceOperationRequest {
   string order_number = 1;
   string operation_number = 2;
-  enterprise.common.ConfirmationType confirmation_type = 3;
+  common.v1.ConfirmationType confirmation_type = 3;
   
   string actual_work_duration = 4;
   string work_unit = 5;
-  enterprise.common.QuantityValue yield_quantity = 6;
-  enterprise.common.QuantityValue scrap_quantity = 7; // 报废数量
+  common.v1.QuantityValue yield_quantity = 6;
+  common.v1.QuantityValue scrap_quantity = 7; // 报废数量
   
   string confirmation_text = 8;
   bool clear_open_reservations = 9;
   google.protobuf.Timestamp posting_date = 10;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 确认维护订单工序响应
 message ConfirmMaintenanceOperationResponse {
   bool success = 1;
   string confirmation_number = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 message GetOrderComponentsRequest {
   string order_number = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message OrderComponentsResponse {

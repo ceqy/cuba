@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.procurement.contract;
+package pm.ct.v1;
 
-option java_package = "com.enterprise.procurement.contract.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/procurement/contract/v2;contract";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -110,7 +107,7 @@ message ContractHeader {
   // 公司代码
   string company_code = 1;
   // 凭证类型
-  enterprise.common.DocumentType document_type = 2;
+  common.v1.DocumentType document_type = 2;
   // 供应商
   string supplier = 3;
   // 采购组织
@@ -122,9 +119,9 @@ message ContractHeader {
   // 有效期结束
   google.protobuf.Timestamp validity_end = 7;
   // 目标金额
-  enterprise.common.MonetaryValue target_value = 8;
+  common.v1.MonetaryValue target_value = 8;
   // 审批状态
-  enterprise.common.ReleaseStatus release_status = 9;
+  common.v1.ReleaseStatus release_status = 9;
 }
 
 // 合同行项目
@@ -136,17 +133,17 @@ message ContractItem {
   // 短文本
   string short_text = 3;
   // 目标数量
-  enterprise.common.QuantityValue target_quantity = 4;
+  common.v1.QuantityValue target_quantity = 4;
   // 单位
   string unit = 5;
   // 净价
-  enterprise.common.MonetaryValue net_price = 6;
+  common.v1.MonetaryValue net_price = 6;
   // 价格单位
   int32 price_unit = 7;
   // 工厂
   string plant = 8;
   // 项目类别
-  enterprise.common.ItemCategory item_category = 9;
+  common.v1.ItemCategory item_category = 9;
 }
 
 // 完整的合同详情
@@ -158,7 +155,7 @@ message ContractDetail {
   // 合同行项目
   repeated ContractItem items = 3;
   // 审计信息
-  enterprise.common.AuditData audit_data = 4;
+  common.v1.AuditData audit_data = 4;
 }
 
 // ============================================================================
@@ -172,7 +169,7 @@ message CreateContractRequest {
   // 合同行项目
   repeated ContractItem items = 2;
   // 请求上下文
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 更新合同请求
@@ -181,7 +178,7 @@ message UpdateContractRequest {
   ContractHeader header = 2;
   repeated ContractItem items = 3;
   repeated string update_mask = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 审批合同请求
@@ -189,7 +186,7 @@ message ApproveContractRequest {
   string contract_number = 1;
   string approver_comment = 2;
   bool approved = 3; // true for approve, false for reject
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 合同响应
@@ -199,7 +196,7 @@ message ContractResponse {
   // 合同号
   string contract_number = 2;
   // 从核心ERP返回的消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 // 获取合同请求
@@ -207,7 +204,7 @@ message GetContractRequest {
   // 合同号
   string contract_number = 1;
   // 请求上下文
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 查询合同请求
@@ -223,13 +220,13 @@ message ListContractsRequest {
   // 工厂
   string plant = 5;
   // 状态
-  enterprise.common.ReleaseStatus status = 6;
+  common.v1.ReleaseStatus status = 6;
   // 有效期范围
-  enterprise.common.DateRange validity_date_range = 7;
+  common.v1.DateRange validity_date_range = 7;
   // 分页请求
-  enterprise.common.PaginationRequest pagination = 98;
+  common.v1.PaginationRequest pagination = 98;
   // 请求上下文
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 查询合同响应
@@ -237,7 +234,7 @@ message ListContractsResponse {
   // 合同摘要列表
   repeated ContractSummary contracts = 1;
   // 分页响应
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 // 合同摘要
@@ -249,7 +246,7 @@ message ContractSummary {
   // 有效期结束
   google.protobuf.Timestamp validity_end = 3;
   // 目标金额
-  enterprise.common.MonetaryValue target_value = 4;
+  common.v1.MonetaryValue target_value = 4;
   // 状态
-  enterprise.common.ReleaseStatus status = 5;
+  common.v1.ReleaseStatus status = 5;
 }

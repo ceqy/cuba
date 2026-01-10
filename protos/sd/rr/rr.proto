@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.sales.revrec;
+package sd.rr.v1;
 
-option java_package = "com.enterprise.sales.revrec.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/sales/revrec/v2;revrec";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -111,11 +108,11 @@ message PerformanceObligation {
   string revenue_contract_number = 2;
   string source_document = 3;
   string description = 4;
-  enterprise.common.MonetaryValue allocated_price = 5;
+  common.v1.MonetaryValue allocated_price = 5;
   string recognition_method = 6;
-  enterprise.common.MonetaryValue recognized_revenue = 7;
-  enterprise.common.MonetaryValue deferred_revenue = 8;
-  enterprise.common.ItemCategory item_category = 9;
+  common.v1.MonetaryValue recognized_revenue = 7;
+  common.v1.MonetaryValue deferred_revenue = 8;
+  common.v1.ItemCategory item_category = 9;
 }
 
 // 收入过账凭证
@@ -123,8 +120,8 @@ message RevenuePostingDocument {
   string document_id = 1;
   google.protobuf.Timestamp posting_date = 2;
   string pob_id = 3;
-  enterprise.common.MonetaryValue amount = 4;
-  enterprise.common.PostingType posting_type = 5;
+  common.v1.MonetaryValue amount = 4;
+  common.v1.PostingType posting_type = 5;
   string accounting_document_number = 6;
 }
 
@@ -134,22 +131,22 @@ message RevenuePostingDocument {
 
 message CreateRevenueContractRequest {
   string source_document_number = 1; // e.g. Sales Order
-  enterprise.common.DocumentType source_document_type = 2;
+  common.v1.DocumentType source_document_type = 2;
   string company_code = 3;
   string customer = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message RevenueContractResponse {
   bool success = 1;
   string revenue_contract_number = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 // 获取履约义务请求
 message GetPerformanceObligationsRequest {
   string revenue_contract_number = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 获取履约义务响应
@@ -161,7 +158,7 @@ message GetPerformanceObligationsResponse {
 message RunRevenuePostingRequest {
   string company_code = 1;
   string posting_period = 2; // YYYY-MM
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 执行收入确认运行响应
@@ -169,31 +166,31 @@ message RunRevenuePostingResponse {
   string run_id = 1;
   bool success = 2;
   int32 documents_created = 3;
-  repeated enterprise.common.ApiMessage messages = 4;
+  repeated common.v1.ApiMessage messages = 4;
 }
 
 message ReverseRevenuePostingRequest {
   string document_id = 1;
   string reversal_reason = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message RevenuePostingResponse {
   bool success = 1;
   string reversal_document_id = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 // 查询收入过账凭证请求
 message GetRevenuePostingsRequest {
   string pob_id = 1;
-  enterprise.common.DateRange posting_date_range = 2;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.DateRange posting_date_range = 2;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 // 查询收入过账凭证响应
 message GetRevenuePostingsResponse {
   repeated RevenuePostingDocument documents = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }

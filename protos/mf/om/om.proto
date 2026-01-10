@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.manufacturing.outsourced;
+package mf.om.v1;
 
-option java_package = "com.enterprise.manufacturing.outsourced.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/manufacturing/outsourced/v2;outsourced";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -107,9 +104,9 @@ message SubcontractingItem {
   // 成品物料编号
   string finished_good_material = 2;
   // 订单数量
-  enterprise.common.QuantityValue order_quantity = 3;
+  common.v1.QuantityValue order_quantity = 3;
   // 已收货数量
-  enterprise.common.QuantityValue received_quantity = 4;
+  common.v1.QuantityValue received_quantity = 4;
   // 单位
   string unit = 5;
   // 需要提供的组件列表
@@ -121,9 +118,9 @@ message SubcontractingComponent {
   // 组件物料编号
   string component_material = 1;
   // 需求数量
-  enterprise.common.QuantityValue required_quantity = 2;
+  common.v1.QuantityValue required_quantity = 2;
   // 已发货数量
-  enterprise.common.QuantityValue issued_quantity = 3;
+  common.v1.QuantityValue issued_quantity = 3;
   // 单位
   string unit = 4;
 }
@@ -139,12 +136,12 @@ message CreateSubcontractingOrderRequest {
   string purchasing_org = 3;
   string purchasing_group = 4;
   repeated CreateSubcontractingItem items = 5;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message CreateSubcontractingItem {
   string material = 1;
-  enterprise.common.QuantityValue quantity = 2;
+  common.v1.QuantityValue quantity = 2;
   string plant = 3;
   google.protobuf.Timestamp delivery_date = 4;
   // 组件列表 (可选，如果BOM未展开)
@@ -155,14 +152,14 @@ message CreateSubcontractingItem {
 message SubcontractingOrderResponse {
   bool success = 1;
   string purchase_order_number = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 // 获取外协订单请求
 message GetSubcontractingOrderRequest {
   // 采购订单号
   string purchase_order_number = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 发送组件请求
@@ -174,7 +171,7 @@ message PostComponentsRequest {
   // 要发送的组件列表
   repeated ComponentIssuance items = 3;
   // 请求上下文
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 待发货的组件
@@ -184,7 +181,7 @@ message ComponentIssuance {
   // 组件物料编号
   string component_material = 2;
   // 发货数量
-  enterprise.common.QuantityValue quantity_to_issue = 3;
+  common.v1.QuantityValue quantity_to_issue = 3;
   // 单位
   string unit = 4;
   // 批次
@@ -196,7 +193,7 @@ message PostComponentsResponse {
   // 生成的物料凭证号
   string material_document_number = 1;
   // 从核心ERP返回的消息列表
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
 }
 
 // 接收成品请求
@@ -208,7 +205,7 @@ message ReceiveFinishedGoodsRequest {
   // 要接收的成品列表
   repeated FinishedGoodReceipt items = 3;
   // 请求上下文
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 待接收的成品
@@ -216,7 +213,7 @@ message FinishedGoodReceipt {
   // 采购订单项目号
   int32 purchase_order_item = 1;
   // 接收数量
-  enterprise.common.QuantityValue quantity_to_receive = 2;
+  common.v1.QuantityValue quantity_to_receive = 2;
   // 单位
   string unit = 3;
   // 批次 (接收到的成品批次)
@@ -228,5 +225,5 @@ message ReceiveFinishedGoodsResponse {
   // 生成的物料凭证号
   string material_document_number = 1;
   // 从核心ERP返回的消息列表
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
 }

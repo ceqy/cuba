@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.finance.controlling;
+package fi.co.v1;
 
-option java_package = "com.enterprise.finance.controlling.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/finance/controlling/v2;controlling";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -93,7 +90,7 @@ message AllocationResponse {
   // 分配运行的ID
   string run_id = 2;
   // 从核心ERP返回的消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 // 获取分配结果请求
@@ -107,7 +104,7 @@ message GetAllocationResultResponse {
   // 分配运行的ID
   string run_id = 1;
   // 生成的凭证列表
-  repeated enterprise.common.SystemDocumentReference generated_documents = 2;
+  repeated common.v1.SystemDocumentReference generated_documents = 2;
   // 发送方列表
   repeated AllocationSender senders = 3;
   // 接收方列表
@@ -119,7 +116,7 @@ message AllocationSender {
   // 发送方对象 (例如成本中心)
   string sender_object = 1;
   // 发送的金额
-  enterprise.common.MonetaryValue sent_amount = 2;
+  common.v1.MonetaryValue sent_amount = 2;
 }
 
 // 分配接收方信息
@@ -127,5 +124,5 @@ message AllocationReceiver {
   // 接收方对象 (例如成本中心)
   string receiver_object = 1;
   // 接收的金额
-  enterprise.common.MonetaryValue received_amount = 2;
+  common.v1.MonetaryValue received_amount = 2;
 }

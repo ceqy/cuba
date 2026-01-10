@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.sales.pricing;
+package sd.pe.v1;
 
-option java_package = "com.enterprise.sales.pricing.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/sales/pricing/v2;pricing";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -78,15 +75,15 @@ message PricingItem {
 // 定价结果
 message PricingResult {
   string item_id = 1;
-  enterprise.common.MonetaryValue net_price = 2;
-  enterprise.common.MonetaryValue tax_amount = 3;
-  enterprise.common.MonetaryValue gross_price = 4;
+  common.v1.MonetaryValue net_price = 2;
+  common.v1.MonetaryValue tax_amount = 3;
+  common.v1.MonetaryValue gross_price = 4;
   repeated PricingCondition conditions = 5;
 }
 
 // 定价条件
 message PricingCondition {
-  enterprise.common.PricingConditionType condition_type = 1;
+  common.v1.PricingConditionType condition_type = 1;
   string condition_value = 2;
   string currency_or_unit = 3;
   string description = 4;
@@ -100,28 +97,28 @@ message PricingCondition {
 message CalculatePriceRequest {
   PricingContext context = 1;
   repeated PricingItem items = 2;
-  enterprise.common.RequestContext request_context = 99;
+  common.v1.RequestContext request_context = 99;
 }
 
 // 计算价格响应
 message CalculatePriceResponse {
   repeated PricingResult results = 1;
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
 }
 
 message UpdatePricingConditionRequest {
-  enterprise.common.PricingConditionType condition_type = 1;
+  common.v1.PricingConditionType condition_type = 1;
   string material = 2;
   string customer = 3; // Optional
   string sales_org = 4;
   string amount = 5;
   string currency = 6;
-  enterprise.common.DateRange validity_period = 7;
-  enterprise.common.RequestContext context = 99;
+  common.v1.DateRange validity_period = 7;
+  common.v1.RequestContext context = 99;
 }
 
 message UpdatePricingConditionResponse {
   bool success = 1;
   string condition_record_id = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }

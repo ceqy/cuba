@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.manufacturing.quality;
+package mf.qi.v1;
 
-option java_package = "com.enterprise.manufacturing.quality.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/manufacturing/quality/v2;quality";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -114,15 +111,15 @@ message InspectionLotDetail {
   // 工厂 (原: WERK)
   string plant = 3;
   // 检验批来源 (例如, '01' for GR, '04' for Production) (原: HERKUNFT)
-  enterprise.common.InspectionLotOrigin lot_origin = 4;
+  common.v1.InspectionLotOrigin lot_origin = 4;
   // 检验批数量 (原: LOSMENGE)
-  enterprise.common.QuantityValue lot_quantity = 5;
+  common.v1.QuantityValue lot_quantity = 5;
   // 创建日期 (原: ENTSTEHDAT)
   google.protobuf.Timestamp creation_date = 7;
   // 检验特性列表
   repeated InspectionCharacteristic characteristics = 8;
   // 使用决策
-  enterprise.common.UsageDecision usage_decision = 9;
+  common.v1.UsageDecision usage_decision = 9;
 }
 
 // 检验特性 (参考: QAMR, QASR)
@@ -149,25 +146,25 @@ message InspectionCharacteristic {
 message CreateInspectionLotRequest {
   string material = 1;
   string plant = 2;
-  enterprise.common.QuantityValue quantity = 3;
-  enterprise.common.InspectionLotOrigin origin = 4;
+  common.v1.QuantityValue quantity = 3;
+  common.v1.InspectionLotOrigin origin = 4;
   // 来源凭证 (如 PO号, 生产订单号)
-  enterprise.common.SystemDocumentReference source_document = 5;
-  enterprise.common.RequestContext context = 99;
+  common.v1.SystemDocumentReference source_document = 5;
+  common.v1.RequestContext context = 99;
 }
 
 // 检验批响应
 message InspectionLotResponse {
   bool success = 1;
   string inspection_lot_number = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 // 获取检验批请求
 message GetInspectionLotRequest {
   // 检验批号
   string inspection_lot_number = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 查询检验批请求
@@ -177,19 +174,19 @@ message ListInspectionLotsRequest {
   // 物料
   string material = 2;
   // 来源
-  enterprise.common.InspectionLotOrigin origin = 3;
+  common.v1.InspectionLotOrigin origin = 3;
   // 创建日期范围
-  enterprise.common.DateRange creation_date_range = 4;
+  common.v1.DateRange creation_date_range = 4;
   // 分页请求
-  enterprise.common.PaginationRequest pagination = 98;
+  common.v1.PaginationRequest pagination = 98;
   // 请求上下文
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 查询检验批响应
 message ListInspectionLotsResponse {
   repeated InspectionLotDetail inspection_lots = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 // 记录检验结果请求
@@ -199,7 +196,7 @@ message RecordResultsRequest {
   // 结果列表
   repeated CharacteristicResult results = 2;
   // 请求上下文
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 特性结果
@@ -217,7 +214,7 @@ message RecordResultsResponse {
   // 操作是否成功
   bool success = 1;
   // 从核心ERP返回的消息列表
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
 }
 
 // 做使用决策请求
@@ -225,13 +222,13 @@ message MakeUsageDecisionRequest {
   // 检验批号
   string inspection_lot_number = 1;
   // 使用决策代码
-  enterprise.common.UsageDecision decision_code = 2;
+  common.v1.UsageDecision decision_code = 2;
   // 将合格品过账到的库存类型
   string post_to_stock_type = 3;
   // 备注
   string note = 4;
   // 请求上下文
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 做使用决策响应
@@ -239,5 +236,5 @@ message MakeUsageDecisionResponse {
   // 操作是否成功
   bool success = 1;
   // 从核心ERP返回的消息列表
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
 }

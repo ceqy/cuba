@@ -5,8 +5,7 @@
 
 syntax = "proto3";
 
-package enterprise.common;
-option go_package = "github.com/yourproject/common";
+package common.v1;
 
 
 import "google/protobuf/timestamp.proto";

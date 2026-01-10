@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.hr.talent;
+package hr.ta.v1;
 
-option java_package = "com.enterprise.hr.talent.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/hr/talent/v2;talent";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -129,11 +126,11 @@ message JobApplicationDetail {
   string requisition_id = 2;
   string requisition_title = 3;
   CandidateInfo candidate = 4;
-  enterprise.common.ApplicationStatus status = 5;
+  common.v1.ApplicationStatus status = 5;
   google.protobuf.Timestamp application_date = 6;
   repeated ApplicationAttachment attachments = 7;
   repeated InterviewSchedule interviews = 8;
-  enterprise.common.AuditData audit_data = 9;
+  common.v1.AuditData audit_data = 9;
 }
 
 // 候选人信息
@@ -157,7 +154,7 @@ message ApplicationAttachment {
 // 面试安排
 message InterviewSchedule {
   string interview_id = 1;
-  enterprise.common.InterviewType interview_type = 2;
+  common.v1.InterviewType interview_type = 2;
   google.protobuf.Timestamp scheduled_time = 3;
   string interviewer_id = 4;
   string location = 5;
@@ -171,35 +168,35 @@ message InterviewSchedule {
 message CreateJobApplicationRequest {
   string requisition_id = 1;
   CandidateInfo candidate = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message SubmitResumeRequest {
   string requisition_id = 1;
   string candidate_email = 2;
   string resume_url = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message JobApplicationResponse {
   bool success = 1;
   string application_id = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 // 查询职位申请请求
 message ListJobApplicationsRequest {
   string requisition_id = 1;
-  enterprise.common.ApplicationStatus status = 2;
-  enterprise.common.DateRange application_date_range = 3;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.ApplicationStatus status = 2;
+  common.v1.DateRange application_date_range = 3;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 // 查询职位申请响应
 message ListJobApplicationsResponse {
   repeated JobApplicationSummary applications = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 // 职位申请摘要
@@ -207,38 +204,38 @@ message JobApplicationSummary {
   string application_id = 1;
   string requisition_title = 2;
   string candidate_name = 3;
-  enterprise.common.ApplicationStatus status = 4;
+  common.v1.ApplicationStatus status = 4;
   google.protobuf.Timestamp application_date = 5;
 }
 
 // 获取职位申请详情请求
 message GetJobApplicationRequest {
   string application_id = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 更新职位申请状态请求
 message UpdateJobApplicationStatusRequest {
   string application_id = 1;
-  enterprise.common.ApplicationStatus new_status = 2;
+  common.v1.ApplicationStatus new_status = 2;
   string notes = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 更新职位申请状态响应
 message UpdateJobApplicationStatusResponse {
   bool success = 1;
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
 }
 
 message ScheduleInterviewRequest {
   string application_id = 1;
   InterviewSchedule interview = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ScheduleInterviewResponse {
   bool success = 1;
   string interview_id = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }

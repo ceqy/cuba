@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.service.dispatch;
+package cs.fd.v1;
 
-option java_package = "com.enterprise.service.dispatch.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/service/dispatch/v2;dispatch";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -127,14 +124,14 @@ service FieldServiceDispatchService {
 // 服务订单详情
 message ServiceOrderDetail {
   string order_number = 1;
-  enterprise.common.ServiceOrderType order_type = 2;
+  common.v1.ServiceOrderType order_type = 2;
   string customer_id = 3;
-  enterprise.common.Address service_location = 4;
+  common.v1.Address service_location = 4;
   string description = 5;
   google.protobuf.Timestamp planned_start_datetime = 6;
   string assigned_technician_id = 7;
-  enterprise.common.ServiceOrderStatus status = 8;
-  enterprise.common.AuditData audit_data = 9;
+  common.v1.ServiceOrderStatus status = 8;
+  common.v1.AuditData audit_data = 9;
 }
 
 // ============================================================================
@@ -144,21 +141,21 @@ message ServiceOrderDetail {
 // 获取服务订单请求
 message GetServiceOrderRequest {
   string order_number = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ListServiceOrdersRequest {
   string technician_id = 1;
   string customer_id = 2;
-  enterprise.common.DateRange date_range = 3;
-  enterprise.common.ServiceOrderStatus status_filter = 4;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.DateRange date_range = 3;
+  common.v1.ServiceOrderStatus status_filter = 4;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message ListServiceOrdersResponse {
   repeated ServiceOrderDetail orders = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 // 分配技术人员请求
@@ -166,38 +163,38 @@ message AssignTechnicianRequest {
   string order_number = 1;
   string technician_id = 2;
   google.protobuf.Timestamp scheduled_datetime = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 分配技术人员响应
 message AssignTechnicianResponse {
   bool success = 1;
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
 }
 
 message CancelAssignmentRequest {
   string order_number = 1;
   string reason = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message RescheduleOrderRequest {
   string order_number = 1;
   google.protobuf.Timestamp new_start_datetime = 2;
   string reason = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 更新服务订单状态请求
 message UpdateServiceOrderStatusRequest {
   string order_number = 1;
-  enterprise.common.ServiceOrderStatus new_status = 2;
+  common.v1.ServiceOrderStatus new_status = 2;
   string notes = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 更新服务订单状态响应
 message UpdateServiceOrderStatusResponse {
   bool success = 1;
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
 }

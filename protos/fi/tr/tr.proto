@@ -5,13 +5,12 @@
 // 设计基线：
 // - 支持多格式对账单导入 (MT940, CAMT.053, etc.)
 // - 支持异步付款运行执行 (类似 SAP F110)
-// - 统一使用 enterprise.common 基础类型
+// - 统一使用 common.v1 基础类型
 // ============================================================================
 
 syntax = "proto3";
 
-package finance.treasury;
-option go_package = "github.com/yourproject/finance/treasury";
+package fi.tr.v1;
 
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
@@ -68,7 +67,7 @@ service TreasuryService {
   // --------------------------------------------------------------------------
 
   // 处理银行对账单 (异步模式)
-  rpc ProcessBankStatement(ProcessBankStatementRequest) returns (enterprise.common.JobInfo) {
+  rpc ProcessBankStatement(ProcessBankStatementRequest) returns (common.v1.JobInfo) {
     option (google.api.http) = {
       post: "/api/v1/finance/treasury/bank-statements:process"
       body: "*"
@@ -98,7 +97,7 @@ service TreasuryService {
   // --------------------------------------------------------------------------
 
   // 执行付款运行 (异步模式)
-  rpc ExecutePaymentRun(ExecutePaymentRunRequest) returns (enterprise.common.JobInfo) {
+  rpc ExecutePaymentRun(ExecutePaymentRunRequest) returns (common.v1.JobInfo) {
     option (google.api.http) = {
       post: "/api/v1/finance/treasury/payment-runs:execute"
       body: "*"
@@ -110,7 +109,7 @@ service TreasuryService {
   }
 
   // 取消付款运行
-  rpc CancelPaymentRun(CancelPaymentRunRequest) returns (enterprise.common.JobInfo) {
+  rpc CancelPaymentRun(CancelPaymentRunRequest) returns (common.v1.JobInfo) {
     option (google.api.http) = {
       delete: "/api/v1/finance/treasury/payment-runs/{run_id}"
     };
@@ -131,7 +130,7 @@ service TreasuryService {
   }
 
   // 获取作业状态 (通用)
-  rpc GetJobStatus(GetJobStatusRequest) returns (enterprise.common.JobInfo) {
+  rpc GetJobStatus(GetJobStatusRequest) returns (common.v1.JobInfo) {
     option (google.api.http) = {
       get: "/api/v1/finance/treasury/jobs/{job_id}"
     };
@@ -145,41 +144,41 @@ service TreasuryService {
 message ProcessBankStatementRequest {
   string company_code = 1;
   bytes raw_statement_data = 2;
-  enterprise.common.BankStatementFormat statement_format = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.BankStatementFormat statement_format = 3;
+  common.v1.RequestContext context = 99;
 }
 
 message GetBankStatementRequest {
   string statement_id = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message BankStatementDetail {
   string statement_id = 1;
   string company_code = 2;
-  enterprise.common.BankStatementFormat format = 3;
+  common.v1.BankStatementFormat format = 3;
   repeated BankStatementTransaction transactions = 4;
-  enterprise.common.AuditData audit_data = 5;
+  common.v1.AuditData audit_data = 5;
 }
 
 message BankStatementTransaction {
   string transaction_id = 1;
   google.protobuf.Timestamp value_date = 2;
-  enterprise.common.MonetaryValue amount = 3;
+  common.v1.MonetaryValue amount = 3;
   string memo = 4;
   string partner_name = 5;
 }
 
 message ListBankStatementsRequest {
   string company_code = 1;
-  enterprise.common.DateRange date_range = 2;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.DateRange date_range = 2;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message ListBankStatementsResponse {
   repeated BankStatementSummary statements = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 message BankStatementSummary {
@@ -192,37 +191,37 @@ message ExecutePaymentRunRequest {
   string run_id = 1;
   google.protobuf.Timestamp posting_date = 2;
   PaymentRunParameters parameters = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message CancelPaymentRunRequest {
   string run_id = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message PaymentRunParameters {
   repeated string company_codes = 1;
-  repeated enterprise.common.PaymentMethodType payment_methods = 2;
+  repeated common.v1.PaymentMethodType payment_methods = 2;
   google.protobuf.Timestamp next_posting_date = 3;
   repeated string vendor_range = 4;
 }
 
 message GetPaymentRunRequest {
   string run_id = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message PaymentRunDetail {
   string run_id = 1;
-  enterprise.common.JobStatus status = 2;
+  common.v1.JobStatus status = 2;
   repeated PaymentDocument paid_documents = 3;
   repeated PaymentException exceptions = 4;
-  enterprise.common.AuditData audit_data = 5;
+  common.v1.AuditData audit_data = 5;
 }
 
 message PaymentDocument {
-  enterprise.common.SystemDocumentReference document_reference = 1;
-  enterprise.common.MonetaryValue amount = 2;
+  common.v1.SystemDocumentReference document_reference = 1;
+  common.v1.MonetaryValue amount = 2;
   string payee_name = 3;
 }
 
@@ -234,23 +233,23 @@ message PaymentException {
 
 message ListPaymentRunsRequest {
   string company_code = 1;
-  enterprise.common.DateRange date_range = 2;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.DateRange date_range = 2;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message ListPaymentRunsResponse {
   repeated PaymentRunSummary payment_runs = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 message PaymentRunSummary {
   string run_id = 1;
   google.protobuf.Timestamp run_date = 2;
-  enterprise.common.JobStatus status = 3;
+  common.v1.JobStatus status = 3;
 }
 
 message GetJobStatusRequest {
   string job_id = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }

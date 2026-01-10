@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.rd.projectcost;
+package rd.ps.v1;
 
-option java_package = "com.enterprise.rd.projectcost.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/rd/projectcost/v2;projectcost";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -65,7 +62,7 @@ service ProjectCostControllingService {
   }
 
   // 为项目/WBS元素过账直接成本 - 异步
-  rpc PostDirectCost(PostDirectCostRequest) returns (enterprise.common.JobInfo) {
+  rpc PostDirectCost(PostDirectCostRequest) returns (common.v1.JobInfo) {
 
 
     option (google.api.http) = {
@@ -109,21 +106,21 @@ service ProjectCostControllingService {
 message ProjectCostReport {
   string project_or_wbs_element = 1;
   string description = 2;
-  enterprise.common.MonetaryValue planned_cost = 3;
-  enterprise.common.MonetaryValue actual_cost = 4;
-  enterprise.common.MonetaryValue commitment_cost = 5;
-  enterprise.common.MonetaryValue budget = 6;
-  enterprise.common.MonetaryValue available_amount = 7;
+  common.v1.MonetaryValue planned_cost = 3;
+  common.v1.MonetaryValue actual_cost = 4;
+  common.v1.MonetaryValue commitment_cost = 5;
+  common.v1.MonetaryValue budget = 6;
+  common.v1.MonetaryValue available_amount = 7;
   repeated CostDetailItem cost_details = 8;
-  enterprise.common.BudgetStatus budget_status = 9;
+  common.v1.BudgetStatus budget_status = 9;
 }
 
 // 成本明细项
 message CostDetailItem {
-  enterprise.common.CostElementType cost_element_type = 1;
+  common.v1.CostElementType cost_element_type = 1;
   string cost_element = 2; // GL Account or Cost Element Key
   string cost_element_description = 3;
-  enterprise.common.MonetaryValue amount = 4;
+  common.v1.MonetaryValue amount = 4;
   google.protobuf.Timestamp posting_date = 5;
   string reference_document = 6;
   string text = 7;
@@ -135,59 +132,59 @@ message CostDetailItem {
 
 message CreateBudgetRequest {
   string project_or_wbs_element = 1;
-  enterprise.common.MonetaryValue amount = 2;
+  common.v1.MonetaryValue amount = 2;
   string fiscal_year = 3;
   string version = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message BudgetResponse {
   bool success = 1;
   string document_number = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 // 获取项目成本报告请求
 message GetProjectCostReportRequest {
   string project_or_wbs_element = 1;
   bool drilldown = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ListProjectCostsRequest {
   string project_definition = 1;
-  enterprise.common.DateRange date_range = 2;
-  enterprise.common.CostElementType type_filter = 3;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.DateRange date_range = 2;
+  common.v1.CostElementType type_filter = 3;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message ListProjectCostsResponse {
   repeated CostDetailItem costs = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 // 过账直接成本请求
 message PostDirectCostRequest {
   string wbs_element = 1;
   string cost_element = 2;
-  enterprise.common.CostElementType cost_element_type = 3;
-  enterprise.common.MonetaryValue amount = 4;
+  common.v1.CostElementType cost_element_type = 3;
+  common.v1.MonetaryValue amount = 4;
   google.protobuf.Timestamp posting_date = 5;
   string text = 6;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message UpdateCostRequest {
   string document_number = 1;
-  enterprise.common.MonetaryValue new_amount = 2;
+  common.v1.MonetaryValue new_amount = 2;
   string reason_code = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 过账直接成本响应
 message PostDirectCostResponse {
   bool success = 1;
   string accounting_document_number = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }

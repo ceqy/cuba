@@ -5,11 +5,8 @@
 
 syntax = "proto3";
 
-package enterprise.service.billing;
+package cs.cb.v1;
 
-option java_package = "com.enterprise.service.billing.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/service/billing/v2;billing";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -82,7 +79,7 @@ service ContractBillingService {
   }
 
   // 执行计费运行 - 异步
-  rpc RunBilling(RunBillingRequest) returns (enterprise.common.JobInfo) {
+  rpc RunBilling(RunBillingRequest) returns (common.v1.JobInfo) {
 
 
     option (google.api.http) = {
@@ -108,15 +105,15 @@ service ContractBillingService {
 message ServiceContractDetail {
   string contract_number = 1;
   string customer_id = 2;
-  enterprise.common.DateRange validity_period = 3;
+  common.v1.DateRange validity_period = 3;
   repeated BillingPlanItem billing_plan = 4;
 }
 
 // 计费计划项
 message BillingPlanItem {
   google.protobuf.Timestamp planned_billing_date = 1;
-  enterprise.common.MonetaryValue billing_amount = 2;
-  enterprise.common.BillingPlanStatus status = 3;
+  common.v1.MonetaryValue billing_amount = 2;
+  common.v1.BillingPlanStatus status = 3;
   string invoice_number = 4;
 }
 
@@ -127,41 +124,41 @@ message BillingPlanItem {
 message CreateBillingPlanRequest {
   string contract_number = 1;
   repeated BillingPlanItem items = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message BillingPlanResponse {
   bool success = 1;
   string contract_number = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 // 获取服务合同请求
 message GetServiceContractRequest {
   string contract_number = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message GetBillingHistoryRequest {
   string contract_number = 1;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message BillingHistoryResponse {
   repeated BillingPlanItem history = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 message PreviewBillingRunRequest {
   google.protobuf.Timestamp billing_until_date = 1;
   repeated string contract_numbers = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message PreviewBillingRunResponse {
   int32 expected_invoices = 1;
-  enterprise.common.MonetaryValue total_expected_amount = 2;
+  common.v1.MonetaryValue total_expected_amount = 2;
   repeated BillingPlanItem preview_items = 3;
 }
 
@@ -169,5 +166,5 @@ message PreviewBillingRunResponse {
 message RunBillingRequest {
   google.protobuf.Timestamp billing_until_date = 1;
   repeated string contract_numbers = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }

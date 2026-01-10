@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.asset.ehs;
+package am.eh.v1;
 
-option java_package = "com.enterprise.asset.ehs.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/asset/ehs/v2;ehs";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -108,13 +105,13 @@ service EHSIncidentService {
 // EHS事件详情
 message IncidentDetail {
   string incident_id = 1;
-  enterprise.common.IncidentCategory category = 2;
+  common.v1.IncidentCategory category = 2;
   string title = 3;
   string description = 4;
   string location = 5;
   google.protobuf.Timestamp incident_datetime = 6;
   string reported_by = 7;
-  enterprise.common.IncidentStatus status = 8;
+  common.v1.IncidentStatus status = 8;
   repeated InvestigationFinding findings = 9;
 }
 
@@ -134,51 +131,51 @@ message InvestigationFinding {
 // 报告事件请求
 message ReportIncidentRequest {
   IncidentDetail incident = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 报告事件响应
 message ReportIncidentResponse {
   bool success = 1;
   string incident_id = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 // 获取事件请求
 message GetIncidentRequest {
   string incident_id = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 更新事件请求
 message UpdateIncidentRequest {
   string incident_id = 1;
-  enterprise.common.IncidentStatus new_status = 2;
+  common.v1.IncidentStatus new_status = 2;
   InvestigationFinding new_finding = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message CloseIncidentRequest {
   string incident_id = 1;
   string closure_comment = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 更新事件响应
 message UpdateIncidentResponse {
   bool success = 1;
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
 }
 
 message ListIncidentsRequest {
-  enterprise.common.DateRange date_range = 1;
-  enterprise.common.IncidentCategory category = 2;
-  enterprise.common.IncidentStatus status = 3;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.DateRange date_range = 1;
+  common.v1.IncidentCategory category = 2;
+  common.v1.IncidentStatus status = 3;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message ListIncidentsResponse {
   repeated IncidentDetail incidents = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }

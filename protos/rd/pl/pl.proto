@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.rd.plm;
+package rd.pl.v1;
 
-option java_package = "com.enterprise.rd.plm.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/rd/plm/v2;plm";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -22,7 +19,7 @@ import "google/api/annotations.proto";
 
 service PLMIntegrationService {
   // 从PLM系统同步一个物料清单 (BOM) 到核心ERP - 异步
-  rpc SyncBillOfMaterial(SyncBOMRequest) returns (enterprise.common.JobInfo) {
+  rpc SyncBillOfMaterial(SyncBOMRequest) returns (common.v1.JobInfo) {
 
     option (google.api.http) = {
 
@@ -109,15 +106,15 @@ service PLMIntegrationService {
 message BillOfMaterial {
   BOMHeader header = 1;
   repeated BOMItem items = 2;
-  enterprise.common.AuditData audit_data = 3;
+  common.v1.AuditData audit_data = 3;
 }
 
 // BOM 抬头 (参考: STKO)
 message BOMHeader {
   string material = 1;
   string plant = 2;
-  enterprise.common.BOMUsage bom_usage = 3;
-  enterprise.common.BOMStatus bom_status = 4;
+  common.v1.BOMUsage bom_usage = 3;
+  common.v1.BOMStatus bom_status = 4;
   string base_quantity = 5;
   string alternative_bom = 6;
   google.protobuf.Timestamp valid_from = 7;
@@ -126,7 +123,7 @@ message BOMHeader {
 // BOM 项目 (参考: STPO)
 message BOMItem {
   string item_node = 1;
-  enterprise.common.BOMItemCategory item_category = 2;
+  common.v1.BOMItemCategory item_category = 2;
   string component_material = 3;
   string component_quantity = 4;
   string component_unit = 5;
@@ -142,7 +139,7 @@ message BOMItem {
 message SyncBOMRequest {
   BillOfMaterial bom = 1;
   string change_number = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message SyncMaterialMasterRequest {
@@ -150,47 +147,47 @@ message SyncMaterialMasterRequest {
   string description = 2;
   string material_type = 3;
   string base_unit = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message SyncMaterialMasterResponse {
   bool success = 1;
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
 }
 
 // 获取BOM请求
 message GetBOMRequest {
   string material = 1;
   string plant = 2;
-  enterprise.common.BOMUsage bom_usage = 3;
+  common.v1.BOMUsage bom_usage = 3;
   string alternative_bom = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message UpdateBOMRequest {
   string material = 1;
   string plant = 2;
-  enterprise.common.BOMUsage bom_usage = 3;
+  common.v1.BOMUsage bom_usage = 3;
   BillOfMaterial bom = 4;
   repeated string update_mask = 5;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message BOMResponse {
   bool success = 1;
   string bom_number = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 message ListBOMsRequest {
   string material = 1;
   string plant = 2;
-  enterprise.common.BOMStatus status_filter = 3;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.BOMStatus status_filter = 3;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message ListBOMsResponse {
   repeated BillOfMaterial boms = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }

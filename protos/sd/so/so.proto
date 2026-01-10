@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.sales.fulfillment;
+package sd.so.v1;
 
-option java_package = "com.enterprise.sales.fulfillment.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/sales/fulfillment/v2;fulfillment";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -122,7 +119,7 @@ service SalesOrderFulfillmentService {
 
 // 销售订单抬头 (参考: VBAK)
 message SalesOrderHeader {
-  enterprise.common.OrderType order_type = 1;
+  common.v1.OrderType order_type = 1;
   string sales_org = 2;
   string distribution_channel = 3;
   string division = 4;
@@ -150,7 +147,7 @@ message SalesOrderItem {
   string storage_location = 7;
   string net_value = 8;
   string tax_amount = 9;
-  enterprise.common.ItemCategory item_category = 10;
+  common.v1.ItemCategory item_category = 10;
   string rejection_reason = 11;
   int32 higher_level_item = 12;
 }
@@ -168,8 +165,8 @@ message SalesOrderDetail {
   SalesOrderHeader header = 2;
   repeated SalesOrderItem items = 3;
   repeated SalesOrderScheduleLine schedule_lines = 4;
-  enterprise.common.AuditData audit_data = 5;
-  enterprise.common.OrderStatus overall_status = 6;
+  common.v1.AuditData audit_data = 5;
+  common.v1.OrderStatus overall_status = 6;
 }
 
 // ============================================================================
@@ -180,7 +177,7 @@ message SalesOrderDetail {
 message CreateSalesOrderRequest {
   SalesOrderHeader header = 1;
   repeated SalesOrderItem items = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message UpdateSalesOrderRequest {
@@ -188,53 +185,53 @@ message UpdateSalesOrderRequest {
   SalesOrderHeader header = 2;
   repeated SalesOrderItem items = 3;
   repeated string update_mask = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message CancelSalesOrderRequest {
   string order_number = 1;
   string cancellation_reason = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 销售订单响应
 message SalesOrderResponse {
   bool success = 1;
   string order_number = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 // 获取销售订单请求
 message GetSalesOrderRequest {
   string order_number = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 查询销售订单请求
 message ListSalesOrdersRequest {
   string sold_to_party = 1;
   string material = 2;
-  enterprise.common.DateRange document_date_range = 3;
-  enterprise.common.OrderType order_type = 4;
-  enterprise.common.OrderStatus status = 6;
-  enterprise.common.PaginationRequest pagination = 5;
-  enterprise.common.RequestContext context = 99;
+  common.v1.DateRange document_date_range = 3;
+  common.v1.OrderType order_type = 4;
+  common.v1.OrderStatus status = 6;
+  common.v1.PaginationRequest pagination = 5;
+  common.v1.RequestContext context = 99;
 }
 
 // 查询销售订单响应
 message ListSalesOrdersResponse {
   repeated SalesOrderSummary orders = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 // 销售订单摘要
 message SalesOrderSummary {
   string order_number = 1;
-  enterprise.common.OrderType order_type = 2;
+  common.v1.OrderType order_type = 2;
   google.protobuf.Timestamp document_date = 3;
   string sold_to_party = 4;
-  enterprise.common.MonetaryValue net_value = 5;
-  enterprise.common.OrderStatus overall_status = 6;
+  common.v1.MonetaryValue net_value = 5;
+  common.v1.OrderStatus overall_status = 6;
 }
 
 // 凭证流响应
@@ -247,7 +244,7 @@ message FulfillmentStatusResponse {
 message DocumentFlowNode {
   int32 node_id = 1;
   int32 parent_id = 2;
-  enterprise.common.SystemDocumentReference document = 3;
+  common.v1.SystemDocumentReference document = 3;
   string description = 4;
   google.protobuf.Timestamp creation_date = 5;
 }

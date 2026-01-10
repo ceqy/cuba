@@ -12,8 +12,7 @@
 
 syntax = "proto3";
 
-package finance.co;
-option go_package = "github.com/yourproject/finance/co";
+package fi.co.v1;
 
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
@@ -111,7 +110,7 @@ service CostCenterAllocationService {
   }
 
   // 获取作业状态 (New)
-  rpc GetJobStatus(GetJobStatusRequest) returns (enterprise.common.JobInfo) {
+  rpc GetJobStatus(GetJobStatusRequest) returns (common.v1.JobInfo) {
     option (google.api.http) = {
       get: "/api/v1/finance/co/jobs/{job_id}"
     };
@@ -182,7 +181,7 @@ message CycleDefinition {
   ExecutionMode mode = 6;
   bool is_active = 7;
   repeated SegmentDefinition segments = 8;
-  enterprise.common.AuditData audit_data = 9;
+  common.v1.AuditData audit_data = 9;
 }
 
 // 分配段定义 (Segment)
@@ -226,14 +225,14 @@ message ExecuteRequest {
   google.protobuf.Timestamp posting_date = 5;
   bool test_run = 6;
   string run_text = 7;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 执行响应 (异步模式)
 message ExecuteResponse {
   string job_id = 1;
-  enterprise.common.JobStatus initial_status = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.JobStatus initial_status = 2;
+  common.v1.RequestContext context = 99;
 }
 
 // 批量执行请求
@@ -243,14 +242,14 @@ message ExecuteBatchRequest {
   int32 fiscal_period = 3;
   repeated string cycle_ids = 4;
   bool test_run = 5;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 模拟响应
 message SimulationResponse {
   bool success = 1;
   repeated AllocationResult results = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 // 分配结果 (明细)
@@ -259,28 +258,28 @@ message AllocationResult {
   string sender_cost_center = 2;
   string receiver_cost_center = 3;
   string cost_element = 4;
-  enterprise.common.MonetaryValue amount = 5;
+  common.v1.MonetaryValue amount = 5;
   string currency = 6;
 }
 
 // 查询请求
 message GetCycleRequest {
   string cycle_id = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ListCyclesRequest {
   string controlling_area = 1;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message ListCyclesResponse {
   repeated CycleDefinition cycles = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 message GetJobStatusRequest {
   string job_id = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }

@@ -10,11 +10,8 @@
 
 syntax = "proto3";
 
-package enterprise.supplychain.inventory;
+package sc.im.v1;
 
-option java_package = "com.enterprise.supplychain.inventory.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/supplychain/inventory/v2;inventory";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -82,7 +79,7 @@ service InventoryManagementService {
   // --------------------------------------------------------------------------
 
   // 执行库存移动
-  rpc PostStockMovement(PostStockMovementRequest) returns (enterprise.common.StockMovementResponse) {
+  rpc PostStockMovement(PostStockMovementRequest) returns (common.v1.StockMovementResponse) {
 
 
     option (google.api.http) = {
@@ -100,7 +97,7 @@ service InventoryManagementService {
   }
 
   // 冲销物料凭证
-  rpc ReverseMaterialDocument(ReverseMaterialDocumentRequest) returns (enterprise.common.StockMovementResponse) {
+  rpc ReverseMaterialDocument(ReverseMaterialDocumentRequest) returns (common.v1.StockMovementResponse) {
 
 
     option (google.api.http) = {
@@ -198,7 +195,7 @@ service InventoryManagementService {
   }
   
   // 过账盘点差异
-  rpc PostInventoryDifference(PostInventoryDifferenceRequest) returns (enterprise.common.StockMovementResponse) {
+  rpc PostInventoryDifference(PostInventoryDifferenceRequest) returns (common.v1.StockMovementResponse) {
 
   
     option (google.api.http) = {
@@ -227,13 +224,13 @@ message GetStockOverviewRequest {
   string plant = 2;
   repeated string storage_locations = 3;
   bool show_zero_stock = 4;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message GetStockOverviewResponse {
   repeated StockOverviewItem items = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 message StockOverviewItem {
@@ -241,16 +238,16 @@ message StockOverviewItem {
   string plant = 2;
   string storage_location = 3;
   string batch = 4;
-  enterprise.common.QuantityValue unrestricted_stock = 5;
-  enterprise.common.QuantityValue quality_inspection_stock = 6;
-  enterprise.common.QuantityValue blocked_stock = 7;
+  common.v1.QuantityValue unrestricted_stock = 5;
+  common.v1.QuantityValue quality_inspection_stock = 6;
+  common.v1.QuantityValue blocked_stock = 7;
 }
 
 message ListStockRequest {
   string plant = 1;
   string storage_location = 2;
   repeated string material_group_filter = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message StockItem {
@@ -258,30 +255,30 @@ message StockItem {
   string description = 2;
   string plant = 3;
   string storage_location = 4;
-  enterprise.common.QuantityValue quantity = 5;
+  common.v1.QuantityValue quantity = 5;
   string stock_type = 6;
 }
 
 message CheckStockAvailabilityRequest {
   string material = 1;
   string plant = 2;
-  enterprise.common.QuantityValue required_quantity = 3;
+  common.v1.QuantityValue required_quantity = 3;
   google.protobuf.Timestamp checking_date = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message StockAvailabilityResponse {
   bool is_available = 1;
-  enterprise.common.QuantityValue available_quantity = 2;
+  common.v1.QuantityValue available_quantity = 2;
   google.protobuf.Timestamp earliest_availability_date = 3;
 }
 
 // --- Stock Movement ---
 
 message PostStockMovementRequest {
-  enterprise.common.StockMovementHeader header = 1;
-  repeated enterprise.common.StockMovementItem items = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.StockMovementHeader header = 1;
+  repeated common.v1.StockMovementItem items = 2;
+  common.v1.RequestContext context = 99;
 }
 
 message ReverseMaterialDocumentRequest {
@@ -289,7 +286,7 @@ message ReverseMaterialDocumentRequest {
   int32 fiscal_year = 2;
   string reversal_reason = 3;
   google.protobuf.Timestamp posting_date = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // --- Stock Reservation ---
@@ -297,14 +294,14 @@ message ReverseMaterialDocumentRequest {
 message CreateReservationRequest {
   string plant = 1;
   google.protobuf.Timestamp requirement_date = 2;
-  enterprise.common.MovementType movement_type = 3;
+  common.v1.MovementType movement_type = 3;
   repeated ReservationItem items = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message ReservationItem {
   string material = 1;
-  enterprise.common.QuantityValue quantity = 2;
+  common.v1.QuantityValue quantity = 2;
   string storage_location = 3;
   string cost_center = 4;
 }
@@ -312,12 +309,12 @@ message ReservationItem {
 message ReservationResponse {
   bool success = 1;
   string reservation_number = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 message CancelReservationRequest {
   string reservation_number = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // --- Physical Inventory ---
@@ -328,31 +325,31 @@ message CreatePIDocumentRequest {
   google.protobuf.Timestamp planned_count_date = 3;
   // 特殊库存标识
   string special_stock_indicator = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message PIDocumentResponse {
   bool success = 1;
   string physical_inventory_document = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 message EnterInventoryCountRequest {
   string physical_inventory_document = 1;
   int32 fiscal_year = 2;
   repeated CountItem items = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message CountItem {
   int32 item_number = 1;
-  enterprise.common.QuantityValue counted_quantity = 2;
+  common.v1.QuantityValue counted_quantity = 2;
   bool zero_count = 3;
 }
 
 message EnterInventoryCountResponse {
   bool success = 1;
-  repeated enterprise.common.ApiMessage messages = 2;
+  repeated common.v1.ApiMessage messages = 2;
 }
 
 message PostInventoryDifferenceRequest {
@@ -360,5 +357,5 @@ message PostInventoryDifferenceRequest {
   int32 fiscal_year = 2;
   google.protobuf.Timestamp posting_date = 3;
   string reason = 4;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }

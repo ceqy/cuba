@@ -5,11 +5,8 @@
 
 syntax = "proto3";
 
-package enterprise.asset.health;
+package am.ah.v1;
 
-option java_package = "com.enterprise.asset.health.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/asset/health/v2;health";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
@@ -21,7 +18,7 @@ import "google/api/annotations.proto";
 
 service IntelligentAssetHealthService {
   // 接收资产的传感器数据 - 异步
-  rpc IngestSensorData(IngestSensorDataRequest) returns (enterprise.common.JobInfo) {
+  rpc IngestSensorData(IngestSensorDataRequest) returns (common.v1.JobInfo) {
 
     option (google.api.http) = {
 
@@ -113,7 +110,7 @@ message SensorDataPoint {
 message AssetHealthStatus {
   string equipment_number = 1;
   int32 overall_health_score = 2; // 0-100
-  enterprise.common.HealthStatus status_description = 3;
+  common.v1.HealthStatus status_description = 3;
   string remaining_useful_life = 4;
   google.protobuf.Timestamp last_updated = 5;
 }
@@ -122,7 +119,7 @@ message AssetHealthStatus {
 message PredictiveMaintenanceAlert {
   string alert_id = 1;
   string equipment_number = 2;
-  enterprise.common.FailureMode predicted_failure_mode = 3;
+  common.v1.FailureMode predicted_failure_mode = 3;
   string recommended_action = 4;
   double confidence_score = 5;
   google.protobuf.Timestamp alert_time = 6;
@@ -136,20 +133,20 @@ message PredictiveMaintenanceAlert {
 message IngestSensorDataRequest {
   string equipment_number = 1;
   repeated SensorDataPoint data_points = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 获取资产健康状态请求
 message GetAssetHealthStatusRequest {
   string equipment_number = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 获取预测性维护警报请求
 message GetPredictiveMaintenanceAlertsRequest {
   string equipment_number = 1;
   string severity_level = 2;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message GetPredictiveMaintenanceAlertsResponse {
@@ -159,25 +156,25 @@ message GetPredictiveMaintenanceAlertsResponse {
 message ListSensorDataRequest {
   string equipment_number = 1;
   string sensor_id = 2;
-  enterprise.common.DateRange date_range = 3;
-  enterprise.common.PaginationRequest pagination = 98;
-  enterprise.common.RequestContext context = 99;
+  common.v1.DateRange date_range = 3;
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
 }
 
 message ListSensorDataResponse {
   repeated SensorDataPoint data_points = 1;
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
 
 message CreateHealthModelRequest {
   string equipment_number = 1;
   string model_type = 2; // e.g. "LinearRegression", "NeuralNet"
   repeated string features = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 message HealthModelResponse {
   bool success = 1;
   string model_id = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }

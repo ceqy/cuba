@@ -6,11 +6,8 @@
 
 syntax = "proto3";
 
-package enterprise.manufacturing.kanban;
+package mf.kb.v1;
 
-option java_package = "com.enterprise.manufacturing.kanban.v2";
-option java_multiple_files = true;
-option go_package = "github.com/enterprise-extensions/manufacturing/kanban/v2;kanban";
 
 import "common/common.proto";
 import "google/api/annotations.proto";
@@ -117,9 +114,9 @@ message KanbanControlCycle {
   // 看板容器数量 (原: ANZPK)
   int32 number_of_kanbans = 5;
   // 每个看板的数量 (原: KANMNG)
-  enterprise.common.QuantityValue quantity_per_kanban = 6;
+  common.v1.QuantityValue quantity_per_kanban = 6;
   // 补货策略
-  enterprise.common.ReplenishmentStrategy replenishment_strategy = 7;
+  common.v1.ReplenishmentStrategy replenishment_strategy = 7;
 }
 
 // 看板容器
@@ -129,7 +126,7 @@ message KanbanContainer {
   // 控制周期编号
   string control_cycle_number = 2;
   // 当前状态
-  enterprise.common.KanbanStatus status = 3;
+  common.v1.KanbanStatus status = 3;
 }
 
 // ============================================================================
@@ -139,7 +136,7 @@ message KanbanContainer {
 // 创建看板控制周期请求
 message CreateControlCycleRequest {
   KanbanControlCycle control_cycle = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 更新看板控制周期请求
@@ -147,21 +144,21 @@ message UpdateControlCycleRequest {
   string control_cycle_number = 1;
   KanbanControlCycle control_cycle = 2;
   repeated string update_mask = 3;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 控制周期响应
 message ControlCycleResponse {
   bool success = 1;
   string control_cycle_number = 2;
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 // 获取看板控制周期请求
 message GetKanbanControlCycleRequest {
   // 控制周期编号
   string control_cycle_number = 1;
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 更改看板状态请求
@@ -169,9 +166,9 @@ message ChangeKanbanStatusRequest {
   // 容器ID
   string container_id = 1;
   // 新的状态
-  enterprise.common.KanbanStatus new_status = 2;
+  common.v1.KanbanStatus new_status = 2;
   // 请求上下文
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 更改看板状态响应
@@ -181,7 +178,7 @@ message ChangeKanbanStatusResponse {
   // 触发的补货凭证号 (例如, 生产订单号或采购订单号)
   string replenishment_document_number = 2;
   // 从核心ERP返回的消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated common.v1.ApiMessage messages = 3;
 }
 
 // 查询看板容器请求
@@ -193,11 +190,11 @@ message ListKanbanContainersRequest {
   // 物料编号
   string material = 3;
   // 状态过滤器
-  enterprise.common.KanbanStatus status = 4;
+  common.v1.KanbanStatus status = 4;
   // 分页请求
-  enterprise.common.PaginationRequest pagination = 98;
+  common.v1.PaginationRequest pagination = 98;
   // 请求上下文
-  enterprise.common.RequestContext context = 99;
+  common.v1.RequestContext context = 99;
 }
 
 // 查询看板容器响应
@@ -205,5 +202,5 @@ message ListKanbanContainersResponse {
   // 容器列表
   repeated KanbanContainer containers = 1;
   // 分页响应
-  enterprise.common.PaginationResponse pagination = 2;
+  common.v1.PaginationResponse pagination = 2;
 }
