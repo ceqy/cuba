@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/manufacturing/quality/v2;q
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: QualityInspectionService
@@ -21,19 +22,83 @@ import "common/common.proto";
 
 service QualityInspectionService {
   // 创建检验批 (New)
-  rpc CreateInspectionLot(CreateInspectionLotRequest) returns (InspectionLotResponse);
+  rpc CreateInspectionLot(CreateInspectionLotRequest) returns (InspectionLotResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/manufacturing/inspection-lot"
+
+      body: "*"
+
+    };
+
+  }
 
   // 获取检验批详情
-  rpc GetInspectionLot(GetInspectionLotRequest) returns (InspectionLotDetail);
+  rpc GetInspectionLot(GetInspectionLotRequest) returns (InspectionLotDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/manufacturing/inspection-lot"
+
+
+    };
+
+
+  }
 
   // 查询检验批列表 (New)
-  rpc ListInspectionLots(ListInspectionLotsRequest) returns (ListInspectionLotsResponse);
+  rpc ListInspectionLots(ListInspectionLotsRequest) returns (ListInspectionLotsResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/manufacturing/inspection-lots"
+
+
+    };
+
+
+  }
 
   // 记录检验结果
-  rpc RecordInspectionResults(RecordResultsRequest) returns (RecordResultsResponse);
+  rpc RecordInspectionResults(RecordResultsRequest) returns (RecordResultsResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/manufacturing/record-inspection-results"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 对检验批做使用决策
-  rpc MakeUsageDecision(MakeUsageDecisionRequest) returns (MakeUsageDecisionResponse);
+  rpc MakeUsageDecision(MakeUsageDecisionRequest) returns (MakeUsageDecisionResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/manufacturing/make-usage-decision"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

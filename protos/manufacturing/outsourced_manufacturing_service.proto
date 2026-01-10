@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/manufacturing/outsourced/v
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: OutsourcedManufacturingService
@@ -21,16 +22,68 @@ import "common/common.proto";
 
 service OutsourcedManufacturingService {
   // 创建外协采购订单 (New)
-  rpc CreateSubcontractingOrder(CreateSubcontractingOrderRequest) returns (SubcontractingOrderResponse);
+  rpc CreateSubcontractingOrder(CreateSubcontractingOrderRequest) returns (SubcontractingOrderResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/manufacturing/subcontracting-order"
+
+      body: "*"
+
+    };
+
+  }
 
   // 获取外协采购订单详情
-  rpc GetSubcontractingOrder(GetSubcontractingOrderRequest) returns (SubcontractingOrderDetail);
+  rpc GetSubcontractingOrder(GetSubcontractingOrderRequest) returns (SubcontractingOrderDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/manufacturing/subcontracting-order"
+
+
+    };
+
+
+  }
 
   // 向供应商过账组件发料
-  rpc PostComponentsToSupplier(PostComponentsRequest) returns (PostComponentsResponse);
+  rpc PostComponentsToSupplier(PostComponentsRequest) returns (PostComponentsResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/manufacturing/components-to-supplier/post"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 接收外协加工成品
-  rpc ReceiveFinishedGoodsFromSupplier(ReceiveFinishedGoodsRequest) returns (ReceiveFinishedGoodsResponse);
+  rpc ReceiveFinishedGoodsFromSupplier(ReceiveFinishedGoodsRequest) returns (ReceiveFinishedGoodsResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/manufacturing/receive-finished-goods-from-supplier"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

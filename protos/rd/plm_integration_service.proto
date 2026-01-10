@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/rd/plm/v2;plm";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: PLMIntegrationService
@@ -21,19 +22,83 @@ import "common/common.proto";
 
 service PLMIntegrationService {
   // 从PLM系统同步一个物料清单 (BOM) 到核心ERP - 异步
-  rpc SyncBillOfMaterial(SyncBOMRequest) returns (enterprise.common.JobInfo);
+  rpc SyncBillOfMaterial(SyncBOMRequest) returns (enterprise.common.JobInfo) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/rd/sync-bill-of-material"
+
+      body: "*"
+
+    };
+
+  }
   
   // 同步物料主数据 (New)
-  rpc SyncMaterialMaster(SyncMaterialMasterRequest) returns (SyncMaterialMasterResponse);
+  rpc SyncMaterialMaster(SyncMaterialMasterRequest) returns (SyncMaterialMasterResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/rd/sync-material-master"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 
   // 获取核心ERP中的物料清单
-  rpc GetBillOfMaterial(GetBOMRequest) returns (BillOfMaterial);
+  rpc GetBillOfMaterial(GetBOMRequest) returns (BillOfMaterial) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/rd/bill-of-material"
+
+
+    };
+
+
+  }
   
   // 更新物料清单 (New)
-  rpc UpdateBillOfMaterial(UpdateBOMRequest) returns (BOMResponse);
+  rpc UpdateBillOfMaterial(UpdateBOMRequest) returns (BOMResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      put: "/api/v1/rd/bill-of-material"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
   
   // 查询BOM列表 (New)
-  rpc ListBillOfMaterials(ListBOMsRequest) returns (ListBOMsResponse);
+  rpc ListBillOfMaterials(ListBOMsRequest) returns (ListBOMsResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      get: "/api/v1/rd/bill-of-materials"
+
+  
+    };
+
+  
+  }
 }
 
 // ============================================================================

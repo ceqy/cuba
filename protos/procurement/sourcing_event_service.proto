@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/procurement/sourcing/v2;so
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: SourcingEventService
@@ -21,25 +22,119 @@ import "common/common.proto";
 
 service SourcingEventService {
   // 创建报价请求 (RFQ)
-  rpc CreateRFQ(CreateRFQRequest) returns (RFQResponse);
+  rpc CreateRFQ(CreateRFQRequest) returns (RFQResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/procurement/rfq"
+
+      body: "*"
+
+    };
+
+  }
 
   // 发布 RFQ (New)
-  rpc PublishRFQ(PublishRFQRequest) returns (RFQResponse);
+  rpc PublishRFQ(PublishRFQRequest) returns (RFQResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/publish-rfq"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 关闭 RFQ (New)
-  rpc CloseRFQ(CloseRFQRequest) returns (RFQResponse);
+  rpc CloseRFQ(CloseRFQRequest) returns (RFQResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/close-rfq"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 获取RFQ详情
-  rpc GetRFQ(GetRFQRequest) returns (RFQDetail);
+  rpc GetRFQ(GetRFQRequest) returns (RFQDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/procurement/rfq"
+
+
+    };
+
+
+  }
 
   // 接收供应商报价
-  rpc SubmitSupplierQuote(SubmitQuoteRequest) returns (QuoteResponse);
+  rpc SubmitSupplierQuote(SubmitQuoteRequest) returns (QuoteResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/supplier-quote/submit"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 授予报价 (Award) (New)
-  rpc AwardQuote(AwardQuoteRequest) returns (QuoteResponse);
+  rpc AwardQuote(AwardQuoteRequest) returns (QuoteResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/award-quote"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 获取供应商报价详情
-  rpc GetSupplierQuote(GetQuoteRequest) returns (QuoteDetail);
+  rpc GetSupplierQuote(GetQuoteRequest) returns (QuoteDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/procurement/supplier-quote"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

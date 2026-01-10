@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/rd/projectcost/v2;projectc
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: ProjectCostControllingService
@@ -21,19 +22,83 @@ import "common/common.proto";
 
 service ProjectCostControllingService {
   // 创建项目预算 (New)
-  rpc CreateProjectBudget(CreateBudgetRequest) returns (BudgetResponse);
+  rpc CreateProjectBudget(CreateBudgetRequest) returns (BudgetResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/rd/project-budget"
+
+      body: "*"
+
+    };
+
+  }
 
   // 获取项目/WBS元素的成本报告
-  rpc GetProjectCostReport(GetProjectCostReportRequest) returns (ProjectCostReport);
+  rpc GetProjectCostReport(GetProjectCostReportRequest) returns (ProjectCostReport) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/rd/project-cost-report"
+
+
+    };
+
+
+  }
   
   // 查询项目成本列表 (New)
-  rpc ListProjectCosts(ListProjectCostsRequest) returns (ListProjectCostsResponse);
+  rpc ListProjectCosts(ListProjectCostsRequest) returns (ListProjectCostsResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      get: "/api/v1/rd/project-costs"
+
+  
+    };
+
+  
+  }
 
   // 为项目/WBS元素过账直接成本 - 异步
-  rpc PostDirectCost(PostDirectCostRequest) returns (enterprise.common.JobInfo);
+  rpc PostDirectCost(PostDirectCostRequest) returns (enterprise.common.JobInfo) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/rd/direct-cost/post"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
   
   // 更新成本记录 (New)
-  rpc UpdateCost(UpdateCostRequest) returns (PostDirectCostResponse);
+  rpc UpdateCost(UpdateCostRequest) returns (PostDirectCostResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      put: "/api/v1/rd/cost"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 }
 
 // ============================================================================

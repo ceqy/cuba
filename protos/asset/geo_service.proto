@@ -13,6 +13,7 @@ option go_package = "github.com/enterprise-extensions/asset/geo/v2;geo";
 
 import "common/common.proto";
 import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: GeoService
@@ -20,22 +21,102 @@ import "google/protobuf/timestamp.proto";
 
 service GeoService {
   // 获取资产的最后已知位置
-  rpc GetAssetLocation(GetAssetLocationRequest) returns (AssetLocation);
+  rpc GetAssetLocation(GetAssetLocationRequest) returns (AssetLocation) {
+
+    option (google.api.http) = {
+
+      get: "/api/v1/asset/asset-location"
+
+    };
+
+  }
   
   // 更新资产位置 (New)
-  rpc UpdateAssetLocation(UpdateAssetLocationRequest) returns (UpdateLocationResponse);
+  rpc UpdateAssetLocation(UpdateAssetLocationRequest) returns (UpdateLocationResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      put: "/api/v1/asset/asset-location"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 
   // 检查资产是否在指定的地理围栏内
-  rpc CheckGeofence(CheckGeofenceRequest) returns (CheckGeofenceResponse);
+  rpc CheckGeofence(CheckGeofenceRequest) returns (CheckGeofenceResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/asset/geofence/check"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
   
   // 创建地理围栏 (New)
-  rpc CreateGeofence(CreateGeofenceRequest) returns (GeofenceResponse);
+  rpc CreateGeofence(CreateGeofenceRequest) returns (GeofenceResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/asset/geofence"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 
   // 计算两个地理点之间的路线 - 异步
-  rpc CalculateRoute(CalculateRouteRequest) returns (enterprise.common.JobInfo);
+  rpc CalculateRoute(CalculateRouteRequest) returns (enterprise.common.JobInfo) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/asset/route/calculate"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
   
   // 获取路线计算结果 (New)
-  rpc GetRouteResult(GetRouteResultRequest) returns (Route);
+  rpc GetRouteResult(GetRouteResultRequest) returns (Route) {
+
+  
+    option (google.api.http) = {
+
+  
+      get: "/api/v1/asset/route-result"
+
+  
+    };
+
+  
+  }
 }
 
 // ============================================================================

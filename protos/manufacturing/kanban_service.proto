@@ -13,6 +13,7 @@ option java_multiple_files = true;
 option go_package = "github.com/enterprise-extensions/manufacturing/kanban/v2;kanban";
 
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: KanbanService
@@ -20,19 +21,83 @@ import "common/common.proto";
 
 service KanbanService {
   // 创建看板控制周期 (New)
-  rpc CreateKanbanControlCycle(CreateControlCycleRequest) returns (ControlCycleResponse);
+  rpc CreateKanbanControlCycle(CreateControlCycleRequest) returns (ControlCycleResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/manufacturing/kanban-control-cycle"
+
+      body: "*"
+
+    };
+
+  }
 
   // 更新看板控制周期 (New)
-  rpc UpdateKanbanControlCycle(UpdateControlCycleRequest) returns (ControlCycleResponse);
+  rpc UpdateKanbanControlCycle(UpdateControlCycleRequest) returns (ControlCycleResponse) {
+
+
+    option (google.api.http) = {
+
+
+      put: "/api/v1/manufacturing/kanban-control-cycle"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 获取看板控制周期详情
-  rpc GetKanbanControlCycle(GetKanbanControlCycleRequest) returns (KanbanControlCycle);
+  rpc GetKanbanControlCycle(GetKanbanControlCycleRequest) returns (KanbanControlCycle) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/manufacturing/kanban-control-cycle"
+
+
+    };
+
+
+  }
 
   // 更改看板状态 (例如, 从 EMPTY 到 FULL)
-  rpc ChangeKanbanStatus(ChangeKanbanStatusRequest) returns (ChangeKanbanStatusResponse);
+  rpc ChangeKanbanStatus(ChangeKanbanStatusRequest) returns (ChangeKanbanStatusResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/manufacturing/change-kanban-status"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 查询看板容器列表
-  rpc ListKanbanContainers(ListKanbanContainersRequest) returns (ListKanbanContainersResponse);
+  rpc ListKanbanContainers(ListKanbanContainersRequest) returns (ListKanbanContainersResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/manufacturing/kanban-containers"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

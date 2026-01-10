@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/manufacturing/planning/v2;
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: ProductionPlanningService
@@ -21,22 +22,98 @@ import "common/common.proto";
 
 service ProductionPlanningService {
   // 运行物料需求计划 (MRP) - 异步
-  rpc RunMRP(RunMRPRequest) returns (enterprise.common.JobInfo);
+  rpc RunMRP(RunMRPRequest) returns (enterprise.common.JobInfo) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/manufacturing/run-mrp"
+
+      body: "*"
+
+    };
+
+  }
 
   // 模拟物料需求计划 (MRP) - 异步
-  rpc SimulateMRP(RunMRPRequest) returns (enterprise.common.JobInfo);
+  rpc SimulateMRP(RunMRPRequest) returns (enterprise.common.JobInfo) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/manufacturing/mrp/simulate"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 获取MRP运行状态
-  rpc GetMRPStatus(GetMRPStatusRequest) returns (enterprise.common.JobInfo);
+  rpc GetMRPStatus(GetMRPStatusRequest) returns (enterprise.common.JobInfo) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/manufacturing/mrp-status"
+
+
+    };
+
+
+  }
 
   // 查询计划订单
-  rpc ListPlannedOrders(ListPlannedOrdersRequest) returns (ListPlannedOrdersResponse);
+  rpc ListPlannedOrders(ListPlannedOrdersRequest) returns (ListPlannedOrdersResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/manufacturing/planned-orders"
+
+
+    };
+
+
+  }
 
   // 将计划订单转换为生产订单
-  rpc ConvertPlannedOrder(ConvertPlannedOrderRequest) returns (ConvertPlannedOrderResponse);
+  rpc ConvertPlannedOrder(ConvertPlannedOrderRequest) returns (ConvertPlannedOrderResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/manufacturing/convert-planned-order"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 获取工作中心的产能负荷
-  rpc GetWorkCenterCapacityLoad(GetWorkCenterCapacityLoadRequest) returns (GetWorkCenterCapacityLoadResponse);
+  rpc GetWorkCenterCapacityLoad(GetWorkCenterCapacityLoadRequest) returns (GetWorkCenterCapacityLoadResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/manufacturing/work-center-capacity-load"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

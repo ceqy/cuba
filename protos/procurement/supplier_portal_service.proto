@@ -15,6 +15,7 @@ import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "procurement/order_service.proto";
 import "procurement/invoice_processing_service.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: SupplierPortalService
@@ -22,16 +23,66 @@ import "procurement/invoice_processing_service.proto";
 
 service SupplierPortalService {
   // 供应商查询其采购订单列表
-  rpc GetMyPurchaseOrders(ListSupplierPurchaseOrdersRequest) returns (enterprise.procurement.order.ListPurchaseOrdersResponse);
+  rpc GetMyPurchaseOrders(ListSupplierPurchaseOrdersRequest) returns (enterprise.procurement.order.ListPurchaseOrdersResponse) {
+
+    option (google.api.http) = {
+
+      get: "/api/v1/procurement/my-purchase-orders"
+
+    };
+
+  }
 
   // 供应商提交发票
-  rpc SubmitInvoice(enterprise.procurement.invoice.ReceiveInvoiceRequest) returns (enterprise.procurement.invoice.ReceiveInvoiceResponse);
+  rpc SubmitInvoice(enterprise.procurement.invoice.ReceiveInvoiceRequest) returns (enterprise.procurement.invoice.ReceiveInvoiceResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/invoice/submit"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 供应商查询其发票状态
-  rpc GetMyInvoiceStatus(GetSupplierInvoiceStatusRequest) returns (enterprise.procurement.invoice.InvoiceDetail);
+  rpc GetMyInvoiceStatus(GetSupplierInvoiceStatusRequest) returns (enterprise.procurement.invoice.InvoiceDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/procurement/my-invoice-status"
+
+
+    };
+
+
+  }
 
   // 供应商请求更新其主数据（如地址、联系方式）
-  rpc RequestMasterDataUpdate(UpdateSupplierDataRequest) returns (UpdateSupplierDataResponse);
+  rpc RequestMasterDataUpdate(UpdateSupplierDataRequest) returns (UpdateSupplierDataResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/request-master-data-update"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

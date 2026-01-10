@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/manufacturing/execution/v2
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: ShopFloorExecutionService
@@ -21,19 +22,87 @@ import "common/common.proto";
 
 service ShopFloorExecutionService {
   // 获取生产订单详情
-  rpc GetProductionOrder(GetProductionOrderRequest) returns (ProductionOrderDetail);
+  rpc GetProductionOrder(GetProductionOrderRequest) returns (ProductionOrderDetail) {
+
+    option (google.api.http) = {
+
+      get: "/api/v1/manufacturing/production-order"
+
+    };
+
+  }
 
   // 对生产订单工序进行报工确认
-  rpc ConfirmProductionOperation(ConfirmOperationRequest) returns (ConfirmOperationResponse);
+  rpc ConfirmProductionOperation(ConfirmOperationRequest) returns (ConfirmOperationResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/manufacturing/production-operation/confirm"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 取消报工确认 (New)
-  rpc CancelConfirmation(CancelConfirmationRequest) returns (CancelConfirmationResponse);
+  rpc CancelConfirmation(CancelConfirmationRequest) returns (CancelConfirmationResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/manufacturing/confirmation/cancel"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 为生产订单过账物料消耗 (发料)
-  rpc PostMaterialConsumption(PostMaterialMovementRequest) returns (enterprise.common.StockMovementResponse);
+  rpc PostMaterialConsumption(PostMaterialMovementRequest) returns (enterprise.common.StockMovementResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/manufacturing/material-consumption/post"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 为生产订单过账成品收货
-  rpc PostGoodsReceiptForOrder(PostMaterialMovementRequest) returns (enterprise.common.StockMovementResponse);
+  rpc PostGoodsReceiptForOrder(PostMaterialMovementRequest) returns (enterprise.common.StockMovementResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/manufacturing/goods-receipt-for-order/post"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

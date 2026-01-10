@@ -1,101 +1,94 @@
 #!/usr/bin/env python3
 """
-自动为 Proto 文件中的所有 RPC 添加 google.api.http 注解
-用法: python3 scripts/add_http_annotations.py protos/finance/gl_journal_entry_service.proto
+自动为 Proto 文件中的所有 RPC 添加 google.api.http 注解 (批量版)
+用法: python3 scripts/add_http_annotations.py protos/**/*_service.proto
+      python3 scripts/add_http_annotations.py --all  (处理所有服务)
 """
 
 import re
 import sys
+import glob
 from pathlib import Path
 
+# Domain 映射到 API 路径前缀
+DOMAIN_PATH_MAP = {
+    "auth": "/api/v1/auth",
+    "finance": "/api/v1/finance",
+    "procurement": "/api/v1/procurement",
+    "manufacturing": "/api/v1/manufacturing",
+    "supplychain": "/api/v1/supplychain",
+    "sales": "/api/v1/sales",
+    "asset": "/api/v1/asset",
+    "service": "/api/v1/service",
+    "rd": "/api/v1/rd",
+    "hr": "/api/v1/hr",
+}
 
-def infer_http_method_and_path(rpc_name, request_type, package_name):
-    """
-    根据 RPC 名称推断 HTTP 方法和路径
+def infer_base_path(package_name, file_path):
+    """根据包名或文件路径推断 API 基础路径"""
+    # 尝试从文件路径提取 domain
+    path_str = str(file_path)
+    for domain in DOMAIN_PATH_MAP:
+        if f"/protos/{domain}/" in path_str or f"\\protos\\{domain}\\" in path_str:
+            return DOMAIN_PATH_MAP[domain]
     
-    Args:
-        rpc_name: RPC 方法名，如 "CreateJournalEntry"
-        request_type: 请求类型，如 "CreateJournalEntryRequest"
-        package_name: 包名，如 "finance.gl"
+    # 从包名推断
+    for domain in DOMAIN_PATH_MAP:
+        if domain in package_name.lower():
+            return DOMAIN_PATH_MAP[domain]
     
-    Returns:
-        tuple: (http_method, path, body)
-    """
-    # 从包名推断基础路径
-    base_path = "/api/v1/finance"
-    
-    # 资源名称映射
-    resource_patterns = {
-        "JournalEntry": "journal-entries",
-        "JournalEntries": "journal-entries",
-        "OpenItem": "open-items",
-        "OpenItems": "open-items",
-        "Attachment": "attachments",
-        "Attachments": "attachments",
-        "Approval": "approvals",
-        "Template": "templates",
-        "Templates": "templates",
-        "RecurringEntry": "recurring-entries",
-        "RecurringEntries": "recurring-entries",
-        "ParkedJournalEntry": "parked-journal-entries",
-        "ParkedJournalEntries": "parked-journal-entries",
-        "BatchInputSession": "batch-sessions",
-        "DocumentChain": "document-chains",
-        "AccountBalance": "account-balances",
-        "AccountLineItem": "account-line-items",
-    }
+    return "/api/v1"  # 默认
+
+
+def infer_http_method_and_path(rpc_name, request_type, base_path):
+    """根据 RPC 名称推断 HTTP 方法和路径"""
     
     # 创建操作 - POST
     if rpc_name.startswith("Create"):
         resource = rpc_name.replace("Create", "")
-        path_segment = resource_patterns.get(resource, _to_kebab_case(resource))
+        path_segment = _to_kebab_case(resource)
         return ("post", f"{base_path}/{path_segment}", "*")
     
     # 批量创建 - POST
     if rpc_name.startswith("BatchCreate"):
         resource = rpc_name.replace("BatchCreate", "")
-        path_segment = resource_patterns.get(resource, _to_kebab_case(resource))
+        path_segment = _to_kebab_case(resource)
         return ("post", f"{base_path}/{path_segment}/batch", "*")
     
-    # 获取单个资源 - GET with ID
-    if rpc_name.startswith("Get") and "List" not in rpc_name and "Statistics" not in rpc_name:
+    # 获取单个资源 - GET (无路径参数，使用查询参数)
+    if rpc_name.startswith("Get") and "List" not in rpc_name:
         resource = rpc_name.replace("Get", "")
-        path_segment = resource_patterns.get(resource, _to_kebab_case(resource))
-        
-        # 特殊处理：需要路径参数的情况
-        if "ById" in resource or "ByAccount" in resource or "History" in resource:
-            return ("get", f"{base_path}/{path_segment}", None)
-        
-        # 默认使用 ID 参数
-        id_param = _infer_id_param(resource)
-        return ("get", f"{base_path}/{path_segment}/{{{id_param}}}", None)
-    
-    # 列表查询 - GET
-    if rpc_name.startswith("List"):
-        resource = rpc_name.replace("List", "")
-        path_segment = resource_patterns.get(resource, _to_kebab_case(resource))
+        path_segment = _to_kebab_case(resource)
+        # 使用查询参数而非路径参数，避免字段名不匹配
         return ("get", f"{base_path}/{path_segment}", None)
     
-    # 更新操作 - PUT
+    # 列表查询 - GET
+    if rpc_name.startswith("List") or rpc_name.startswith("Search") or rpc_name.startswith("Stream"):
+        resource = rpc_name.replace("List", "").replace("Search", "").replace("Stream", "")
+        path_segment = _to_kebab_case(resource) if resource else "items"
+        return ("get", f"{base_path}/{path_segment}", None)
+    
+    # 更新操作 - PUT (使用 body 传递 ID)
     if rpc_name.startswith("Update"):
         resource = rpc_name.replace("Update", "")
-        path_segment = resource_patterns.get(resource, _to_kebab_case(resource))
-        id_param = _infer_id_param(resource)
-        return ("put", f"{base_path}/{path_segment}/{{{id_param}}}", "*")
+        path_segment = _to_kebab_case(resource)
+        return ("put", f"{base_path}/{path_segment}", "*")
     
-    # 删除操作 - DELETE
+    # 删除操作 - DELETE (使用查询参数传递 ID)
     if rpc_name.startswith("Delete"):
         resource = rpc_name.replace("Delete", "")
-        path_segment = resource_patterns.get(resource, _to_kebab_case(resource))
-        id_param = _infer_id_param(resource)
-        return ("delete", f"{base_path}/{path_segment}/{{{id_param}}}", None)
+        path_segment = _to_kebab_case(resource)
+        return ("delete", f"{base_path}/{path_segment}", None)
     
     # 动作型操作 - POST with action
     action_verbs = [
         "Post", "Reverse", "Cancel", "Reset", "Clear", "Validate", "Simulate",
         "Approve", "Reject", "Submit", "Execute", "Process", "Upload", "Download",
         "Export", "Generate", "Park", "Reconcile", "Revaluate", "Reclassify",
-        "CarryForward", "Configure", "Adjust", "Recalculate", "Save"
+        "CarryForward", "Configure", "Adjust", "Recalculate", "Save", "Enable",
+        "Disable", "Verify", "Check", "Enter", "Import", "Trigger", "Start",
+        "Stop", "Complete", "Confirm", "Assign", "Revoke", "Add", "Remove",
+        "Calculate", "Optimize", "Dispatch", "Register", "Release"
     ]
     
     for verb in action_verbs:
@@ -103,23 +96,11 @@ def infer_http_method_and_path(rpc_name, request_type, package_name):
             resource = rpc_name.replace(verb, "")
             action = _to_kebab_case(verb)
             
-            # 如果包含资源名，使用资源路径
             if resource:
-                path_segment = resource_patterns.get(resource, _to_kebab_case(resource))
-                # 某些操作需要 ID，某些不需要
-                if verb in ["Post", "Reverse", "Cancel", "Reset", "Approve", "Reject"]:
-                    id_param = _infer_id_param(resource)
-                    return ("post", f"{base_path}/{path_segment}/{{{id_param}}}/{action}", "*")
-                else:
-                    return ("post", f"{base_path}/{path_segment}/{action}", "*")
+                path_segment = _to_kebab_case(resource)
+                return ("post", f"{base_path}/{path_segment}/{action}", "*")
             else:
-                # 没有资源名，直接使用动作
                 return ("post", f"{base_path}/{action}", "*")
-    
-    # 批量操作 - POST
-    if rpc_name.startswith("Batch"):
-        action = _to_kebab_case(rpc_name.replace("Batch", ""))
-        return ("post", f"{base_path}/batch/{action}", "*")
     
     # 默认：POST
     return ("post", f"{base_path}/{_to_kebab_case(rpc_name)}", "*")
@@ -127,100 +108,132 @@ def infer_http_method_and_path(rpc_name, request_type, package_name):
 
 def _to_kebab_case(text):
     """将 PascalCase 转换为 kebab-case"""
-    # 插入连字符
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', text)
     return re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1).lower()
 
 
 def _infer_id_param(resource_name):
-    """推断资源的 ID 参数名"""
-    # 移除复数形式
-    singular = resource_name.rstrip('s').rstrip('ie') + 'y' if resource_name.endswith('ies') else resource_name.rstrip('s')
-    return f"{_to_kebab_case(singular)}_id"
+    """推断资源的 ID 参数名 - 使用简单的 'id' 避免字段不匹配"""
+    # 使用通用的 'id' 以确保与大多数 Request message 的 string id = 1 字段兼容
+    return "id"
 
 
-def add_http_annotations(proto_file_path):
-    """
-    为 proto 文件添加 HTTP 注解
-    
-    Args:
-        proto_file_path: proto 文件路径
-    """
+def _to_snake_case(text):
+    """将 PascalCase 转换为 snake_case"""
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', text)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+
+def add_http_annotations(proto_file_path, in_place=True):
+    """为 proto 文件添加 HTTP 注解"""
     proto_path = Path(proto_file_path)
     
     if not proto_path.exists():
         print(f"❌ 文件不存在: {proto_file_path}")
         return False
     
-    # 读取文件
     with open(proto_path, 'r', encoding='utf-8') as f:
         content = f.read()
     
-    # 检查是否已经有注解
-    if 'google/api/annotations.proto' in content:
-        print("⚠️  文件已包含 google/api/annotations.proto 导入")
-    else:
-        # 在 import 区域添加导入
-        import_pattern = r'(import\s+"google/protobuf/timestamp\.proto";)'
-        replacement = r'\1\nimport "google/api/annotations.proto";'
-        content = re.sub(import_pattern, replacement, content)
-        print("✅ 已添加 google/api/annotations.proto 导入")
+    # 跳过已有注解的文件
+    if 'google.api.http' in content:
+        print(f"⏭️  跳过 (已有注解): {proto_path.name}")
+        return True
+    
+    # 添加 import
+    if 'google/api/annotations.proto' not in content:
+        # 在最后一个 import 后添加
+        import_pattern = r'(import\s+"[^"]+";)(\s*\n)(?=\s*(?:option|package|message|service|enum|//))'
+        
+        def add_import(match):
+            return match.group(1) + '\nimport "google/api/annotations.proto";' + match.group(2)
+        
+        content = re.sub(import_pattern, add_import, content, count=1)
     
     # 提取包名
     package_match = re.search(r'package\s+([\w.]+);', content)
     package_name = package_match.group(1) if package_match else ""
     
-    # 查找所有 RPC 定义
-    rpc_pattern = r'(\s*//[^\n]*\n)*\s*rpc\s+(\w+)\s*\((\w+)\)\s*returns\s*\((\w+)\)\s*;'
+    # 推断基础路径
+    base_path = infer_base_path(package_name, proto_path)
     
+    # 查找并替换 RPC 定义 (未注解的)
+    # 匹配: rpc MethodName(Request) returns (Response);
+    rpc_pattern = r'(\s*)(//[^\n]*\n\s*)?rpc\s+(\w+)\s*\(([^)]+)\)\s*returns\s*\(([^)]+)\)\s*;'
+    
+    count = 0
     def replace_rpc(match):
-        comments = match.group(1) or ""
-        rpc_name = match.group(2)
-        request_type = match.group(3)
-        response_type = match.group(4)
+        nonlocal count
+        indent = match.group(1)
+        comment = match.group(2) or ""
+        rpc_name = match.group(3)
+        request_type = match.group(4).strip()
+        response_type = match.group(5).strip()
         
-        # 推断 HTTP 方法和路径
-        http_method, path, body = infer_http_method_and_path(rpc_name, request_type, package_name)
+        http_method, path, body = infer_http_method_and_path(rpc_name, request_type, base_path)
         
-        # 构建注解
-        indent = "  "
-        annotation_lines = [
-            f"{comments}{indent}rpc {rpc_name}({request_type}) returns ({response_type}) {{",
-            f"{indent}  option (google.api.http) = {{"
+        # Build annotation block
+        lines = [
+            f"{indent}{comment}rpc {rpc_name}({request_type}) returns ({response_type}) {{",
+            f"{indent}  option (google.api.http) = {{",
+            f'{indent}    {http_method}: "{path}"'
         ]
         
-        annotation_lines.append(f'{indent}    {http_method}: "{path}"')
-        
         if body:
-            annotation_lines.append(f'{indent}    body: "{body}"')
+            lines.append(f'{indent}    body: "{body}"')
         
-        annotation_lines.append(f"{indent}  }};")
-        annotation_lines.append(f"{indent}}}")
+        lines.append(f"{indent}  }};")
+        lines.append(f"{indent}}}")
         
-        return "\n".join(annotation_lines)
+        count += 1
+        return "\n".join(lines)
     
-    # 替换所有 RPC
-    new_content, count = re.subn(rpc_pattern, replace_rpc, content)
+    new_content = re.sub(rpc_pattern, replace_rpc, content)
     
-    # 保存到新文件
-    output_path = proto_path.parent / f"{proto_path.stem}_annotated.proto"
+    if count == 0:
+        print(f"⏭️  跳过 (无需处理): {proto_path.name}")
+        return True
+    
+    # 写入文件
+    output_path = proto_path if in_place else proto_path.parent / f"{proto_path.stem}_annotated.proto"
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(new_content)
     
-    print(f"✅ 已处理 {count} 个 RPC 方法")
-    print(f"✅ 输出文件: {output_path}")
-    print(f"\n建议: 检查生成的文件并根据需要调整，然后替换原文件：")
-    print(f"  mv {output_path} {proto_path}")
+    print(f"✅ {proto_path.name}: 处理了 {count} 个 RPC")
+    return True
+
+
+def process_all_protos():
+    """处理所有 proto 文件"""
+    proto_files = glob.glob("protos/**/*_service.proto", recursive=True)
     
+    if not proto_files:
+        print("❌ 未找到任何 *_service.proto 文件")
+        return False
+    
+    print(f"🔍 找到 {len(proto_files)} 个服务 proto 文件")
+    print("=" * 50)
+    
+    success_count = 0
+    for proto_file in sorted(proto_files):
+        if add_http_annotations(proto_file, in_place=True):
+            success_count += 1
+    
+    print("=" * 50)
+    print(f"✅ 完成: {success_count}/{len(proto_files)} 个文件处理成功")
     return True
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("用法: python3 scripts/add_http_annotations.py <proto_file_path>")
-        print("示例: python3 scripts/add_http_annotations.py protos/finance/gl_journal_entry_service.proto")
+        print("用法:")
+        print("  python3 scripts/add_http_annotations.py --all")
+        print("  python3 scripts/add_http_annotations.py <proto_file>")
         sys.exit(1)
     
-    proto_file = sys.argv[1]
-    success = add_http_annotations(proto_file)
+    if sys.argv[1] == "--all":
+        success = process_all_protos()
+    else:
+        success = add_http_annotations(sys.argv[1])
+    
     sys.exit(0 if success else 1)

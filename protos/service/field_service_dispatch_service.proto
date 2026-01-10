@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/service/dispatch/v2;dispat
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: FieldServiceDispatchService
@@ -21,22 +22,102 @@ import "common/common.proto";
 
 service FieldServiceDispatchService {
   // 获取服务订单详情
-  rpc GetServiceOrder(GetServiceOrderRequest) returns (ServiceOrderDetail);
+  rpc GetServiceOrder(GetServiceOrderRequest) returns (ServiceOrderDetail) {
+
+    option (google.api.http) = {
+
+      get: "/api/v1/service/service-order"
+
+    };
+
+  }
 
   // 查询服务订单列表 (New)
-  rpc ListServiceOrders(ListServiceOrdersRequest) returns (ListServiceOrdersResponse);
+  rpc ListServiceOrders(ListServiceOrdersRequest) returns (ListServiceOrdersResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/service/service-orders"
+
+
+    };
+
+
+  }
 
   // 将技术人员分配到服务订单
-  rpc AssignTechnician(AssignTechnicianRequest) returns (AssignTechnicianResponse);
+  rpc AssignTechnician(AssignTechnicianRequest) returns (AssignTechnicianResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/service/technician/assign"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
   
   // 取消分配 (New)
-  rpc CancelAssignment(CancelAssignmentRequest) returns (AssignTechnicianResponse);
+  rpc CancelAssignment(CancelAssignmentRequest) returns (AssignTechnicianResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/service/assignment/cancel"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
   
   // 重新调度订单 (New)
-  rpc RescheduleOrder(RescheduleOrderRequest) returns (ServiceOrderDetail);
+  rpc RescheduleOrder(RescheduleOrderRequest) returns (ServiceOrderDetail) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/service/reschedule-order"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 
   // 更新服务订单状态
-  rpc UpdateServiceOrderStatus(UpdateServiceOrderStatusRequest) returns (UpdateServiceOrderStatusResponse);
+  rpc UpdateServiceOrderStatus(UpdateServiceOrderStatusRequest) returns (UpdateServiceOrderStatusResponse) {
+
+
+    option (google.api.http) = {
+
+
+      put: "/api/v1/service/service-order-status"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

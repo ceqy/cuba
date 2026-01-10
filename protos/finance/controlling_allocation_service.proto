@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/finance/controlling/v2;con
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: ControllingAllocationService
@@ -21,13 +22,50 @@ import "common/common.proto";
 
 service ControllingAllocationService {
   // 执行成本中心分配
-  rpc ExecuteCostCenterAllocation(ExecuteAllocationRequest) returns (AllocationResponse);
+  rpc ExecuteCostCenterAllocation(ExecuteAllocationRequest) returns (AllocationResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/finance/cost-center-allocation/execute"
+
+      body: "*"
+
+    };
+
+  }
 
   // 执行活动分配
-  rpc ExecuteActivityAllocation(ExecuteAllocationRequest) returns (AllocationResponse);
+  rpc ExecuteActivityAllocation(ExecuteAllocationRequest) returns (AllocationResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/finance/activity-allocation/execute"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 获取分配运行的结果
-  rpc GetAllocationResult(GetAllocationResultRequest) returns (GetAllocationResultResponse);
+  rpc GetAllocationResult(GetAllocationResultRequest) returns (GetAllocationResultResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/finance/allocation-result"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

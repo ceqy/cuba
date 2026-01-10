@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/hr/talent/v2;talent";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: TalentAcquisitionService
@@ -21,22 +22,101 @@ import "common/common.proto";
 
 service TalentAcquisitionService {
   // 创建职位申请 (New)
-  rpc CreateJobApplication(CreateJobApplicationRequest) returns (JobApplicationResponse);
+  rpc CreateJobApplication(CreateJobApplicationRequest) returns (JobApplicationResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/hr/job-application"
+
+      body: "*"
+
+    };
+
+  }
   
   // 提交简历 (New)
-  rpc SubmitResume(SubmitResumeRequest) returns (JobApplicationResponse);
+  rpc SubmitResume(SubmitResumeRequest) returns (JobApplicationResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/hr/resume/submit"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 
   // 获取职位申请列表
-  rpc ListJobApplications(ListJobApplicationsRequest) returns (ListJobApplicationsResponse);
+  rpc ListJobApplications(ListJobApplicationsRequest) returns (ListJobApplicationsResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/hr/job-applications"
+
+
+    };
+
+
+  }
 
   // 获取单个职位申请详情
-  rpc GetJobApplication(GetJobApplicationRequest) returns (JobApplicationDetail);
+  rpc GetJobApplication(GetJobApplicationRequest) returns (JobApplicationDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/hr/job-application"
+
+
+    };
+
+
+  }
 
   // 更新职位申请状态
-  rpc UpdateJobApplicationStatus(UpdateJobApplicationStatusRequest) returns (UpdateJobApplicationStatusResponse);
+  rpc UpdateJobApplicationStatus(UpdateJobApplicationStatusRequest) returns (UpdateJobApplicationStatusResponse) {
+
+
+    option (google.api.http) = {
+
+
+      put: "/api/v1/hr/job-application-status"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
   
   // 安排面试 (New)
-  rpc ScheduleInterview(ScheduleInterviewRequest) returns (ScheduleInterviewResponse);
+  rpc ScheduleInterview(ScheduleInterviewRequest) returns (ScheduleInterviewResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/hr/schedule-interview"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 }
 
 // ============================================================================

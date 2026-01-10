@@ -18,6 +18,7 @@ option go_package = "github.com/enterprise-extensions/supplychain/inventory/v2;i
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: InventoryManagementService
@@ -29,46 +30,190 @@ service InventoryManagementService {
   // --------------------------------------------------------------------------
 
   // 获取物料在不同存储地点的库存概览
-  rpc GetStockOverview(GetStockOverviewRequest) returns (GetStockOverviewResponse);
+  rpc GetStockOverview(GetStockOverviewRequest) returns (GetStockOverviewResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/supplychain/stock-overview"
+
+
+    };
+
+
+  }
 
   // 流式获取库存列表 (Streaming) (New)
-  rpc StreamStockList(ListStockRequest) returns (stream StockItem);
+  rpc StreamStockList(ListStockRequest) returns (stream StockItem) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/supplychain/stock"
+
+
+    };
+
+
+  }
 
   // 库存可用性检查 (ATP)
-  rpc CheckStockAvailability(CheckStockAvailabilityRequest) returns (StockAvailabilityResponse);
+  rpc CheckStockAvailability(CheckStockAvailabilityRequest) returns (StockAvailabilityResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/stock-availability/check"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // --------------------------------------------------------------------------
   // 库存移动 (Stock Movement)
   // --------------------------------------------------------------------------
 
   // 执行库存移动
-  rpc PostStockMovement(PostStockMovementRequest) returns (enterprise.common.StockMovementResponse);
+  rpc PostStockMovement(PostStockMovementRequest) returns (enterprise.common.StockMovementResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/stock-movement/post"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 冲销物料凭证
-  rpc ReverseMaterialDocument(ReverseMaterialDocumentRequest) returns (enterprise.common.StockMovementResponse);
+  rpc ReverseMaterialDocument(ReverseMaterialDocumentRequest) returns (enterprise.common.StockMovementResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/material-document/reverse"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // --------------------------------------------------------------------------
   // 库存预留 (Stock Reservation)
   // --------------------------------------------------------------------------
 
   // 创建库存预留
-  rpc CreateReservation(CreateReservationRequest) returns (ReservationResponse);
+  rpc CreateReservation(CreateReservationRequest) returns (ReservationResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/reservation"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 取消库存预留 (New)
-  rpc CancelReservation(CancelReservationRequest) returns (ReservationResponse);
+  rpc CancelReservation(CancelReservationRequest) returns (ReservationResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/reservation/cancel"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // --------------------------------------------------------------------------
   // 物理盘点 (Physical Inventory)
   // --------------------------------------------------------------------------
 
   // 创建盘点凭证
-  rpc CreatePhysicalInventoryDocument(CreatePIDocumentRequest) returns (PIDocumentResponse);
+  rpc CreatePhysicalInventoryDocument(CreatePIDocumentRequest) returns (PIDocumentResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/physical-inventory-document"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
   
   // 输入盘点数量
-  rpc EnterInventoryCount(EnterInventoryCountRequest) returns (EnterInventoryCountResponse);
+  rpc EnterInventoryCount(EnterInventoryCountRequest) returns (EnterInventoryCountResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/supplychain/inventory-count/enter"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
   
   // 过账盘点差异
-  rpc PostInventoryDifference(PostInventoryDifferenceRequest) returns (enterprise.common.StockMovementResponse);
+  rpc PostInventoryDifference(PostInventoryDifferenceRequest) returns (enterprise.common.StockMovementResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/supplychain/inventory-difference/post"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 }
 
 // ============================================================================

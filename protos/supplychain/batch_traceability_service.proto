@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/supplychain/traceability/v
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: BatchTraceabilityService
@@ -21,19 +22,83 @@ import "common/common.proto";
 
 service BatchTraceabilityService {
   // 创建批次 (New)
-  rpc CreateBatch(CreateBatchRequest) returns (BatchResponse);
+  rpc CreateBatch(CreateBatchRequest) returns (BatchResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/supplychain/batch"
+
+      body: "*"
+
+    };
+
+  }
 
   // 向上追溯批次 (找到其来源) - 异步
-  rpc TraceUpstream(TraceRequest) returns (enterprise.common.JobInfo);
+  rpc TraceUpstream(TraceRequest) returns (enterprise.common.JobInfo) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/trace-upstream"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 向下追溯批次 (找到其去向) - 异步
-  rpc TraceDownstream(TraceRequest) returns (enterprise.common.JobInfo);
+  rpc TraceDownstream(TraceRequest) returns (enterprise.common.JobInfo) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/trace-downstream"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
   
   // 获取批次历史记录 (New)
-  rpc GetBatchHistory(GetBatchHistoryRequest) returns (BatchHistoryResponse);
+  rpc GetBatchHistory(GetBatchHistoryRequest) returns (BatchHistoryResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      get: "/api/v1/supplychain/batch-history"
+
+  
+    };
+
+  
+  }
 
   // 获取追溯作业结果
-  rpc GetTraceResult(GetTraceResultRequest) returns (TraceabilityTree);
+  rpc GetTraceResult(GetTraceResultRequest) returns (TraceabilityTree) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/supplychain/trace-result"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

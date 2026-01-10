@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/procurement/invoice/v2;inv
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: InvoiceProcessingService
@@ -21,25 +22,119 @@ import "common/common.proto";
 
 service InvoiceProcessingService {
   // 接收并暂存供应商发票
-  rpc ReceiveInvoice(ReceiveInvoiceRequest) returns (ReceiveInvoiceResponse);
+  rpc ReceiveInvoice(ReceiveInvoiceRequest) returns (ReceiveInvoiceResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/procurement/receive-invoice"
+
+      body: "*"
+
+    };
+
+  }
 
   // 对暂存的发票执行三单匹配 (PO-GR-IV)
-  rpc MatchInvoice(MatchInvoiceRequest) returns (MatchInvoiceResponse);
+  rpc MatchInvoice(MatchInvoiceRequest) returns (MatchInvoiceResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/match-invoice"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 过账已匹配或无差异的发票
-  rpc PostInvoice(PostInvoiceRequest) returns (PostInvoiceResponse);
+  rpc PostInvoice(PostInvoiceRequest) returns (PostInvoiceResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/invoice/post"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 预制发票 (Park) - 暂存但不校验完整性
-  rpc ParkInvoice(ParkInvoiceRequest) returns (ParkInvoiceResponse);
+  rpc ParkInvoice(ParkInvoiceRequest) returns (ParkInvoiceResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/invoice/park"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 冲销发票 (Reverse)
-  rpc ReverseInvoice(ReverseInvoiceRequest) returns (ReverseInvoiceResponse);
+  rpc ReverseInvoice(ReverseInvoiceRequest) returns (ReverseInvoiceResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/invoice/reverse"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 获取发票详情
-  rpc GetInvoice(GetInvoiceRequest) returns (InvoiceDetail);
+  rpc GetInvoice(GetInvoiceRequest) returns (InvoiceDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/procurement/invoice"
+
+
+    };
+
+
+  }
 
   // 获取发票处理状态 (异步查询)
-  rpc GetProcessingStatus(GetProcessingStatusRequest) returns (enterprise.common.JobInfo);
+  rpc GetProcessingStatus(GetProcessingStatusRequest) returns (enterprise.common.JobInfo) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/procurement/processing-status"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

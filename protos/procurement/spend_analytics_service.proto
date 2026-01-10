@@ -13,6 +13,7 @@ option java_multiple_files = true;
 option go_package = "github.com/enterprise-extensions/procurement/analytics/v2;analytics";
 
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: SpendAnalyticsService
@@ -20,13 +21,45 @@ import "common/common.proto";
 
 service SpendAnalyticsService {
   // 按物料类别获取支出
-  rpc GetSpendByCategory(SpendAnalysisRequest) returns (SpendAnalysisResponse);
+  rpc GetSpendByCategory(SpendAnalysisRequest) returns (SpendAnalysisResponse) {
+
+    option (google.api.http) = {
+
+      get: "/api/v1/procurement/spend-by-category"
+
+    };
+
+  }
 
   // 按供应商获取支出
-  rpc GetSpendBySupplier(SpendAnalysisRequest) returns (SpendAnalysisResponse);
+  rpc GetSpendBySupplier(SpendAnalysisRequest) returns (SpendAnalysisResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/procurement/spend-by-supplier"
+
+
+    };
+
+
+  }
 
   // 获取支出趋势
-  rpc GetSpendTrend(SpendTrendRequest) returns (SpendTrendResponse);
+  rpc GetSpendTrend(SpendTrendRequest) returns (SpendTrendResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/procurement/spend-trend"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

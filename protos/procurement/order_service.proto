@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/procurement/order/v2;order
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: PurchaseOrderService
@@ -21,22 +22,101 @@ import "common/common.proto";
 
 service PurchaseOrderService {
   // 创建采购订单
-  rpc CreatePurchaseOrder(CreatePurchaseOrderRequest) returns (PurchaseOrderResponse);
+  rpc CreatePurchaseOrder(CreatePurchaseOrderRequest) returns (PurchaseOrderResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/procurement/purchase-order"
+
+      body: "*"
+
+    };
+
+  }
 
   // 更新采购订单 (New)
-  rpc UpdatePurchaseOrder(UpdatePurchaseOrderRequest) returns (PurchaseOrderResponse);
+  rpc UpdatePurchaseOrder(UpdatePurchaseOrderRequest) returns (PurchaseOrderResponse) {
+
+
+    option (google.api.http) = {
+
+
+      put: "/api/v1/procurement/purchase-order"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 取消采购订单 (New)
-  rpc CancelPurchaseOrder(CancelPurchaseOrderRequest) returns (PurchaseOrderResponse);
+  rpc CancelPurchaseOrder(CancelPurchaseOrderRequest) returns (PurchaseOrderResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/purchase-order/cancel"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 获取采购订单详情
-  rpc GetPurchaseOrder(GetPurchaseOrderRequest) returns (PurchaseOrderDetail);
+  rpc GetPurchaseOrder(GetPurchaseOrderRequest) returns (PurchaseOrderDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/procurement/purchase-order"
+
+
+    };
+
+
+  }
 
   // 查询采购订单列表
-  rpc ListPurchaseOrders(ListPurchaseOrdersRequest) returns (ListPurchaseOrdersResponse);
+  rpc ListPurchaseOrders(ListPurchaseOrdersRequest) returns (ListPurchaseOrdersResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/procurement/purchase-orders"
+
+
+    };
+
+
+  }
 
   // 审批或拒绝采购订单
-  rpc ReleasePurchaseOrder(ReleasePurchaseOrderRequest) returns (ReleasePurchaseOrderResponse);
+  rpc ReleasePurchaseOrder(ReleasePurchaseOrderRequest) returns (ReleasePurchaseOrderResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/purchase-order/release"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

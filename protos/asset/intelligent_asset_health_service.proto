@@ -13,6 +13,7 @@ option go_package = "github.com/enterprise-extensions/asset/health/v2;health";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: IntelligentAssetHealthService
@@ -20,19 +21,80 @@ import "common/common.proto";
 
 service IntelligentAssetHealthService {
   // 接收资产的传感器数据 - 异步
-  rpc IngestSensorData(IngestSensorDataRequest) returns (enterprise.common.JobInfo);
+  rpc IngestSensorData(IngestSensorDataRequest) returns (enterprise.common.JobInfo) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/asset/ingest-sensor-data"
+
+      body: "*"
+
+    };
+
+  }
 
   // 获取资产的当前健康状态
-  rpc GetAssetHealthStatus(GetAssetHealthStatusRequest) returns (AssetHealthStatus);
+  rpc GetAssetHealthStatus(GetAssetHealthStatusRequest) returns (AssetHealthStatus) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/asset/asset-health-status"
+
+
+    };
+
+
+  }
 
   // 获取资产的预测性维护建议
-  rpc GetPredictiveMaintenanceAlerts(GetPredictiveMaintenanceAlertsRequest) returns (GetPredictiveMaintenanceAlertsResponse);
+  rpc GetPredictiveMaintenanceAlerts(GetPredictiveMaintenanceAlertsRequest) returns (GetPredictiveMaintenanceAlertsResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/asset/predictive-maintenance-alerts"
+
+
+    };
+
+
+  }
   
   // 查询历史传感器数据 (New)
-  rpc ListSensorData(ListSensorDataRequest) returns (ListSensorDataResponse);
+  rpc ListSensorData(ListSensorDataRequest) returns (ListSensorDataResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      get: "/api/v1/asset/sensor-data"
+
+  
+    };
+
+  
+  }
   
   // 创建资产健康模型 (New)
-  rpc CreateHealthModel(CreateHealthModelRequest) returns (HealthModelResponse);
+  rpc CreateHealthModel(CreateHealthModelRequest) returns (HealthModelResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/asset/health-model"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 }
 
 // ============================================================================

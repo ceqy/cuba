@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/sales/fulfillment/v2;fulfi
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: SalesOrderFulfillmentService
@@ -21,22 +22,98 @@ import "common/common.proto";
 
 service SalesOrderFulfillmentService {
   // 创建销售订单
-  rpc CreateSalesOrder(CreateSalesOrderRequest) returns (SalesOrderResponse);
+  rpc CreateSalesOrder(CreateSalesOrderRequest) returns (SalesOrderResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/sales/sales-order"
+
+      body: "*"
+
+    };
+
+  }
   
   // 更新销售订单 (New)
-  rpc UpdateSalesOrder(UpdateSalesOrderRequest) returns (SalesOrderResponse);
+  rpc UpdateSalesOrder(UpdateSalesOrderRequest) returns (SalesOrderResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      put: "/api/v1/sales/sales-order"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
   
   // 取消销售订单 (New)
-  rpc CancelSalesOrder(CancelSalesOrderRequest) returns (SalesOrderResponse);
+  rpc CancelSalesOrder(CancelSalesOrderRequest) returns (SalesOrderResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/sales/sales-order/cancel"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 
   // 获取销售订单详情
-  rpc GetSalesOrder(GetSalesOrderRequest) returns (SalesOrderDetail);
+  rpc GetSalesOrder(GetSalesOrderRequest) returns (SalesOrderDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/sales/sales-order"
+
+
+    };
+
+
+  }
 
   // 查询销售订单列表
-  rpc ListSalesOrders(ListSalesOrdersRequest) returns (ListSalesOrdersResponse);
+  rpc ListSalesOrders(ListSalesOrdersRequest) returns (ListSalesOrdersResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/sales/sales-orders"
+
+
+    };
+
+
+  }
 
   // 获取销售订单的履行状态 (凭证流)
-  rpc GetSalesOrderFulfillmentStatus(GetSalesOrderRequest) returns (FulfillmentStatusResponse);
+  rpc GetSalesOrderFulfillmentStatus(GetSalesOrderRequest) returns (FulfillmentStatusResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/sales/sales-order-fulfillment-status"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

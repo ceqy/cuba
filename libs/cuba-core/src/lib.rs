@@ -4,6 +4,10 @@ use uuid::Uuid;
 
 // Re-export commonly used types for downstream crates
 pub use serde::{Deserialize, Serialize};
+pub use rust_decimal::Decimal;
+
+pub mod types;
+pub use types::*;
 
 // --- Core Domain Primitives ---
 

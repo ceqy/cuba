@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/supplychain/transportation
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: TransportationPlanningService
@@ -21,22 +22,101 @@ import "common/common.proto";
 
 service TransportationPlanningService {
   // 基于交货单创建货运单 - 异步
-  rpc CreateShipment(CreateShipmentRequest) returns (enterprise.common.JobInfo);
+  rpc CreateShipment(CreateShipmentRequest) returns (enterprise.common.JobInfo) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/supplychain/shipment"
+
+      body: "*"
+
+    };
+
+  }
 
   // 取消货运单 (New)
-  rpc CancelShipment(CancelShipmentRequest) returns (ShipmentResponse);
+  rpc CancelShipment(CancelShipmentRequest) returns (ShipmentResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/shipment/cancel"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 分配承运人 (New)
-  rpc AssignCarrier(AssignCarrierRequest) returns (ShipmentResponse);
+  rpc AssignCarrier(AssignCarrierRequest) returns (ShipmentResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/carrier/assign"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 获取货运单详情
-  rpc GetShipment(GetShipmentRequest) returns (ShipmentDetail);
+  rpc GetShipment(GetShipmentRequest) returns (ShipmentDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/supplychain/shipment"
+
+
+    };
+
+
+  }
   
   // 查询货运单列表 (New)
-  rpc ListShipments(ListShipmentsRequest) returns (ListShipmentsResponse);
+  rpc ListShipments(ListShipmentsRequest) returns (ListShipmentsResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      get: "/api/v1/supplychain/shipments"
+
+  
+    };
+
+  
+  }
 
   // 更新货运状态 (例如, 计划、装载、发运、到达)
-  rpc UpdateShipmentStatus(UpdateShipmentStatusRequest) returns (ShipmentResponse);
+  rpc UpdateShipmentStatus(UpdateShipmentStatusRequest) returns (ShipmentResponse) {
+
+
+    option (google.api.http) = {
+
+
+      put: "/api/v1/supplychain/shipment-status"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

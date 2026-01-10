@@ -15,6 +15,7 @@ option go_package = "github.com/enterprise-extensions/asset/maintenance/v2;maint
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: AssetMaintenanceService
@@ -26,55 +27,238 @@ service AssetMaintenanceService {
   // --------------------------------------------------------------------------
 
   // 创建维护通知单
-  rpc CreateMaintenanceNotification(CreateNotificationRequest) returns (NotificationResponse);
+  rpc CreateMaintenanceNotification(CreateNotificationRequest) returns (NotificationResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/asset/maintenance-notification"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 更新维护通知单
-  rpc UpdateMaintenanceNotification(UpdateNotificationRequest) returns (NotificationResponse);
+  rpc UpdateMaintenanceNotification(UpdateNotificationRequest) returns (NotificationResponse) {
+
+
+    option (google.api.http) = {
+
+
+      put: "/api/v1/asset/maintenance-notification"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 下达维护通知单 (New)
-  rpc ReleaseMaintenanceNotification(ReleaseNotificationRequest) returns (NotificationResponse);
+  rpc ReleaseMaintenanceNotification(ReleaseNotificationRequest) returns (NotificationResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/asset/maintenance-notification/release"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 查询维护通知单列表 (New)
-  rpc ListMaintenanceNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
+  rpc ListMaintenanceNotifications(ListNotificationsRequest) returns (ListNotificationsResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/asset/maintenance-notifications"
+
+
+    };
+
+
+  }
 
   // --------------------------------------------------------------------------
   // 维护订单 (Maintenance Order)
   // --------------------------------------------------------------------------
 
   // 基于通知单或直接创建维护订单
-  rpc CreateMaintenanceOrder(CreateMaintenanceOrderRequest) returns (MaintenanceOrderResponse);
+  rpc CreateMaintenanceOrder(CreateMaintenanceOrderRequest) returns (MaintenanceOrderResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/asset/maintenance-order"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 获取维护订单详情
-  rpc GetMaintenanceOrder(GetMaintenanceOrderRequest) returns (MaintenanceOrderDetail);
+  rpc GetMaintenanceOrder(GetMaintenanceOrderRequest) returns (MaintenanceOrderDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/asset/maintenance-order"
+
+
+    };
+
+
+  }
 
   // 更新维护订单
-  rpc UpdateMaintenanceOrder(UpdateMaintenanceOrderRequest) returns (MaintenanceOrderResponse);
+  rpc UpdateMaintenanceOrder(UpdateMaintenanceOrderRequest) returns (MaintenanceOrderResponse) {
+
+
+    option (google.api.http) = {
+
+
+      put: "/api/v1/asset/maintenance-order"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 下达维护订单 (Release)
-  rpc ReleaseMaintenanceOrder(ReleaseMaintenanceOrderRequest) returns (MaintenanceOrderResponse);
+  rpc ReleaseMaintenanceOrder(ReleaseMaintenanceOrderRequest) returns (MaintenanceOrderResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/asset/maintenance-order/release"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 取消维护订单 (New)
-  rpc CancelMaintenanceOrder(CancelMaintenanceOrderRequest) returns (MaintenanceOrderResponse);
+  rpc CancelMaintenanceOrder(CancelMaintenanceOrderRequest) returns (MaintenanceOrderResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/asset/maintenance-order/cancel"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 技术性完成维护订单 (TECO)
-  rpc CompleteMaintenanceOrder(CompleteMaintenanceOrderRequest) returns (MaintenanceOrderResponse);
+  rpc CompleteMaintenanceOrder(CompleteMaintenanceOrderRequest) returns (MaintenanceOrderResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/asset/maintenance-order/complete"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 查询维护订单列表 (New)
-  rpc ListMaintenanceOrders(ListOrdersRequest) returns (ListOrdersResponse);
+  rpc ListMaintenanceOrders(ListOrdersRequest) returns (ListOrdersResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/asset/maintenance-orders"
+
+
+    };
+
+
+  }
 
   // --------------------------------------------------------------------------
   // 执行与确认 (Execution & Confirmation)
   // --------------------------------------------------------------------------
 
   // 确认维护订单工序 (报工)
-  rpc ConfirmMaintenanceOperation(ConfirmMaintenanceOperationRequest) returns (ConfirmMaintenanceOperationResponse);
+  rpc ConfirmMaintenanceOperation(ConfirmMaintenanceOperationRequest) returns (ConfirmMaintenanceOperationResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/asset/maintenance-operation/confirm"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // --------------------------------------------------------------------------
   // 备件/组件 (Components)
   // --------------------------------------------------------------------------
 
   // 获取订单组件列表
-  rpc GetOrderComponents(GetOrderComponentsRequest) returns (OrderComponentsResponse);
+  rpc GetOrderComponents(GetOrderComponentsRequest) returns (OrderComponentsResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/asset/order-components"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

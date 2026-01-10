@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/asset/ehs/v2;ehs";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: EHSIncidentService
@@ -21,19 +22,83 @@ import "common/common.proto";
 
 service EHSIncidentService {
   // 报告一个EHS事件
-  rpc ReportIncident(ReportIncidentRequest) returns (ReportIncidentResponse);
+  rpc ReportIncident(ReportIncidentRequest) returns (ReportIncidentResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/asset/report-incident"
+
+      body: "*"
+
+    };
+
+  }
 
   // 获取EHS事件详情
-  rpc GetIncident(GetIncidentRequest) returns (IncidentDetail);
+  rpc GetIncident(GetIncidentRequest) returns (IncidentDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/asset/incident"
+
+
+    };
+
+
+  }
 
   // 更新EHS事件状态或添加调查结果
-  rpc UpdateIncident(UpdateIncidentRequest) returns (UpdateIncidentResponse);
+  rpc UpdateIncident(UpdateIncidentRequest) returns (UpdateIncidentResponse) {
+
+
+    option (google.api.http) = {
+
+
+      put: "/api/v1/asset/incident"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 关闭EHS事件 (New)
-  rpc CloseIncident(CloseIncidentRequest) returns (UpdateIncidentResponse);
+  rpc CloseIncident(CloseIncidentRequest) returns (UpdateIncidentResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/asset/close-incident"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 查询事件列表 (New)
-  rpc ListIncidents(ListIncidentsRequest) returns (ListIncidentsResponse);
+  rpc ListIncidents(ListIncidentsRequest) returns (ListIncidentsResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/asset/incidents"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

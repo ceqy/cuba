@@ -13,6 +13,7 @@ option go_package = "github.com/enterprise-extensions/supplychain/visibility/v2;
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: VisibilityService
@@ -20,16 +21,68 @@ import "common/common.proto";
 
 service VisibilityService {
   // 根据销售订单号跟踪整个订单到现金的流程
-  rpc TrackSalesOrderFlow(TrackRequest) returns (SalesOrderFlow);
+  rpc TrackSalesOrderFlow(TrackRequest) returns (SalesOrderFlow) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/supplychain/track-sales-order-flow"
+
+      body: "*"
+
+    };
+
+  }
 
   // 根据采购订单号跟踪整个采购到付款的流程
-  rpc TrackPurchaseOrderFlow(TrackRequest) returns (PurchaseOrderFlow);
+  rpc TrackPurchaseOrderFlow(TrackRequest) returns (PurchaseOrderFlow) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/track-purchase-order-flow"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 订阅流程事件 (Streaming) (New)
-  rpc SubscribeToFlowEvents(SubscribeRequest) returns (stream FlowEvent);
+  rpc SubscribeToFlowEvents(SubscribeRequest) returns (stream FlowEvent) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/subscribe-to-flow-events"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
   
   // 获取流程摘要
-  rpc GetFlowSummary(GetFlowSummaryRequest) returns (FlowSummary);
+  rpc GetFlowSummary(GetFlowSummaryRequest) returns (FlowSummary) {
+
+  
+    option (google.api.http) = {
+
+  
+      get: "/api/v1/supplychain/flow-summary"
+
+  
+    };
+
+  
+  }
 }
 
 // ============================================================================

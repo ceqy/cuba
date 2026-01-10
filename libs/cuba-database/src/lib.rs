@@ -1,3 +1,5 @@
-// Event Store implementation will be implemented later
-// Event Store implementation
-// pub mod event_store;
+pub mod db;
+pub mod uow;
+
+pub use db::PostgresDb;
+pub use uow::UnitOfWork;

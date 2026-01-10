@@ -8,3 +8,4 @@ thiserror.workspace = true
 sqlx.workspace = true
 config.workspace = true
 anyhow.workspace = true
+tonic.workspace = true

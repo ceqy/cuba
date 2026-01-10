@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/procurement/contract/v2;co
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: ContractManagementService
@@ -21,19 +22,83 @@ import "common/common.proto";
 
 service ContractManagementService {
   // 创建采购合同
-  rpc CreateContract(CreateContractRequest) returns (ContractResponse);
+  rpc CreateContract(CreateContractRequest) returns (ContractResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/procurement/contract"
+
+      body: "*"
+
+    };
+
+  }
 
   // 更新采购合同 (New)
-  rpc UpdateContract(UpdateContractRequest) returns (ContractResponse);
+  rpc UpdateContract(UpdateContractRequest) returns (ContractResponse) {
+
+
+    option (google.api.http) = {
+
+
+      put: "/api/v1/procurement/contract"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 审批采购合同 (New)
-  rpc ApproveContract(ApproveContractRequest) returns (ContractResponse);
+  rpc ApproveContract(ApproveContractRequest) returns (ContractResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/procurement/contract/approve"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 获取采购合同详情
-  rpc GetContract(GetContractRequest) returns (ContractDetail);
+  rpc GetContract(GetContractRequest) returns (ContractDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/procurement/contract"
+
+
+    };
+
+
+  }
 
   // 查询采购合同列表
-  rpc ListContracts(ListContractsRequest) returns (ListContractsResponse);
+  rpc ListContracts(ListContractsRequest) returns (ListContractsResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/procurement/contracts"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

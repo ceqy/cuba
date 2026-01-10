@@ -13,6 +13,7 @@ option go_package = "github.com/enterprise-extensions/service/warranty/v2;warran
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: WarrantyClaimsService
@@ -20,25 +21,119 @@ import "common/common.proto";
 
 service WarrantyClaimsService {
   // 创建保修索赔
-  rpc CreateClaim(CreateClaimRequest) returns (ClaimResponse);
+  rpc CreateClaim(CreateClaimRequest) returns (ClaimResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/service/claim"
+
+      body: "*"
+
+    };
+
+  }
   
   // 更新索赔信息 (New)
-  rpc UpdateClaim(UpdateClaimRequest) returns (ClaimResponse);
+  rpc UpdateClaim(UpdateClaimRequest) returns (ClaimResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      put: "/api/v1/service/claim"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 
   // 获取保修索赔详情
-  rpc GetClaim(GetClaimRequest) returns (ClaimDetail);
+  rpc GetClaim(GetClaimRequest) returns (ClaimDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/service/claim"
+
+
+    };
+
+
+  }
   
   // 查询索赔列表 (New)
-  rpc ListClaims(ListClaimsRequest) returns (ListClaimsResponse);
+  rpc ListClaims(ListClaimsRequest) returns (ListClaimsResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      get: "/api/v1/service/claims"
+
+  
+    };
+
+  
+  }
   
   // 添加证据附件 (New)
-  rpc AddEvidenceAttachment(AddEvidenceAttachmentRequest) returns (ClaimResponse);
+  rpc AddEvidenceAttachment(AddEvidenceAttachmentRequest) returns (ClaimResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/service/evidence-attachment/add"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 
   // 裁定保修索赔 (批准/拒绝) - 异步
-  rpc AdjudicateClaim(AdjudicateClaimRequest) returns (enterprise.common.JobInfo);
+  rpc AdjudicateClaim(AdjudicateClaimRequest) returns (enterprise.common.JobInfo) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/service/adjudicate-claim"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
   
   // 关闭索赔 (New)
-  rpc CloseClaim(CloseClaimRequest) returns (ClaimResponse);
+  rpc CloseClaim(CloseClaimRequest) returns (ClaimResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/service/close-claim"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 }
 
 // ============================================================================

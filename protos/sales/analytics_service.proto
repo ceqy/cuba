@@ -13,6 +13,7 @@ option java_multiple_files = true;
 option go_package = "github.com/enterprise-extensions/sales/analytics/v2;analytics";
 
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: SalesAnalyticsService
@@ -20,16 +21,63 @@ import "common/common.proto";
 
 service SalesAnalyticsService {
   // 按客户获取销售额
-  rpc GetSalesByCustomer(SalesAnalysisRequest) returns (SalesAnalysisResponse);
+  rpc GetSalesByCustomer(SalesAnalysisRequest) returns (SalesAnalysisResponse) {
+
+    option (google.api.http) = {
+
+      get: "/api/v1/sales/sales-by-customer"
+
+    };
+
+  }
 
   // 按产品获取销售额
-  rpc GetSalesByProduct(SalesAnalysisRequest) returns (SalesAnalysisResponse);
+  rpc GetSalesByProduct(SalesAnalysisRequest) returns (SalesAnalysisResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/sales/sales-by-product"
+
+
+    };
+
+
+  }
 
   // 获取销售额趋势
-  rpc GetSalesTrend(SalesTrendRequest) returns (SalesTrendResponse);
+  rpc GetSalesTrend(SalesTrendRequest) returns (SalesTrendResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/sales/sales-trend"
+
+
+    };
+
+
+  }
   
   // 导出销售报表 - 异步
-  rpc ExportSalesReport(ExportSalesReportRequest) returns (enterprise.common.JobInfo);
+  rpc ExportSalesReport(ExportSalesReportRequest) returns (enterprise.common.JobInfo) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/sales/sales-report/export"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 }
 
 // ============================================================================

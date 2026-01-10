@@ -13,6 +13,7 @@ option go_package = "github.com/enterprise-extensions/hr/experience/v2;experienc
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: EmployeeExperienceService
@@ -20,25 +21,113 @@ import "common/common.proto";
 
 service EmployeeExperienceService {
   // 发起一个员工调查 - 异步
-  rpc LaunchSurvey(LaunchSurveyRequest) returns (enterprise.common.JobInfo);
+  rpc LaunchSurvey(LaunchSurveyRequest) returns (enterprise.common.JobInfo) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/hr/launch-survey"
+
+      body: "*"
+
+    };
+
+  }
   
   // 查询调查列表 (New)
-  rpc ListSurveys(ListSurveysRequest) returns (ListSurveysResponse);
+  rpc ListSurveys(ListSurveysRequest) returns (ListSurveysResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      get: "/api/v1/hr/surveys"
+
+  
+    };
+
+  
+  }
 
   // 提交员工调查回复
-  rpc SubmitSurveyResponse(SubmitSurveyResponseRequest) returns (SubmitSurveyResponseResponse);
+  rpc SubmitSurveyResponse(SubmitSurveyResponseRequest) returns (SubmitSurveyResponseResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/hr/survey-response/submit"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 获取调查结果分析
-  rpc GetSurveyAnalytics(GetSurveyAnalyticsRequest) returns (SurveyAnalytics);
+  rpc GetSurveyAnalytics(GetSurveyAnalyticsRequest) returns (SurveyAnalytics) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/hr/survey-analytics"
+
+
+    };
+
+
+  }
 
   // 给予员工认可/赞赏
-  rpc GiveRecognition(GiveRecognitionRequest) returns (GiveRecognitionResponse);
+  rpc GiveRecognition(GiveRecognitionRequest) returns (GiveRecognitionResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/hr/give-recognition"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
   
   // 查询认可列表 (New)
-  rpc ListRecognitions(ListRecognitionsRequest) returns (ListRecognitionsResponse);
+  rpc ListRecognitions(ListRecognitionsRequest) returns (ListRecognitionsResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      get: "/api/v1/hr/recognitions"
+
+  
+    };
+
+  
+  }
   
   // 获取认可动态 (New)
-  rpc GetRecognitionFeed(GetRecognitionFeedRequest) returns (GetRecognitionFeedResponse);
+  rpc GetRecognitionFeed(GetRecognitionFeedRequest) returns (GetRecognitionFeedResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      get: "/api/v1/hr/recognition-feed"
+
+  
+    };
+
+  
+  }
 }
 
 // ============================================================================

@@ -11,4 +11,5 @@ thiserror.workspace = true
 anyhow.workspace = true
 uuid.workspace = true
 chrono.workspace = true
+rust_decimal = { workspace = true, features = ["serde-float"] }
 erased-serde = "0.4"

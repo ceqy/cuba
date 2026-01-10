@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/supplychain/forecasting/v2
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: DemandForecastingService
@@ -21,19 +22,86 @@ import "common/common.proto";
 
 service DemandForecastingService {
   // 生成需求预测 - 异步
-  rpc GenerateForecast(GenerateForecastRequest) returns (enterprise.common.JobInfo);
+  rpc GenerateForecast(GenerateForecastRequest) returns (enterprise.common.JobInfo) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/supplychain/forecast/generate"
+
+      body: "*"
+
+    };
+
+  }
 
   // 获取已生成的预测计划
-  rpc GetForecast(GetForecastRequest) returns (ForecastPlan);
+  rpc GetForecast(GetForecastRequest) returns (ForecastPlan) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/supplychain/forecast"
+
+
+    };
+
+
+  }
   
   // 更新预测计划 (New)
-  rpc UpdateForecastPlan(UpdateForecastPlanRequest) returns (ForecastPlanResponse);
+  rpc UpdateForecastPlan(UpdateForecastPlanRequest) returns (ForecastPlanResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      put: "/api/v1/supplychain/forecast-plan"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 
   // 比较预测版本 (New)
-  rpc CompareForecastVersions(CompareForecastVersionsRequest) returns (ForecastComparisonResponse);
+  rpc CompareForecastVersions(CompareForecastVersionsRequest) returns (ForecastComparisonResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/compare-forecast-versions"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 将预测计划传输到核心ERP作为计划独立需求
-  rpc TransferForecastToERP(TransferForecastRequest) returns (TransferForecastResponse);
+  rpc TransferForecastToERP(TransferForecastRequest) returns (TransferForecastResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/transfer-forecast-to-erp"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

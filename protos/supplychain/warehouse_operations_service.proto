@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/supplychain/warehouse/v2;w
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: WarehouseOperationsService
@@ -21,19 +22,86 @@ import "common/common.proto";
 
 service WarehouseOperationsService {
   // 基于转储需求 (TR) 或其他参考凭证创建转储订单 (TO)
-  rpc CreateTransferOrder(CreateTransferOrderRequest) returns (TransferOrderResponse);
+  rpc CreateTransferOrder(CreateTransferOrderRequest) returns (TransferOrderResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/supplychain/transfer-order"
+
+      body: "*"
+
+    };
+
+  }
 
   // 确认转储订单或其行项目
-  rpc ConfirmTransferOrder(ConfirmTransferOrderRequest) returns (ConfirmTransferOrderResponse);
+  rpc ConfirmTransferOrder(ConfirmTransferOrderRequest) returns (ConfirmTransferOrderResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/supplychain/transfer-order/confirm"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
   
   // 部分确认行项目 (New)
-  rpc PartialConfirmItem(PartialConfirmItemRequest) returns (ConfirmTransferOrderResponse);
+  rpc PartialConfirmItem(PartialConfirmItemRequest) returns (ConfirmTransferOrderResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/supplychain/partial-confirm-item"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 
   // 获取转储订单详情
-  rpc GetTransferOrder(GetTransferOrderRequest) returns (TransferOrderDetail);
+  rpc GetTransferOrder(GetTransferOrderRequest) returns (TransferOrderDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/supplychain/transfer-order"
+
+
+    };
+
+
+  }
   
   // 打印转储订单标签 (New)
-  rpc PrintTransferOrderLabel(PrintLabelRequest) returns (PrintLabelResponse);
+  rpc PrintTransferOrderLabel(PrintLabelRequest) returns (PrintLabelResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/supplychain/print-transfer-order-label"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 }
 
 // ============================================================================

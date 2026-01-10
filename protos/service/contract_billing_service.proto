@@ -13,6 +13,7 @@ option go_package = "github.com/enterprise-extensions/service/billing/v2;billing
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: ContractBillingService
@@ -20,19 +21,83 @@ import "common/common.proto";
 
 service ContractBillingService {
   // 创建计费计划 (New)
-  rpc CreateBillingPlan(CreateBillingPlanRequest) returns (BillingPlanResponse);
+  rpc CreateBillingPlan(CreateBillingPlanRequest) returns (BillingPlanResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/service/billing-plan"
+
+      body: "*"
+
+    };
+
+  }
 
   // 获取服务合同详情
-  rpc GetServiceContract(GetServiceContractRequest) returns (ServiceContractDetail);
+  rpc GetServiceContract(GetServiceContractRequest) returns (ServiceContractDetail) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/service/service-contract"
+
+
+    };
+
+
+  }
   
   // 获取计费历史 (New)
-  rpc GetBillingHistory(GetBillingHistoryRequest) returns (BillingHistoryResponse);
+  rpc GetBillingHistory(GetBillingHistoryRequest) returns (BillingHistoryResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      get: "/api/v1/service/billing-history"
+
+  
+    };
+
+  
+  }
 
   // 预览计费运行 (New)
-  rpc PreviewBillingRun(PreviewBillingRunRequest) returns (PreviewBillingRunResponse);
+  rpc PreviewBillingRun(PreviewBillingRunRequest) returns (PreviewBillingRunResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/service/preview-billing-run"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 
   // 执行计费运行 - 异步
-  rpc RunBilling(RunBillingRequest) returns (enterprise.common.JobInfo);
+  rpc RunBilling(RunBillingRequest) returns (enterprise.common.JobInfo) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/service/run-billing"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================

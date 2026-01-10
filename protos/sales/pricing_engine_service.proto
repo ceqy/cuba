@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/sales/pricing/v2;pricing";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: PricingEngineService
@@ -21,10 +22,35 @@ import "common/common.proto";
 
 service PricingEngineService {
   // 模拟并计算一组项目的定价
-  rpc CalculatePrice(CalculatePriceRequest) returns (CalculatePriceResponse);
+  rpc CalculatePrice(CalculatePriceRequest) returns (CalculatePriceResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/sales/price/calculate"
+
+      body: "*"
+
+    };
+
+  }
   
   // 更新定价条件记录 (New)
-  rpc UpdatePricingCondition(UpdatePricingConditionRequest) returns (UpdatePricingConditionResponse);
+  rpc UpdatePricingCondition(UpdatePricingConditionRequest) returns (UpdatePricingConditionResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      put: "/api/v1/sales/pricing-condition"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 }
 
 // ============================================================================

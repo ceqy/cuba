@@ -14,6 +14,7 @@ option go_package = "github.com/enterprise-extensions/sales/revrec/v2;revrec";
 
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
+import "google/api/annotations.proto";
 
 // ============================================================================
 // 服务定义: RevenueRecognitionService
@@ -21,19 +22,83 @@ import "common/common.proto";
 
 service RevenueRecognitionService {
   // 创建收入合同 (New)
-  rpc CreateRevenueContract(CreateRevenueContractRequest) returns (RevenueContractResponse);
+  rpc CreateRevenueContract(CreateRevenueContractRequest) returns (RevenueContractResponse) {
+
+    option (google.api.http) = {
+
+      post: "/api/v1/sales/revenue-contract"
+
+      body: "*"
+
+    };
+
+  }
 
   // 获取收入合同的履约义务 (POB)
-  rpc GetPerformanceObligations(GetPerformanceObligationsRequest) returns (GetPerformanceObligationsResponse);
+  rpc GetPerformanceObligations(GetPerformanceObligationsRequest) returns (GetPerformanceObligationsResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/sales/performance-obligations"
+
+
+    };
+
+
+  }
 
   // 执行收入确认运行
-  rpc RunRevenuePosting(RunRevenuePostingRequest) returns (RunRevenuePostingResponse);
+  rpc RunRevenuePosting(RunRevenuePostingRequest) returns (RunRevenuePostingResponse) {
+
+
+    option (google.api.http) = {
+
+
+      post: "/api/v1/sales/run-revenue-posting"
+
+
+      body: "*"
+
+
+    };
+
+
+  }
   
   // 冲销收入过账 (New)
-  rpc ReverseRevenuePosting(ReverseRevenuePostingRequest) returns (RevenuePostingResponse);
+  rpc ReverseRevenuePosting(ReverseRevenuePostingRequest) returns (RevenuePostingResponse) {
+
+  
+    option (google.api.http) = {
+
+  
+      post: "/api/v1/sales/revenue-posting/reverse"
+
+  
+      body: "*"
+
+  
+    };
+
+  
+  }
 
   // 查询收入过账凭证
-  rpc GetRevenuePostings(GetRevenuePostingsRequest) returns (GetRevenuePostingsResponse);
+  rpc GetRevenuePostings(GetRevenuePostingsRequest) returns (GetRevenuePostingsResponse) {
+
+
+    option (google.api.http) = {
+
+
+      get: "/api/v1/sales/revenue-postings"
+
+
+    };
+
+
+  }
 }
 
 // ============================================================================
