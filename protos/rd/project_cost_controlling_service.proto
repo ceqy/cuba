@@ -20,11 +20,20 @@ import "common/common.proto";
 // ============================================================================
 
 service ProjectCostControllingService {
+  // 创建项目预算 (New)
+  rpc CreateProjectBudget(CreateBudgetRequest) returns (BudgetResponse);
+
   // 获取项目/WBS元素的成本报告
   rpc GetProjectCostReport(GetProjectCostReportRequest) returns (ProjectCostReport);
+  
+  // 查询项目成本列表 (New)
+  rpc ListProjectCosts(ListProjectCostsRequest) returns (ListProjectCostsResponse);
 
-  // 为项目/WBS元素过账直接成本
-  rpc PostDirectCost(PostDirectCostRequest) returns (PostDirectCostResponse);
+  // 为项目/WBS元素过账直接成本 - 异步
+  rpc PostDirectCost(PostDirectCostRequest) returns (enterprise.common.JobInfo);
+  
+  // 更新成本记录 (New)
+  rpc UpdateCost(UpdateCostRequest) returns (PostDirectCostResponse);
 }
 
 // ============================================================================
@@ -33,70 +42,87 @@ service ProjectCostControllingService {
 
 // 项目成本报告
 message ProjectCostReport {
-  // 项目定义或WBS元素 (原: POSID)
   string project_or_wbs_element = 1;
-  // 描述
   string description = 2;
-  // 计划成本
   enterprise.common.MonetaryValue planned_cost = 3;
-  // 实际成本
   enterprise.common.MonetaryValue actual_cost = 4;
-  // 承诺成本 (例如, 从采购订单)
   enterprise.common.MonetaryValue commitment_cost = 5;
-  // 预算
   enterprise.common.MonetaryValue budget = 6;
-  // 可用金额 (预算 - 实际 - 承诺)
   enterprise.common.MonetaryValue available_amount = 7;
-  // 成本明细
   repeated CostDetailItem cost_details = 8;
+  enterprise.common.BudgetStatus budget_status = 9;
 }
 
 // 成本明细项
 message CostDetailItem {
-  // 成本要素 (原: KSTAR)
-  string cost_element = 1;
-  // 成本要素描述
-  string cost_element_description = 2;
-  // 金额
-  enterprise.common.MonetaryValue amount = 3;
-  // 过账日期
-  google.protobuf.Timestamp posting_date = 4;
-  // 参考凭证
-  string reference_document = 5;
+  enterprise.common.CostElementType cost_element_type = 1;
+  string cost_element = 2; // GL Account or Cost Element Key
+  string cost_element_description = 3;
+  enterprise.common.MonetaryValue amount = 4;
+  google.protobuf.Timestamp posting_date = 5;
+  string reference_document = 6;
+  string text = 7;
 }
 
 // ============================================================================
 // RPC 消息定义
 // ============================================================================
 
+message CreateBudgetRequest {
+  string project_or_wbs_element = 1;
+  enterprise.common.MonetaryValue amount = 2;
+  string fiscal_year = 3;
+  string version = 4;
+  enterprise.common.RequestContext context = 99;
+}
+
+message BudgetResponse {
+  bool success = 1;
+  string document_number = 2;
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
 // 获取项目成本报告请求
 message GetProjectCostReportRequest {
-  // 项目定义或WBS元素
   string project_or_wbs_element = 1;
-  // 是否展开所有下级WBS元素
   bool drilldown = 2;
+  enterprise.common.RequestContext context = 99;
+}
+
+message ListProjectCostsRequest {
+  string project_definition = 1;
+  enterprise.common.DateRange date_range = 2;
+  enterprise.common.CostElementType type_filter = 3;
+  enterprise.common.PaginationRequest pagination = 98;
+  enterprise.common.RequestContext context = 99;
+}
+
+message ListProjectCostsResponse {
+  repeated CostDetailItem costs = 1;
+  enterprise.common.PaginationResponse pagination = 2;
 }
 
 // 过账直接成本请求
 message PostDirectCostRequest {
-  // WBS元素
   string wbs_element = 1;
-  // 成本要素
   string cost_element = 2;
-  // 金额
-  enterprise.common.MonetaryValue amount = 3;
-  // 过账日期
-  google.protobuf.Timestamp posting_date = 4;
-  // 文本
-  string text = 5;
+  enterprise.common.CostElementType cost_element_type = 3;
+  enterprise.common.MonetaryValue amount = 4;
+  google.protobuf.Timestamp posting_date = 5;
+  string text = 6;
+  enterprise.common.RequestContext context = 99;
+}
+
+message UpdateCostRequest {
+  string document_number = 1;
+  enterprise.common.MonetaryValue new_amount = 2;
+  string reason_code = 3;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 过账直接成本响应
 message PostDirectCostResponse {
-  // 操作是否成功
   bool success = 1;
-  // 生成的会计凭证号
   string accounting_document_number = 2;
-  // 从核心ERP返回的消息列表
   repeated enterprise.common.ApiMessage messages = 3;
 }

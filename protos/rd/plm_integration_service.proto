@@ -20,11 +20,20 @@ import "common/common.proto";
 // ============================================================================
 
 service PLMIntegrationService {
-  // 从PLM系统同步一个物料清单 (BOM) 到核心ERP
-  rpc SyncBillOfMaterial(SyncBOMRequest) returns (SyncBOMResponse);
+  // 从PLM系统同步一个物料清单 (BOM) 到核心ERP - 异步
+  rpc SyncBillOfMaterial(SyncBOMRequest) returns (enterprise.common.JobInfo);
+  
+  // 同步物料主数据 (New)
+  rpc SyncMaterialMaster(SyncMaterialMasterRequest) returns (SyncMaterialMasterResponse);
 
   // 获取核心ERP中的物料清单
   rpc GetBillOfMaterial(GetBOMRequest) returns (BillOfMaterial);
+  
+  // 更新物料清单 (New)
+  rpc UpdateBillOfMaterial(UpdateBOMRequest) returns (BOMResponse);
+  
+  // 查询BOM列表 (New)
+  rpc ListBillOfMaterials(ListBOMsRequest) returns (ListBOMsResponse);
 }
 
 // ============================================================================
@@ -33,38 +42,31 @@ service PLMIntegrationService {
 
 // 物料清单 (BOM)
 message BillOfMaterial {
-  // BOM 抬头
   BOMHeader header = 1;
-  // BOM 项目列表
   repeated BOMItem items = 2;
+  enterprise.common.AuditData audit_data = 3;
 }
 
 // BOM 抬头 (参考: STKO)
 message BOMHeader {
-  // 物料编号 (成品或半成品) (原: STLNR)
   string material = 1;
-  // 工厂 (原: WERKS)
   string plant = 2;
-  // BOM 用途 (例如, '1' for Production) (原: STLAN)
-  string bom_usage = 3;
-  // BOM 状态 (原: STLST)
-  string bom_status = 4;
-  // 基本数量 (原: BMENG)
+  enterprise.common.BOMUsage bom_usage = 3;
+  enterprise.common.BOMStatus bom_status = 4;
   string base_quantity = 5;
+  string alternative_bom = 6;
+  google.protobuf.Timestamp valid_from = 7;
 }
 
 // BOM 项目 (参考: STPO)
 message BOMItem {
-  // 项目节点 (原: STLKN)
   string item_node = 1;
-  // 项目类别 (例如, 'L' for Stock Item) (原: POSTP)
-  string item_category = 2;
-  // 组件物料编号 (原: IDNRK)
+  enterprise.common.BOMItemCategory item_category = 2;
   string component_material = 3;
-  // 组件数量 (原: MENGE)
   string component_quantity = 4;
-  // 组件单位
   string component_unit = 5;
+  string item_text = 6;
+  bool recursive_allowed = 7;
 }
 
 // ============================================================================
@@ -73,28 +75,57 @@ message BOMItem {
 
 // 同步BOM请求
 message SyncBOMRequest {
-  // 物料清单
   BillOfMaterial bom = 1;
-  // 变更号 (用于记录工程变更)
   string change_number = 2;
+  enterprise.common.RequestContext context = 99;
 }
 
-// 同步BOM响应
-message SyncBOMResponse {
-  // 操作是否成功
+message SyncMaterialMasterRequest {
+  string material_number = 1;
+  string description = 2;
+  string material_type = 3;
+  string base_unit = 4;
+  enterprise.common.RequestContext context = 99;
+}
+
+message SyncMaterialMasterResponse {
   bool success = 1;
-  // 核心ERP中的BOM编号
-  string bom_number = 2;
-  // 从核心ERP返回的消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  repeated enterprise.common.ApiMessage messages = 2;
 }
 
 // 获取BOM请求
 message GetBOMRequest {
-  // 物料编号
   string material = 1;
-  // 工厂
   string plant = 2;
-  // BOM 用途
-  string bom_usage = 3;
+  enterprise.common.BOMUsage bom_usage = 3;
+  string alternative_bom = 4;
+  enterprise.common.RequestContext context = 99;
+}
+
+message UpdateBOMRequest {
+  string material = 1;
+  string plant = 2;
+  enterprise.common.BOMUsage bom_usage = 3;
+  BillOfMaterial bom = 4;
+  repeated string update_mask = 5;
+  enterprise.common.RequestContext context = 99;
+}
+
+message BOMResponse {
+  bool success = 1;
+  string bom_number = 2;
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
+message ListBOMsRequest {
+  string material = 1;
+  string plant = 2;
+  enterprise.common.BOMStatus status_filter = 3;
+  enterprise.common.PaginationRequest pagination = 98;
+  enterprise.common.RequestContext context = 99;
+}
+
+message ListBOMsResponse {
+  repeated BillOfMaterial boms = 1;
+  enterprise.common.PaginationResponse pagination = 2;
 }
