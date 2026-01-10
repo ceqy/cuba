@@ -130,21 +130,6 @@ proto:
 	@echo "Proto generation complete."
 
 # ===================
-# Documentation
-# ===================
-
-openapi:
-	@echo "Generating OpenAPI documentation for all services..."
-	@find protos -mindepth 2 -name "*_service.proto" | while read file; do \
-		path=$$(dirname $$file | sed 's/protos\///'); \
-		./scripts/gen_openapi.sh $$path; \
-	done
-	@echo "✅ OpenAPI generation complete."
-
-openapi-ui:
-	./scripts/start_swagger_ui.sh
-
-# ===================
 # Utilities
 # ===================
 
