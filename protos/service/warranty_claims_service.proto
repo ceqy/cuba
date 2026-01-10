@@ -21,12 +21,24 @@ import "common/common.proto";
 service WarrantyClaimsService {
   // 创建保修索赔
   rpc CreateClaim(CreateClaimRequest) returns (ClaimResponse);
+  
+  // 更新索赔信息 (New)
+  rpc UpdateClaim(UpdateClaimRequest) returns (ClaimResponse);
 
   // 获取保修索赔详情
   rpc GetClaim(GetClaimRequest) returns (ClaimDetail);
+  
+  // 查询索赔列表 (New)
+  rpc ListClaims(ListClaimsRequest) returns (ListClaimsResponse);
+  
+  // 添加证据附件 (New)
+  rpc AddEvidenceAttachment(AddEvidenceAttachmentRequest) returns (ClaimResponse);
 
-  // 裁定保修索赔 (批准/拒绝)
-  rpc AdjudicateClaim(AdjudicateClaimRequest) returns (ClaimResponse);
+  // 裁定保修索赔 (批准/拒绝) - 异步
+  rpc AdjudicateClaim(AdjudicateClaimRequest) returns (enterprise.common.JobInfo);
+  
+  // 关闭索赔 (New)
+  rpc CloseClaim(CloseClaimRequest) returns (ClaimResponse);
 }
 
 // ============================================================================
@@ -35,33 +47,22 @@ service WarrantyClaimsService {
 
 // 保修索赔详情
 message ClaimDetail {
-  // 索赔ID
   string claim_id = 1;
-  // 客户编号
   string customer_id = 2;
-  // 产品/设备号
   string product_or_equipment_id = 3;
-  // 故障日期
   google.protobuf.Timestamp failure_date = 4;
-  // 故障描述
   string failure_description = 5;
-  // 索赔金额
   enterprise.common.MonetaryValue claimed_amount = 6;
-  // 状态 (例如, Submitted, UnderReview, Approved, Rejected)
-  string status = 7;
-  // 裁定结果
+  enterprise.common.ClaimStatus status = 7;
   AdjudicationResult adjudication = 8;
+  repeated string attachment_urls = 9;
 }
 
 // 裁定结果
 message AdjudicationResult {
-  // 裁定人
   string adjudicated_by = 1;
-  // 裁定日期
   google.protobuf.Timestamp adjudication_date = 2;
-  // 批准金额
   enterprise.common.MonetaryValue approved_amount = 3;
-  // 裁定备注
   string notes = 4;
 }
 
@@ -71,32 +72,61 @@ message AdjudicationResult {
 
 // 创建索赔请求
 message CreateClaimRequest {
-  // 索赔详情
   ClaimDetail claim = 1;
+  enterprise.common.RequestContext context = 99;
+}
+
+message UpdateClaimRequest {
+  string claim_id = 1;
+  ClaimDetail claim = 2;
+  repeated string update_mask = 3;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 索赔响应
 message ClaimResponse {
-  // 操作是否成功
   bool success = 1;
-  // 索赔ID
   string claim_id = 2;
-  // 从核心ERP返回的消息列表
   repeated enterprise.common.ApiMessage messages = 3;
 }
 
 // 获取索赔请求
 message GetClaimRequest {
-  // 索赔ID
   string claim_id = 1;
+  enterprise.common.RequestContext context = 99;
+}
+
+message ListClaimsRequest {
+  string customer_id = 1;
+  string product_id = 2;
+  enterprise.common.DateRange date_range = 3;
+  enterprise.common.ClaimStatus status_filter = 4;
+  enterprise.common.PaginationRequest pagination = 98;
+  enterprise.common.RequestContext context = 99;
+}
+
+message ListClaimsResponse {
+  repeated ClaimDetail claims = 1;
+  enterprise.common.PaginationResponse pagination = 2;
+}
+
+message AddEvidenceAttachmentRequest {
+  string claim_id = 1;
+  string attachment_url = 2;
+  string description = 3;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 裁定索赔请求
 message AdjudicateClaimRequest {
-  // 索赔ID
   string claim_id = 1;
-  // 新的状态 (Approved/Rejected)
-  string new_status = 2;
-  // 裁定结果
+  enterprise.common.ClaimStatus new_status = 2;
   AdjudicationResult result = 3;
+  enterprise.common.RequestContext context = 99;
+}
+
+message CloseClaimRequest {
+  string claim_id = 1;
+  string closure_reason = 2;
+  enterprise.common.RequestContext context = 99;
 }

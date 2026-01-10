@@ -23,10 +23,19 @@ service FieldServiceDispatchService {
   // 获取服务订单详情
   rpc GetServiceOrder(GetServiceOrderRequest) returns (ServiceOrderDetail);
 
+  // 查询服务订单列表 (New)
+  rpc ListServiceOrders(ListServiceOrdersRequest) returns (ListServiceOrdersResponse);
+
   // 将技术人员分配到服务订单
   rpc AssignTechnician(AssignTechnicianRequest) returns (AssignTechnicianResponse);
+  
+  // 取消分配 (New)
+  rpc CancelAssignment(CancelAssignmentRequest) returns (AssignTechnicianResponse);
+  
+  // 重新调度订单 (New)
+  rpc RescheduleOrder(RescheduleOrderRequest) returns (ServiceOrderDetail);
 
-  // 更新服务订单状态 (例如, Dispatched, On-site, Completed)
+  // 更新服务订单状态
   rpc UpdateServiceOrderStatus(UpdateServiceOrderStatusRequest) returns (UpdateServiceOrderStatusResponse);
 }
 
@@ -36,22 +45,15 @@ service FieldServiceDispatchService {
 
 // 服务订单详情
 message ServiceOrderDetail {
-  // 服务订单号
   string order_number = 1;
-  // 订单类型
-  string order_type = 2;
-  // 客户编号
+  enterprise.common.ServiceOrderType order_type = 2;
   string customer_id = 3;
-  // 服务地点
   enterprise.common.Address service_location = 4;
-  // 描述
   string description = 5;
-  // 计划开始时间
   google.protobuf.Timestamp planned_start_datetime = 6;
-  // 分配的技术人员ID
   string assigned_technician_id = 7;
-  // 当前状态
-  string status = 8;
+  enterprise.common.ServiceOrderStatus status = 8;
+  enterprise.common.AuditData audit_data = 9;
 }
 
 // ============================================================================
@@ -60,42 +62,61 @@ message ServiceOrderDetail {
 
 // 获取服务订单请求
 message GetServiceOrderRequest {
-  // 服务订单号
   string order_number = 1;
+  enterprise.common.RequestContext context = 99;
+}
+
+message ListServiceOrdersRequest {
+  string technician_id = 1;
+  string customer_id = 2;
+  enterprise.common.DateRange date_range = 3;
+  enterprise.common.ServiceOrderStatus status_filter = 4;
+  enterprise.common.PaginationRequest pagination = 98;
+  enterprise.common.RequestContext context = 99;
+}
+
+message ListServiceOrdersResponse {
+  repeated ServiceOrderDetail orders = 1;
+  enterprise.common.PaginationResponse pagination = 2;
 }
 
 // 分配技术人员请求
 message AssignTechnicianRequest {
-  // 服务订单号
   string order_number = 1;
-  // 技术人员ID
   string technician_id = 2;
-  // 计划的服务时间
   google.protobuf.Timestamp scheduled_datetime = 3;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 分配技术人员响应
 message AssignTechnicianResponse {
-  // 操作是否成功
   bool success = 1;
-  // 从核心ERP返回的消息列表
   repeated enterprise.common.ApiMessage messages = 2;
+}
+
+message CancelAssignmentRequest {
+  string order_number = 1;
+  string reason = 2;
+  enterprise.common.RequestContext context = 99;
+}
+
+message RescheduleOrderRequest {
+  string order_number = 1;
+  google.protobuf.Timestamp new_start_datetime = 2;
+  string reason = 3;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 更新服务订单状态请求
 message UpdateServiceOrderStatusRequest {
-  // 服务订单号
   string order_number = 1;
-  // 新的状态
-  string new_status = 2;
-  // 备注
+  enterprise.common.ServiceOrderStatus new_status = 2;
   string notes = 3;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 更新服务订单状态响应
 message UpdateServiceOrderStatusResponse {
-  // 操作是否成功
   bool success = 1;
-  // 从核心ERP返回的消息列表
   repeated enterprise.common.ApiMessage messages = 2;
 }

@@ -19,11 +19,20 @@ import "common/common.proto";
 // ============================================================================
 
 service ContractBillingService {
+  // 创建计费计划 (New)
+  rpc CreateBillingPlan(CreateBillingPlanRequest) returns (BillingPlanResponse);
+
   // 获取服务合同详情
   rpc GetServiceContract(GetServiceContractRequest) returns (ServiceContractDetail);
+  
+  // 获取计费历史 (New)
+  rpc GetBillingHistory(GetBillingHistoryRequest) returns (BillingHistoryResponse);
 
-  // 执行计费运行
-  rpc RunBilling(RunBillingRequest) returns (RunBillingResponse);
+  // 预览计费运行 (New)
+  rpc PreviewBillingRun(PreviewBillingRunRequest) returns (PreviewBillingRunResponse);
+
+  // 执行计费运行 - 异步
+  rpc RunBilling(RunBillingRequest) returns (enterprise.common.JobInfo);
 }
 
 // ============================================================================
@@ -32,25 +41,17 @@ service ContractBillingService {
 
 // 服务合同详情
 message ServiceContractDetail {
-  // 合同号
   string contract_number = 1;
-  // 客户编号
   string customer_id = 2;
-  // 有效期
   enterprise.common.DateRange validity_period = 3;
-  // 计费计划
   repeated BillingPlanItem billing_plan = 4;
 }
 
 // 计费计划项
 message BillingPlanItem {
-  // 计划计费日期
   google.protobuf.Timestamp planned_billing_date = 1;
-  // 计费金额
   enterprise.common.MonetaryValue billing_amount = 2;
-  // 是否已计费
-  bool is_billed = 3;
-  // 生成的发票号
+  enterprise.common.BillingPlanStatus status = 3;
   string invoice_number = 4;
 }
 
@@ -58,26 +59,50 @@ message BillingPlanItem {
 // RPC 消息定义
 // ============================================================================
 
+message CreateBillingPlanRequest {
+  string contract_number = 1;
+  repeated BillingPlanItem items = 2;
+  enterprise.common.RequestContext context = 99;
+}
+
+message BillingPlanResponse {
+  bool success = 1;
+  string contract_number = 2;
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
 // 获取服务合同请求
 message GetServiceContractRequest {
-  // 合同号
   string contract_number = 1;
+  enterprise.common.RequestContext context = 99;
+}
+
+message GetBillingHistoryRequest {
+  string contract_number = 1;
+  enterprise.common.PaginationRequest pagination = 98;
+  enterprise.common.RequestContext context = 99;
+}
+
+message BillingHistoryResponse {
+  repeated BillingPlanItem history = 1;
+  enterprise.common.PaginationResponse pagination = 2;
+}
+
+message PreviewBillingRunRequest {
+  google.protobuf.Timestamp billing_until_date = 1;
+  repeated string contract_numbers = 2;
+  enterprise.common.RequestContext context = 99;
+}
+
+message PreviewBillingRunResponse {
+  int32 expected_invoices = 1;
+  enterprise.common.MonetaryValue total_expected_amount = 2;
+  repeated BillingPlanItem preview_items = 3;
 }
 
 // 执行计费运行请求
 message RunBillingRequest {
-  // 计费截止日期
   google.protobuf.Timestamp billing_until_date = 1;
-  // 要计费的合同号 (可选, 如果为空则处理所有到期合同)
   repeated string contract_numbers = 2;
-}
-
-// 执行计费运行响应
-message RunBillingResponse {
-  // 运行ID
-  string run_id = 1;
-  // 生成的发票数量
-  int32 invoices_created = 2;
-  // 从核心ERP返回的消息列表
-  repeated enterprise.common.ApiMessage messages = 3;
+  enterprise.common.RequestContext context = 99;
 }
