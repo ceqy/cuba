@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/pm/iv;iv";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: InvoiceProcessingService
 // ============================================================================
 
 service InvoiceProcessingService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "提供供应商发票的接收、验证、三单匹配及过账功能。"
+  };
   // 接收并暂存供应商发票
   rpc ReceiveInvoice(ReceiveInvoiceRequest) returns (ReceiveInvoiceResponse) {
 

@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/rd/pl;pl";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: PLMIntegrationService
 // ============================================================================
 
 service PLMIntegrationService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "与产品生命周期管理(PLM)系统集成，同步物料主数据和物料清单(BOM)。"
+  };
   // 从PLM系统同步一个物料清单 (BOM) 到核心ERP - 异步
   rpc SyncBillOfMaterial(SyncBOMRequest) returns (common.v1.JobInfo) {
 

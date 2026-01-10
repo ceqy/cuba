@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/sc/bt;bt";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: BatchTraceabilityService
 // ============================================================================
 
 service BatchTraceabilityService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "提供批次的端到端追溯功能，包括向上追溯（到原材料）和向下追溯（到客户）。"
+  };
   // 创建批次 (New)
   rpc CreateBatch(CreateBatchRequest) returns (BatchResponse) {
 

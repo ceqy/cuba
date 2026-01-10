@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/sd/pe;pe";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: PricingEngineService
 // ============================================================================
 
 service PricingEngineService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "提供动态定价计算功能，模拟销售订单或开票的定价过程。"
+  };
   // 模拟并计算一组项目的定价
   rpc CalculatePrice(CalculatePriceRequest) returns (CalculatePriceResponse) {
 

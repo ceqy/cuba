@@ -18,12 +18,17 @@ option go_package = "github.com/enterprise/erp/protos/sc/im;im";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: InventoryManagementService
 // ============================================================================
 
 service InventoryManagementService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "提供完整的库存管理功能，包括库存查询、库存移动、批次管理、序列号管理、"
+  };
   // --------------------------------------------------------------------------
   // 库存查询 (Stock Query)
   // --------------------------------------------------------------------------

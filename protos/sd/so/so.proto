@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/sd/so;so";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: SalesOrderFulfillmentService
 // ============================================================================
 
 service SalesOrderFulfillmentService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "提供销售订单的创建、查询和履行状态跟踪功能。"
+  };
   // 创建销售订单
   rpc CreateSalesOrder(CreateSalesOrderRequest) returns (SalesOrderResponse) {
 

@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/am/eh;eh";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: EHSIncidentService
 // ============================================================================
 
 service EHSIncidentService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "管理环境、健康与安全 (EHS) 事件的报告和跟踪。"
+  };
   // 报告一个EHS事件
   rpc ReportIncident(ReportIncidentRequest) returns (ReportIncidentResponse) {
 

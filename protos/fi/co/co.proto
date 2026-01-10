@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/fi/co;co";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: ControllingAllocationService
 // ============================================================================
 
 service ControllingAllocationService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "提供成本中心相关的成本分配和活动分配功能。"
+  };
   // 执行成本中心分配
   rpc ExecuteCostCenterAllocation(ExecuteAllocationRequest) returns (AllocationResponse) {
 

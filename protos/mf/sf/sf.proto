@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/mf/sf;sf";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: ShopFloorExecutionService
 // ============================================================================
 
 service ShopFloorExecutionService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "提供车间生产订单的报工、物料消耗和收货功能。"
+  };
   // 获取生产订单详情
   rpc GetProductionOrder(GetProductionOrderRequest) returns (ProductionOrderDetail) {
 

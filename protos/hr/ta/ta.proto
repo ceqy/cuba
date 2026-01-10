@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/hr/ta;ta";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: TalentAcquisitionService
 // ============================================================================
 
 service TalentAcquisitionService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "提供与人才招聘相关的功能，如职位申请管理和候选人跟踪。"
+  };
   // 创建职位申请 (New)
   rpc CreateJobApplication(CreateJobApplicationRequest) returns (JobApplicationResponse) {
 

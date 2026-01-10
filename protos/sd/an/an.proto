@@ -13,12 +13,17 @@ option go_package = "github.com/enterprise/erp/protos/sd/an;an";
 
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: SalesAnalyticsService
 // ============================================================================
 
 service SalesAnalyticsService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "提供销售数据的多维度分析功能。"
+  };
   // 按客户获取销售额
   rpc GetSalesByCustomer(SalesAnalysisRequest) returns (SalesAnalysisResponse) {
 

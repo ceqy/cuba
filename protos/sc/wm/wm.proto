@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/sc/wm;wm";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: WarehouseOperationsService
 // ============================================================================
 
 service WarehouseOperationsService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "提供仓库内部的物料移动功能，如创建和确认转储订单 (TO)。"
+  };
   // 基于转储需求 (TR) 或其他参考凭证创建转储订单 (TO)
   rpc CreateTransferOrder(CreateTransferOrderRequest) returns (TransferOrderResponse) {
 

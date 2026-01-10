@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/mf/pp;pp";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: ProductionPlanningService
 // ============================================================================
 
 service ProductionPlanningService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "提供物料需求计划 (MRP) 运行、计划订单管理和产能计划功能。"
+  };
   // 运行物料需求计划 (MRP) - 异步
   rpc RunMRP(RunMRPRequest) returns (common.v1.JobInfo) {
 

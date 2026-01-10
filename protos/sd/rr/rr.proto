@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/sd/rr;rr";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: RevenueRecognitionService
 // ============================================================================
 
 service RevenueRecognitionService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "管理收入确认流程，处理履约义务 (POB) 和收入确认过账。"
+  };
   // 创建收入合同 (New)
   rpc CreateRevenueContract(CreateRevenueContractRequest) returns (RevenueContractResponse) {
 

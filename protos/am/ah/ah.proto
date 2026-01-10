@@ -13,12 +13,17 @@ option go_package = "github.com/enterprise/erp/protos/am/ah;ah";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: IntelligentAssetHealthService
 // ============================================================================
 
 service IntelligentAssetHealthService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "集成物联网(IoT)传感器数据，监控资产健康状况，并预测潜在故障。"
+  };
   // 接收资产的传感器数据 - 异步
   rpc IngestSensorData(IngestSensorDataRequest) returns (common.v1.JobInfo) {
 

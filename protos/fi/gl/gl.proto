@@ -30,7 +30,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
     description: "总账日记账管理服务 - 提供财务凭证创建、过账、冲销、审批及高级财务分析功能"
     contact: {
       name: "GL Team"
-      email: "gl@yourproject.com"
+      email: "gl@"
     }
   }
   host: "localhost:8080"
@@ -56,6 +56,26 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
       value: {}
     }
   }
+  tags: {
+    name: "Journal Entry Basics"
+    description: "日记账基础操作 - 创建、查询、冲销凭证"
+  }
+  tags: {
+    name: "Journal Entry Advanced"
+    description: "日记账高级功能 - 清账建议、税计算、外币重估、期末处理"
+  }
+  tags: {
+    name: "Batch Operations"
+    description: "批量操作 - 批量过账、批量输入会话"
+  }
+  tags: {
+    name: "Bank Statement"
+    description: "银行对账单 - 导入、匹配、过账"
+  }
+  tags: {
+    name: "Payment Run"
+    description: "付款执行 - 自动付款、付款建议"
+  }
 };
 
 // ============================================================================
@@ -66,7 +86,7 @@ service GlJournalEntryService {
   option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
     description: "总账日记账管理服务"
     external_docs: {
-      url: "https://yourproject.com/docs/finance/gl";
+      url: "";
       description: "GL 服务详细文档";
     }
   };

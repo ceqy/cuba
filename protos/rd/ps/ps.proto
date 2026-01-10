@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/rd/ps;ps";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: ProjectCostControllingService
 // ============================================================================
 
 service ProjectCostControllingService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "管理研发项目的成本和预算。"
+  };
   // 创建项目预算 (New)
   rpc CreateProjectBudget(CreateBudgetRequest) returns (BudgetResponse) {
 

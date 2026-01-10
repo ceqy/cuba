@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/mf/qi;qi";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: QualityInspectionService
 // ============================================================================
 
 service QualityInspectionService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "提供质量检验批的创建、结果记录和使用决策功能。"
+  };
   // 创建检验批 (New)
   rpc CreateInspectionLot(CreateInspectionLotRequest) returns (InspectionLotResponse) {
 

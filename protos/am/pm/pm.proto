@@ -15,12 +15,17 @@ option go_package = "github.com/enterprise/erp/protos/am/pm;pm";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: AssetMaintenanceService
 // ============================================================================
 
 service AssetMaintenanceService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "提供技术对象管理和维护订单的创建、执行与全生命周期管理功能。"
+  };
   // --------------------------------------------------------------------------
   // 通知单 (Notification)
   // --------------------------------------------------------------------------

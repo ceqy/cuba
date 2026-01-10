@@ -13,12 +13,17 @@ option go_package = "github.com/enterprise/erp/protos/cs/cb;cb";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: ContractBillingService
 // ============================================================================
 
 service ContractBillingService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "管理服务合同的计费计划和发票创建。"
+  };
   // 创建计费计划 (New)
   rpc CreateBillingPlan(CreateBillingPlanRequest) returns (BillingPlanResponse) {
 

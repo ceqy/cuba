@@ -13,12 +13,17 @@ option go_package = "github.com/enterprise/erp/protos/pm/sa;sa";
 
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: SpendAnalyticsService
 // ============================================================================
 
 service SpendAnalyticsService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "提供采购支出的多维度分析功能。"
+  };
   // 按物料类别获取支出
   rpc GetSpendByCategory(SpendAnalysisRequest) returns (SpendAnalysisResponse) {
 

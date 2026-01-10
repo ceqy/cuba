@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/sc/df;df";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: DemandForecastingService
 // ============================================================================
 
 service DemandForecastingService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "提供需求预测功能，基于历史消耗数据生成未来的需求计划。"
+  };
   // 生成需求预测 - 异步
   rpc GenerateForecast(GenerateForecastRequest) returns (common.v1.JobInfo) {
 

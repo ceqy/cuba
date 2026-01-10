@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/cs/fd;fd";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: FieldServiceDispatchService
 // ============================================================================
 
 service FieldServiceDispatchService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "管理现场服务订单的调度和执行。"
+  };
   // 获取服务订单详情
   rpc GetServiceOrder(GetServiceOrderRequest) returns (ServiceOrderDetail) {
 

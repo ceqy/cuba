@@ -1,11 +1,8 @@
-version: v2
-modules:
-  - path: .
-    lint:
-      use:
-        - DEFAULT
-      except:
-        - PACKAGE_VERSION_SUFFIX
-        - FIELD_LOWER_SNAKE_CASE
-      ignore:
-        - google
+version: v1
+name: buf.build/enterprise/erp
+lint:
+  use:
+    - DEFAULT
+  except:
+    - PACKAGE_VERSION_SUFFIX
+    - FIELD_LOWER_SNAKE_CASE

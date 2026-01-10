@@ -15,12 +15,17 @@ import "common/common.proto";
 import "pm/po/po.proto";
 import "pm/iv/iv.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: SupplierPortalService
 // ============================================================================
 
 service SupplierPortalService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "为供应商提供自助服务功能，如查询订单、提交发票、更新主数据等。"
+  };
   // 供应商查询其采购订单列表
   rpc GetMyPurchaseOrders(ListSupplierPurchaseOrdersRequest) returns (pm.po.v1.ListPurchaseOrdersResponse) {
 

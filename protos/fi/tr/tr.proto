@@ -27,7 +27,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
     description: "资金管理服务 - 提供银行对账单处理与付款运行管理"
     contact: {
       name: "Treasury Team"
-      email: "treasury@yourproject.com"
+      email: "treasury@"
     }
   }
   host: "localhost:8083"

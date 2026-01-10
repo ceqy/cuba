@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/mf/om;om";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: OutsourcedManufacturingService
 // ============================================================================
 
 service OutsourcedManufacturingService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "管理外协加工流程，包括向供应商发料和接收加工后的成品。"
+  };
   // 创建外协采购订单 (New)
   rpc CreateSubcontractingOrder(CreateSubcontractingOrderRequest) returns (SubcontractingOrderResponse) {
 

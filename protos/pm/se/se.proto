@@ -14,12 +14,17 @@ option go_package = "github.com/enterprise/erp/protos/pm/se;se";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: SourcingEventService
 // ============================================================================
 
 service SourcingEventService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "管理寻源事件，如报价请求 (RFQ) 的创建、发布以及供应商报价的接收。"
+  };
   // 创建报价请求 (RFQ)
   rpc CreateRFQ(CreateRFQRequest) returns (RFQResponse) {
 

@@ -22,12 +22,17 @@ option go_package = "github.com/enterprise/erp/protos/fi/ap;ap";
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
 import "common/common.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: AccountsReceivablePayableService（终极完整版）
 // ============================================================================
 
 service AccountsReceivablePayableService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "提供客户/供应商主数据、应收/应付全生命周期管理，涵盖："
+  };
   // --------------------------------------------------------------------------
   // === 主数据管理 ===
   // --------------------------------------------------------------------------

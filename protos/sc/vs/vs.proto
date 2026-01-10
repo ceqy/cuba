@@ -13,12 +13,17 @@ option go_package = "github.com/enterprise/erp/protos/sc/vs;vs";
 import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 // ============================================================================
 // 服务定义: VisibilityService
 // ============================================================================
 
 service VisibilityService {
+
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "提供端到端的供应链可见性，整合来自不同微服务的事件和状态。"
+  };
   // 根据销售订单号跟踪整个订单到现金的流程
   rpc TrackSalesOrderFlow(TrackRequest) returns (SalesOrderFlow) {
 

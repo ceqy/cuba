@@ -18,7 +18,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
     description: "用户身份验证、双因素认证、RBAC 权限管理及租户管理服务"
     contact: {
       name: "Auth Team"
-      email: "auth@yourproject.com"
+      email: "auth@"
     }
   }
   host: "localhost:8081"
@@ -51,7 +51,7 @@ service AuthService {
   option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
     description: "用户身份验证、双因素认证、RBAC 权限管理及租户管理服务"
     external_docs: {
-      url: "https://yourproject.com/docs/auth";
+      url: "";
       description: "认证服务详细文档";
     }
   };
