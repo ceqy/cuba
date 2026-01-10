@@ -1,0 +1,878 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Spend Analytics Service API",
+    "version": "version not set",
+    "description": "支出分析服务 - 采购分析、供应商绩效、成本洞察",
+    "contact": {
+      "name": "Procurement Analytics Team",
+      "email": "procurement-analytics@enterprise.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "SpendAnalyticsService",
+      "description": "SpendAnalyticsService"
+    }
+  ],
+  "paths": {
+    "/api/v1/procurement/spend-by-category": {
+      "get": {
+        "summary": "按物料类别获取支出",
+        "operationId": "SpendAnalyticsService_GetSpendByCategory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/analyticsSpendAnalysisResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "time_range.start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "time_range.end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "company_codes",
+            "description": "公司代码过滤器",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "purchasing_orgs",
+            "description": "采购组织过滤器",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "plants",
+            "description": "工厂过滤器",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "top_n",
+            "description": "返回结果数量限制",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "SpendAnalyticsService"
+        ]
+      }
+    },
+    "/api/v1/procurement/spend-by-supplier": {
+      "get": {
+        "summary": "按供应商获取支出",
+        "operationId": "SpendAnalyticsService_GetSpendBySupplier",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/analyticsSpendAnalysisResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "time_range.start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "time_range.end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "company_codes",
+            "description": "公司代码过滤器",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "purchasing_orgs",
+            "description": "采购组织过滤器",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "plants",
+            "description": "工厂过滤器",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "top_n",
+            "description": "返回结果数量限制",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "SpendAnalyticsService"
+        ]
+      }
+    },
+    "/api/v1/procurement/spend-trend": {
+      "get": {
+        "summary": "获取支出趋势",
+        "operationId": "SpendAnalyticsService_GetSpendTrend",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/analyticsSpendTrendResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "time_range.start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "time_range.end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "granularity",
+            "description": "时间粒度",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "TIME_GRANULARITY_UNSPECIFIED",
+                "TIME_GRANULARITY_DAILY",
+                "TIME_GRANULARITY_MONTHLY",
+                "TIME_GRANULARITY_QUARTERLY",
+                "TIME_GRANULARITY_YEARLY"
+              ],
+              "default": "TIME_GRANULARITY_UNSPECIFIED"
+            }
+          },
+          {
+            "name": "filters.time_range.start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "filters.time_range.end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "filters.company_codes",
+            "description": "公司代码过滤器",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "filters.purchasing_orgs",
+            "description": "采购组织过滤器",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "filters.plants",
+            "description": "工厂过滤器",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "filters.top_n",
+            "description": "返回结果数量限制",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "filters.context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filters.context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filters.context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filters.context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "filters.context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filters.context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filters.context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "filters.context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filters.context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "SpendAnalyticsService"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "analyticsSpendAnalysisRequest": {
+        "type": "object",
+        "properties": {
+          "time_range": {
+            "$ref": "#/components/schemas/commonDateRange"
+          },
+          "company_codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "title": "公司代码过滤器"
+          },
+          "purchasing_orgs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "title": "采购组织过滤器"
+          },
+          "plants": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "title": "工厂过滤器"
+          },
+          "top_n": {
+            "type": "integer",
+            "format": "int32",
+            "title": "返回结果数量限制"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "支出分析请求"
+      },
+      "analyticsSpendAnalysisResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/analyticsSpendDimension"
+            },
+            "title": "分析结果列表"
+          }
+        },
+        "title": "支出分析响应"
+      },
+      "analyticsSpendDimension": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "维度ID (例如, 物料类别ID或供应商ID)"
+          },
+          "name": {
+            "type": "string",
+            "title": "维度名称"
+          },
+          "spend_amount": {
+            "$ref": "#/components/schemas/commonMonetaryValue"
+          },
+          "document_count": {
+            "type": "string",
+            "format": "int64",
+            "title": "订单/发票数量"
+          }
+        },
+        "title": "支出分析维度"
+      },
+      "analyticsSpendTrendResponse": {
+        "type": "object",
+        "properties": {
+          "trend": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/analyticsTimeSeriesDataPoint"
+            },
+            "title": "时间序列数据点列表"
+          }
+        },
+        "title": "支出趋势响应"
+      },
+      "analyticsTimeSeriesDataPoint": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string",
+            "title": "时间点 (例如, \"2026-01\")"
+          },
+          "spend_amount": {
+            "$ref": "#/components/schemas/commonMonetaryValue"
+          }
+        },
+        "title": "时间序列数据点"
+      },
+      "commonDateRange": {
+        "type": "object",
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "commonMonetaryValue": {
+        "type": "object",
+        "properties": {
+          "currency_code": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "commonRequestContext": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "idempotency_key": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_system": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          }
+        }
+      },
+      "commonTimeGranularity": {
+        "type": "string",
+        "enum": [
+          "TIME_GRANULARITY_UNSPECIFIED",
+          "TIME_GRANULARITY_DAILY",
+          "TIME_GRANULARITY_MONTHLY",
+          "TIME_GRANULARITY_QUARTERLY",
+          "TIME_GRANULARITY_YEARLY"
+        ],
+        "default": "TIME_GRANULARITY_UNSPECIFIED",
+        "title": "时间粒度 (Analytics)"
+      },
+      "protobufAny": {
+        "type": "object",
+        "properties": {
+          "@type": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": {}
+      },
+      "rpcStatus": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/protobufAny"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token (e.g. from Login API)"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ]
+}

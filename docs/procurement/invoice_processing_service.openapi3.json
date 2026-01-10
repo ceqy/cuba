@@ -1,0 +1,1072 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Invoice Processing Service API",
+    "version": "version not set",
+    "description": "发票处理服务 - 发票校验、三单匹配、自动审批",
+    "contact": {
+      "name": "AP Team",
+      "email": "ap@enterprise.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "InvoiceProcessingService",
+      "description": "InvoiceProcessingService"
+    }
+  ],
+  "paths": {
+    "/api/v1/procurement/invoice": {
+      "get": {
+        "summary": "获取发票详情",
+        "operationId": "InvoiceProcessingService_GetInvoice",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/invoiceInvoiceDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "internal_invoice_id",
+            "description": "内部发票ID",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "document_reference.document_number",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "document_reference.fiscal_year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "document_reference.company_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "document_reference.document_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "document_reference.document_category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "InvoiceProcessingService"
+        ]
+      }
+    },
+    "/api/v1/procurement/invoice/park": {
+      "post": {
+        "summary": "预制发票 (Park) - 暂存但不校验完整性",
+        "operationId": "InvoiceProcessingService_ParkInvoice",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/invoiceParkInvoiceResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/invoiceParkInvoiceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "InvoiceProcessingService"
+        ]
+      }
+    },
+    "/api/v1/procurement/invoice/post": {
+      "post": {
+        "summary": "过账已匹配或无差异的发票",
+        "operationId": "InvoiceProcessingService_PostInvoice",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/invoicePostInvoiceResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/invoicePostInvoiceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "InvoiceProcessingService"
+        ]
+      }
+    },
+    "/api/v1/procurement/invoice/reverse": {
+      "post": {
+        "summary": "冲销发票 (Reverse)",
+        "operationId": "InvoiceProcessingService_ReverseInvoice",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/invoiceReverseInvoiceResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/invoiceReverseInvoiceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "InvoiceProcessingService"
+        ]
+      }
+    },
+    "/api/v1/procurement/match-invoice": {
+      "post": {
+        "summary": "对暂存的发票执行三单匹配 (PO-GR-IV)",
+        "operationId": "InvoiceProcessingService_MatchInvoice",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/invoiceMatchInvoiceResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/invoiceMatchInvoiceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "InvoiceProcessingService"
+        ]
+      }
+    },
+    "/api/v1/procurement/processing-status": {
+      "get": {
+        "summary": "获取发票处理状态 (异步查询)",
+        "operationId": "InvoiceProcessingService_GetProcessingStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/commonJobInfo"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "InvoiceProcessingService"
+        ]
+      }
+    },
+    "/api/v1/procurement/receive-invoice": {
+      "post": {
+        "summary": "接收并暂存供应商发票",
+        "operationId": "InvoiceProcessingService_ReceiveInvoice",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/invoiceReceiveInvoiceResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/invoiceReceiveInvoiceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "InvoiceProcessingService"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "commonApiMessage": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          }
+        }
+      },
+      "commonJobInfo": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string"
+          },
+          "job_type": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/commonJobStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "progress_percentage": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          },
+          "error_detail": {
+            "type": "string"
+          }
+        }
+      },
+      "commonJobStatus": {
+        "type": "string",
+        "enum": [
+          "JOB_STATUS_UNSPECIFIED",
+          "JOB_STATUS_PENDING",
+          "JOB_STATUS_RUNNING",
+          "JOB_STATUS_COMPLETED",
+          "JOB_STATUS_FAILED",
+          "JOB_STATUS_CANCELLED",
+          "JOB_STATUS_PARTIALLY_COMPLETED"
+        ],
+        "default": "JOB_STATUS_UNSPECIFIED",
+        "title": "异步作业状态"
+      },
+      "commonMonetaryValue": {
+        "type": "object",
+        "properties": {
+          "currency_code": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "commonQuantityValue": {
+        "type": "object",
+        "properties": {
+          "unit_code": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "commonRequestContext": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "idempotency_key": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_system": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          }
+        }
+      },
+      "commonSystemDocumentReference": {
+        "type": "object",
+        "properties": {
+          "document_number": {
+            "type": "string"
+          },
+          "fiscal_year": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "company_code": {
+            "type": "string"
+          },
+          "document_type": {
+            "type": "string"
+          },
+          "document_category": {
+            "type": "string"
+          }
+        }
+      },
+      "invoiceInvoiceDetail": {
+        "type": "object",
+        "properties": {
+          "internal_invoice_id": {
+            "type": "string",
+            "title": "内部发票ID"
+          },
+          "document_reference": {
+            "$ref": "#/components/schemas/commonSystemDocumentReference"
+          },
+          "status": {
+            "$ref": "#/components/schemas/invoiceInvoiceProcessingStatus"
+          },
+          "header": {
+            "$ref": "#/components/schemas/invoiceInvoiceHeader"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/invoiceInvoiceItem"
+            },
+            "title": "发票行项目"
+          }
+        },
+        "title": "完整的发票详情"
+      },
+      "invoiceInvoiceHeader": {
+        "type": "object",
+        "properties": {
+          "company_code": {
+            "type": "string",
+            "title": "公司代码 (原: BUKRS)"
+          },
+          "document_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "发票凭证日期 (原: BLDAT)"
+          },
+          "posting_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "过账日期 (原: BUDAT)"
+          },
+          "supplier_invoice_number": {
+            "type": "string",
+            "title": "供应商发票号 (原: XBLNR)"
+          },
+          "gross_amount": {
+            "$ref": "#/components/schemas/commonMonetaryValue"
+          },
+          "tax_amount": {
+            "$ref": "#/components/schemas/commonMonetaryValue"
+          },
+          "currency": {
+            "type": "string",
+            "title": "货币代码 (原: WAERS)"
+          },
+          "payment_terms": {
+            "type": "string",
+            "title": "付款条件 (原: ZTERM)"
+          },
+          "header_text": {
+            "type": "string",
+            "title": "抬头文本 (原: BKTXT)"
+          }
+        },
+        "title": "发票抬头 (参考: RBKP)"
+      },
+      "invoiceInvoiceItem": {
+        "type": "object",
+        "properties": {
+          "item_number": {
+            "type": "integer",
+            "format": "int32",
+            "title": "发票行项目号 (原: BUZEI)"
+          },
+          "purchase_order_number": {
+            "type": "string",
+            "title": "采购订单号 (原: EBELN)"
+          },
+          "purchase_order_item": {
+            "type": "integer",
+            "format": "int32",
+            "title": "采购订单行项目 (原: EBELP)"
+          },
+          "material": {
+            "type": "string",
+            "title": "物料编号 (原: MATNR)"
+          },
+          "short_text": {
+            "type": "string",
+            "title": "短文本 (原: TXZ01)"
+          },
+          "quantity": {
+            "$ref": "#/components/schemas/commonQuantityValue"
+          },
+          "unit": {
+            "type": "string",
+            "title": "单位 (原: MEINS)"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/commonMonetaryValue"
+          },
+          "tax_code": {
+            "type": "string",
+            "title": "税码 (原: MWSKZ)"
+          },
+          "goods_receipt_document": {
+            "type": "string",
+            "title": "收货凭证 (原: LFBNR)"
+          },
+          "goods_receipt_year": {
+            "type": "integer",
+            "format": "int32",
+            "title": "收货凭证年度 (原: LFGJA)"
+          },
+          "goods_receipt_item": {
+            "type": "integer",
+            "format": "int32",
+            "title": "收货凭证行项目 (原: LFPOS)"
+          }
+        },
+        "title": "发票行项目 (参考: RSEG)"
+      },
+      "invoiceInvoiceProcessingStatus": {
+        "type": "string",
+        "enum": [
+          "INVOICE_PROCESSING_STATUS_UNSPECIFIED",
+          "RECEIVED",
+          "MATCHING",
+          "MATCH_SUCCESS",
+          "MATCH_FAILURE",
+          "POSTED",
+          "PARKED",
+          "CANCELLED",
+          "REVERSED"
+        ],
+        "default": "INVOICE_PROCESSING_STATUS_UNSPECIFIED",
+        "title": "- RECEIVED: 已接收，待处理\n - MATCHING: 匹配中\n - MATCH_SUCCESS: 匹配成功\n - MATCH_FAILURE: 匹配失败，存在差异\n - POSTED: 已过账\n - PARKED: 已冻结/暂存\n - CANCELLED: 已取消\n - REVERSED: 已冲销"
+      },
+      "invoiceMatchInvoiceRequest": {
+        "type": "object",
+        "properties": {
+          "internal_invoice_id": {
+            "type": "string",
+            "title": "内部发票ID"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "匹配发票请求"
+      },
+      "invoiceMatchInvoiceResponse": {
+        "type": "object",
+        "properties": {
+          "internal_invoice_id": {
+            "type": "string",
+            "title": "内部发票ID"
+          },
+          "match_status": {
+            "$ref": "#/components/schemas/invoiceMatchStatus"
+          },
+          "variances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/invoiceMatchVariance"
+            },
+            "title": "匹配差异列表"
+          }
+        },
+        "title": "匹配发票响应"
+      },
+      "invoiceMatchStatus": {
+        "type": "string",
+        "enum": [
+          "MATCH_STATUS_UNSPECIFIED",
+          "SUCCESS",
+          "PRICE_VARIANCE",
+          "QUANTITY_VARIANCE",
+          "MISSING_GOODS_RECEIPT"
+        ],
+        "default": "MATCH_STATUS_UNSPECIFIED",
+        "title": "- SUCCESS: 匹配成功\n - PRICE_VARIANCE: 价格差异\n - QUANTITY_VARIANCE: 数量差异\n - MISSING_GOODS_RECEIPT: 缺少收货记录"
+      },
+      "invoiceMatchVariance": {
+        "type": "object",
+        "properties": {
+          "purchase_order_item": {
+            "type": "integer",
+            "format": "int32",
+            "title": "采购订单行项目"
+          },
+          "variance_type": {
+            "type": "string",
+            "title": "差异类型"
+          },
+          "po_value": {
+            "type": "string",
+            "title": "采购订单值 (价格或数量)"
+          },
+          "gr_value": {
+            "type": "string",
+            "title": "收货值 (数量)"
+          },
+          "invoice_value": {
+            "type": "string",
+            "title": "发票值 (价格或数量)"
+          }
+        },
+        "title": "匹配差异详情"
+      },
+      "invoiceParkInvoiceRequest": {
+        "type": "object",
+        "properties": {
+          "header": {
+            "$ref": "#/components/schemas/invoiceInvoiceHeader"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/invoiceInvoiceItem"
+            },
+            "title": "发票行项目"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "预制发票请求"
+      },
+      "invoiceParkInvoiceResponse": {
+        "type": "object",
+        "properties": {
+          "internal_invoice_id": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/invoiceInvoiceProcessingStatus"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          }
+        },
+        "title": "预制发票响应"
+      },
+      "invoicePostInvoiceRequest": {
+        "type": "object",
+        "properties": {
+          "internal_invoice_id": {
+            "type": "string",
+            "title": "内部发票ID"
+          },
+          "posting_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "过账日期"
+          },
+          "accept_variances": {
+            "type": "boolean",
+            "title": "如果存在差异，是否接受差异并过账"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "过账发票请求"
+      },
+      "invoicePostInvoiceResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "操作是否成功"
+          },
+          "document_reference": {
+            "$ref": "#/components/schemas/commonSystemDocumentReference"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            },
+            "title": "从核心ERP返回的消息列表"
+          }
+        },
+        "title": "过账发票响应"
+      },
+      "invoiceReceiveInvoiceRequest": {
+        "type": "object",
+        "properties": {
+          "header": {
+            "$ref": "#/components/schemas/invoiceInvoiceHeader"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/invoiceInvoiceItem"
+            },
+            "title": "发票行项目"
+          },
+          "raw_document": {
+            "type": "string",
+            "format": "byte",
+            "title": "发票原始文件 (例如 PDF, XML)"
+          },
+          "document_format": {
+            "type": "string",
+            "title": "原始文件格式"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "接收发票请求"
+      },
+      "invoiceReceiveInvoiceResponse": {
+        "type": "object",
+        "properties": {
+          "internal_invoice_id": {
+            "type": "string",
+            "title": "内部生成的唯一发票ID"
+          },
+          "status": {
+            "$ref": "#/components/schemas/invoiceInvoiceProcessingStatus"
+          },
+          "job_id": {
+            "type": "string",
+            "title": "异步处理作业ID (如果启用异步处理)"
+          }
+        },
+        "title": "接收发票响应"
+      },
+      "invoiceReverseInvoiceRequest": {
+        "type": "object",
+        "properties": {
+          "internal_invoice_id": {
+            "type": "string",
+            "title": "内部发票ID"
+          },
+          "reversal_reason": {
+            "type": "string",
+            "title": "冲销原因"
+          },
+          "reversal_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "冲销日期"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "冲销发票请求"
+      },
+      "invoiceReverseInvoiceResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "reversal_document": {
+            "$ref": "#/components/schemas/commonSystemDocumentReference"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          }
+        },
+        "title": "冲销发票响应"
+      },
+      "protobufAny": {
+        "type": "object",
+        "properties": {
+          "@type": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": {}
+      },
+      "rpcStatus": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/protobufAny"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token (e.g. from Login API)"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ]
+}

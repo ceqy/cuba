@@ -1,0 +1,643 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Outsourced Manufacturing Service API",
+    "version": "version not set",
+    "description": "委外加工服务 - 外协订单、物料发放、成品接收",
+    "contact": {
+      "name": "Manufacturing Team",
+      "email": "manufacturing@enterprise.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "OutsourcedManufacturingService",
+      "description": "OutsourcedManufacturingService"
+    }
+  ],
+  "paths": {
+    "/api/v1/manufacturing/components-to-supplier/post": {
+      "post": {
+        "summary": "向供应商过账组件发料",
+        "operationId": "OutsourcedManufacturingService_PostComponentsToSupplier",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/outsourcedPostComponentsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/outsourcedPostComponentsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "OutsourcedManufacturingService"
+        ]
+      }
+    },
+    "/api/v1/manufacturing/receive-finished-goods-from-supplier": {
+      "post": {
+        "summary": "接收外协加工成品",
+        "operationId": "OutsourcedManufacturingService_ReceiveFinishedGoodsFromSupplier",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/outsourcedReceiveFinishedGoodsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/outsourcedReceiveFinishedGoodsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "OutsourcedManufacturingService"
+        ]
+      }
+    },
+    "/api/v1/manufacturing/subcontracting-order": {
+      "get": {
+        "summary": "获取外协采购订单详情",
+        "operationId": "OutsourcedManufacturingService_GetSubcontractingOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/outsourcedSubcontractingOrderDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "purchase_order_number",
+            "description": "采购订单号",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "OutsourcedManufacturingService"
+        ]
+      },
+      "post": {
+        "summary": "创建外协采购订单 (New)",
+        "operationId": "OutsourcedManufacturingService_CreateSubcontractingOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/outsourcedSubcontractingOrderResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/outsourcedCreateSubcontractingOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "OutsourcedManufacturingService"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "commonApiMessage": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          }
+        }
+      },
+      "commonQuantityValue": {
+        "type": "object",
+        "properties": {
+          "unit_code": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "commonRequestContext": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "idempotency_key": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_system": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          }
+        }
+      },
+      "outsourcedComponentIssuance": {
+        "type": "object",
+        "properties": {
+          "purchase_order_item": {
+            "type": "integer",
+            "format": "int32",
+            "title": "采购订单项目号"
+          },
+          "component_material": {
+            "type": "string",
+            "title": "组件物料编号"
+          },
+          "quantity_to_issue": {
+            "$ref": "#/components/schemas/commonQuantityValue"
+          },
+          "unit": {
+            "type": "string",
+            "title": "单位"
+          },
+          "batch": {
+            "type": "string",
+            "title": "批次"
+          }
+        },
+        "title": "待发货的组件"
+      },
+      "outsourcedCreateSubcontractingItem": {
+        "type": "object",
+        "properties": {
+          "material": {
+            "type": "string"
+          },
+          "quantity": {
+            "$ref": "#/components/schemas/commonQuantityValue"
+          },
+          "plant": {
+            "type": "string"
+          },
+          "delivery_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/outsourcedSubcontractingComponent"
+            },
+            "title": "组件列表 (可选，如果BOM未展开)"
+          }
+        }
+      },
+      "outsourcedCreateSubcontractingOrderRequest": {
+        "type": "object",
+        "properties": {
+          "supplier": {
+            "type": "string"
+          },
+          "company_code": {
+            "type": "string"
+          },
+          "purchasing_org": {
+            "type": "string"
+          },
+          "purchasing_group": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/outsourcedCreateSubcontractingItem"
+            }
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "创建外协订单请求"
+      },
+      "outsourcedFinishedGoodReceipt": {
+        "type": "object",
+        "properties": {
+          "purchase_order_item": {
+            "type": "integer",
+            "format": "int32",
+            "title": "采购订单项目号"
+          },
+          "quantity_to_receive": {
+            "$ref": "#/components/schemas/commonQuantityValue"
+          },
+          "unit": {
+            "type": "string",
+            "title": "单位"
+          },
+          "batch": {
+            "type": "string",
+            "title": "批次 (接收到的成品批次)"
+          }
+        },
+        "title": "待接收的成品"
+      },
+      "outsourcedPostComponentsRequest": {
+        "type": "object",
+        "properties": {
+          "purchase_order_number": {
+            "type": "string",
+            "title": "采购订单号"
+          },
+          "posting_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "过账日期"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/outsourcedComponentIssuance"
+            },
+            "title": "要发送的组件列表"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "发送组件请求"
+      },
+      "outsourcedPostComponentsResponse": {
+        "type": "object",
+        "properties": {
+          "material_document_number": {
+            "type": "string",
+            "title": "生成的物料凭证号"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            },
+            "title": "从核心ERP返回的消息列表"
+          }
+        },
+        "title": "发送组件响应"
+      },
+      "outsourcedReceiveFinishedGoodsRequest": {
+        "type": "object",
+        "properties": {
+          "purchase_order_number": {
+            "type": "string",
+            "title": "采购订单号"
+          },
+          "posting_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "过账日期"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/outsourcedFinishedGoodReceipt"
+            },
+            "title": "要接收的成品列表"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "接收成品请求"
+      },
+      "outsourcedReceiveFinishedGoodsResponse": {
+        "type": "object",
+        "properties": {
+          "material_document_number": {
+            "type": "string",
+            "title": "生成的物料凭证号"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            },
+            "title": "从核心ERP返回的消息列表"
+          }
+        },
+        "title": "接收成品响应"
+      },
+      "outsourcedSubcontractingComponent": {
+        "type": "object",
+        "properties": {
+          "component_material": {
+            "type": "string",
+            "title": "组件物料编号"
+          },
+          "required_quantity": {
+            "$ref": "#/components/schemas/commonQuantityValue"
+          },
+          "issued_quantity": {
+            "$ref": "#/components/schemas/commonQuantityValue"
+          },
+          "unit": {
+            "type": "string",
+            "title": "单位"
+          }
+        },
+        "title": "外协组件"
+      },
+      "outsourcedSubcontractingItem": {
+        "type": "object",
+        "properties": {
+          "item_number": {
+            "type": "integer",
+            "format": "int32",
+            "title": "采购订单项目号"
+          },
+          "finished_good_material": {
+            "type": "string",
+            "title": "成品物料编号"
+          },
+          "order_quantity": {
+            "$ref": "#/components/schemas/commonQuantityValue"
+          },
+          "received_quantity": {
+            "$ref": "#/components/schemas/commonQuantityValue"
+          },
+          "unit": {
+            "type": "string",
+            "title": "单位"
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/outsourcedSubcontractingComponent"
+            },
+            "title": "需要提供的组件列表"
+          }
+        },
+        "title": "外协项目 (成品)"
+      },
+      "outsourcedSubcontractingOrderDetail": {
+        "type": "object",
+        "properties": {
+          "purchase_order_number": {
+            "type": "string",
+            "title": "采购订单号"
+          },
+          "supplier": {
+            "type": "string",
+            "title": "供应商"
+          },
+          "finished_goods_items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/outsourcedSubcontractingItem"
+            },
+            "title": "外协成品项目列表"
+          }
+        },
+        "title": "外协采购订单详情"
+      },
+      "outsourcedSubcontractingOrderResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "purchase_order_number": {
+            "type": "string"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          }
+        },
+        "title": "外协订单响应"
+      },
+      "protobufAny": {
+        "type": "object",
+        "properties": {
+          "@type": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": {}
+      },
+      "rpcStatus": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/protobufAny"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token (e.g. from Login API)"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ]
+}

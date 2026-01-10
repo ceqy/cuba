@@ -1,0 +1,780 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "EHS Incident Service API",
+    "version": "version not set",
+    "description": "环境健康安全事件管理服务 - 事件报告、调查分析、CAPA管理",
+    "contact": {
+      "name": "EHS Team",
+      "email": "ehs@enterprise.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "EHSIncidentService",
+      "description": "EHSIncidentService"
+    }
+  ],
+  "paths": {
+    "/api/v1/asset/close-incident": {
+      "post": {
+        "summary": "关闭EHS事件 (New)",
+        "operationId": "EHSIncidentService_CloseIncident",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ehsUpdateIncidentResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ehsCloseIncidentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "EHSIncidentService"
+        ]
+      }
+    },
+    "/api/v1/asset/incident": {
+      "get": {
+        "summary": "获取EHS事件详情",
+        "operationId": "EHSIncidentService_GetIncident",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ehsIncidentDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "EHSIncidentService"
+        ]
+      },
+      "put": {
+        "summary": "更新EHS事件状态或添加调查结果",
+        "operationId": "EHSIncidentService_UpdateIncident",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ehsUpdateIncidentResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ehsUpdateIncidentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "EHSIncidentService"
+        ]
+      }
+    },
+    "/api/v1/asset/incidents": {
+      "get": {
+        "summary": "查询事件列表 (New)",
+        "operationId": "EHSIncidentService_ListIncidents",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ehsListIncidentsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "date_range.start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "date_range.end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "INCIDENT_CATEGORY_UNSPECIFIED",
+                "INCIDENT_CATEGORY_SAFETY",
+                "INCIDENT_CATEGORY_ENVIRONMENTAL",
+                "INCIDENT_CATEGORY_HEALTH",
+                "INCIDENT_CATEGORY_SECURITY",
+                "INCIDENT_CATEGORY_QUALITY"
+              ],
+              "default": "INCIDENT_CATEGORY_UNSPECIFIED"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "INCIDENT_STATUS_UNSPECIFIED",
+                "INCIDENT_STATUS_REPORTED",
+                "INCIDENT_STATUS_INVESTIGATING",
+                "INCIDENT_STATUS_CAPA_ASSIGNED",
+                "INCIDENT_STATUS_CLOSED",
+                "INCIDENT_STATUS_VOID"
+              ],
+              "default": "INCIDENT_STATUS_UNSPECIFIED"
+            }
+          },
+          {
+            "name": "pagination.page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "EHSIncidentService"
+        ]
+      }
+    },
+    "/api/v1/asset/report-incident": {
+      "post": {
+        "summary": "报告一个EHS事件",
+        "operationId": "EHSIncidentService_ReportIncident",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ehsReportIncidentResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ehsReportIncidentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "EHSIncidentService"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "commonApiMessage": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          }
+        }
+      },
+      "commonDateRange": {
+        "type": "object",
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "commonIncidentCategory": {
+        "type": "string",
+        "enum": [
+          "INCIDENT_CATEGORY_UNSPECIFIED",
+          "INCIDENT_CATEGORY_SAFETY",
+          "INCIDENT_CATEGORY_ENVIRONMENTAL",
+          "INCIDENT_CATEGORY_HEALTH",
+          "INCIDENT_CATEGORY_SECURITY",
+          "INCIDENT_CATEGORY_QUALITY"
+        ],
+        "default": "INCIDENT_CATEGORY_UNSPECIFIED",
+        "title": "EHS事件类别"
+      },
+      "commonIncidentStatus": {
+        "type": "string",
+        "enum": [
+          "INCIDENT_STATUS_UNSPECIFIED",
+          "INCIDENT_STATUS_REPORTED",
+          "INCIDENT_STATUS_INVESTIGATING",
+          "INCIDENT_STATUS_CAPA_ASSIGNED",
+          "INCIDENT_STATUS_CLOSED",
+          "INCIDENT_STATUS_VOID"
+        ],
+        "default": "INCIDENT_STATUS_UNSPECIFIED",
+        "title": "EHS事件状态"
+      },
+      "commonPaginationRequest": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sort_by": {
+            "type": "string"
+          },
+          "descending": {
+            "type": "boolean"
+          }
+        }
+      },
+      "commonPaginationResponse": {
+        "type": "object",
+        "properties": {
+          "current_page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total_items": {
+            "type": "string",
+            "format": "int64"
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "commonRequestContext": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "idempotency_key": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_system": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          }
+        }
+      },
+      "ehsCloseIncidentRequest": {
+        "type": "object",
+        "properties": {
+          "incident_id": {
+            "type": "string"
+          },
+          "closure_comment": {
+            "type": "string"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        }
+      },
+      "ehsIncidentDetail": {
+        "type": "object",
+        "properties": {
+          "incident_id": {
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/commonIncidentCategory"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "incident_datetime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reported_by": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/commonIncidentStatus"
+          },
+          "findings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ehsInvestigationFinding"
+            }
+          }
+        },
+        "title": "EHS事件详情"
+      },
+      "ehsInvestigationFinding": {
+        "type": "object",
+        "properties": {
+          "finding_id": {
+            "type": "string"
+          },
+          "investigator": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "root_cause_analysis": {
+            "type": "string"
+          },
+          "corrective_and_preventive_actions": {
+            "type": "string"
+          }
+        },
+        "title": "调查结果"
+      },
+      "ehsListIncidentsResponse": {
+        "type": "object",
+        "properties": {
+          "incidents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ehsIncidentDetail"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/commonPaginationResponse"
+          }
+        }
+      },
+      "ehsReportIncidentRequest": {
+        "type": "object",
+        "properties": {
+          "incident": {
+            "$ref": "#/components/schemas/ehsIncidentDetail"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "报告事件请求"
+      },
+      "ehsReportIncidentResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "incident_id": {
+            "type": "string"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          }
+        },
+        "title": "报告事件响应"
+      },
+      "ehsUpdateIncidentRequest": {
+        "type": "object",
+        "properties": {
+          "incident_id": {
+            "type": "string"
+          },
+          "new_status": {
+            "$ref": "#/components/schemas/commonIncidentStatus"
+          },
+          "new_finding": {
+            "$ref": "#/components/schemas/ehsInvestigationFinding"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "更新事件请求"
+      },
+      "ehsUpdateIncidentResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          }
+        },
+        "title": "更新事件响应"
+      },
+      "protobufAny": {
+        "type": "object",
+        "properties": {
+          "@type": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": {}
+      },
+      "rpcStatus": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/protobufAny"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token (e.g. from Login API)"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ]
+}

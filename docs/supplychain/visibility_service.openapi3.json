@@ -1,0 +1,590 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Supply Chain Visibility Service API",
+    "version": "version not set",
+    "description": "供应链可视化服务 - 实时跟踪、流程监控、异常预警",
+    "contact": {
+      "name": "Visibility Team",
+      "email": "visibility@enterprise.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "VisibilityService",
+      "description": "VisibilityService"
+    }
+  ],
+  "paths": {
+    "/api/v1/supplychain/flow-summary": {
+      "get": {
+        "summary": "获取流程摘要",
+        "operationId": "VisibilityService_GetFlowSummary",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/visibilityFlowSummary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "period.start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "period.end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "VisibilityService"
+        ]
+      }
+    },
+    "/api/v1/supplychain/subscribe-to-flow-events": {
+      "post": {
+        "summary": "订阅流程事件 (Streaming) (New)",
+        "operationId": "VisibilityService_SubscribeToFlowEvents",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "$ref": "#/components/schemas/visibilityFlowEvent"
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/rpcStatus"
+                    }
+                  },
+                  "title": "Stream result of visibilityFlowEvent"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/visibilitySubscribeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "VisibilityService"
+        ]
+      }
+    },
+    "/api/v1/supplychain/track-purchase-order-flow": {
+      "post": {
+        "summary": "根据采购订单号跟踪整个采购到付款的流程",
+        "operationId": "VisibilityService_TrackPurchaseOrderFlow",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/visibilityPurchaseOrderFlow"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "$ref": "#/components/requestBodies/visibilityTrackRequest"
+        },
+        "tags": [
+          "VisibilityService"
+        ]
+      }
+    },
+    "/api/v1/supplychain/track-sales-order-flow": {
+      "post": {
+        "summary": "根据销售订单号跟踪整个订单到现金的流程",
+        "operationId": "VisibilityService_TrackSalesOrderFlow",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/visibilitySalesOrderFlow"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "$ref": "#/components/requestBodies/visibilityTrackRequest"
+        },
+        "tags": [
+          "VisibilityService"
+        ]
+      }
+    }
+  },
+  "components": {
+    "requestBodies": {
+      "visibilityTrackRequest": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/visibilityTrackRequest"
+            }
+          }
+        },
+        "required": true
+      }
+    },
+    "schemas": {
+      "commonDateRange": {
+        "type": "object",
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "commonDocumentType": {
+        "type": "string",
+        "enum": [
+          "DOCUMENT_TYPE_UNSPECIFIED",
+          "DOCUMENT_TYPE_STANDARD_PO",
+          "DOCUMENT_TYPE_CONTRACT",
+          "DOCUMENT_TYPE_RFQ",
+          "DOCUMENT_TYPE_SCHEDULING_AGREEMENT",
+          "DOCUMENT_TYPE_FRAMEWORK_ORDER",
+          "DOCUMENT_TYPE_CONSIGNMENT",
+          "DOCUMENT_TYPE_STOCK_TRANSPORT",
+          "DOCUMENT_TYPE_SALES_ORDER",
+          "DOCUMENT_TYPE_PURCHASE_ORDER",
+          "DOCUMENT_TYPE_DELIVERY",
+          "DOCUMENT_TYPE_INVOICE",
+          "DOCUMENT_TYPE_PAYMENT",
+          "DOCUMENT_TYPE_RESERVATION",
+          "DOCUMENT_TYPE_TRANSFER_ORDER",
+          "DOCUMENT_TYPE_SHIPMENT"
+        ],
+        "default": "DOCUMENT_TYPE_UNSPECIFIED",
+        "description": "- DOCUMENT_TYPE_PURCHASE_ORDER: Added for generic PO reference",
+        "title": "凭证类型 (Procurement)"
+      },
+      "commonFlowStatus": {
+        "type": "string",
+        "enum": [
+          "FLOW_STATUS_UNSPECIFIED",
+          "FLOW_STATUS_CREATED",
+          "FLOW_STATUS_RELEASED",
+          "FLOW_STATUS_PROCESSED",
+          "FLOW_STATUS_PARTIALLY_FULFILLED",
+          "FLOW_STATUS_COMPLETED",
+          "FLOW_STATUS_CANCELLED",
+          "FLOW_STATUS_DELAYED",
+          "FLOW_STATUS_ON_HOLD"
+        ],
+        "default": "FLOW_STATUS_UNSPECIFIED",
+        "title": "流程状态 (Visibility/Flow)"
+      },
+      "commonRequestContext": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "idempotency_key": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_system": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          }
+        }
+      },
+      "protobufAny": {
+        "type": "object",
+        "properties": {
+          "@type": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": {}
+      },
+      "rpcStatus": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/protobufAny"
+            }
+          }
+        }
+      },
+      "visibilityDocumentStatus": {
+        "type": "object",
+        "properties": {
+          "document_number": {
+            "type": "string",
+            "title": "文档编号"
+          },
+          "document_type": {
+            "$ref": "#/components/schemas/commonDocumentType"
+          },
+          "status_code": {
+            "type": "string",
+            "title": "当前状态"
+          },
+          "status_description": {
+            "type": "string",
+            "title": "状态描述"
+          },
+          "last_updated": {
+            "type": "string",
+            "format": "date-time",
+            "title": "最后更新时间"
+          },
+          "deep_link": {
+            "type": "string",
+            "title": "引用链接"
+          }
+        },
+        "title": "文档状态"
+      },
+      "visibilityFlowEvent": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "event_type": {
+            "type": "string"
+          },
+          "source_service": {
+            "type": "string"
+          },
+          "document_number": {
+            "type": "string"
+          },
+          "document_type": {
+            "$ref": "#/components/schemas/commonDocumentType"
+          },
+          "previous_status": {
+            "type": "string"
+          },
+          "new_status": {
+            "type": "string"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        }
+      },
+      "visibilityFlowSummary": {
+        "type": "object",
+        "properties": {
+          "total_active_flows": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "delayed_flows": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completed_flows_today": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "visibilityPurchaseOrderFlow": {
+        "type": "object",
+        "properties": {
+          "purchase_order": {
+            "$ref": "#/components/schemas/visibilityDocumentStatus"
+          },
+          "goods_receipts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/visibilityDocumentStatus"
+            },
+            "title": "收货状态"
+          },
+          "invoices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/visibilityDocumentStatus"
+            },
+            "title": "发票状态"
+          },
+          "payment": {
+            "$ref": "#/components/schemas/visibilityDocumentStatus"
+          },
+          "overall_status": {
+            "$ref": "#/components/schemas/commonFlowStatus"
+          }
+        },
+        "title": "采购订单流程"
+      },
+      "visibilitySalesOrderFlow": {
+        "type": "object",
+        "properties": {
+          "sales_order": {
+            "$ref": "#/components/schemas/visibilityDocumentStatus"
+          },
+          "deliveries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/visibilityDocumentStatus"
+            },
+            "title": "交货单状态"
+          },
+          "shipments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/visibilityDocumentStatus"
+            },
+            "title": "货运单状态"
+          },
+          "invoices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/visibilityDocumentStatus"
+            },
+            "title": "发票状态"
+          },
+          "payment": {
+            "$ref": "#/components/schemas/visibilityDocumentStatus"
+          },
+          "overall_status": {
+            "$ref": "#/components/schemas/commonFlowStatus"
+          }
+        },
+        "title": "销售订单流程"
+      },
+      "visibilitySubscribeRequest": {
+        "type": "object",
+        "properties": {
+          "event_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "document_numbers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "title": "Filter by specific documents"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        }
+      },
+      "visibilityTrackRequest": {
+        "type": "object",
+        "properties": {
+          "document_number": {
+            "type": "string",
+            "title": "要跟踪的主文档编号 (例如, 销售订单号或采购订单号)"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "跟踪请求"
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token (e.g. from Login API)"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ]
+}

@@ -1,0 +1,1156 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sales Order Fulfillment Service API",
+    "version": "version not set",
+    "description": "订单履行服务 - 订单处理、发货管理、ATP检查",
+    "contact": {
+      "name": "Order Fulfillment Team",
+      "email": "fulfillment@enterprise.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "SalesOrderFulfillmentService",
+      "description": "SalesOrderFulfillmentService"
+    }
+  ],
+  "paths": {
+    "/api/v1/sales/sales-order": {
+      "get": {
+        "summary": "获取销售订单详情",
+        "operationId": "SalesOrderFulfillmentService_GetSalesOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/fulfillmentSalesOrderDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "order_number",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "SalesOrderFulfillmentService"
+        ]
+      },
+      "post": {
+        "summary": "创建销售订单",
+        "operationId": "SalesOrderFulfillmentService_CreateSalesOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/fulfillmentSalesOrderResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/fulfillmentCreateSalesOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "SalesOrderFulfillmentService"
+        ]
+      },
+      "put": {
+        "summary": "更新销售订单 (New)",
+        "operationId": "SalesOrderFulfillmentService_UpdateSalesOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/fulfillmentSalesOrderResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/fulfillmentUpdateSalesOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "SalesOrderFulfillmentService"
+        ]
+      }
+    },
+    "/api/v1/sales/sales-order-fulfillment-status": {
+      "get": {
+        "summary": "获取销售订单的履行状态 (凭证流)",
+        "operationId": "SalesOrderFulfillmentService_GetSalesOrderFulfillmentStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/fulfillmentFulfillmentStatusResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "order_number",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "SalesOrderFulfillmentService"
+        ]
+      }
+    },
+    "/api/v1/sales/sales-order/cancel": {
+      "post": {
+        "summary": "取消销售订单 (New)",
+        "operationId": "SalesOrderFulfillmentService_CancelSalesOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/fulfillmentSalesOrderResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/fulfillmentCancelSalesOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "SalesOrderFulfillmentService"
+        ]
+      }
+    },
+    "/api/v1/sales/sales-orders": {
+      "get": {
+        "summary": "查询销售订单列表",
+        "operationId": "SalesOrderFulfillmentService_ListSalesOrders",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/fulfillmentListSalesOrdersResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "sold_to_party",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "material",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "document_date_range.start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "document_date_range.end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "order_type",
+            "description": " - ORDER_TYPE_STANDARD_ORDER: OR\n - ORDER_TYPE_RUSH_ORDER: SO\n - ORDER_TYPE_CASH_ORDER: BV\n - ORDER_TYPE_CONTRACT: CT\n - ORDER_TYPE_RETURN: RE\n - ORDER_TYPE_FREE_OF_CHARGE: FD\n - ORDER_TYPE_CONSIGNMENT_FILL_UP: KB",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ORDER_TYPE_UNSPECIFIED",
+                "ORDER_TYPE_STANDARD_ORDER",
+                "ORDER_TYPE_RUSH_ORDER",
+                "ORDER_TYPE_CASH_ORDER",
+                "ORDER_TYPE_CONTRACT",
+                "ORDER_TYPE_RETURN",
+                "ORDER_TYPE_FREE_OF_CHARGE",
+                "ORDER_TYPE_CONSIGNMENT_FILL_UP"
+              ],
+              "default": "ORDER_TYPE_UNSPECIFIED"
+            }
+          },
+          {
+            "name": "status",
+            "description": " - ORDER_STATUS_TECO: Technically Completed\n - ORDER_STATUS_OPEN: Sales specific additions",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ORDER_STATUS_UNSPECIFIED",
+                "ORDER_STATUS_CREATED",
+                "ORDER_STATUS_RELEASED",
+                "ORDER_STATUS_CONFIRMED",
+                "ORDER_STATUS_PARTIALLY_CONFIRMED",
+                "ORDER_STATUS_DELIVERED",
+                "ORDER_STATUS_TECO",
+                "ORDER_STATUS_CLOSED",
+                "ORDER_STATUS_LOCKED",
+                "ORDER_STATUS_DELETED",
+                "ORDER_STATUS_OPEN",
+                "ORDER_STATUS_PROCESSING",
+                "ORDER_STATUS_SHIPPED",
+                "ORDER_STATUS_INVOICED",
+                "ORDER_STATUS_COMPLETED",
+                "ORDER_STATUS_CANCELLED"
+              ],
+              "default": "ORDER_STATUS_UNSPECIFIED"
+            }
+          },
+          {
+            "name": "pagination.page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "SalesOrderFulfillmentService"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "commonApiMessage": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          }
+        }
+      },
+      "commonAuditData": {
+        "type": "object",
+        "properties": {
+          "created_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "changed_by": {
+            "type": "string"
+          },
+          "changed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "commonDateRange": {
+        "type": "object",
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "commonItemCategory": {
+        "type": "string",
+        "enum": [
+          "ITEM_CATEGORY_UNSPECIFIED",
+          "ITEM_CATEGORY_STANDARD",
+          "ITEM_CATEGORY_LIMIT",
+          "ITEM_CATEGORY_CONSIGNMENT",
+          "ITEM_CATEGORY_SUBCONTRACTING",
+          "ITEM_CATEGORY_THIRD_PARTY",
+          "ITEM_CATEGORY_SERVICE"
+        ],
+        "default": "ITEM_CATEGORY_UNSPECIFIED",
+        "title": "项目类别 (Procurement)"
+      },
+      "commonMonetaryValue": {
+        "type": "object",
+        "properties": {
+          "currency_code": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "commonOrderStatus": {
+        "type": "string",
+        "enum": [
+          "ORDER_STATUS_UNSPECIFIED",
+          "ORDER_STATUS_CREATED",
+          "ORDER_STATUS_RELEASED",
+          "ORDER_STATUS_CONFIRMED",
+          "ORDER_STATUS_PARTIALLY_CONFIRMED",
+          "ORDER_STATUS_DELIVERED",
+          "ORDER_STATUS_TECO",
+          "ORDER_STATUS_CLOSED",
+          "ORDER_STATUS_LOCKED",
+          "ORDER_STATUS_DELETED",
+          "ORDER_STATUS_OPEN",
+          "ORDER_STATUS_PROCESSING",
+          "ORDER_STATUS_SHIPPED",
+          "ORDER_STATUS_INVOICED",
+          "ORDER_STATUS_COMPLETED",
+          "ORDER_STATUS_CANCELLED"
+        ],
+        "default": "ORDER_STATUS_UNSPECIFIED",
+        "description": "- ORDER_STATUS_TECO: Technically Completed\n - ORDER_STATUS_OPEN: Sales specific additions",
+        "title": "订单状态 (Production/Sales)"
+      },
+      "commonOrderType": {
+        "type": "string",
+        "enum": [
+          "ORDER_TYPE_UNSPECIFIED",
+          "ORDER_TYPE_STANDARD_ORDER",
+          "ORDER_TYPE_RUSH_ORDER",
+          "ORDER_TYPE_CASH_ORDER",
+          "ORDER_TYPE_CONTRACT",
+          "ORDER_TYPE_RETURN",
+          "ORDER_TYPE_FREE_OF_CHARGE",
+          "ORDER_TYPE_CONSIGNMENT_FILL_UP"
+        ],
+        "default": "ORDER_TYPE_UNSPECIFIED",
+        "description": "- ORDER_TYPE_STANDARD_ORDER: OR\n - ORDER_TYPE_RUSH_ORDER: SO\n - ORDER_TYPE_CASH_ORDER: BV\n - ORDER_TYPE_CONTRACT: CT\n - ORDER_TYPE_RETURN: RE\n - ORDER_TYPE_FREE_OF_CHARGE: FD\n - ORDER_TYPE_CONSIGNMENT_FILL_UP: KB",
+        "title": "销售订单类型"
+      },
+      "commonPaginationRequest": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sort_by": {
+            "type": "string"
+          },
+          "descending": {
+            "type": "boolean"
+          }
+        }
+      },
+      "commonPaginationResponse": {
+        "type": "object",
+        "properties": {
+          "current_page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total_items": {
+            "type": "string",
+            "format": "int64"
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "commonRequestContext": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "idempotency_key": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_system": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          }
+        }
+      },
+      "commonSystemDocumentReference": {
+        "type": "object",
+        "properties": {
+          "document_number": {
+            "type": "string"
+          },
+          "fiscal_year": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "company_code": {
+            "type": "string"
+          },
+          "document_type": {
+            "type": "string"
+          },
+          "document_category": {
+            "type": "string"
+          }
+        }
+      },
+      "fulfillmentCancelSalesOrderRequest": {
+        "type": "object",
+        "properties": {
+          "order_number": {
+            "type": "string"
+          },
+          "cancellation_reason": {
+            "type": "string"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        }
+      },
+      "fulfillmentCreateSalesOrderRequest": {
+        "type": "object",
+        "properties": {
+          "header": {
+            "$ref": "#/components/schemas/fulfillmentSalesOrderHeader"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/fulfillmentSalesOrderItem"
+            }
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "创建销售订单请求"
+      },
+      "fulfillmentDocumentFlowNode": {
+        "type": "object",
+        "properties": {
+          "node_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "parent_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "document": {
+            "$ref": "#/components/schemas/commonSystemDocumentReference"
+          },
+          "description": {
+            "type": "string"
+          },
+          "creation_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "title": "凭证流节点"
+      },
+      "fulfillmentFulfillmentStatusResponse": {
+        "type": "object",
+        "properties": {
+          "root_document_number": {
+            "type": "string"
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/fulfillmentDocumentFlowNode"
+            }
+          }
+        },
+        "title": "凭证流响应"
+      },
+      "fulfillmentListSalesOrdersResponse": {
+        "type": "object",
+        "properties": {
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/fulfillmentSalesOrderSummary"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/commonPaginationResponse"
+          }
+        },
+        "title": "查询销售订单响应"
+      },
+      "fulfillmentSalesOrderDetail": {
+        "type": "object",
+        "properties": {
+          "order_number": {
+            "type": "string"
+          },
+          "header": {
+            "$ref": "#/components/schemas/fulfillmentSalesOrderHeader"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/fulfillmentSalesOrderItem"
+            }
+          },
+          "schedule_lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/fulfillmentSalesOrderScheduleLine"
+            }
+          },
+          "audit_data": {
+            "$ref": "#/components/schemas/commonAuditData"
+          },
+          "overall_status": {
+            "$ref": "#/components/schemas/commonOrderStatus"
+          }
+        },
+        "title": "完整的销售订单详情"
+      },
+      "fulfillmentSalesOrderHeader": {
+        "type": "object",
+        "properties": {
+          "order_type": {
+            "$ref": "#/components/schemas/commonOrderType"
+          },
+          "sales_org": {
+            "type": "string"
+          },
+          "distribution_channel": {
+            "type": "string"
+          },
+          "division": {
+            "type": "string"
+          },
+          "sold_to_party": {
+            "type": "string"
+          },
+          "ship_to_party": {
+            "type": "string"
+          },
+          "customer_po": {
+            "type": "string"
+          },
+          "customer_po_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "document_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requested_delivery_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "pricing_procedure": {
+            "type": "string"
+          },
+          "shipping_conditions": {
+            "type": "string"
+          },
+          "delivery_block": {
+            "type": "string"
+          },
+          "billing_block": {
+            "type": "string"
+          }
+        },
+        "title": "销售订单抬头 (参考: VBAK)"
+      },
+      "fulfillmentSalesOrderItem": {
+        "type": "object",
+        "properties": {
+          "item_number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "material": {
+            "type": "string"
+          },
+          "item_description": {
+            "type": "string"
+          },
+          "order_quantity": {
+            "type": "string"
+          },
+          "sales_unit": {
+            "type": "string"
+          },
+          "plant": {
+            "type": "string"
+          },
+          "storage_location": {
+            "type": "string"
+          },
+          "net_value": {
+            "type": "string"
+          },
+          "tax_amount": {
+            "type": "string"
+          },
+          "item_category": {
+            "$ref": "#/components/schemas/commonItemCategory"
+          },
+          "rejection_reason": {
+            "type": "string"
+          },
+          "higher_level_item": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "title": "销售订单行项目 (参考: VBAP)"
+      },
+      "fulfillmentSalesOrderResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "order_number": {
+            "type": "string"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          }
+        },
+        "title": "销售订单响应"
+      },
+      "fulfillmentSalesOrderScheduleLine": {
+        "type": "object",
+        "properties": {
+          "schedule_line_number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "delivery_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "confirmed_quantity": {
+            "type": "string"
+          }
+        },
+        "title": "销售订单计划行 (参考: VBEP)"
+      },
+      "fulfillmentSalesOrderSummary": {
+        "type": "object",
+        "properties": {
+          "order_number": {
+            "type": "string"
+          },
+          "order_type": {
+            "$ref": "#/components/schemas/commonOrderType"
+          },
+          "document_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sold_to_party": {
+            "type": "string"
+          },
+          "net_value": {
+            "$ref": "#/components/schemas/commonMonetaryValue"
+          },
+          "overall_status": {
+            "$ref": "#/components/schemas/commonOrderStatus"
+          }
+        },
+        "title": "销售订单摘要"
+      },
+      "fulfillmentUpdateSalesOrderRequest": {
+        "type": "object",
+        "properties": {
+          "order_number": {
+            "type": "string"
+          },
+          "header": {
+            "$ref": "#/components/schemas/fulfillmentSalesOrderHeader"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/fulfillmentSalesOrderItem"
+            }
+          },
+          "update_mask": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        }
+      },
+      "protobufAny": {
+        "type": "object",
+        "properties": {
+          "@type": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": {}
+      },
+      "rpcStatus": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/protobufAny"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token (e.g. from Login API)"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ]
+}

@@ -70,10 +70,6 @@ generate_service() {
              
              if [ -f "$OPENAPI3_FILE" ]; then
                  echo "   ✅ Generated OpenAPI 3.1: $OPENAPI3_FILE"
-                 
-                 # Enrich OpenAPI (Add Security, Types, Descriptions)
-                 echo "   ✨ Enriching OpenAPI spec..."
-                 python3 ./scripts/enrich_openapi.py "$OPENAPI3_FILE"
              else
                  echo "   ⚠️ Failed to convert to OpenAPI 3.0"
              fi

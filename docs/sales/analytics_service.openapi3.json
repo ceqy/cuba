@@ -1,0 +1,964 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sales Analytics Service API",
+    "version": "version not set",
+    "description": "销售分析服务 - 销售漏斗、业绩预测、客户洞察",
+    "contact": {
+      "name": "Sales Analytics Team",
+      "email": "sales-analytics@enterprise.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "SalesAnalyticsService",
+      "description": "SalesAnalyticsService"
+    }
+  ],
+  "paths": {
+    "/api/v1/sales/sales-by-customer": {
+      "get": {
+        "summary": "按客户获取销售额",
+        "operationId": "SalesAnalyticsService_GetSalesByCustomer",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/analyticsSalesAnalysisResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "time_range.start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "time_range.end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "sales_orgs",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "distribution_channels",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "top_n",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "SalesAnalyticsService"
+        ]
+      }
+    },
+    "/api/v1/sales/sales-by-product": {
+      "get": {
+        "summary": "按产品获取销售额",
+        "operationId": "SalesAnalyticsService_GetSalesByProduct",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/analyticsSalesAnalysisResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "time_range.start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "time_range.end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "sales_orgs",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "distribution_channels",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "top_n",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "SalesAnalyticsService"
+        ]
+      }
+    },
+    "/api/v1/sales/sales-report/export": {
+      "post": {
+        "summary": "导出销售报表 - 异步",
+        "operationId": "SalesAnalyticsService_ExportSalesReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/commonJobInfo"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/analyticsExportSalesReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "SalesAnalyticsService"
+        ]
+      }
+    },
+    "/api/v1/sales/sales-trend": {
+      "get": {
+        "summary": "获取销售额趋势",
+        "operationId": "SalesAnalyticsService_GetSalesTrend",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/analyticsSalesTrendResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "time_range.start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "time_range.end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "granularity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "TIME_GRANULARITY_UNSPECIFIED",
+                "TIME_GRANULARITY_DAILY",
+                "TIME_GRANULARITY_MONTHLY",
+                "TIME_GRANULARITY_QUARTERLY",
+                "TIME_GRANULARITY_YEARLY"
+              ],
+              "default": "TIME_GRANULARITY_UNSPECIFIED"
+            }
+          },
+          {
+            "name": "filters.time_range.start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "filters.time_range.end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "filters.sales_orgs",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "filters.distribution_channels",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "filters.top_n",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "filters.context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filters.context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filters.context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filters.context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "filters.context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filters.context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filters.context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "filters.context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filters.context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "SalesAnalyticsService"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "analyticsExportSalesReportRequest": {
+        "type": "object",
+        "properties": {
+          "time_range": {
+            "$ref": "#/components/schemas/commonDateRange"
+          },
+          "sales_orgs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "report_type": {
+            "$ref": "#/components/schemas/commonReportType"
+          },
+          "export_format": {
+            "type": "string",
+            "title": "e.g. CSV, PDF"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        }
+      },
+      "analyticsSalesAnalysisRequest": {
+        "type": "object",
+        "properties": {
+          "time_range": {
+            "$ref": "#/components/schemas/commonDateRange"
+          },
+          "sales_orgs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "distribution_channels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "top_n": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "销售分析请求"
+      },
+      "analyticsSalesAnalysisResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/analyticsSalesDimension"
+            }
+          }
+        },
+        "title": "销售分析响应"
+      },
+      "analyticsSalesDimension": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "维度ID (例如, 客户ID或产品ID)"
+          },
+          "name": {
+            "type": "string"
+          },
+          "revenue": {
+            "$ref": "#/components/schemas/commonMonetaryValue"
+          },
+          "quantity_sold": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          }
+        },
+        "title": "销售分析维度"
+      },
+      "analyticsSalesTrendResponse": {
+        "type": "object",
+        "properties": {
+          "trend": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/analyticsTimeSeriesDataPoint"
+            }
+          }
+        },
+        "title": "销售趋势响应"
+      },
+      "analyticsTimeSeriesDataPoint": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string"
+          },
+          "revenue": {
+            "$ref": "#/components/schemas/commonMonetaryValue"
+          }
+        },
+        "title": "时间序列数据点"
+      },
+      "commonApiMessage": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          }
+        }
+      },
+      "commonDateRange": {
+        "type": "object",
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "commonJobInfo": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string"
+          },
+          "job_type": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/commonJobStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "progress_percentage": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          },
+          "error_detail": {
+            "type": "string"
+          }
+        }
+      },
+      "commonJobStatus": {
+        "type": "string",
+        "enum": [
+          "JOB_STATUS_UNSPECIFIED",
+          "JOB_STATUS_PENDING",
+          "JOB_STATUS_RUNNING",
+          "JOB_STATUS_COMPLETED",
+          "JOB_STATUS_FAILED",
+          "JOB_STATUS_CANCELLED",
+          "JOB_STATUS_PARTIALLY_COMPLETED"
+        ],
+        "default": "JOB_STATUS_UNSPECIFIED",
+        "title": "异步作业状态"
+      },
+      "commonMonetaryValue": {
+        "type": "object",
+        "properties": {
+          "currency_code": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "commonReportType": {
+        "type": "string",
+        "enum": [
+          "REPORT_TYPE_UNSPECIFIED",
+          "REPORT_TYPE_AGING_ANALYSIS",
+          "REPORT_TYPE_OPEN_ITEMS",
+          "REPORT_TYPE_STATEMENT",
+          "REPORT_TYPE_TRIAL_BALANCE",
+          "REPORT_TYPE_JOURNAL"
+        ],
+        "default": "REPORT_TYPE_UNSPECIFIED",
+        "title": "报表类型"
+      },
+      "commonRequestContext": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "idempotency_key": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_system": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          }
+        }
+      },
+      "commonTimeGranularity": {
+        "type": "string",
+        "enum": [
+          "TIME_GRANULARITY_UNSPECIFIED",
+          "TIME_GRANULARITY_DAILY",
+          "TIME_GRANULARITY_MONTHLY",
+          "TIME_GRANULARITY_QUARTERLY",
+          "TIME_GRANULARITY_YEARLY"
+        ],
+        "default": "TIME_GRANULARITY_UNSPECIFIED",
+        "title": "时间粒度 (Analytics)"
+      },
+      "protobufAny": {
+        "type": "object",
+        "properties": {
+          "@type": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": {}
+      },
+      "rpcStatus": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/protobufAny"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token (e.g. from Login API)"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ]
+}

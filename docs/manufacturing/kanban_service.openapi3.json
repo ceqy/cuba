@@ -1,0 +1,778 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Kanban Service API",
+    "version": "version not set",
+    "description": "看板管理服务 - 看板触发、补货管理、库存拉动",
+    "contact": {
+      "name": "Manufacturing Team",
+      "email": "manufacturing@enterprise.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "KanbanService",
+      "description": "KanbanService"
+    }
+  ],
+  "paths": {
+    "/api/v1/manufacturing/change-kanban-status": {
+      "post": {
+        "summary": "更改看板状态 (例如, 从 EMPTY 到 FULL)",
+        "operationId": "KanbanService_ChangeKanbanStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/kanbanChangeKanbanStatusResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/kanbanChangeKanbanStatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "KanbanService"
+        ]
+      }
+    },
+    "/api/v1/manufacturing/kanban-containers": {
+      "get": {
+        "summary": "查询看板容器列表",
+        "operationId": "KanbanService_ListKanbanContainers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/kanbanListKanbanContainersResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "plant",
+            "description": "工厂",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "production_supply_area",
+            "description": "生产供应区域",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "material",
+            "description": "物料编号",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "description": "状态过滤器\n\n - KANBAN_STATUS_EMPTY: 空 (需要补货)\n - KANBAN_STATUS_FULL: 满 (已补货)\n - KANBAN_STATUS_IN_TRANSIT: 运输中\n - KANBAN_STATUS_WAIT: 等待中\n - KANBAN_STATUS_ERROR: 错误\n - KANBAN_STATUS_IN_USE: 使用中",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "KANBAN_STATUS_UNSPECIFIED",
+                "KANBAN_STATUS_EMPTY",
+                "KANBAN_STATUS_FULL",
+                "KANBAN_STATUS_IN_TRANSIT",
+                "KANBAN_STATUS_WAIT",
+                "KANBAN_STATUS_ERROR",
+                "KANBAN_STATUS_IN_USE"
+              ],
+              "default": "KANBAN_STATUS_UNSPECIFIED"
+            }
+          },
+          {
+            "name": "pagination.page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "KanbanService"
+        ]
+      }
+    },
+    "/api/v1/manufacturing/kanban-control-cycle": {
+      "get": {
+        "summary": "获取看板控制周期详情",
+        "operationId": "KanbanService_GetKanbanControlCycle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/kanbanKanbanControlCycle"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "control_cycle_number",
+            "description": "控制周期编号",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "KanbanService"
+        ]
+      },
+      "post": {
+        "summary": "创建看板控制周期 (New)",
+        "operationId": "KanbanService_CreateKanbanControlCycle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/kanbanControlCycleResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/kanbanCreateControlCycleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "KanbanService"
+        ]
+      },
+      "put": {
+        "summary": "更新看板控制周期 (New)",
+        "operationId": "KanbanService_UpdateKanbanControlCycle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/kanbanControlCycleResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/kanbanUpdateControlCycleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "KanbanService"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "commonApiMessage": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          }
+        }
+      },
+      "commonKanbanStatus": {
+        "type": "string",
+        "enum": [
+          "KANBAN_STATUS_UNSPECIFIED",
+          "KANBAN_STATUS_EMPTY",
+          "KANBAN_STATUS_FULL",
+          "KANBAN_STATUS_IN_TRANSIT",
+          "KANBAN_STATUS_WAIT",
+          "KANBAN_STATUS_ERROR",
+          "KANBAN_STATUS_IN_USE"
+        ],
+        "default": "KANBAN_STATUS_UNSPECIFIED",
+        "description": "- KANBAN_STATUS_EMPTY: 空 (需要补货)\n - KANBAN_STATUS_FULL: 满 (已补货)\n - KANBAN_STATUS_IN_TRANSIT: 运输中\n - KANBAN_STATUS_WAIT: 等待中\n - KANBAN_STATUS_ERROR: 错误\n - KANBAN_STATUS_IN_USE: 使用中",
+        "title": "看板状态 (Kanban)"
+      },
+      "commonPaginationRequest": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sort_by": {
+            "type": "string"
+          },
+          "descending": {
+            "type": "boolean"
+          }
+        }
+      },
+      "commonPaginationResponse": {
+        "type": "object",
+        "properties": {
+          "current_page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total_items": {
+            "type": "string",
+            "format": "int64"
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "commonQuantityValue": {
+        "type": "object",
+        "properties": {
+          "unit_code": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "commonReplenishmentStrategy": {
+        "type": "string",
+        "enum": [
+          "REPLENISHMENT_STRATEGY_UNSPECIFIED",
+          "REPLENISHMENT_STRATEGY_IN_HOUSE",
+          "REPLENISHMENT_STRATEGY_EXTERNAL",
+          "REPLENISHMENT_STRATEGY_STOCK_TRANSFER",
+          "REPLENISHMENT_STRATEGY_CONSIGNMENT"
+        ],
+        "default": "REPLENISHMENT_STRATEGY_UNSPECIFIED",
+        "description": "- REPLENISHMENT_STRATEGY_IN_HOUSE: 内部生产\n - REPLENISHMENT_STRATEGY_EXTERNAL: 外部采购\n - REPLENISHMENT_STRATEGY_STOCK_TRANSFER: 库存转储\n - REPLENISHMENT_STRATEGY_CONSIGNMENT: 寄售",
+        "title": "补货策略 (Kanban/Production)"
+      },
+      "commonRequestContext": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "idempotency_key": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_system": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          }
+        }
+      },
+      "kanbanChangeKanbanStatusRequest": {
+        "type": "object",
+        "properties": {
+          "container_id": {
+            "type": "string",
+            "title": "容器ID"
+          },
+          "new_status": {
+            "$ref": "#/components/schemas/commonKanbanStatus"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "更改看板状态请求"
+      },
+      "kanbanChangeKanbanStatusResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "操作是否成功"
+          },
+          "replenishment_document_number": {
+            "type": "string",
+            "title": "触发的补货凭证号 (例如, 生产订单号或采购订单号)"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            },
+            "title": "从核心ERP返回的消息列表"
+          }
+        },
+        "title": "更改看板状态响应"
+      },
+      "kanbanControlCycleResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "control_cycle_number": {
+            "type": "string"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          }
+        },
+        "title": "控制周期响应"
+      },
+      "kanbanCreateControlCycleRequest": {
+        "type": "object",
+        "properties": {
+          "control_cycle": {
+            "$ref": "#/components/schemas/kanbanKanbanControlCycle"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "创建看板控制周期请求"
+      },
+      "kanbanKanbanContainer": {
+        "type": "object",
+        "properties": {
+          "container_id": {
+            "type": "string",
+            "title": "容器ID (通常是控制周期号 + 序列号)"
+          },
+          "control_cycle_number": {
+            "type": "string",
+            "title": "控制周期编号"
+          },
+          "status": {
+            "$ref": "#/components/schemas/commonKanbanStatus"
+          }
+        },
+        "title": "看板容器"
+      },
+      "kanbanKanbanControlCycle": {
+        "type": "object",
+        "properties": {
+          "control_cycle_number": {
+            "type": "string",
+            "title": "控制周期编号 (原: REGEL)"
+          },
+          "material": {
+            "type": "string",
+            "title": "物料编号 (原: MATNR)"
+          },
+          "plant": {
+            "type": "string",
+            "title": "工厂 (原: WERKS)"
+          },
+          "production_supply_area": {
+            "type": "string",
+            "title": "生产供应区域 (原: PRVBE)"
+          },
+          "number_of_kanbans": {
+            "type": "integer",
+            "format": "int32",
+            "title": "看板容器数量 (原: ANZPK)"
+          },
+          "quantity_per_kanban": {
+            "$ref": "#/components/schemas/commonQuantityValue"
+          },
+          "replenishment_strategy": {
+            "$ref": "#/components/schemas/commonReplenishmentStrategy"
+          }
+        },
+        "title": "看板控制周期 (参考: PKHD)"
+      },
+      "kanbanListKanbanContainersResponse": {
+        "type": "object",
+        "properties": {
+          "containers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/kanbanKanbanContainer"
+            },
+            "title": "容器列表"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/commonPaginationResponse"
+          }
+        },
+        "title": "查询看板容器响应"
+      },
+      "kanbanUpdateControlCycleRequest": {
+        "type": "object",
+        "properties": {
+          "control_cycle_number": {
+            "type": "string"
+          },
+          "control_cycle": {
+            "$ref": "#/components/schemas/kanbanKanbanControlCycle"
+          },
+          "update_mask": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "更新看板控制周期请求"
+      },
+      "protobufAny": {
+        "type": "object",
+        "properties": {
+          "@type": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": {}
+      },
+      "rpcStatus": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/protobufAny"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token (e.g. from Login API)"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ]
+}

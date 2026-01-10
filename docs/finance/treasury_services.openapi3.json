@@ -1,0 +1,1442 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Treasury Service API",
+    "description": "资金管理服务 - 现金管理、银行对账、支付处理",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Treasury Team",
+      "email": "treasury@enterprise.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "Bank Statement",
+      "description": "Bank Statement"
+    },
+    {
+      "name": "Payment Run",
+      "description": "Payment Run"
+    },
+    {
+      "name": "TreasuryService",
+      "description": "资金管理服务"
+    }
+  ],
+  "paths": {
+    "/api/v1/finance/treasury/bank-statements": {
+      "get": {
+        "summary": "查询银行对账单列表",
+        "operationId": "TreasuryService_ListBankStatements",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/treasuryListBankStatementsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "company_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date_range.start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "date_range.end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "pagination.page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "TreasuryService"
+        ]
+      }
+    },
+    "/api/v1/finance/treasury/bank-statements/{statement_id}": {
+      "get": {
+        "summary": "获取银行对账单详情",
+        "operationId": "TreasuryService_GetBankStatementDetail",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/treasuryBankStatementDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "statement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "TreasuryService"
+        ]
+      }
+    },
+    "/api/v1/finance/treasury/bank-statements:process": {
+      "post": {
+        "summary": "处理银行对账单",
+        "operationId": "TreasuryService_ProcessBankStatement",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/commonJobInfo"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/treasuryProcessBankStatementRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "Bank Statement"
+        ]
+      }
+    },
+    "/api/v1/finance/treasury/jobs/{job_id}": {
+      "get": {
+        "summary": "获取作业状态 (通用)",
+        "operationId": "TreasuryService_GetJobStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/commonJobInfo"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "TreasuryService"
+        ]
+      }
+    },
+    "/api/v1/finance/treasury/payment-runs": {
+      "get": {
+        "summary": "查询付款运行列表",
+        "operationId": "TreasuryService_ListPaymentRuns",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/treasuryListPaymentRunsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "company_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date_range.start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "date_range.end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "pagination.page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "TreasuryService"
+        ]
+      }
+    },
+    "/api/v1/finance/treasury/payment-runs/{run_id}": {
+      "get": {
+        "summary": "获取付款运行详情",
+        "operationId": "TreasuryService_GetPaymentRunStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/treasuryPaymentRunDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "TreasuryService"
+        ]
+      },
+      "delete": {
+        "summary": "取消付款运行",
+        "operationId": "TreasuryService_CancelPaymentRun",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/commonJobInfo"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "TreasuryService"
+        ]
+      }
+    },
+    "/api/v1/finance/treasury/payment-runs:execute": {
+      "post": {
+        "summary": "执行付款运行",
+        "operationId": "TreasuryService_ExecutePaymentRun",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/commonJobInfo"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/treasuryExecutePaymentRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "Payment Run"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "bearer_auth": []
+    },
+    {
+      "BearerAuth": []
+    }
+  ],
+  "servers": [
+    {
+      "url": "http://localhost:8083"
+    },
+    {
+      "url": "https://localhost:8083"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearer_auth": {
+        "type": "apiKey",
+        "description": "Bearer token for authentication",
+        "name": "Authorization",
+        "in": "header"
+      },
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token (e.g. from Login API)"
+      }
+    },
+    "schemas": {
+      "commonApiMessage": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          }
+        }
+      },
+      "commonAuditData": {
+        "type": "object",
+        "properties": {
+          "created_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "changed_by": {
+            "type": "string"
+          },
+          "changed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "commonBankStatementFormat": {
+        "type": "string",
+        "enum": [
+          "BANK_STATEMENT_FORMAT_UNSPECIFIED",
+          "BANK_STATEMENT_FORMAT_MT940",
+          "BANK_STATEMENT_FORMAT_CAMT053",
+          "BANK_STATEMENT_FORMAT_BAI2",
+          "BANK_STATEMENT_FORMAT_OFX",
+          "BANK_STATEMENT_FORMAT_CSV_CUSTOM",
+          "BANK_STATEMENT_FORMAT_MULTI_CASH"
+        ],
+        "default": "BANK_STATEMENT_FORMAT_UNSPECIFIED",
+        "title": "银行对账单格式"
+      },
+      "commonDateRange": {
+        "type": "object",
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "commonJobInfo": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string"
+          },
+          "job_type": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/commonJobStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "progress_percentage": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          },
+          "error_detail": {
+            "type": "string"
+          }
+        }
+      },
+      "commonJobStatus": {
+        "type": "string",
+        "enum": [
+          "JOB_STATUS_UNSPECIFIED",
+          "JOB_STATUS_PENDING",
+          "JOB_STATUS_RUNNING",
+          "JOB_STATUS_COMPLETED",
+          "JOB_STATUS_FAILED",
+          "JOB_STATUS_CANCELLED",
+          "JOB_STATUS_PARTIALLY_COMPLETED"
+        ],
+        "default": "JOB_STATUS_UNSPECIFIED",
+        "title": "异步作业状态"
+      },
+      "commonMonetaryValue": {
+        "type": "object",
+        "properties": {
+          "currency_code": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "commonPaginationRequest": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sort_by": {
+            "type": "string"
+          },
+          "descending": {
+            "type": "boolean"
+          }
+        }
+      },
+      "commonPaginationResponse": {
+        "type": "object",
+        "properties": {
+          "current_page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total_items": {
+            "type": "string",
+            "format": "int64"
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "commonPaymentMethodType": {
+        "type": "string",
+        "enum": [
+          "PAYMENT_METHOD_TYPE_UNSPECIFIED",
+          "PAYMENT_METHOD_TYPE_SEPA",
+          "PAYMENT_METHOD_TYPE_WIRE",
+          "PAYMENT_METHOD_TYPE_CHECK",
+          "PAYMENT_METHOD_TYPE_ACH",
+          "PAYMENT_METHOD_TYPE_CREDIT_CARD",
+          "PAYMENT_METHOD_TYPE_CASH",
+          "PAYMENT_METHOD_TYPE_BILL_OF_EXCHANGE",
+          "PAYMENT_METHOD_TYPE_DIRECT_DEBIT"
+        ],
+        "default": "PAYMENT_METHOD_TYPE_UNSPECIFIED",
+        "title": "支付方式"
+      },
+      "commonRequestContext": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "idempotency_key": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_system": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          }
+        }
+      },
+      "commonSystemDocumentReference": {
+        "type": "object",
+        "properties": {
+          "document_number": {
+            "type": "string"
+          },
+          "fiscal_year": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "company_code": {
+            "type": "string"
+          },
+          "document_type": {
+            "type": "string"
+          },
+          "document_category": {
+            "type": "string"
+          }
+        }
+      },
+      "protobufAny": {
+        "type": "object",
+        "properties": {
+          "@type": {
+            "type": "string",
+            "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com. As of May 2023, there are no widely used type server\nimplementations and no plans to implement one.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+          }
+        },
+        "additionalProperties": {},
+        "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(&foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := &pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := &pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": <string>,\n      \"lastName\": <string>\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+      },
+      "rpcStatus": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/protobufAny"
+            }
+          }
+        }
+      },
+      "treasuryBankStatementDetail": {
+        "type": "object",
+        "properties": {
+          "statement_id": {
+            "type": "string"
+          },
+          "company_code": {
+            "type": "string"
+          },
+          "format": {
+            "$ref": "#/components/schemas/commonBankStatementFormat"
+          },
+          "transactions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/treasuryBankStatementTransaction"
+            }
+          },
+          "audit_data": {
+            "$ref": "#/components/schemas/commonAuditData"
+          }
+        }
+      },
+      "treasuryBankStatementSummary": {
+        "type": "object",
+        "properties": {
+          "statement_id": {
+            "type": "string"
+          },
+          "statement_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "company_code": {
+            "type": "string"
+          }
+        }
+      },
+      "treasuryBankStatementTransaction": {
+        "type": "object",
+        "properties": {
+          "transaction_id": {
+            "type": "string"
+          },
+          "value_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/commonMonetaryValue"
+          },
+          "memo": {
+            "type": "string"
+          },
+          "partner_name": {
+            "type": "string"
+          }
+        }
+      },
+      "treasuryExecutePaymentRunRequest": {
+        "type": "object",
+        "properties": {
+          "run_id": {
+            "type": "string"
+          },
+          "posting_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/treasuryPaymentRunParameters"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        }
+      },
+      "treasuryListBankStatementsResponse": {
+        "type": "object",
+        "properties": {
+          "statements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/treasuryBankStatementSummary"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/commonPaginationResponse"
+          }
+        }
+      },
+      "treasuryListPaymentRunsResponse": {
+        "type": "object",
+        "properties": {
+          "payment_runs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/treasuryPaymentRunSummary"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/commonPaginationResponse"
+          }
+        }
+      },
+      "treasuryPaymentDocument": {
+        "type": "object",
+        "properties": {
+          "document_reference": {
+            "$ref": "#/components/schemas/commonSystemDocumentReference"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/commonMonetaryValue"
+          },
+          "payee_name": {
+            "type": "string"
+          }
+        }
+      },
+      "treasuryPaymentException": {
+        "type": "object",
+        "properties": {
+          "document_number": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "error_code": {
+            "type": "string"
+          }
+        }
+      },
+      "treasuryPaymentRunDetail": {
+        "type": "object",
+        "properties": {
+          "run_id": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/commonJobStatus"
+          },
+          "paid_documents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/treasuryPaymentDocument"
+            }
+          },
+          "exceptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/treasuryPaymentException"
+            }
+          },
+          "audit_data": {
+            "$ref": "#/components/schemas/commonAuditData"
+          }
+        }
+      },
+      "treasuryPaymentRunParameters": {
+        "type": "object",
+        "properties": {
+          "company_codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "payment_methods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonPaymentMethodType"
+            }
+          },
+          "next_posting_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "vendor_range": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "treasuryPaymentRunSummary": {
+        "type": "object",
+        "properties": {
+          "run_id": {
+            "type": "string"
+          },
+          "run_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "$ref": "#/components/schemas/commonJobStatus"
+          }
+        }
+      },
+      "treasuryProcessBankStatementRequest": {
+        "type": "object",
+        "properties": {
+          "company_code": {
+            "type": "string"
+          },
+          "raw_statement_data": {
+            "type": "string",
+            "format": "byte"
+          },
+          "statement_format": {
+            "$ref": "#/components/schemas/commonBankStatementFormat"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,836 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Revenue Recognition Service API",
+    "version": "version not set",
+    "description": "收入确认服务 - 收入分摊、递延收入、IFRS15合规",
+    "contact": {
+      "name": "Revenue Team",
+      "email": "revenue@enterprise.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "RevenueRecognitionService",
+      "description": "RevenueRecognitionService"
+    }
+  ],
+  "paths": {
+    "/api/v1/sales/performance-obligations": {
+      "get": {
+        "summary": "获取收入合同的履约义务 (POB)",
+        "operationId": "RevenueRecognitionService_GetPerformanceObligations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/revrecGetPerformanceObligationsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "revenue_contract_number",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "RevenueRecognitionService"
+        ]
+      }
+    },
+    "/api/v1/sales/revenue-contract": {
+      "post": {
+        "summary": "创建收入合同 (New)",
+        "operationId": "RevenueRecognitionService_CreateRevenueContract",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/revrecRevenueContractResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/revrecCreateRevenueContractRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "RevenueRecognitionService"
+        ]
+      }
+    },
+    "/api/v1/sales/revenue-posting/reverse": {
+      "post": {
+        "summary": "冲销收入过账 (New)",
+        "operationId": "RevenueRecognitionService_ReverseRevenuePosting",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/revrecRevenuePostingResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/revrecReverseRevenuePostingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "RevenueRecognitionService"
+        ]
+      }
+    },
+    "/api/v1/sales/revenue-postings": {
+      "get": {
+        "summary": "查询收入过账凭证",
+        "operationId": "RevenueRecognitionService_GetRevenuePostings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/revrecGetRevenuePostingsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pob_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "posting_date_range.start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "posting_date_range.end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "pagination.page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "RevenueRecognitionService"
+        ]
+      }
+    },
+    "/api/v1/sales/run-revenue-posting": {
+      "post": {
+        "summary": "执行收入确认运行",
+        "operationId": "RevenueRecognitionService_RunRevenuePosting",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/revrecRunRevenuePostingResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/revrecRunRevenuePostingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "RevenueRecognitionService"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "commonApiMessage": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          }
+        }
+      },
+      "commonDateRange": {
+        "type": "object",
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "commonDocumentType": {
+        "type": "string",
+        "enum": [
+          "DOCUMENT_TYPE_UNSPECIFIED",
+          "DOCUMENT_TYPE_STANDARD_PO",
+          "DOCUMENT_TYPE_CONTRACT",
+          "DOCUMENT_TYPE_RFQ",
+          "DOCUMENT_TYPE_SCHEDULING_AGREEMENT",
+          "DOCUMENT_TYPE_FRAMEWORK_ORDER",
+          "DOCUMENT_TYPE_CONSIGNMENT",
+          "DOCUMENT_TYPE_STOCK_TRANSPORT",
+          "DOCUMENT_TYPE_SALES_ORDER",
+          "DOCUMENT_TYPE_PURCHASE_ORDER",
+          "DOCUMENT_TYPE_DELIVERY",
+          "DOCUMENT_TYPE_INVOICE",
+          "DOCUMENT_TYPE_PAYMENT",
+          "DOCUMENT_TYPE_RESERVATION",
+          "DOCUMENT_TYPE_TRANSFER_ORDER",
+          "DOCUMENT_TYPE_SHIPMENT"
+        ],
+        "default": "DOCUMENT_TYPE_UNSPECIFIED",
+        "description": "- DOCUMENT_TYPE_PURCHASE_ORDER: Added for generic PO reference",
+        "title": "凭证类型 (Procurement)"
+      },
+      "commonItemCategory": {
+        "type": "string",
+        "enum": [
+          "ITEM_CATEGORY_UNSPECIFIED",
+          "ITEM_CATEGORY_STANDARD",
+          "ITEM_CATEGORY_LIMIT",
+          "ITEM_CATEGORY_CONSIGNMENT",
+          "ITEM_CATEGORY_SUBCONTRACTING",
+          "ITEM_CATEGORY_THIRD_PARTY",
+          "ITEM_CATEGORY_SERVICE"
+        ],
+        "default": "ITEM_CATEGORY_UNSPECIFIED",
+        "title": "项目类别 (Procurement)"
+      },
+      "commonMonetaryValue": {
+        "type": "object",
+        "properties": {
+          "currency_code": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "commonPaginationRequest": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sort_by": {
+            "type": "string"
+          },
+          "descending": {
+            "type": "boolean"
+          }
+        }
+      },
+      "commonPaginationResponse": {
+        "type": "object",
+        "properties": {
+          "current_page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total_items": {
+            "type": "string",
+            "format": "int64"
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "commonPostingType": {
+        "type": "string",
+        "enum": [
+          "POSTING_TYPE_UNSPECIFIED",
+          "POSTING_TYPE_REVENUE",
+          "POSTING_TYPE_DEFERRED_REVENUE",
+          "POSTING_TYPE_COGS",
+          "POSTING_TYPE_ACCRUED_REVENUE",
+          "POSTING_TYPE_CONTRACT_ASSET",
+          "POSTING_TYPE_CONTRACT_LIABILITY"
+        ],
+        "default": "POSTING_TYPE_UNSPECIFIED",
+        "title": "过账类型 (Revenue Recognition)"
+      },
+      "commonRequestContext": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "idempotency_key": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_system": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          }
+        }
+      },
+      "protobufAny": {
+        "type": "object",
+        "properties": {
+          "@type": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": {}
+      },
+      "revrecCreateRevenueContractRequest": {
+        "type": "object",
+        "properties": {
+          "source_document_number": {
+            "type": "string",
+            "title": "e.g. Sales Order"
+          },
+          "source_document_type": {
+            "$ref": "#/components/schemas/commonDocumentType"
+          },
+          "company_code": {
+            "type": "string"
+          },
+          "customer": {
+            "type": "string"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        }
+      },
+      "revrecGetPerformanceObligationsResponse": {
+        "type": "object",
+        "properties": {
+          "obligations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/revrecPerformanceObligation"
+            }
+          }
+        },
+        "title": "获取履约义务响应"
+      },
+      "revrecGetRevenuePostingsResponse": {
+        "type": "object",
+        "properties": {
+          "documents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/revrecRevenuePostingDocument"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/commonPaginationResponse"
+          }
+        },
+        "title": "查询收入过账凭证响应"
+      },
+      "revrecPerformanceObligation": {
+        "type": "object",
+        "properties": {
+          "pob_id": {
+            "type": "string"
+          },
+          "revenue_contract_number": {
+            "type": "string"
+          },
+          "source_document": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "allocated_price": {
+            "$ref": "#/components/schemas/commonMonetaryValue"
+          },
+          "recognition_method": {
+            "type": "string"
+          },
+          "recognized_revenue": {
+            "$ref": "#/components/schemas/commonMonetaryValue"
+          },
+          "deferred_revenue": {
+            "$ref": "#/components/schemas/commonMonetaryValue"
+          },
+          "item_category": {
+            "$ref": "#/components/schemas/commonItemCategory"
+          }
+        },
+        "title": "履约义务 (POB)"
+      },
+      "revrecRevenueContractResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "revenue_contract_number": {
+            "type": "string"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          }
+        }
+      },
+      "revrecRevenuePostingDocument": {
+        "type": "object",
+        "properties": {
+          "document_id": {
+            "type": "string"
+          },
+          "posting_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pob_id": {
+            "type": "string"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/commonMonetaryValue"
+          },
+          "posting_type": {
+            "$ref": "#/components/schemas/commonPostingType"
+          },
+          "accounting_document_number": {
+            "type": "string"
+          }
+        },
+        "title": "收入过账凭证"
+      },
+      "revrecRevenuePostingResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "reversal_document_id": {
+            "type": "string"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          }
+        }
+      },
+      "revrecReverseRevenuePostingRequest": {
+        "type": "object",
+        "properties": {
+          "document_id": {
+            "type": "string"
+          },
+          "reversal_reason": {
+            "type": "string"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        }
+      },
+      "revrecRunRevenuePostingRequest": {
+        "type": "object",
+        "properties": {
+          "company_code": {
+            "type": "string"
+          },
+          "posting_period": {
+            "type": "string",
+            "title": "YYYY-MM"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "执行收入确认运行请求"
+      },
+      "revrecRunRevenuePostingResponse": {
+        "type": "object",
+        "properties": {
+          "run_id": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "documents_created": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          }
+        },
+        "title": "执行收入确认运行响应"
+      },
+      "rpcStatus": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/protobufAny"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token (e.g. from Login API)"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ]
+}

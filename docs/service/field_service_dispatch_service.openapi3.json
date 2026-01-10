@@ -1,0 +1,868 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Field Service Dispatch Service API",
+    "version": "version not set",
+    "description": "现场服务调度 - 工单分派、技术员调度、路径优化",
+    "contact": {
+      "name": "Field Service Team",
+      "email": "field-service@enterprise.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "FieldServiceDispatchService",
+      "description": "FieldServiceDispatchService"
+    }
+  ],
+  "paths": {
+    "/api/v1/service/assignment/cancel": {
+      "post": {
+        "summary": "取消分配 (New)",
+        "operationId": "FieldServiceDispatchService_CancelAssignment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/dispatchAssignTechnicianResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/dispatchCancelAssignmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "FieldServiceDispatchService"
+        ]
+      }
+    },
+    "/api/v1/service/reschedule-order": {
+      "post": {
+        "summary": "重新调度订单 (New)",
+        "operationId": "FieldServiceDispatchService_RescheduleOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/dispatchServiceOrderDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/dispatchRescheduleOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "FieldServiceDispatchService"
+        ]
+      }
+    },
+    "/api/v1/service/service-order": {
+      "get": {
+        "summary": "获取服务订单详情",
+        "operationId": "FieldServiceDispatchService_GetServiceOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/dispatchServiceOrderDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "order_number",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "FieldServiceDispatchService"
+        ]
+      }
+    },
+    "/api/v1/service/service-order-status": {
+      "put": {
+        "summary": "更新服务订单状态",
+        "operationId": "FieldServiceDispatchService_UpdateServiceOrderStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/dispatchUpdateServiceOrderStatusResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/dispatchUpdateServiceOrderStatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "FieldServiceDispatchService"
+        ]
+      }
+    },
+    "/api/v1/service/service-orders": {
+      "get": {
+        "summary": "查询服务订单列表 (New)",
+        "operationId": "FieldServiceDispatchService_ListServiceOrders",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/dispatchListServiceOrdersResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "technician_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customer_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date_range.start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "date_range.end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "status_filter",
+            "description": " - SERVICE_ORDER_STATUS_ON_SITE: Technician Arrived\n - SERVICE_ORDER_STATUS_WIP: Work In Progress",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SERVICE_ORDER_STATUS_UNSPECIFIED",
+                "SERVICE_ORDER_STATUS_CREATED",
+                "SERVICE_ORDER_STATUS_DISPATCHED",
+                "SERVICE_ORDER_STATUS_ON_SITE",
+                "SERVICE_ORDER_STATUS_WIP",
+                "SERVICE_ORDER_STATUS_COMPLETED",
+                "SERVICE_ORDER_STATUS_CANCELLED",
+                "SERVICE_ORDER_STATUS_ON_HOLD"
+              ],
+              "default": "SERVICE_ORDER_STATUS_UNSPECIFIED"
+            }
+          },
+          {
+            "name": "pagination.page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "FieldServiceDispatchService"
+        ]
+      }
+    },
+    "/api/v1/service/technician/assign": {
+      "post": {
+        "summary": "将技术人员分配到服务订单",
+        "operationId": "FieldServiceDispatchService_AssignTechnician",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/dispatchAssignTechnicianResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/dispatchAssignTechnicianRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "FieldServiceDispatchService"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "commonAddress": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "postal_code": {
+            "type": "string"
+          },
+          "street": {
+            "type": "string"
+          },
+          "house_number": {
+            "type": "string"
+          }
+        }
+      },
+      "commonApiMessage": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          }
+        }
+      },
+      "commonAuditData": {
+        "type": "object",
+        "properties": {
+          "created_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "changed_by": {
+            "type": "string"
+          },
+          "changed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "commonDateRange": {
+        "type": "object",
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "commonPaginationRequest": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sort_by": {
+            "type": "string"
+          },
+          "descending": {
+            "type": "boolean"
+          }
+        }
+      },
+      "commonPaginationResponse": {
+        "type": "object",
+        "properties": {
+          "current_page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total_items": {
+            "type": "string",
+            "format": "int64"
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "commonRequestContext": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "idempotency_key": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_system": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          }
+        }
+      },
+      "commonServiceOrderStatus": {
+        "type": "string",
+        "enum": [
+          "SERVICE_ORDER_STATUS_UNSPECIFIED",
+          "SERVICE_ORDER_STATUS_CREATED",
+          "SERVICE_ORDER_STATUS_DISPATCHED",
+          "SERVICE_ORDER_STATUS_ON_SITE",
+          "SERVICE_ORDER_STATUS_WIP",
+          "SERVICE_ORDER_STATUS_COMPLETED",
+          "SERVICE_ORDER_STATUS_CANCELLED",
+          "SERVICE_ORDER_STATUS_ON_HOLD"
+        ],
+        "default": "SERVICE_ORDER_STATUS_UNSPECIFIED",
+        "description": "- SERVICE_ORDER_STATUS_ON_SITE: Technician Arrived\n - SERVICE_ORDER_STATUS_WIP: Work In Progress",
+        "title": "服务订单状态"
+      },
+      "commonServiceOrderType": {
+        "type": "string",
+        "enum": [
+          "SERVICE_ORDER_TYPE_UNSPECIFIED",
+          "SERVICE_ORDER_TYPE_REPAIR",
+          "SERVICE_ORDER_TYPE_MAINTENANCE",
+          "SERVICE_ORDER_TYPE_INSTALLATION",
+          "SERVICE_ORDER_TYPE_INSPECTION",
+          "SERVICE_ORDER_TYPE_CONSULTING"
+        ],
+        "default": "SERVICE_ORDER_TYPE_UNSPECIFIED",
+        "title": "服务订单类型"
+      },
+      "dispatchAssignTechnicianRequest": {
+        "type": "object",
+        "properties": {
+          "order_number": {
+            "type": "string"
+          },
+          "technician_id": {
+            "type": "string"
+          },
+          "scheduled_datetime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "分配技术人员请求"
+      },
+      "dispatchAssignTechnicianResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          }
+        },
+        "title": "分配技术人员响应"
+      },
+      "dispatchCancelAssignmentRequest": {
+        "type": "object",
+        "properties": {
+          "order_number": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        }
+      },
+      "dispatchListServiceOrdersResponse": {
+        "type": "object",
+        "properties": {
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/dispatchServiceOrderDetail"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/commonPaginationResponse"
+          }
+        }
+      },
+      "dispatchRescheduleOrderRequest": {
+        "type": "object",
+        "properties": {
+          "order_number": {
+            "type": "string"
+          },
+          "new_start_datetime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        }
+      },
+      "dispatchServiceOrderDetail": {
+        "type": "object",
+        "properties": {
+          "order_number": {
+            "type": "string"
+          },
+          "order_type": {
+            "$ref": "#/components/schemas/commonServiceOrderType"
+          },
+          "customer_id": {
+            "type": "string"
+          },
+          "service_location": {
+            "$ref": "#/components/schemas/commonAddress"
+          },
+          "description": {
+            "type": "string"
+          },
+          "planned_start_datetime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "assigned_technician_id": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/commonServiceOrderStatus"
+          },
+          "audit_data": {
+            "$ref": "#/components/schemas/commonAuditData"
+          }
+        },
+        "title": "服务订单详情"
+      },
+      "dispatchUpdateServiceOrderStatusRequest": {
+        "type": "object",
+        "properties": {
+          "order_number": {
+            "type": "string"
+          },
+          "new_status": {
+            "$ref": "#/components/schemas/commonServiceOrderStatus"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "更新服务订单状态请求"
+      },
+      "dispatchUpdateServiceOrderStatusResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          }
+        },
+        "title": "更新服务订单状态响应"
+      },
+      "protobufAny": {
+        "type": "object",
+        "properties": {
+          "@type": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": {}
+      },
+      "rpcStatus": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/protobufAny"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token (e.g. from Login API)"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ]
+}

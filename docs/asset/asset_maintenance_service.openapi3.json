@@ -1,0 +1,1726 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Asset Maintenance Service API",
+    "version": "version not set",
+    "description": "资产维护管理服务 - 设备维护计划、工单管理、预防性维护",
+    "contact": {
+      "name": "Asset Team",
+      "email": "asset@enterprise.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "AssetMaintenanceService",
+      "description": "AssetMaintenanceService"
+    }
+  ],
+  "paths": {
+    "/api/v1/asset/maintenance-notification": {
+      "post": {
+        "summary": "创建维护通知单",
+        "operationId": "AssetMaintenanceService_CreateMaintenanceNotification",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/maintenanceNotificationResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/maintenanceCreateNotificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "AssetMaintenanceService"
+        ]
+      },
+      "put": {
+        "summary": "更新维护通知单",
+        "operationId": "AssetMaintenanceService_UpdateMaintenanceNotification",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/maintenanceNotificationResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/maintenanceUpdateNotificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "AssetMaintenanceService"
+        ]
+      }
+    },
+    "/api/v1/asset/maintenance-notification/release": {
+      "post": {
+        "summary": "下达维护通知单 (New)",
+        "operationId": "AssetMaintenanceService_ReleaseMaintenanceNotification",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/maintenanceNotificationResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/maintenanceReleaseNotificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "AssetMaintenanceService"
+        ]
+      }
+    },
+    "/api/v1/asset/maintenance-notifications": {
+      "get": {
+        "summary": "查询维护通知单列表 (New)",
+        "operationId": "AssetMaintenanceService_ListMaintenanceNotifications",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/maintenanceListNotificationsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "equipment_number",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date_range.start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "date_range.end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "status_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagination.page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "AssetMaintenanceService"
+        ]
+      }
+    },
+    "/api/v1/asset/maintenance-operation/confirm": {
+      "post": {
+        "summary": "确认维护订单工序 (报工)",
+        "operationId": "AssetMaintenanceService_ConfirmMaintenanceOperation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/maintenanceConfirmMaintenanceOperationResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/maintenanceConfirmMaintenanceOperationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "AssetMaintenanceService"
+        ]
+      }
+    },
+    "/api/v1/asset/maintenance-order": {
+      "get": {
+        "summary": "获取维护订单详情",
+        "operationId": "AssetMaintenanceService_GetMaintenanceOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/maintenanceMaintenanceOrderDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "order_number",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "AssetMaintenanceService"
+        ]
+      },
+      "post": {
+        "summary": "基于通知单或直接创建维护订单",
+        "operationId": "AssetMaintenanceService_CreateMaintenanceOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/maintenanceMaintenanceOrderResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/maintenanceCreateMaintenanceOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "AssetMaintenanceService"
+        ]
+      },
+      "put": {
+        "summary": "更新维护订单",
+        "operationId": "AssetMaintenanceService_UpdateMaintenanceOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/maintenanceMaintenanceOrderResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/maintenanceUpdateMaintenanceOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "AssetMaintenanceService"
+        ]
+      }
+    },
+    "/api/v1/asset/maintenance-order/cancel": {
+      "post": {
+        "summary": "取消维护订单 (New)",
+        "operationId": "AssetMaintenanceService_CancelMaintenanceOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/maintenanceMaintenanceOrderResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/maintenanceCancelMaintenanceOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "AssetMaintenanceService"
+        ]
+      }
+    },
+    "/api/v1/asset/maintenance-order/complete": {
+      "post": {
+        "summary": "技术性完成维护订单 (TECO)",
+        "operationId": "AssetMaintenanceService_CompleteMaintenanceOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/maintenanceMaintenanceOrderResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/maintenanceCompleteMaintenanceOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "AssetMaintenanceService"
+        ]
+      }
+    },
+    "/api/v1/asset/maintenance-order/release": {
+      "post": {
+        "summary": "下达维护订单 (Release)",
+        "operationId": "AssetMaintenanceService_ReleaseMaintenanceOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/maintenanceMaintenanceOrderResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/maintenanceReleaseMaintenanceOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "tags": [
+          "AssetMaintenanceService"
+        ]
+      }
+    },
+    "/api/v1/asset/maintenance-orders": {
+      "get": {
+        "summary": "查询维护订单列表 (New)",
+        "operationId": "AssetMaintenanceService_ListMaintenanceOrders",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/maintenanceListOrdersResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "equipment_number",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date_range.start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "date_range.end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "status_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagination.page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pagination.sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "AssetMaintenanceService"
+        ]
+      }
+    },
+    "/api/v1/asset/order-components": {
+      "get": {
+        "summary": "获取订单组件列表",
+        "operationId": "AssetMaintenanceService_GetOrderComponents",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/maintenanceOrderComponentsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rpcStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "order_number",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.request_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.roles",
+            "in": "query",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "context.idempotency_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "context.source_system",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context.correlation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": [
+          "AssetMaintenanceService"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "commonApiMessage": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          }
+        }
+      },
+      "commonConfirmationType": {
+        "type": "string",
+        "enum": [
+          "CONFIRMATION_TYPE_UNSPECIFIED",
+          "CONFIRMATION_TYPE_PARTIAL",
+          "CONFIRMATION_TYPE_FINAL",
+          "CONFIRMATION_TYPE_AUTOMATIC"
+        ],
+        "default": "CONFIRMATION_TYPE_UNSPECIFIED",
+        "title": "确认类型 (Maintenance)"
+      },
+      "commonDateRange": {
+        "type": "object",
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "commonItemCategory": {
+        "type": "string",
+        "enum": [
+          "ITEM_CATEGORY_UNSPECIFIED",
+          "ITEM_CATEGORY_STANDARD",
+          "ITEM_CATEGORY_LIMIT",
+          "ITEM_CATEGORY_CONSIGNMENT",
+          "ITEM_CATEGORY_SUBCONTRACTING",
+          "ITEM_CATEGORY_THIRD_PARTY",
+          "ITEM_CATEGORY_SERVICE"
+        ],
+        "default": "ITEM_CATEGORY_UNSPECIFIED",
+        "title": "项目类别 (Procurement)"
+      },
+      "commonMonetaryValue": {
+        "type": "object",
+        "properties": {
+          "currency_code": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "commonOperationStatus": {
+        "type": "string",
+        "enum": [
+          "OPERATION_STATUS_UNSPECIFIED",
+          "OPERATION_STATUS_CRTD",
+          "OPERATION_STATUS_REL",
+          "OPERATION_STATUS_PCNF",
+          "OPERATION_STATUS_CNF",
+          "OPERATION_STATUS_DLV",
+          "OPERATION_STATUS_TECO",
+          "OPERATION_STATUS_CLSD"
+        ],
+        "default": "OPERATION_STATUS_UNSPECIFIED",
+        "description": "- OPERATION_STATUS_CRTD: 已创建\n - OPERATION_STATUS_REL: 已下达\n - OPERATION_STATUS_PCNF: 部分确认\n - OPERATION_STATUS_CNF: 已确认\n - OPERATION_STATUS_DLV: 已交货\n - OPERATION_STATUS_TECO: 技术性完成\n - OPERATION_STATUS_CLSD: 已关闭",
+        "title": "工序/订单状态 (Production)"
+      },
+      "commonOrderStatus": {
+        "type": "string",
+        "enum": [
+          "ORDER_STATUS_UNSPECIFIED",
+          "ORDER_STATUS_CREATED",
+          "ORDER_STATUS_RELEASED",
+          "ORDER_STATUS_CONFIRMED",
+          "ORDER_STATUS_PARTIALLY_CONFIRMED",
+          "ORDER_STATUS_DELIVERED",
+          "ORDER_STATUS_TECO",
+          "ORDER_STATUS_CLOSED",
+          "ORDER_STATUS_LOCKED",
+          "ORDER_STATUS_DELETED",
+          "ORDER_STATUS_OPEN",
+          "ORDER_STATUS_PROCESSING",
+          "ORDER_STATUS_SHIPPED",
+          "ORDER_STATUS_INVOICED",
+          "ORDER_STATUS_COMPLETED",
+          "ORDER_STATUS_CANCELLED"
+        ],
+        "default": "ORDER_STATUS_UNSPECIFIED",
+        "description": "- ORDER_STATUS_TECO: Technically Completed\n - ORDER_STATUS_OPEN: Sales specific additions",
+        "title": "订单状态 (Production/Sales)"
+      },
+      "commonPaginationRequest": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sort_by": {
+            "type": "string"
+          },
+          "descending": {
+            "type": "boolean"
+          }
+        }
+      },
+      "commonPaginationResponse": {
+        "type": "object",
+        "properties": {
+          "current_page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total_items": {
+            "type": "string",
+            "format": "int64"
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "commonQuantityValue": {
+        "type": "object",
+        "properties": {
+          "unit_code": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "commonRequestContext": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "idempotency_key": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_system": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          }
+        }
+      },
+      "maintenanceCancelMaintenanceOrderRequest": {
+        "type": "object",
+        "properties": {
+          "order_number": {
+            "type": "string"
+          },
+          "cancellation_reason": {
+            "type": "string"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        }
+      },
+      "maintenanceCompleteMaintenanceOrderRequest": {
+        "type": "object",
+        "properties": {
+          "order_number": {
+            "type": "string"
+          },
+          "reference_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "技术性完成订单请求"
+      },
+      "maintenanceConfirmMaintenanceOperationRequest": {
+        "type": "object",
+        "properties": {
+          "order_number": {
+            "type": "string"
+          },
+          "operation_number": {
+            "type": "string"
+          },
+          "confirmation_type": {
+            "$ref": "#/components/schemas/commonConfirmationType"
+          },
+          "actual_work_duration": {
+            "type": "string"
+          },
+          "work_unit": {
+            "type": "string"
+          },
+          "yield_quantity": {
+            "$ref": "#/components/schemas/commonQuantityValue"
+          },
+          "scrap_quantity": {
+            "$ref": "#/components/schemas/commonQuantityValue"
+          },
+          "confirmation_text": {
+            "type": "string"
+          },
+          "clear_open_reservations": {
+            "type": "boolean"
+          },
+          "posting_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "确认维护订单工序请求"
+      },
+      "maintenanceConfirmMaintenanceOperationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "confirmation_number": {
+            "type": "string"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          }
+        },
+        "title": "确认维护订单工序响应"
+      },
+      "maintenanceCreateMaintenanceOrderRequest": {
+        "type": "object",
+        "properties": {
+          "order_type": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "reference_notification_number": {
+            "type": "string"
+          },
+          "equipment_number": {
+            "type": "string"
+          },
+          "functional_location": {
+            "type": "string"
+          },
+          "planning_plant": {
+            "type": "string"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "创建维护订单请求"
+      },
+      "maintenanceCreateNotificationRequest": {
+        "type": "object",
+        "properties": {
+          "notification": {
+            "$ref": "#/components/schemas/maintenanceMaintenanceNotification"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "创建维护通知单请求"
+      },
+      "maintenanceListNotificationsResponse": {
+        "type": "object",
+        "properties": {
+          "notifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/maintenanceMaintenanceNotification"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/commonPaginationResponse"
+          }
+        }
+      },
+      "maintenanceListOrdersResponse": {
+        "type": "object",
+        "properties": {
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/maintenanceMaintenanceOrderDetail"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/commonPaginationResponse"
+          }
+        }
+      },
+      "maintenanceMaintenanceNotification": {
+        "type": "object",
+        "properties": {
+          "notification_number": {
+            "type": "string"
+          },
+          "notification_type": {
+            "type": "string",
+            "title": "e.g. M1, M2"
+          },
+          "description": {
+            "type": "string"
+          },
+          "long_description": {
+            "type": "string"
+          },
+          "equipment_number": {
+            "type": "string"
+          },
+          "functional_location": {
+            "type": "string"
+          },
+          "assembly_material": {
+            "type": "string"
+          },
+          "reported_by": {
+            "type": "string"
+          },
+          "reported_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "breakdown_start_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "breakdown_end_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "breakdown_duration": {
+            "type": "string"
+          },
+          "breakdown_duration_unit": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/commonOrderStatus"
+          }
+        },
+        "title": "维护通知单 (参考: QMEL)"
+      },
+      "maintenanceMaintenanceOperation": {
+        "type": "object",
+        "properties": {
+          "operation_number": {
+            "type": "string"
+          },
+          "sub_operation_number": {
+            "type": "string"
+          },
+          "control_key": {
+            "type": "string"
+          },
+          "work_center": {
+            "type": "string"
+          },
+          "plant": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "long_description": {
+            "type": "string"
+          },
+          "planned_work_duration": {
+            "type": "string"
+          },
+          "actual_work_duration": {
+            "type": "string"
+          },
+          "work_unit": {
+            "type": "string"
+          },
+          "quantity": {
+            "$ref": "#/components/schemas/commonQuantityValue"
+          },
+          "system_status": {
+            "$ref": "#/components/schemas/commonOperationStatus"
+          }
+        },
+        "title": "维护订单工序 (参考: AFVC)"
+      },
+      "maintenanceMaintenanceOrderComponent": {
+        "type": "object",
+        "properties": {
+          "item_number": {
+            "type": "string"
+          },
+          "material": {
+            "type": "string"
+          },
+          "material_description": {
+            "type": "string"
+          },
+          "requirement_quantity": {
+            "$ref": "#/components/schemas/commonQuantityValue"
+          },
+          "withdrawn_quantity": {
+            "$ref": "#/components/schemas/commonQuantityValue"
+          },
+          "plant": {
+            "type": "string"
+          },
+          "storage_location": {
+            "type": "string"
+          },
+          "batch": {
+            "type": "string"
+          },
+          "item_category": {
+            "$ref": "#/components/schemas/commonItemCategory"
+          },
+          "requirement_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "backflush_indicator": {
+            "type": "boolean"
+          }
+        },
+        "title": "维护订单组件 (参考: RESB)"
+      },
+      "maintenanceMaintenanceOrderDetail": {
+        "type": "object",
+        "properties": {
+          "order_number": {
+            "type": "string"
+          },
+          "order_type": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "notification_number": {
+            "type": "string"
+          },
+          "equipment_number": {
+            "type": "string"
+          },
+          "functional_location": {
+            "type": "string"
+          },
+          "maintenance_plant": {
+            "type": "string"
+          },
+          "planning_plant": {
+            "type": "string"
+          },
+          "planner_group": {
+            "type": "string"
+          },
+          "main_work_center": {
+            "type": "string"
+          },
+          "system_status": {
+            "type": "string"
+          },
+          "user_status": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "basic_start_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "basic_finish_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "scheduled_start_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "scheduled_finish_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actual_start_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actual_finish_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "estimated_total_cost": {
+            "$ref": "#/components/schemas/commonMonetaryValue"
+          },
+          "actual_total_cost": {
+            "$ref": "#/components/schemas/commonMonetaryValue"
+          },
+          "operations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/maintenanceMaintenanceOperation"
+            }
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/maintenanceMaintenanceOrderComponent"
+            }
+          }
+        },
+        "title": "维护订单详情 (参考: AUFK, AFKO)"
+      },
+      "maintenanceMaintenanceOrderResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "order_number": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/commonOrderStatus"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          }
+        },
+        "title": "维护订单响应"
+      },
+      "maintenanceNotificationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "notification_number": {
+            "type": "string"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/commonApiMessage"
+            }
+          }
+        },
+        "title": "通知单响应"
+      },
+      "maintenanceOrderComponentsResponse": {
+        "type": "object",
+        "properties": {
+          "order_number": {
+            "type": "string"
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/maintenanceMaintenanceOrderComponent"
+            }
+          }
+        }
+      },
+      "maintenanceReleaseMaintenanceOrderRequest": {
+        "type": "object",
+        "properties": {
+          "order_number": {
+            "type": "string"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "下达维护订单请求"
+      },
+      "maintenanceReleaseNotificationRequest": {
+        "type": "object",
+        "properties": {
+          "notification_number": {
+            "type": "string"
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        }
+      },
+      "maintenanceUpdateMaintenanceOrderRequest": {
+        "type": "object",
+        "properties": {
+          "order_number": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "basic_start_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "basic_finish_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "operations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/maintenanceMaintenanceOperation"
+            }
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/maintenanceMaintenanceOrderComponent"
+            }
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "更新维护订单请求"
+      },
+      "maintenanceUpdateNotificationRequest": {
+        "type": "object",
+        "properties": {
+          "notification_number": {
+            "type": "string"
+          },
+          "notification": {
+            "$ref": "#/components/schemas/maintenanceMaintenanceNotification"
+          },
+          "update_mask": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "context": {
+            "$ref": "#/components/schemas/commonRequestContext"
+          }
+        },
+        "title": "更新维护通知单请求"
+      },
+      "protobufAny": {
+        "type": "object",
+        "properties": {
+          "@type": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": {}
+      },
+      "rpcStatus": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/protobufAny"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token (e.g. from Login API)"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ]
+}
