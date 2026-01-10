@@ -22,6 +22,12 @@ import "common/common.proto";
 service SalesOrderFulfillmentService {
   // 创建销售订单
   rpc CreateSalesOrder(CreateSalesOrderRequest) returns (SalesOrderResponse);
+  
+  // 更新销售订单 (New)
+  rpc UpdateSalesOrder(UpdateSalesOrderRequest) returns (SalesOrderResponse);
+  
+  // 取消销售订单 (New)
+  rpc CancelSalesOrder(CancelSalesOrderRequest) returns (SalesOrderResponse);
 
   // 获取销售订单详情
   rpc GetSalesOrder(GetSalesOrderRequest) returns (SalesOrderDetail);
@@ -39,88 +45,54 @@ service SalesOrderFulfillmentService {
 
 // 销售订单抬头 (参考: VBAK)
 message SalesOrderHeader {
-  // 订单类型 (原: AUART)
-  string order_type = 1;
-  // 销售组织 (原: VKORG)
+  enterprise.common.OrderType order_type = 1;
   string sales_org = 2;
-  // 分销渠道 (原: VTWEG)
   string distribution_channel = 3;
-  // 产品组 (原: SPART)
   string division = 4;
-  // 售达方 (原: KUNNR)
   string sold_to_party = 5;
-  // 送达方
   string ship_to_party = 6;
-  // 客户采购订单号 (原: BSTNK)
   string customer_po = 7;
-  // 客户采购订单日期 (原: BSTDK)
   google.protobuf.Timestamp customer_po_date = 8;
-  // 凭证日期 (原: AUDAT)
   google.protobuf.Timestamp document_date = 9;
-  // 请求交货日期 (原: VDATU)
   google.protobuf.Timestamp requested_delivery_date = 10;
-  // 货币代码 (原: WAERK)
   string currency = 11;
-  // 定价程序 (原: KALSM)
   string pricing_procedure = 12;
-  // 装运条件 (原: VSBED)
   string shipping_conditions = 13;
-  // 交货冻结 (原: LIFSK)
   string delivery_block = 14;
-  // 开票冻结 (原: FAKSK)
   string billing_block = 15;
 }
 
 // 销售订单行项目 (参考: VBAP)
 message SalesOrderItem {
-  // 行项目号 (原: POSNR)
   int32 item_number = 1;
-  // 物料编号 (原: MATNR)
   string material = 2;
-  // 项目描述 (原: ARKTX)
   string item_description = 3;
-  // 订单数量 (原: KWMENG)
   string order_quantity = 4;
-  // 销售单位 (原: VRKME)
   string sales_unit = 5;
-  // 工厂 (原: WERKS)
   string plant = 6;
-  // 存储地点 (原: LGORT)
   string storage_location = 7;
-  // 净值 (原: NETWR)
   string net_value = 8;
-  // 税额 (原: MWSBP)
   string tax_amount = 9;
-  // 项目类别 (原: PSTYV)
-  string item_category = 10;
-  // 拒绝原因 (原: ABGRU)
+  enterprise.common.ItemCategory item_category = 10;
   string rejection_reason = 11;
-  // 上级项目 (原: UEPOS)
   int32 higher_level_item = 12;
 }
 
 // 销售订单计划行 (参考: VBEP)
 message SalesOrderScheduleLine {
-    // 计划行号 (原: ETENR)
     int32 schedule_line_number = 1;
-    // 计划交货日期
     google.protobuf.Timestamp delivery_date = 2;
-    // 确认数量 (原: BMENG)
     string confirmed_quantity = 3;
 }
 
 // 完整的销售订单详情
 message SalesOrderDetail {
-  // 销售订单号 (原: VBELN)
   string order_number = 1;
-  // 订单抬头
   SalesOrderHeader header = 2;
-  // 订单行项目列表
   repeated SalesOrderItem items = 3;
-  // 订单计划行列表
   repeated SalesOrderScheduleLine schedule_lines = 4;
-  // 审计信息
   enterprise.common.AuditData audit_data = 5;
+  enterprise.common.OrderStatus overall_status = 6;
 }
 
 // ============================================================================
@@ -129,84 +101,76 @@ message SalesOrderDetail {
 
 // 创建销售订单请求
 message CreateSalesOrderRequest {
-  // 订单抬头
   SalesOrderHeader header = 1;
-  // 订单行项目
   repeated SalesOrderItem items = 2;
+  enterprise.common.RequestContext context = 99;
+}
+
+message UpdateSalesOrderRequest {
+  string order_number = 1;
+  SalesOrderHeader header = 2;
+  repeated SalesOrderItem items = 3;
+  repeated string update_mask = 4;
+  enterprise.common.RequestContext context = 99;
+}
+
+message CancelSalesOrderRequest {
+  string order_number = 1;
+  string cancellation_reason = 2;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 销售订单响应
 message SalesOrderResponse {
-  // 操作是否成功
   bool success = 1;
-  // 销售订单号
   string order_number = 2;
-  // 从核心ERP返回的消息列表
   repeated enterprise.common.ApiMessage messages = 3;
 }
 
 // 获取销售订单请求
 message GetSalesOrderRequest {
-  // 销售订单号
   string order_number = 1;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 查询销售订单请求
 message ListSalesOrdersRequest {
-  // 售达方
   string sold_to_party = 1;
-  // 物料编号
   string material = 2;
-  // 凭证日期范围
   enterprise.common.DateRange document_date_range = 3;
-  // 订单类型
-  string order_type = 4;
-  // 分页请求
+  enterprise.common.OrderType order_type = 4;
+  enterprise.common.OrderStatus status = 6;
   enterprise.common.PaginationRequest pagination = 5;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 查询销售订单响应
 message ListSalesOrdersResponse {
-  // 销售订单摘要列表
   repeated SalesOrderSummary orders = 1;
-  // 分页响应
   enterprise.common.PaginationResponse pagination = 2;
 }
 
 // 销售订单摘要
 message SalesOrderSummary {
-  // 销售订单号
   string order_number = 1;
-  // 订单类型
-  string order_type = 2;
-  // 凭证日期
+  enterprise.common.OrderType order_type = 2;
   google.protobuf.Timestamp document_date = 3;
-  // 售达方
   string sold_to_party = 4;
-  // 净值
   enterprise.common.MonetaryValue net_value = 5;
-  // 总体状态
-  string overall_status = 6;
+  enterprise.common.OrderStatus overall_status = 6;
 }
 
 // 凭证流响应
 message FulfillmentStatusResponse {
-  // 根文档 (销售订单)
   string root_document_number = 1;
-  // 凭证流节点列表
   repeated DocumentFlowNode nodes = 2;
 }
 
 // 凭证流节点
 message DocumentFlowNode {
-  // 节点ID
   int32 node_id = 1;
-  // 父节点ID
   int32 parent_id = 2;
-  // 凭证引用
   enterprise.common.SystemDocumentReference document = 3;
-  // 凭证描述
   string description = 4;
-  // 创建日期
   google.protobuf.Timestamp creation_date = 5;
 }

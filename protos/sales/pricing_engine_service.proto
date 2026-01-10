@@ -22,6 +22,9 @@ import "common/common.proto";
 service PricingEngineService {
   // 模拟并计算一组项目的定价
   rpc CalculatePrice(CalculatePriceRequest) returns (CalculatePriceResponse);
+  
+  // 更新定价条件记录 (New)
+  rpc UpdatePricingCondition(UpdatePricingConditionRequest) returns (UpdatePricingConditionResponse);
 }
 
 // ============================================================================
@@ -30,55 +33,36 @@ service PricingEngineService {
 
 // 定价上下文
 message PricingContext {
-  // 销售组织
   string sales_org = 1;
-  // 分销渠道
   string distribution_channel = 2;
-  // 产品组
   string division = 3;
-  // 客户编号
   string customer = 4;
-  // 定价日期
   google.protobuf.Timestamp pricing_date = 5;
-  // 货币代码
   string currency = 6;
 }
 
 // 待定价的项目
 message PricingItem {
-  // 项目ID (由调用方提供，用于关联结果)
   string item_id = 1;
-  // 物料编号
   string material = 2;
-  // 数量
   string quantity = 3;
-  // 单位
   string unit = 4;
 }
 
 // 定价结果
 message PricingResult {
-  // 项目ID
   string item_id = 1;
-  // 净价
   enterprise.common.MonetaryValue net_price = 2;
-  // 税额
   enterprise.common.MonetaryValue tax_amount = 3;
-  // 总价 (净价 + 税)
   enterprise.common.MonetaryValue gross_price = 4;
-  // 应用的定价条件列表
   repeated PricingCondition conditions = 5;
 }
 
 // 定价条件
 message PricingCondition {
-  // 条件类型 (例如, PR00 for Price, K007 for Discount)
-  string condition_type = 1;
-  // 条件值
+  enterprise.common.PricingConditionType condition_type = 1;
   string condition_value = 2;
-  // 条件货币/单位
   string currency_or_unit = 3;
-  // 条件描述
   string description = 4;
 }
 
@@ -88,16 +72,30 @@ message PricingCondition {
 
 // 计算价格请求
 message CalculatePriceRequest {
-  // 定价上下文
   PricingContext context = 1;
-  // 待定价的项目列表
   repeated PricingItem items = 2;
+  enterprise.common.RequestContext request_context = 99;
 }
 
 // 计算价格响应
 message CalculatePriceResponse {
-  // 定价结果列表
   repeated PricingResult results = 1;
-  // 从核心ERP返回的消息列表
   repeated enterprise.common.ApiMessage messages = 2;
+}
+
+message UpdatePricingConditionRequest {
+  enterprise.common.PricingConditionType condition_type = 1;
+  string material = 2;
+  string customer = 3; // Optional
+  string sales_org = 4;
+  string amount = 5;
+  string currency = 6;
+  enterprise.common.DateRange validity_period = 7;
+  enterprise.common.RequestContext context = 99;
+}
+
+message UpdatePricingConditionResponse {
+  bool success = 1;
+  string condition_record_id = 2;
+  repeated enterprise.common.ApiMessage messages = 3;
 }

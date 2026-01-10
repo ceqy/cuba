@@ -27,6 +27,9 @@ service SalesAnalyticsService {
 
   // 获取销售额趋势
   rpc GetSalesTrend(SalesTrendRequest) returns (SalesTrendResponse);
+  
+  // 导出销售报表 - 异步
+  rpc ExportSalesReport(ExportSalesReportRequest) returns (enterprise.common.JobInfo);
 }
 
 // ============================================================================
@@ -35,23 +38,16 @@ service SalesAnalyticsService {
 
 // 销售分析维度
 message SalesDimension {
-  // 维度ID (例如, 客户ID或产品ID)
-  string id = 1;
-  // 维度名称
+  string id = 1; // 维度ID (例如, 客户ID或产品ID)
   string name = 2;
-  // 销售收入
   enterprise.common.MonetaryValue revenue = 3;
-  // 销售数量
   string quantity_sold = 4;
-  // 单位
   string unit = 5;
 }
 
 // 时间序列数据点
 message TimeSeriesDataPoint {
-  // 时间点 (例如, "2026-01")
   string period = 1;
-  // 该时间点的销售收入
   enterprise.common.MonetaryValue revenue = 2;
 }
 
@@ -61,34 +57,35 @@ message TimeSeriesDataPoint {
 
 // 销售分析请求
 message SalesAnalysisRequest {
-  // 时间范围
   enterprise.common.DateRange time_range = 1;
-  // 销售组织过滤器
   repeated string sales_orgs = 2;
-  // 分销渠道过滤器
   repeated string distribution_channels = 3;
-  // 返回结果数量限制
   int32 top_n = 4;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 销售分析响应
 message SalesAnalysisResponse {
-  // 分析结果列表
   repeated SalesDimension results = 1;
 }
 
 // 销售趋势请求
 message SalesTrendRequest {
-  // 时间范围
   enterprise.common.DateRange time_range = 1;
-  // 时间粒度 (MONTHLY, QUARTERLY, YEARLY)
-  string granularity = 2;
-  // 过滤器
+  enterprise.common.TimeGranularity granularity = 2;
   SalesAnalysisRequest filters = 3;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 销售趋势响应
 message SalesTrendResponse {
-  // 时间序列数据点列表
   repeated TimeSeriesDataPoint trend = 1;
+}
+
+message ExportSalesReportRequest {
+  enterprise.common.DateRange time_range = 1;
+  repeated string sales_orgs = 2;
+  enterprise.common.ReportType report_type = 3;
+  string export_format = 4; // e.g. CSV, PDF
+  enterprise.common.RequestContext context = 99;
 }

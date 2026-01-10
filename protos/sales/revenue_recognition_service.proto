@@ -20,11 +20,17 @@ import "common/common.proto";
 // ============================================================================
 
 service RevenueRecognitionService {
+  // 创建收入合同 (New)
+  rpc CreateRevenueContract(CreateRevenueContractRequest) returns (RevenueContractResponse);
+
   // 获取收入合同的履约义务 (POB)
   rpc GetPerformanceObligations(GetPerformanceObligationsRequest) returns (GetPerformanceObligationsResponse);
 
   // 执行收入确认运行
   rpc RunRevenuePosting(RunRevenuePostingRequest) returns (RunRevenuePostingResponse);
+  
+  // 冲销收入过账 (New)
+  rpc ReverseRevenuePosting(ReverseRevenuePostingRequest) returns (RevenuePostingResponse);
 
   // 查询收入过账凭证
   rpc GetRevenuePostings(GetRevenuePostingsRequest) returns (GetRevenuePostingsResponse);
@@ -36,37 +42,24 @@ service RevenueRecognitionService {
 
 // 履约义务 (POB)
 message PerformanceObligation {
-  // POB ID
   string pob_id = 1;
-  // 收入合同号
   string revenue_contract_number = 2;
-  // 原始凭证 (例如, 销售订单号)
   string source_document = 3;
-  // 履约义务描述
   string description = 4;
-  // 分配的交易价格
   enterprise.common.MonetaryValue allocated_price = 5;
-  // 收入确认方法 (例如, Time-based, Event-based)
   string recognition_method = 6;
-  // 已确认收入
   enterprise.common.MonetaryValue recognized_revenue = 7;
-  // 待确认收入
   enterprise.common.MonetaryValue deferred_revenue = 8;
+  enterprise.common.ItemCategory item_category = 9;
 }
 
 // 收入过账凭证
 message RevenuePostingDocument {
-  // 凭证ID
   string document_id = 1;
-  // 过账日期
   google.protobuf.Timestamp posting_date = 2;
-  // 履约义务ID
   string pob_id = 3;
-  // 过账金额
   enterprise.common.MonetaryValue amount = 4;
-  // 过账类型 (例如, REVENUE, DEFERRED_REVENUE)
-  string posting_type = 5;
-  // 对应的会计凭证号
+  enterprise.common.PostingType posting_type = 5;
   string accounting_document_number = 6;
 }
 
@@ -74,48 +67,68 @@ message RevenuePostingDocument {
 // RPC 消息定义
 // ============================================================================
 
+message CreateRevenueContractRequest {
+  string source_document_number = 1; // e.g. Sales Order
+  enterprise.common.DocumentType source_document_type = 2;
+  string company_code = 3;
+  string customer = 4;
+  enterprise.common.RequestContext context = 99;
+}
+
+message RevenueContractResponse {
+  bool success = 1;
+  string revenue_contract_number = 2;
+  repeated enterprise.common.ApiMessage messages = 3;
+}
+
 // 获取履约义务请求
 message GetPerformanceObligationsRequest {
-  // 收入合同号
   string revenue_contract_number = 1;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 获取履约义务响应
 message GetPerformanceObligationsResponse {
-  // 履约义务列表
   repeated PerformanceObligation obligations = 1;
 }
 
 // 执行收入确认运行请求
 message RunRevenuePostingRequest {
-  // 公司代码
   string company_code = 1;
-  // 过账期间
-  string posting_period = 2; // 格式: YYYY-MM
+  string posting_period = 2; // YYYY-MM
+  enterprise.common.RequestContext context = 99;
 }
 
 // 执行收入确认运行响应
 message RunRevenuePostingResponse {
-  // 运行ID
   string run_id = 1;
-  // 是否成功
   bool success = 2;
-  // 生成的凭证数量
   int32 documents_created = 3;
-  // 从核心ERP返回的消息列表
   repeated enterprise.common.ApiMessage messages = 4;
+}
+
+message ReverseRevenuePostingRequest {
+  string document_id = 1;
+  string reversal_reason = 2;
+  enterprise.common.RequestContext context = 99;
+}
+
+message RevenuePostingResponse {
+  bool success = 1;
+  string reversal_document_id = 2;
+  repeated enterprise.common.ApiMessage messages = 3;
 }
 
 // 查询收入过账凭证请求
 message GetRevenuePostingsRequest {
-  // 履约义务ID
   string pob_id = 1;
-  // 过账日期范围
   enterprise.common.DateRange posting_date_range = 2;
+  enterprise.common.PaginationRequest pagination = 98;
+  enterprise.common.RequestContext context = 99;
 }
 
 // 查询收入过账凭证响应
 message GetRevenuePostingsResponse {
-  // 凭证列表
   repeated RevenuePostingDocument documents = 1;
+  enterprise.common.PaginationResponse pagination = 2;
 }
