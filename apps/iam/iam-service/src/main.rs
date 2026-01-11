@@ -2,7 +2,10 @@ use tonic::transport::Server;
 use iam_service::infrastructure::grpc::iam::v1::auth_service_server::AuthServiceServer;
 use iam_service::api::grpc_server::AuthServiceImpl;
 use iam_service::infrastructure::persistence::postgres_user_repository::PostgresUserRepository;
+use iam_service::infrastructure::bcrypt_password_service::BcryptPasswordService;
 use iam_service::application::handlers::RegisterUserHandler;
+use iam_service::application::handlers::LoginUserHandler;
+use iam_service::infrastructure::jwt_token_service::JwtTokenService;
 use cuba_database::{DatabaseConfig, init_pool};
 use std::sync::Arc;
 use tracing::info;
@@ -19,15 +22,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Use ? operator carefully, might fail if DB not running. 
     // For now, let's allow it to fail to signal requirement.
     let pool = init_pool(&db_config).await?;
+
+    // Run migrations
+    let migrator = sqlx::migrate!("./migrations");
+    cuba_database::run_migrations(&pool, &migrator).await?;
     
     // Infrastructure
     let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
+    let password_service = Arc::new(BcryptPasswordService::default());
+    let token_service = Arc::new(JwtTokenService::new("super_secret_key".to_string())); // TODO: Load from env
     
     // Application
-    let register_handler = Arc::new(RegisterUserHandler::new(user_repo));
+    let register_handler = Arc::new(RegisterUserHandler::new(user_repo.clone(), password_service.clone()));
+    let login_handler = Arc::new(LoginUserHandler::new(user_repo.clone(), password_service.clone(), token_service));
     
     // API
-    let auth_service = AuthServiceImpl::new(register_handler);
+    let auth_service = AuthServiceImpl::new(register_handler, login_handler);
     
     info!("Server listening on {}", addr);
     

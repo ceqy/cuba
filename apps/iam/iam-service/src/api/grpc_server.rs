@@ -6,13 +6,21 @@ use crate::application::handlers::RegisterUserHandler;
 use cuba_cqrs::CommandHandler;
 use std::sync::Arc;
 
+use crate::application::queries::LoginUserQuery;
+use crate::application::handlers::LoginUserHandler;
+use cuba_cqrs::QueryHandler;
+
 pub struct AuthServiceImpl {
     register_handler: Arc<RegisterUserHandler>,
+    login_handler: Arc<LoginUserHandler>,
 }
 
 impl AuthServiceImpl {
-    pub fn new(register_handler: Arc<RegisterUserHandler>) -> Self {
-        Self { register_handler }
+    pub fn new(
+        register_handler: Arc<RegisterUserHandler>,
+        login_handler: Arc<LoginUserHandler>
+    ) -> Self {
+        Self { register_handler, login_handler }
     }
 }
 
@@ -52,8 +60,47 @@ impl AuthService for AuthServiceImpl {
         }
     }
 
-    async fn login(&self, _request: Request<LoginRequest>) -> Result<Response<LoginResponse>, Status> {
-        Err(Status::unimplemented("Not implemented"))
+    async fn login(&self, request: Request<LoginRequest>) -> Result<Response<LoginResponse>, Status> {
+        let req = request.into_inner();
+        let query = LoginUserQuery {
+            username: req.username,
+            password: req.password,
+            tenant_id: if req.tenant_id.is_empty() { None } else { Some(req.tenant_id) },
+        };
+
+        match self.login_handler.handle(query).await {
+            Ok(dto) => {
+                Ok(Response::new(LoginResponse {
+                    user: Some(UserInfo {
+                        user_id: dto.user_id,
+                        username: dto.username,
+                        email: dto.email,
+                        tenant_id: dto.tenant_id.unwrap_or_default(),
+                        is_active: true, // Assuming active if login succeeds
+                        created_at: None, // Login query optimization: don't fetch timestamps unless needed
+                        updated_at: None,
+                        ..Default::default()
+                    }),
+                    access_token: dto.token_pair.access_token,
+                    refresh_token: dto.token_pair.refresh_token,
+                    expires_in: dto.token_pair.expires_in as i64,
+                    account_locked: false,
+                    lock_until: None,
+                    requires_2fa: false,
+                    temp_token: String::new(),
+                }))
+            }
+            Err(e) => {
+                // Determine error type based on message string (simple approach for now)
+                // In production, use explicit Error enum matching
+                let msg = e.to_string();
+                if msg.contains("Invalid username or password") {
+                    Err(Status::unauthenticated(msg))
+                } else {
+                    Err(Status::internal(msg))
+                }
+            }
+        }
     }
 
     async fn logout(&self, _request: Request<LogoutRequest>) -> Result<Response<LogoutResponse>, Status> {

@@ -1,7 +1,6 @@
 use anyhow::{Context, Result};
 use async_trait::async_trait;
-use sqlx::postgres::{PgPool, PgPoolOptions, PgTransaction};
-use sqlx::Transaction;
+use sqlx::postgres::{PgPool, PgPoolOptions};
 use std::time::Duration;
 use tracing::info;
 
@@ -44,6 +43,14 @@ pub async fn init_pool(config: &DatabaseConfig) -> Result<DbPool> {
     Ok(pool)
 }
 
+/// Run database migrations
+pub async fn run_migrations(pool: &DbPool, migrator: &sqlx::migrate::Migrator) -> Result<()> {
+    info!("Running database migrations...");
+    migrator.run(pool).await.context("Failed to run database migrations")?;
+    info!("Database migrations completed successfully");
+    Ok(())
+}
+
 /// UnitOfWork trait for transaction management
 #[async_trait]
 pub trait UnitOfWork: Send + Sync {
@@ -72,9 +79,8 @@ where
             Ok(result)
         }
         Err(e) => {
-            // Rollback is automatic on drop usually, but explicit requires ownership
-            // sqlx transaction rollback handled by Drop if not committed
             Err(e)
         },
     }
 }
+

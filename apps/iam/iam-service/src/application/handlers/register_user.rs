@@ -6,13 +6,16 @@ use crate::domain::repositories::UserRepository;
 use anyhow::{Result, bail};
 use std::sync::Arc;
 
+use crate::domain::services::PasswordService;
+
 pub struct RegisterUserHandler {
     user_repo: Arc<dyn UserRepository>,
+    password_service: Arc<dyn PasswordService>,
 }
 
 impl RegisterUserHandler {
-    pub fn new(user_repo: Arc<dyn UserRepository>) -> Self {
-        Self { user_repo }
+    pub fn new(user_repo: Arc<dyn UserRepository>, password_service: Arc<dyn PasswordService>) -> Self {
+        Self { user_repo, password_service }
     }
 }
 
@@ -29,8 +32,8 @@ impl CommandHandler<RegisterUserCommand> for RegisterUserHandler {
             bail!("Email already exists");
         }
 
-        // 2. Hash password (TODO: use bcrypt service)
-        let password_hash = format!("hashed_{}", cmd.password);
+        // 2. Hash password
+        let password_hash = self.password_service.hash(&cmd.password).await?;
 
         // 3. Create user
         let user = User::new(
