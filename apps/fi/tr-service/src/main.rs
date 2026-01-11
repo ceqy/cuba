@@ -1,33 +1,41 @@
 use tonic::transport::Server;
-use cuba_database::{DatabaseConfig, init_pool};
 use tracing::info;
+use dotenvy::dotenv;
+use std::sync::Arc;
+use cuba_database::{DatabaseConfig, init_pool};
+
+use tr_service::api::grpc_server::TrServiceImpl;
+use tr_service::api::proto::fi::tr::v1::treasury_service_server::TreasuryServiceServer;
+use tr_service::infrastructure::repository::TreasuryRepository;
+use tr_service::application::handlers::TreasuryHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Init Telemetry
     cuba_telemetry::init_telemetry();
+    dotenv().ok();
     
-    // 2. Load Config
-    // In a real app we might load strictly typed config, here we assume env vars.
-    let addr = "0.0.0.0:50054".parse()?;
-    info!("Starting tr-service on {}", addr);
+    let addr = "0.0.0.0:50071".parse()?;
+    info!("Starting FI Treasury Service on {}", addr);
 
-    // 3. Init Database
     let db_config = DatabaseConfig::default();
-    let _pool = init_pool(&db_config).await?; // Pool is ready, typically passed to repositories
+    let pool = init_pool(&db_config).await?;
 
-    // 4. Init Reflection
-    let descriptor = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));
+    let migrator = sqlx::migrate!("./migrations");
+    cuba_database::run_migrations(&pool, &migrator).await?;
+    
+    let repo = Arc::new(TreasuryRepository::new(pool.clone()));
+    let handler = Arc::new(TreasuryHandler::new(repo.clone()));
+    let service = TrServiceImpl::new(handler, repo);
+    
     let reflection_service = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(descriptor)
+        .register_encoded_file_descriptor_set(tr_service::api::proto::fi::tr::v1::FILE_DESCRIPTOR_SET)
         .build_v1()?;
 
-    info!("Service listening on {}", addr);
+    info!("FI Treasury Service listening on {}", addr);
     
-    // 5. Start Server
     Server::builder()
+        .add_service(TreasuryServiceServer::new(service))
         .add_service(reflection_service)
-        // .add_service(YourGrpcServiceServer::new(YourServiceImpl))
         .serve(addr)
         .await?;
 
