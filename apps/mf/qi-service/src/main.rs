@@ -1,33 +1,50 @@
 use tonic::transport::Server;
-use cuba_database::{DatabaseConfig, init_pool};
 use tracing::info;
+use dotenvy::dotenv;
+use std::sync::Arc;
+use cuba_database::{DatabaseConfig, init_pool};
+
+use qi_service::api::grpc_server::QiServiceImpl;
+use qi_service::api::proto::mf::qi::v1::quality_inspection_service_server::QualityInspectionServiceServer;
+use qi_service::infrastructure::repository::InspectionLotRepository;
+use qi_service::application::handlers::InspectionHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Init Telemetry
     cuba_telemetry::init_telemetry();
+    dotenv().ok();
     
-    // 2. Load Config
-    // In a real app we might load strictly typed config, here we assume env vars.
-    let addr = "0.0.0.0:50074".parse()?;
-    info!("Starting qi-service on {}", addr);
+    // Port 50060 (SF 59, QI 60)
+    let addr = "0.0.0.0:50060".parse()?;
+    info!("Starting MF Quality Inspection Service on {}", addr);
 
-    // 3. Init Database
+    // Database
     let db_config = DatabaseConfig::default();
-    let _pool = init_pool(&db_config).await?; // Pool is ready, typically passed to repositories
+    let pool = init_pool(&db_config).await?;
 
-    // 4. Init Reflection
-    let descriptor = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));
+    // Run migrations
+    let migrator = sqlx::migrate!("./migrations");
+    cuba_database::run_migrations(&pool, &migrator).await?;
+    
+    // Infrastructure
+    let repo = Arc::new(InspectionLotRepository::new(pool.clone()));
+    
+    // Application Handlers
+    let handler = Arc::new(InspectionHandler::new(repo.clone()));
+
+    // API
+    let service = QiServiceImpl::new(handler, repo);
+    
+    // Reflection Service
     let reflection_service = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(descriptor)
+        .register_encoded_file_descriptor_set(qi_service::api::proto::mf::qi::v1::FILE_DESCRIPTOR_SET)
         .build_v1()?;
 
-    info!("Service listening on {}", addr);
+    info!("MF Quality Inspection Service listening on {}", addr);
     
-    // 5. Start Server
     Server::builder()
+        .add_service(QualityInspectionServiceServer::new(service))
         .add_service(reflection_service)
-        // .add_service(YourGrpcServiceServer::new(YourServiceImpl))
         .serve(addr)
         .await?;
 
