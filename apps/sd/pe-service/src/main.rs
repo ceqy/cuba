@@ -1,33 +1,41 @@
 use tonic::transport::Server;
-use cuba_database::{DatabaseConfig, init_pool};
 use tracing::info;
+use dotenvy::dotenv;
+use std::sync::Arc;
+use cuba_database::{DatabaseConfig, init_pool};
+
+use pe_service::api::grpc_server::PeServiceImpl;
+use pe_service::api::proto::sd::pe::v1::pricing_engine_service_server::PricingEngineServiceServer;
+use pe_service::infrastructure::repository::PricingRepository;
+use pe_service::application::handlers::PricingHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Init Telemetry
     cuba_telemetry::init_telemetry();
+    dotenv().ok();
     
-    // 2. Load Config
-    // In a real app we might load strictly typed config, here we assume env vars.
-    let addr = "0.0.0.0:50067".parse()?;
-    info!("Starting pe-service on {}", addr);
+    let addr = "0.0.0.0:50075".parse()?;
+    info!("Starting SD Pricing Engine Service on {}", addr);
 
-    // 3. Init Database
     let db_config = DatabaseConfig::default();
-    let _pool = init_pool(&db_config).await?; // Pool is ready, typically passed to repositories
+    let pool = init_pool(&db_config).await?;
 
-    // 4. Init Reflection
-    let descriptor = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));
+    let migrator = sqlx::migrate!("./migrations");
+    cuba_database::run_migrations(&pool, &migrator).await?;
+    
+    let repo = Arc::new(PricingRepository::new(pool.clone()));
+    let handler = Arc::new(PricingHandler::new(repo));
+    let service = PeServiceImpl::new(handler);
+    
     let reflection_service = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(descriptor)
+        .register_encoded_file_descriptor_set(pe_service::api::proto::sd::pe::v1::FILE_DESCRIPTOR_SET)
         .build_v1()?;
 
-    info!("Service listening on {}", addr);
+    info!("SD Pricing Engine Service listening on {}", addr);
     
-    // 5. Start Server
     Server::builder()
+        .add_service(PricingEngineServiceServer::new(service))
         .add_service(reflection_service)
-        // .add_service(YourGrpcServiceServer::new(YourServiceImpl))
         .serve(addr)
         .await?;
 
