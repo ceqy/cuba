@@ -1,33 +1,41 @@
 use tonic::transport::Server;
-use cuba_database::{DatabaseConfig, init_pool};
 use tracing::info;
+use dotenvy::dotenv;
+use std::sync::Arc;
+use cuba_database::{DatabaseConfig, init_pool};
+
+use iv_service::api::grpc_server::IvServiceImpl;
+use iv_service::api::proto::pm::iv::v1::invoice_processing_service_server::InvoiceProcessingServiceServer;
+use iv_service::infrastructure::repository::InvoiceRepository;
+use iv_service::application::handlers::InvoiceHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Init Telemetry
     cuba_telemetry::init_telemetry();
+    dotenv().ok();
     
-    // 2. Load Config
-    // In a real app we might load strictly typed config, here we assume env vars.
-    let addr = "0.0.0.0:50066".parse()?;
-    info!("Starting iv-service on {}", addr);
+    let addr = "0.0.0.0:50069".parse()?;
+    info!("Starting PM Invoice Processing Service on {}", addr);
 
-    // 3. Init Database
     let db_config = DatabaseConfig::default();
-    let _pool = init_pool(&db_config).await?; // Pool is ready, typically passed to repositories
+    let pool = init_pool(&db_config).await?;
 
-    // 4. Init Reflection
-    let descriptor = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));
+    let migrator = sqlx::migrate!("./migrations");
+    cuba_database::run_migrations(&pool, &migrator).await?;
+    
+    let repo = Arc::new(InvoiceRepository::new(pool.clone()));
+    let handler = Arc::new(InvoiceHandler::new(repo.clone()));
+    let service = IvServiceImpl::new(handler, repo);
+    
     let reflection_service = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(descriptor)
+        .register_encoded_file_descriptor_set(iv_service::api::proto::pm::iv::v1::FILE_DESCRIPTOR_SET)
         .build_v1()?;
 
-    info!("Service listening on {}", addr);
+    info!("PM Invoice Processing Service listening on {}", addr);
     
-    // 5. Start Server
     Server::builder()
+        .add_service(InvoiceProcessingServiceServer::new(service))
         .add_service(reflection_service)
-        // .add_service(YourGrpcServiceServer::new(YourServiceImpl))
         .serve(addr)
         .await?;
 
