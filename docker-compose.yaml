@@ -64,6 +64,21 @@ services:
       postgres:
         condition: service_healthy
 
+  # AR Service (gRPC)
+  ar-service:
+    build:
+      context: .
+      dockerfile: apps/fi/ar-service/Dockerfile
+    container_name: cuba-ar-service
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_fi_ar
+      RUST_LOG: info
+    ports:
+      - "50054:50054"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   # Envoy API Gateway
   envoy:
     image: envoyproxy/envoy:v1.31-latest
