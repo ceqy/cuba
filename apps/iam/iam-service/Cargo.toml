@@ -9,10 +9,11 @@ license.workspace = true
 # 共享基础设施
 cuba-core.workspace = true
 cuba-errors.workspace = true
-# cuba-cqrs.workspace = true      # 待实现
-# cuba-database.workspace = true  # 待实现
-# cuba-messaging.workspace = true # 待实现
-# cuba-telemetry.workspace = true # 待实现
+anyhow.workspace = true
+cuba-cqrs.workspace = true
+cuba-database.workspace = true
+cuba-messaging.workspace = true
+cuba-telemetry.workspace = true
 
 # Async
 tokio.workspace = true
@@ -20,6 +21,7 @@ async-trait.workspace = true
 
 # gRPC
 tonic.workspace = true
+tonic-prost.workspace = true
 prost.workspace = true
 prost-types.workspace = true
 

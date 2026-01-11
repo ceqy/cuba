@@ -5,8 +5,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_client(true)
         .file_descriptor_set_path(out_dir.join("iam_service_descriptor.bin"))
         .compile_protos(
-            &["../../protos/iam/iam.proto"],
-            &["../../protos", "../../third_party"],
+            &["../../../protos/iam/iam.proto", "../../../protos/common/common.proto"],
+            &["../../../protos", "../../../third_party"],
         )?;
     Ok(())
 }
