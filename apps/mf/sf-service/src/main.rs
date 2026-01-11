@@ -1,33 +1,65 @@
 use tonic::transport::Server;
-use cuba_database::{DatabaseConfig, init_pool};
 use tracing::info;
+use dotenvy::dotenv;
+use std::sync::Arc;
+use cuba_database::{DatabaseConfig, init_pool};
+use rust_decimal::Decimal;
+
+use sf_service::api::grpc_server::SfServiceImpl;
+use sf_service::api::proto::mf::sf::v1::shop_floor_execution_service_server::ShopFloorExecutionServiceServer;
+use sf_service::infrastructure::repository::ProductionOrderRepository;
+use sf_service::application::handlers::ProductionHandler;
+use sf_service::application::commands::CreateProductionOrderCommand;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Init Telemetry
     cuba_telemetry::init_telemetry();
+    dotenv().ok();
     
-    // 2. Load Config
-    // In a real app we might load strictly typed config, here we assume env vars.
-    let addr = "0.0.0.0:50075".parse()?;
-    info!("Starting sf-service on {}", addr);
+    // Port 50059 (PP 58, SF 59)
+    let addr = "0.0.0.0:50059".parse()?;
+    info!("Starting MF Shop Floor Service on {}", addr);
 
-    // 3. Init Database
+    // Database
     let db_config = DatabaseConfig::default();
-    let _pool = init_pool(&db_config).await?; // Pool is ready, typically passed to repositories
+    let pool = init_pool(&db_config).await?;
 
-    // 4. Init Reflection
-    let descriptor = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));
+    // Run migrations
+    let migrator = sqlx::migrate!("./migrations");
+    cuba_database::run_migrations(&pool, &migrator).await?;
+    
+    // Infrastructure
+    let repo = Arc::new(ProductionOrderRepository::new(pool.clone()));
+    
+    // Application Handlers
+    let handler = Arc::new(ProductionHandler::new(repo.clone()));
+    
+    // SEED DATA HACK for Verification
+    // In a real app, this wouldn't be here. 
+    // We check if DB is emptyish or just blindly insert one specific order for "curl" testing availability.
+    if std::env::var("SEED_DATA").unwrap_or_default() == "true" {
+        info!("Seeding Production Order...");
+        let _ = handler.create_seed_order(CreateProductionOrderCommand {
+            material: "MAT001".to_string(),
+            plant: "1000".to_string(),
+            quantity: Decimal::from(100),
+            unit: "PC".to_string(),
+        }).await;
+    }
+
+    // API
+    let service = SfServiceImpl::new(handler, repo);
+    
+    // Reflection Service
     let reflection_service = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(descriptor)
+        .register_encoded_file_descriptor_set(sf_service::api::proto::mf::sf::v1::FILE_DESCRIPTOR_SET)
         .build_v1()?;
 
-    info!("Service listening on {}", addr);
+    info!("MF Shop Floor Service listening on {}", addr);
     
-    // 5. Start Server
     Server::builder()
+        .add_service(ShopFloorExecutionServiceServer::new(service))
         .add_service(reflection_service)
-        // .add_service(YourGrpcServiceServer::new(YourServiceImpl))
         .serve(addr)
         .await?;
 
