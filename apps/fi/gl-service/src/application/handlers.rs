@@ -18,19 +18,23 @@ impl<R: JournalRepository> CreateJournalEntryHandler<R> {
     }
 
     pub async fn handle(&self, cmd: CreateJournalEntryCommand) -> Result<JournalEntry, Box<dyn std::error::Error + Send + Sync>> {
-        let lines: Vec<LineItem> = cmd.lines.into_iter().enumerate().map(|(i, l)| {
-            LineItem {
+        let lines: Vec<LineItem> = cmd.lines.into_iter().enumerate().map(|(i, l)| -> Result<LineItem, Box<dyn std::error::Error + Send + Sync>> {
+            Ok(LineItem {
                 id: Uuid::new_v4(),
                 line_number: (i + 1) as i32,
                 account_id: l.account_id,
-                debit_credit: if l.debit_credit == "D" { DebitCredit::Debit } else { DebitCredit::Credit },
+                debit_credit: match l.debit_credit.as_str() {
+                    "S" | "D" => DebitCredit::Debit,
+                    "H" | "C" => DebitCredit::Credit,
+                    _ => return Err(format!("Invalid debit/credit indicator: {}", l.debit_credit).into()),
+                },
                 amount: l.amount,
                 local_amount: l.amount, // Simplified: assume local currency for now or same amount
                 cost_center: l.cost_center,
                 profit_center: l.profit_center,
                 text: l.text,
-            }
-        }).collect();
+            })
+        }).collect::<Result<Vec<_>, _>>()?;
 
         // Create aggregate
         let mut entry = JournalEntry::new(

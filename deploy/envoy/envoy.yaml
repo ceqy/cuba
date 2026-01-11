@@ -29,6 +29,17 @@ static_resources:
                           route:
                             cluster: iam_service
                             timeout: 30s
+                        # GL Service Routes
+                        - match:
+                            prefix: "/fi.gl.v1.GlJournalEntryService"
+                          route:
+                            cluster: gl_service
+                            timeout: 30s
+                        - match:
+                            prefix: "/api/v1/finance/gl"
+                          route:
+                            cluster: gl_service
+                            timeout: 30s
                       cors:
                         allow_origin_string_match:
                           - prefix: "*"
@@ -44,6 +55,7 @@ static_resources:
                       proto_descriptor: "/etc/envoy/proto.pb"
                       services:
                         - "iam.v1.AuthService"
+                        - "fi.gl.v1.GlJournalEntryService"
                       print_options:
                         add_whitespace: true
                         always_print_primitive_fields: true
@@ -75,6 +87,20 @@ static_resources:
                     socket_address:
                       address: iam-service
                       port_value: 50051
+    - name: gl_service
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      http2_protocol_options: {}
+      load_assignment:
+        cluster_name: gl_service
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: gl-service
+                      port_value: 50052
 
 admin:
   address:

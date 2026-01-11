@@ -34,6 +34,21 @@ services:
       postgres:
         condition: service_healthy
 
+  # GL Service (gRPC)
+  gl-service:
+    build:
+      context: .
+      dockerfile: apps/fi/gl-service/Dockerfile
+    container_name: cuba-gl-service
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_gl
+      RUST_LOG: info
+    ports:
+      - "50052:50052"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   # Envoy API Gateway
   envoy:
     image: envoyproxy/envoy:v1.31-latest
