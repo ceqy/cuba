@@ -1,0 +1,62 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: cuba-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cuba_iam
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # IAM Service (gRPC)
+  iam-service:
+    build:
+      context: .
+      dockerfile: apps/iam/iam-service/Dockerfile
+    container_name: cuba-iam-service
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_iam
+      RUST_LOG: info
+    ports:
+      - "50051:50051"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Envoy API Gateway
+  envoy:
+    image: envoyproxy/envoy:v1.31-latest
+    container_name: cuba-envoy
+    ports:
+      - "8080:8080" # HTTP API
+      - "9901:9901" # Admin interface
+    volumes:
+      - ./deploy/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./deploy/envoy/proto.pb:/etc/envoy/proto.pb:ro
+    depends_on:
+      - iam-service
+    command: [ "envoy", "-c", "/etc/envoy/envoy.yaml", "--log-level", "info" ]
+
+  # Swagger UI - API Documentation
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    container_name: cuba-swagger
+    ports:
+      - "8086:8080"
+    volumes:
+      - ./docs/openapi/splits:/usr/share/nginx/html/specs:ro
+      - ./deploy/swagger/swagger-initializer.js:/usr/share/nginx/html/swagger-initializer.js:ro
+
+volumes:
+  postgres_data:

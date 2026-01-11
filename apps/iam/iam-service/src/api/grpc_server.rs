@@ -9,23 +9,30 @@ use std::sync::Arc;
 use crate::application::queries::LoginUserQuery;
 use crate::application::handlers::LoginUserHandler;
 use cuba_cqrs::QueryHandler;
+use crate::domain::repositories::UserRepository;
+use crate::domain::aggregates::user::UserId;
+use crate::domain::services::TokenService;
 
-pub struct AuthServiceImpl {
+pub struct AuthServiceImpl<R: UserRepository, T: TokenService> {
     register_handler: Arc<RegisterUserHandler>,
     login_handler: Arc<LoginUserHandler>,
+    user_repository: Arc<R>,
+    token_service: Arc<T>,
 }
 
-impl AuthServiceImpl {
+impl<R: UserRepository, T: TokenService> AuthServiceImpl<R, T> {
     pub fn new(
         register_handler: Arc<RegisterUserHandler>,
-        login_handler: Arc<LoginUserHandler>
+        login_handler: Arc<LoginUserHandler>,
+        user_repository: Arc<R>,
+        token_service: Arc<T>,
     ) -> Self {
-        Self { register_handler, login_handler }
+        Self { register_handler, login_handler, user_repository, token_service }
     }
 }
 
 #[tonic::async_trait]
-impl AuthService for AuthServiceImpl {
+impl<R: UserRepository + 'static, T: TokenService + 'static> AuthService for AuthServiceImpl<R, T> {
     async fn register(&self, request: Request<RegisterRequest>) -> Result<Response<RegisterResponse>, Status> {
         let req = request.into_inner();
         let cmd = RegisterUserCommand {
@@ -107,16 +114,94 @@ impl AuthService for AuthServiceImpl {
         Err(Status::unimplemented("Not implemented"))
     }
 
-    async fn refresh_token(&self, _request: Request<RefreshTokenRequest>) -> Result<Response<RefreshTokenResponse>, Status> {
-        Err(Status::unimplemented("Not implemented"))
+    async fn refresh_token(&self, request: Request<RefreshTokenRequest>) -> Result<Response<RefreshTokenResponse>, Status> {
+        let req = request.into_inner();
+        
+        // Validate the refresh token
+        let claims = self.token_service.validate_token(&req.refresh_token)
+            .map_err(|e| Status::unauthenticated(format!("Invalid refresh token: {}", e)))?;
+        
+        // Generate new token pair using the user_id from the refresh token claims
+        let new_tokens = self.token_service.generate_tokens(&claims.sub, claims.tenant_id)
+            .map_err(|e| Status::internal(format!("Failed to generate new tokens: {}", e)))?;
+        
+        Ok(Response::new(RefreshTokenResponse {
+            access_token: new_tokens.access_token,
+            refresh_token: new_tokens.refresh_token,
+            expires_in: new_tokens.expires_in as i64,
+        }))
     }
 
-    async fn validate_token(&self, _request: Request<ValidateTokenRequest>) -> Result<Response<ValidateTokenResponse>, Status> {
-        Err(Status::unimplemented("Not implemented"))
+    async fn validate_token(&self, request: Request<ValidateTokenRequest>) -> Result<Response<ValidateTokenResponse>, Status> {
+        let req = request.into_inner();
+        
+        match self.token_service.validate_token(&req.access_token) {
+            Ok(claims) => {
+                Ok(Response::new(ValidateTokenResponse {
+                    valid: true,
+                    user_id: claims.sub,
+                    tenant_id: claims.tenant_id.unwrap_or_default(),
+                    roles: vec![], // TODO: Fetch roles from DB
+                    permissions: vec![], // TODO: Fetch permissions from DB
+                }))
+            }
+            Err(_) => {
+                Ok(Response::new(ValidateTokenResponse {
+                    valid: false,
+                    user_id: String::new(),
+                    tenant_id: String::new(),
+                    roles: vec![],
+                    permissions: vec![],
+                }))
+            }
+        }
     }
 
-    async fn get_user_info(&self, _request: Request<GetUserInfoRequest>) -> Result<Response<GetUserInfoResponse>, Status> {
-        Err(Status::unimplemented("Not implemented"))
+    async fn get_user_info(&self, request: Request<GetUserInfoRequest>) -> Result<Response<GetUserInfoResponse>, Status> {
+        // Extract user_id from JWT Authorization header ONLY (this is /me endpoint)
+        let auth_header = request.metadata().get("authorization")
+            .ok_or_else(|| Status::unauthenticated("Authorization header required. Use 'Bearer <access_token>' from /login response."))?;
+        
+        let auth_str = auth_header.to_str()
+            .map_err(|_| Status::unauthenticated("Invalid authorization header encoding"))?;
+        
+        let token = auth_str.strip_prefix("Bearer ")
+            .ok_or_else(|| Status::unauthenticated("Authorization header must start with 'Bearer '"))?;
+        
+        let claims = self.token_service.validate_token(token)
+            .map_err(|e| Status::unauthenticated(format!("Token validation failed: {}", e)))?;
+        
+        let user_id_str = claims.sub;
+
+        let user_id = UserId::from_uuid(
+            uuid::Uuid::parse_str(&user_id_str)
+                .map_err(|_| Status::internal("Invalid user_id in token claims"))?
+        );
+
+        match self.user_repository.find_by_id(&user_id).await {
+            Ok(Some(user)) => {
+                Ok(Response::new(GetUserInfoResponse {
+                    user: Some(UserInfo {
+                        user_id: user.id.into_inner().to_string(),
+                        username: user.username,
+                        email: user.email,
+                        tenant_id: user.tenant_id.unwrap_or_default(),
+                        is_active: true,
+                        created_at: Some(prost_types::Timestamp {
+                            seconds: user.created_at.timestamp(),
+                            nanos: user.created_at.timestamp_subsec_nanos() as i32,
+                        }),
+                        updated_at: Some(prost_types::Timestamp {
+                            seconds: user.updated_at.timestamp(),
+                            nanos: user.updated_at.timestamp_subsec_nanos() as i32,
+                        }),
+                        ..Default::default()
+                    })
+                }))
+            }
+            Ok(None) => Err(Status::not_found("User not found")),
+            Err(e) => Err(Status::internal(e.to_string())),
+        }
     }
 
     async fn create_role(&self, _request: Request<CreateRoleRequest>) -> Result<Response<CreateRoleResponse>, Status> {

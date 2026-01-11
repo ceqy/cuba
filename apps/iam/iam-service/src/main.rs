@@ -34,10 +34,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Application
     let register_handler = Arc::new(RegisterUserHandler::new(user_repo.clone(), password_service.clone()));
-    let login_handler = Arc::new(LoginUserHandler::new(user_repo.clone(), password_service.clone(), token_service));
+    let login_handler = Arc::new(LoginUserHandler::new(user_repo.clone(), password_service.clone(), token_service.clone()));
     
     // API
-    let auth_service = AuthServiceImpl::new(register_handler, login_handler);
+    let auth_service = AuthServiceImpl::new(register_handler, login_handler, user_repo, token_service);
     
     // Reflection Service
     let reflection_service = tonic_reflection::server::Builder::configure()
