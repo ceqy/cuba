@@ -1,33 +1,41 @@
 use tonic::transport::Server;
-use cuba_database::{DatabaseConfig, init_pool};
 use tracing::info;
+use dotenvy::dotenv;
+use std::sync::Arc;
+use cuba_database::{DatabaseConfig, init_pool};
+
+use om_service::api::grpc_server::OmServiceImpl;
+use om_service::api::proto::mf::om::v1::outsourced_manufacturing_service_server::OutsourcedManufacturingServiceServer;
+use om_service::infrastructure::repository::SubcontractingRepository;
+use om_service::application::handlers::SubcontractingHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Init Telemetry
     cuba_telemetry::init_telemetry();
+    dotenv().ok();
     
-    // 2. Load Config
-    // In a real app we might load strictly typed config, here we assume env vars.
-    let addr = "0.0.0.0:50073".parse()?;
-    info!("Starting om-service on {}", addr);
+    let addr = "0.0.0.0:50080".parse()?;
+    info!("Starting MF Outsourced Manufacturing Service on {}", addr);
 
-    // 3. Init Database
     let db_config = DatabaseConfig::default();
-    let _pool = init_pool(&db_config).await?; // Pool is ready, typically passed to repositories
+    let pool = init_pool(&db_config).await?;
 
-    // 4. Init Reflection
-    let descriptor = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));
+    let migrator = sqlx::migrate!("./migrations");
+    cuba_database::run_migrations(&pool, &migrator).await?;
+    
+    let repo = Arc::new(SubcontractingRepository::new(pool.clone()));
+    let handler = Arc::new(SubcontractingHandler::new(repo.clone()));
+    let service = OmServiceImpl::new(handler, repo);
+    
     let reflection_service = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(descriptor)
+        .register_encoded_file_descriptor_set(om_service::api::proto::mf::om::v1::FILE_DESCRIPTOR_SET)
         .build_v1()?;
 
-    info!("Service listening on {}", addr);
+    info!("MF Outsourced Manufacturing Service listening on {}", addr);
     
-    // 5. Start Server
     Server::builder()
+        .add_service(OutsourcedManufacturingServiceServer::new(service))
         .add_service(reflection_service)
-        // .add_service(YourGrpcServiceServer::new(YourServiceImpl))
         .serve(addr)
         .await?;
 
