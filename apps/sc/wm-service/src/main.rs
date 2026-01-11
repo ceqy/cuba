@@ -1,33 +1,41 @@
 use tonic::transport::Server;
-use cuba_database::{DatabaseConfig, init_pool};
 use tracing::info;
+use dotenvy::dotenv;
+use std::sync::Arc;
+use cuba_database::{DatabaseConfig, init_pool};
+
+use wm_service::api::grpc_server::WmServiceImpl;
+use wm_service::api::proto::sc::wm::v1::warehouse_operations_service_server::WarehouseOperationsServiceServer;
+use wm_service::infrastructure::repository::TransferOrderRepository;
+use wm_service::application::handlers::WarehouseHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Init Telemetry
     cuba_telemetry::init_telemetry();
+    dotenv().ok();
     
-    // 2. Load Config
-    // In a real app we might load strictly typed config, here we assume env vars.
-    let addr = "0.0.0.0:50057".parse()?;
-    info!("Starting wm-service on {}", addr);
+    let addr = "0.0.0.0:50070".parse()?;
+    info!("Starting SC Warehouse Operations Service on {}", addr);
 
-    // 3. Init Database
     let db_config = DatabaseConfig::default();
-    let _pool = init_pool(&db_config).await?; // Pool is ready, typically passed to repositories
+    let pool = init_pool(&db_config).await?;
 
-    // 4. Init Reflection
-    let descriptor = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));
+    let migrator = sqlx::migrate!("./migrations");
+    cuba_database::run_migrations(&pool, &migrator).await?;
+    
+    let repo = Arc::new(TransferOrderRepository::new(pool.clone()));
+    let handler = Arc::new(WarehouseHandler::new(repo.clone()));
+    let service = WmServiceImpl::new(handler, repo);
+    
     let reflection_service = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(descriptor)
+        .register_encoded_file_descriptor_set(wm_service::api::proto::sc::wm::v1::FILE_DESCRIPTOR_SET)
         .build_v1()?;
 
-    info!("Service listening on {}", addr);
+    info!("SC Warehouse Operations Service listening on {}", addr);
     
-    // 5. Start Server
     Server::builder()
+        .add_service(WarehouseOperationsServiceServer::new(service))
         .add_service(reflection_service)
-        // .add_service(YourGrpcServiceServer::new(YourServiceImpl))
         .serve(addr)
         .await?;
 
