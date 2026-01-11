@@ -1,0 +1,49 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: cuba-gateway
+spec:
+  selector:
+    istio: ingressgateway # use istio default controller
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: cuba-vs
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - cuba-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /api/v1/auth
+    route:
+    - destination:
+        host: iam-service
+        port:
+          number: 50051
+  - match:
+    - uri:
+        prefix: /api/v1/gl
+    route:
+    - destination:
+        host: gl-service
+        port:
+          number: 50052
+  - match:
+    - uri:
+        prefix: /api/v1/ap
+    route:
+    - destination:
+        host: ap-service
+        port:
+          number: 50053

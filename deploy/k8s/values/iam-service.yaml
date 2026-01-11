@@ -1,0 +1,11 @@
+image:
+  repository: cuba-iam-service
+  tag: latest
+  pullPolicy: Never # Local image in Kind
+
+service:
+  port: 50051
+
+env:
+  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres:5432/cuba_iam"
+  RUST_LOG: "info"

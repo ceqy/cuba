@@ -1,0 +1,11 @@
+image:
+  repository: cuba-gl-service
+  tag: latest
+  pullPolicy: Never
+
+service:
+  port: 50052
+
+env:
+  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres:5432/cuba_gl"
+  RUST_LOG: "info"

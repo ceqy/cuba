@@ -1,0 +1,37 @@
+# Default values for microservice.
+# This is a YAML-formatted file.
+
+replicaCount: 1
+
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 50051
+  protocol: TCP
+  name: grpc
+
+env: {}
+#  DATABASE_URL: "postgres://..."
+#  RUST_LOG: "info"
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

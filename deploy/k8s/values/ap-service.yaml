@@ -1,0 +1,11 @@
+image:
+  repository: cuba-ap-service
+  tag: latest
+  pullPolicy: Never
+
+service:
+  port: 50053
+
+env:
+  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres:5432/cuba_fi_ap"
+  RUST_LOG: "info"
