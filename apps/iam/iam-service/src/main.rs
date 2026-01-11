@@ -39,10 +39,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // API
     let auth_service = AuthServiceImpl::new(register_handler, login_handler);
     
+    // Reflection Service
+    let reflection_service = tonic_reflection::server::Builder::configure()
+        .register_encoded_file_descriptor_set(iam_service::infrastructure::grpc::iam::v1::FILE_DESCRIPTOR_SET)
+        .build_v1()?;
+
     info!("Server listening on {}", addr);
     
     Server::builder()
         .add_service(AuthServiceServer::new(auth_service))
+        .add_service(reflection_service)
         .serve(addr)
         .await?;
 

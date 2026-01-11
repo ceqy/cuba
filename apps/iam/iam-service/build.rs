@@ -3,7 +3,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     tonic_prost_build::configure()
         .build_server(true)
         .build_client(true)
-        .file_descriptor_set_path(out_dir.join("iam_service_descriptor.bin"))
+        .file_descriptor_set_path(out_dir.join("iam_descriptor.bin"))
         .compile_protos(
             &["../../../protos/iam/iam.proto", "../../../protos/common/common.proto"],
             &["../../../protos", "../../../third_party"],
