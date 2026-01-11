@@ -1,33 +1,50 @@
 use tonic::transport::Server;
-use cuba_database::{DatabaseConfig, init_pool};
 use tracing::info;
+use dotenvy::dotenv;
+use std::sync::Arc;
+use cuba_database::{DatabaseConfig, init_pool};
+
+use po_service::api::grpc_server::PoServiceImpl;
+use po_service::api::proto::pm::po::v1::purchase_order_service_server::PurchaseOrderServiceServer;
+use po_service::infrastructure::repository::PurchaseOrderRepository;
+use po_service::application::handlers::CreatePurchaseOrderHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Init Telemetry
     cuba_telemetry::init_telemetry();
+    dotenv().ok();
     
-    // 2. Load Config
-    // In a real app we might load strictly typed config, here we assume env vars.
-    let addr = "0.0.0.0:50065".parse()?;
-    info!("Starting po-service on {}", addr);
+    // Port 50057
+    let addr = "0.0.0.0:50057".parse()?;
+    info!("Starting PM Purchase Order Service on {}", addr);
 
-    // 3. Init Database
+    // Database
     let db_config = DatabaseConfig::default();
-    let _pool = init_pool(&db_config).await?; // Pool is ready, typically passed to repositories
+    let pool = init_pool(&db_config).await?;
 
-    // 4. Init Reflection
-    let descriptor = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));
+    // Run migrations
+    let migrator = sqlx::migrate!("./migrations");
+    cuba_database::run_migrations(&pool, &migrator).await?;
+    
+    // Infrastructure
+    let repo = Arc::new(PurchaseOrderRepository::new(pool.clone()));
+    
+    // Application Handlers
+    let create_handler = Arc::new(CreatePurchaseOrderHandler::new(repo.clone()));
+    
+    // API
+    let service = PoServiceImpl::new(create_handler);
+    
+    // Reflection Service
     let reflection_service = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(descriptor)
+        .register_encoded_file_descriptor_set(po_service::api::proto::pm::po::v1::FILE_DESCRIPTOR_SET)
         .build_v1()?;
 
-    info!("Service listening on {}", addr);
+    info!("PM Purchase Order Service listening on {}", addr);
     
-    // 5. Start Server
     Server::builder()
+        .add_service(PurchaseOrderServiceServer::new(service))
         .add_service(reflection_service)
-        // .add_service(YourGrpcServiceServer::new(YourServiceImpl))
         .serve(addr)
         .await?;
 
