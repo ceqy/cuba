@@ -1,33 +1,41 @@
 use tonic::transport::Server;
-use cuba_database::{DatabaseConfig, init_pool};
 use tracing::info;
+use dotenvy::dotenv;
+use std::sync::Arc;
+use cuba_database::{DatabaseConfig, init_pool};
+
+use am_pm_service::api::grpc_server::PmServiceImpl;
+use am_pm_service::api::proto::am::pm::v1::asset_maintenance_service_server::AssetMaintenanceServiceServer;
+use am_pm_service::infrastructure::repository::MaintenanceRepository;
+use am_pm_service::application::handlers::MaintenanceHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Init Telemetry
     cuba_telemetry::init_telemetry();
+    dotenv().ok();
     
-    // 2. Load Config
-    // In a real app we might load strictly typed config, here we assume env vars.
-    let addr = "0.0.0.0:50076".parse()?;
-    info!("Starting pm-service on {}", addr);
+    let addr = "0.0.0.0:50061".parse()?;
+    info!("Starting AM Plant Maintenance Service on {}", addr);
 
-    // 3. Init Database
     let db_config = DatabaseConfig::default();
-    let _pool = init_pool(&db_config).await?; // Pool is ready, typically passed to repositories
+    let pool = init_pool(&db_config).await?;
 
-    // 4. Init Reflection
-    let descriptor = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));
+    let migrator = sqlx::migrate!("./migrations");
+    cuba_database::run_migrations(&pool, &migrator).await?;
+    
+    let repo = Arc::new(MaintenanceRepository::new(pool.clone()));
+    let handler = Arc::new(MaintenanceHandler::new(repo.clone()));
+    let service = PmServiceImpl::new(handler, repo);
+    
     let reflection_service = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(descriptor)
+        .register_encoded_file_descriptor_set(am_pm_service::api::proto::am::pm::v1::FILE_DESCRIPTOR_SET)
         .build_v1()?;
 
-    info!("Service listening on {}", addr);
+    info!("AM Plant Maintenance Service listening on {}", addr);
     
-    // 5. Start Server
     Server::builder()
+        .add_service(AssetMaintenanceServiceServer::new(service))
         .add_service(reflection_service)
-        // .add_service(YourGrpcServiceServer::new(YourServiceImpl))
         .serve(addr)
         .await?;
 
