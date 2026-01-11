@@ -1,33 +1,50 @@
 use tonic::transport::Server;
-use cuba_database::{DatabaseConfig, init_pool};
 use tracing::info;
+use dotenvy::dotenv;
+use std::sync::Arc;
+use cuba_database::{DatabaseConfig, init_pool};
+
+use pp_service::api::grpc_server::PpServiceImpl;
+use pp_service::api::proto::mf::pp::v1::production_planning_service_server::ProductionPlanningServiceServer;
+use pp_service::infrastructure::repository::PlannedOrderRepository;
+use pp_service::application::handlers::RunMrpHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Init Telemetry
     cuba_telemetry::init_telemetry();
+    dotenv().ok();
     
-    // 2. Load Config
-    // In a real app we might load strictly typed config, here we assume env vars.
-    let addr = "0.0.0.0:50071".parse()?;
-    info!("Starting pp-service on {}", addr);
+    // Port 50058 (SC IM 56, PM PO 57, so MF PP 58)
+    let addr = "0.0.0.0:50058".parse()?;
+    info!("Starting MF Production Planning Service on {}", addr);
 
-    // 3. Init Database
+    // Database
     let db_config = DatabaseConfig::default();
-    let _pool = init_pool(&db_config).await?; // Pool is ready, typically passed to repositories
+    let pool = init_pool(&db_config).await?;
 
-    // 4. Init Reflection
-    let descriptor = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));
+    // Run migrations
+    let migrator = sqlx::migrate!("./migrations");
+    cuba_database::run_migrations(&pool, &migrator).await?;
+    
+    // Infrastructure
+    let repo = Arc::new(PlannedOrderRepository::new(pool.clone()));
+    
+    // Application Handlers
+    let mrp_handler = Arc::new(RunMrpHandler::new(repo.clone()));
+    
+    // API
+    let service = PpServiceImpl::new(mrp_handler, repo);
+    
+    // Reflection Service
     let reflection_service = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(descriptor)
+        .register_encoded_file_descriptor_set(pp_service::api::proto::mf::pp::v1::FILE_DESCRIPTOR_SET)
         .build_v1()?;
 
-    info!("Service listening on {}", addr);
+    info!("MF Production Planning Service listening on {}", addr);
     
-    // 5. Start Server
     Server::builder()
+        .add_service(ProductionPlanningServiceServer::new(service))
         .add_service(reflection_service)
-        // .add_service(YourGrpcServiceServer::new(YourServiceImpl))
         .serve(addr)
         .await?;
 
