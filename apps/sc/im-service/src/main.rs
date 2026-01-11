@@ -1,33 +1,54 @@
 use tonic::transport::Server;
-use cuba_database::{DatabaseConfig, init_pool};
 use tracing::info;
+use dotenvy::dotenv;
+use std::sync::Arc;
+use cuba_database::{DatabaseConfig, init_pool};
+
+use im_service::api::grpc_server::ImServiceImpl;
+use im_service::api::proto::sc::im::v1::inventory_management_service_server::InventoryManagementServiceServer;
+use im_service::infrastructure::repository::InventoryRepository;
+use im_service::application::handlers::{PostStockMovementHandler, GetStockOverviewHandler};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Init Telemetry
     cuba_telemetry::init_telemetry();
+    dotenv().ok();
     
-    // 2. Load Config
-    // In a real app we might load strictly typed config, here we assume env vars.
-    let addr = "0.0.0.0:50060".parse()?;
-    info!("Starting im-service on {}", addr);
+    // Port 50056
+    let addr = "0.0.0.0:50056".parse()?;
+    info!("Starting SC Inventory Management Service on {}", addr);
 
-    // 3. Init Database
+    // Database
     let db_config = DatabaseConfig::default();
-    let _pool = init_pool(&db_config).await?; // Pool is ready, typically passed to repositories
+    let pool = init_pool(&db_config).await?;
 
-    // 4. Init Reflection
-    let descriptor = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));
+    // Run migrations
+    let migrator = sqlx::migrate!("./migrations");
+    cuba_database::run_migrations(&pool, &migrator).await?;
+    
+    // Infrastructure
+    let repo = Arc::new(InventoryRepository::new(pool.clone()));
+    
+    // Application Handlers
+    let post_handler = Arc::new(PostStockMovementHandler::new(repo.clone()));
+    let get_stock_handler = Arc::new(GetStockOverviewHandler::new(repo.clone()));
+    
+    // API
+    let service = ImServiceImpl::new(
+        post_handler,
+        get_stock_handler,
+    );
+    
+    // Reflection Service
     let reflection_service = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(descriptor)
+        .register_encoded_file_descriptor_set(im_service::api::proto::sc::im::v1::FILE_DESCRIPTOR_SET)
         .build_v1()?;
 
-    info!("Service listening on {}", addr);
+    info!("SC Inventory Management Service listening on {}", addr);
     
-    // 5. Start Server
     Server::builder()
+        .add_service(InventoryManagementServiceServer::new(service))
         .add_service(reflection_service)
-        // .add_service(YourGrpcServiceServer::new(YourServiceImpl))
         .serve(addr)
         .await?;
 
