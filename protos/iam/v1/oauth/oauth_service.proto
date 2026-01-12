@@ -3,43 +3,206 @@ syntax = "proto3";
 package iam.v1.oauth;
 
 import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "common/common.proto";
 
 option go_package = "github.com/enterprise/erp/protos/iam/v1/oauth;oauthv1";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  security_definitions: {
+    security: {
+      key: "oauth2"
+      value: {
+        type: TYPE_OAUTH2
+        flow: FLOW_ACCESS_CODE
+        authorization_url: "/api/v1/oauth2/authorize"
+        token_url: "/api/v1/oauth2/token"
+        scopes: {
+          key: "openid"
+          value: "OpenID scope"
+        }
+      }
+    }
+  }
+};
 
 service OAuthService {
   rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse) {
     option (google.api.http) = { get: "/api/v1/oauth2/authorize" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "OAuth"
+      summary: "授权码获取"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
   }
 
   rpc Token(TokenRequest) returns (TokenResponse) {
     option (google.api.http) = { post: "/api/v1/oauth2/token" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "OAuth"
+      summary: "获取令牌"
+    };
+  }
+
+  rpc RevokeToken(RevokeTokenRequest) returns (RevokeTokenResponse) {
+    option (google.api.http) = { post: "/api/v1/oauth2/revoke" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "OAuth"
+      summary: "撤销令牌 (RFC 7009)"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
+  }
+
+  rpc UserInfo(UserInfoRequest) returns (UserInfoResponse) {
+    option (google.api.http) = { get: "/api/v1/oauth2/userinfo" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "OAuth"
+      summary: "UserInfo"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
+  }
+
+  rpc IntrospectToken(IntrospectTokenRequest) returns (IntrospectTokenResponse) {
+    option (google.api.http) = { post: "/api/v1/oauth2/introspect" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "OAuth"
+      summary: "令牌内省 (RFC 7662)"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
+  }
+
+  rpc CreateClient(CreateClientRequest) returns (OAuthClient) {
+    option (google.api.http) = { post: "/api/v1/oauth2/clients" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "OAuth"
+      summary: "创建客户端"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
+  }
+
+  rpc ListClients(ListClientsRequest) returns (ListClientsResponse) {
+    option (google.api.http) = { get: "/api/v1/oauth2/clients" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "OAuth"
+      summary: "列出客户端"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
+  }
+
+  rpc DeleteClient(DeleteClientRequest) returns (DeleteClientResponse) {
+    option (google.api.http) = { delete: "/api/v1/oauth2/clients/{client_id}" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "OAuth"
+      summary: "删除客户端"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
   }
 }
 
 message AuthorizeRequest {
-    string response_type = 1;
-    string client_id = 2;
-    string redirect_uri = 3;
-    string scope = 4;
-    string state = 5;
+  string response_type = 1;
+  string client_id = 2;
+  string redirect_uri = 3;
+  string scope = 4;
+  string state = 5;
+  string code_challenge = 6;
+  string nonce = 7;
 }
 
 message AuthorizeResponse {
-    string code = 1;
-    string state = 2;
+  string code = 1;
+  string state = 2;
 }
 
 message TokenRequest {
-    string grant_type = 1;
-    string code = 2;
-    string redirect_uri = 3;
-    string client_id = 4;
-    string client_secret = 5;
+  string grant_type = 1;
+  string code = 2;
+  string redirect_uri = 3;
+  string client_id = 4;
+  string client_secret = 5;
+  string code_verifier = 6;
+  string refresh_token = 7;
 }
 
 message TokenResponse {
-    string access_token = 1;
-    string token_type = 2;
-    int32 expires_in = 3;
-    string refresh_token = 4;
+  string access_token = 1;
+  string token_type = 2;
+  int32 expires_in = 3;
+  string refresh_token = 4;
+  string scope = 5;
+}
+
+message RevokeTokenRequest {
+  string token = 1;
+  string token_type_hint = 2;
+}
+
+message RevokeTokenResponse {
+  bool success = 1;
+}
+
+message UserInfoRequest {
+  string access_token = 1;
+}
+
+message UserInfoResponse {
+  string sub = 1;
+  string name = 2;
+  string email = 3;
+  string tenant_id = 4;
+  string picture = 5;
+}
+
+message IntrospectTokenRequest {
+  string token = 1;
+  string token_type_hint = 2;
+}
+
+message IntrospectTokenResponse {
+  bool active = 1;
+  string scope = 2;
+  string client_id = 3;
+  string username = 4;
+  int64 exp = 5;
+  int64 iat = 6;
+  int64 nbf = 7;
+  string sub = 8;
+  string aud = 9;
+  string iss = 10;
+  string jti = 11;
+}
+
+message OAuthClient {
+  string client_id = 1;
+  string client_secret = 2;
+  string name = 3;
+  repeated string redirect_uris = 4;
+  repeated string grant_types = 5;
+  repeated string scopes = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message CreateClientRequest {
+  string name = 1;
+  repeated string redirect_uris = 2;
+  repeated string grant_types = 3;
+  repeated string scopes = 4;
+}
+
+message ListClientsRequest {
+  .common.v1.PaginationRequest pagination = 1;
+}
+
+message ListClientsResponse {
+  repeated OAuthClient clients = 1;
+  .common.v1.PaginationResponse pagination = 2;
+}
+
+message DeleteClientRequest {
+  string client_id = 1;
+}
+
+message DeleteClientResponse {
+  bool success = 1;
 }

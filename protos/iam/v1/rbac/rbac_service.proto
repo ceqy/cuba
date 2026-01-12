@@ -3,6 +3,8 @@ syntax = "proto3";
 package iam.v1.rbac;
 
 import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 import "iam/v1/common/types.proto";
 import "common/common.proto";
 
@@ -14,28 +16,93 @@ service RBACService {
   // 创建角色
   rpc CreateRole(CreateRoleRequest) returns (iam.v1.common.Role) {
     option (google.api.http) = { post: "/api/v1/rbac/roles" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "RBAC"
+      summary: "创建角色"
+      security: { security_requirement: { key: "bearer_auth" } }
+      deprecated: false
+    };
+  }
+
+  // 更新角色（部分字段）
+  rpc UpdateRole(UpdateRoleRequest) returns (iam.v1.common.Role) {
+    option (google.api.http) = { patch: "/api/v1/rbac/roles/{role_id}" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "RBAC"
+      summary: "更新角色"
+      security: { security_requirement: { key: "bearer_auth" } }
+      deprecated: false
+    };
   }
 
   // 获取角色列表
-  rpc ListRoles(.common.v1.PaginationRequest) returns (ListRolesResponse) {
+  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse) {
     option (google.api.http) = { get: "/api/v1/rbac/roles" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "RBAC"
+      summary: "获取角色列表"
+      security: { security_requirement: { key: "bearer_auth" } }
+      deprecated: false
+    };
   }
   
   // 删除角色
   rpc DeleteRole(DeleteRoleRequest) returns (.common.v1.BatchOperationResult) {
-      option (google.api.http) = { delete: "/api/v1/rbac/roles/{role_id}" };
+    option (google.api.http) = { delete: "/api/v1/rbac/roles/{role_id}" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "RBAC"
+      summary: "删除角色"
+      security: { security_requirement: { key: "bearer_auth" } }
+      deprecated: false
+    };
   }
 
   // --- Permission Management ---
 
   // 列出所有权限定义
   rpc ListPermissions(.common.v1.PaginationRequest) returns (ListPermissionsResponse) {
-      option (google.api.http) = { get: "/api/v1/rbac/permissions" };
+    option (google.api.http) = { get: "/api/v1/rbac/permissions" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "RBAC"
+      summary: "获取权限列表"
+      security: { security_requirement: { key: "bearer_auth" } }
+      deprecated: false
+    };
   }
+
+  // --- Permission Assignment ---
 
   // 给角色赋予权限
   rpc GrantPermissionsToRole(GrantPermissionsRequest) returns (GrantPermissionsResponse) {
     option (google.api.http) = { post: "/api/v1/rbac/roles/{role_id}/permissions" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "RBAC"
+      summary: "授权权限到角色"
+      security: { security_requirement: { key: "bearer_auth" } }
+      deprecated: false
+    };
+  }
+
+  // 将角色分配给用户
+  rpc AssignRoleToUser(AssignRoleToUserRequest) returns (AssignRoleToUserResponse) {
+    option (google.api.http) = { post: "/api/v1/rbac/users/{user_id}/roles/{role_id}" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "RBAC"
+      summary: "为用户分配角色"
+      security: { security_requirement: { key: "bearer_auth" } }
+      deprecated: false
+    };
+  }
+
+  // 移除用户角色
+  rpc RemoveRoleFromUser(RemoveRoleFromUserRequest) returns (RemoveRoleFromUserResponse) {
+    option (google.api.http) = { delete: "/api/v1/rbac/users/{user_id}/roles/{role_id}" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "RBAC"
+      summary: "移除用户角色"
+      security: { security_requirement: { key: "bearer_auth" } }
+      deprecated: false
+    };
   }
 
   // --- Access Control ---
@@ -43,44 +110,81 @@ service RBACService {
   // 检查权限
   rpc CheckPermissions(CheckPermissionsRequest) returns (CheckPermissionsResponse) {
     option (google.api.http) = { post: "/api/v1/rbac/permissions/check" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "RBAC"
+      summary: "检查用户权限"
+      security: { security_requirement: { key: "bearer_auth" } }
+      deprecated: false
+    };
   }
 }
 
 message CreateRoleRequest {
-    string name = 1;
-    string description = 2;
-    string parent_role_id = 3;
+  string name = 1;
+  string description = 2;
+  string parent_id = 3;
+  string tenant_id = 4;
+}
+
+message UpdateRoleRequest {
+  string role_id = 1;
+  iam.v1.common.Role role = 2;
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+message ListRolesRequest {
+  .common.v1.PaginationRequest pagination = 1;
+  iam.v1.common.Filter filter = 2;
 }
 
 message ListRolesResponse {
-    repeated iam.v1.common.Role roles = 1;
-    .common.v1.PaginationResponse pagination = 2;
+  repeated iam.v1.common.Role roles = 1;
+  .common.v1.PaginationResponse pagination = 2;
 }
 
 message DeleteRoleRequest {
-    string role_id = 1;
+  string role_id = 1;
 }
 
 message ListPermissionsResponse {
-    repeated iam.v1.common.Permission permissions = 1;
-    .common.v1.PaginationResponse pagination = 2;
+  repeated iam.v1.common.Permission permissions = 1;
+  .common.v1.PaginationResponse pagination = 2;
 }
 
 message GrantPermissionsRequest {
-    string role_id = 1;
-    repeated string permission_ids = 2;
+  string role_id = 1;
+  repeated string permission_ids = 2;
 }
 
 message GrantPermissionsResponse {
-    bool success = 1;
+  bool success = 1;
+}
+
+message AssignRoleToUserRequest {
+  string user_id = 1;
+  string role_id = 2;
+}
+
+message AssignRoleToUserResponse {
+  bool success = 1;
+}
+
+message RemoveRoleFromUserRequest {
+  string user_id = 1;
+  string role_id = 2;
+}
+
+message RemoveRoleFromUserResponse {
+  bool success = 1;
 }
 
 message CheckPermissionsRequest {
-    string user_id = 1; 
-    repeated string permissions = 2; // e.g., ["user:read", "user:write"]
+  string user_id = 1; 
+  repeated string permissions = 2; // e.g., ["user:read", "user:write"]
 }
 
 message CheckPermissionsResponse {
-    bool authorized = 1;
-    repeated string missing_permissions = 2;
+  bool authorized = 1;
+  map<string, bool> permission_results = 2;
+  repeated string missing_permissions = 3;
 }

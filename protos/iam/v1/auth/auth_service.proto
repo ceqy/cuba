@@ -4,6 +4,9 @@ package iam.v1.auth;
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 import "iam/v1/common/types.proto";
 // 确保 common/common.proto 存在且被正确引用
 import "common/common.proto"; 
@@ -14,26 +17,148 @@ service AuthService {
   // 注册
   rpc Register(RegisterRequest) returns (RegisterResponse) {
     option (google.api.http) = { post: "/api/v1/auth/register" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity"
+      summary: "用户注册"
+    };
   }
 
   // 登录
   rpc Login(LoginRequest) returns (LoginResponse) {
     option (google.api.http) = { post: "/api/v1/auth/login" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity"
+      summary: "用户登录"
+    };
+  }
+
+  // 注销
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {
+    option (google.api.http) = { post: "/api/v1/auth/logout" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity"
+      summary: "用户登出"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
+  }
+
+  // 刷新令牌
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {
+    option (google.api.http) = { post: "/api/v1/auth/refresh" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity"
+      summary: "刷新令牌"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
+  }
+
+  // 验证令牌（内部调用）
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse) {
+    option (google.api.http) = { post: "/api/v1/auth/validate" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity"
+      summary: "验证令牌"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
   }
 
   // 获取当前用户信息
-  rpc GetCurrentUser(google.protobuf.Empty) returns (iam.v1.common.User) {
+  rpc GetCurrentUser(google.protobuf.Empty) returns (GetCurrentUserResponse) {
     option (google.api.http) = { get: "/api/v1/auth/me" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity"
+      summary: "获取当前用户信息"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
   }
 
   // 修改密码
   rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse) {
     option (google.api.http) = { post: "/api/v1/auth/password/change" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity"
+      summary: "修改密码"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
+  }
+
+  // 更新个人资料
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse) {
+    option (google.api.http) = { patch: "/api/v1/auth/profile" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity"
+      summary: "更新个人资料"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
+  }
+
+  // 启用二次认证
+  rpc Enable2FA(google.protobuf.Empty) returns (Enable2FAResponse) {
+    option (google.api.http) = { post: "/api/v1/auth/2fa/enable" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity"
+      summary: "启用二次认证"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
+  }
+
+  // 验证二次认证（绑定阶段）
+  rpc Verify2FA(Verify2FARequest) returns (Verify2FAResponse) {
+    option (google.api.http) = { post: "/api/v1/auth/2fa/verify" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity"
+      summary: "验证二次认证绑定"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
+  }
+
+  // 登录时验证 2FA
+  rpc Verify2FACode(Verify2FACodeRequest) returns (LoginResponse) {
+    option (google.api.http) = { post: "/api/v1/auth/2fa/verify-login" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity"
+      summary: "登录流程校验 2FA"
+    };
+  }
+
+  // 审计日志
+  rpc GetAuditLogs(GetAuditLogsRequest) returns (GetAuditLogsResponse) {
+    option (google.api.http) = { get: "/api/v1/auth/audit/logs" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity"
+      summary: "获取审计日志"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
+  }
+
+  // 获取用户会话
+  rpc ListUserSessions(ListUserSessionsRequest) returns (ListUserSessionsResponse) {
+    option (google.api.http) = { get: "/api/v1/auth/sessions" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity"
+      summary: "列出用户会话"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
+  }
+
+  // 撤销会话
+  rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse) {
+    option (google.api.http) = { post: "/api/v1/auth/sessions/revoke" body: "*" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity"
+      summary: "撤销会话"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
   }
   
   // 获取当前用户权限码 (Frontend usage)
   rpc GetPermCodes(google.protobuf.Empty) returns (GetPermCodesResponse) {
     option (google.api.http) = { get: "/api/v1/auth/codes" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity"
+      summary: "获取当前用户权限码"
+      security: { security_requirement: { key: "bearer_auth" } }
+    };
   }
 }
 
@@ -42,17 +167,21 @@ message RegisterRequest {
   string password = 2;
   string email = 3;
   string tenant_id = 4;
+  string idempotency_key = 5;
 }
 
 message RegisterResponse {
   string user_id = 1;
   string username = 2;
+  string status = 3;  // e.g., "PENDING_VERIFICATION", "ACTIVE"
+  bool requires_verification = 4;
 }
 
 message LoginRequest {
   string username = 1;
   string password = 2;
   string tenant_id = 3;
+  string two_factor_code = 4;
 }
 
 message LoginResponse {
@@ -60,6 +189,46 @@ message LoginResponse {
   string refresh_token = 2;
   int32 expires_in = 3;
   string token_type = 4;
+  string session_id = 5;
+  google.protobuf.Timestamp locked_until = 6;
+  google.protobuf.Timestamp password_expires_at = 7;
+  bool mfa_required = 8;
+}
+
+message LogoutRequest {
+  string session_id = 1;
+  bool revoke_all = 2;
+}
+
+message LogoutResponse {
+  bool success = 1;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message RefreshTokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int32 expires_in = 3;
+  string token_type = 4;
+}
+
+message ValidateTokenRequest {
+  string access_token = 1;
+}
+
+message ValidateTokenResponse {
+  bool valid = 1;
+  string subject = 2;
+  string tenant_id = 3;
+  repeated string permissions = 4;
+}
+
+message GetCurrentUserResponse {
+  iam.v1.common.User user = 1;
+  repeated iam.v1.common.Role roles = 2;
 }
 
 message ChangePasswordRequest {
@@ -71,6 +240,91 @@ message ChangePasswordResponse {
   bool success = 1;
 }
 
+message UpdateProfileRequest {
+  string display_name = 1;
+  string avatar_url = 2;
+}
+
+message UpdateProfileResponse {
+  iam.v1.common.User user = 1;
+}
+
+message Enable2FAResponse {
+  string secret_key = 1;
+  string qr_code_url = 2;
+  repeated string backup_codes = 3;
+}
+
+message Verify2FARequest {
+  string code = 1;
+}
+
+message Verify2FAResponse {
+  bool success = 1;
+}
+
+message Verify2FACodeRequest {
+  string session_id = 1;
+  string code = 2;
+  string username = 3;
+  string tenant_id = 4;
+}
+
+enum LogLevel {
+  LOG_LEVEL_UNSPECIFIED = 0;
+  INFO = 1;
+  WARN = 2;
+  ERROR = 3;
+  SECURITY = 4;
+}
+
+message AuditLog {
+  string log_id = 1;
+  string user_id = 2;
+  string action = 3;
+  LogLevel level = 4;
+  string message = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Struct context = 7;
+}
+
+message GetAuditLogsRequest {
+  iam.v1.common.AuditFilter filter = 1;
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+}
+
+message GetAuditLogsResponse {
+  repeated AuditLog logs = 1;
+}
+
+message Session {
+  string session_id = 1;
+  string user_agent = 2;
+  string ip = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp last_seen_at = 5;
+  bool active = 6;
+  string tenant_id = 7;
+}
+
+message ListUserSessionsRequest {
+  string user_id = 1;
+}
+
+message ListUserSessionsResponse {
+  repeated Session sessions = 1;
+}
+
+message RevokeSessionRequest {
+  string session_id = 1;
+  bool revoke_all = 2;
+}
+
+message RevokeSessionResponse {
+  bool success = 1;
+}
+
 message GetPermCodesResponse {
-    repeated string codes = 1;
+  repeated string codes = 1;
 }

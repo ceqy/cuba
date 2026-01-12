@@ -2,41 +2,135 @@ syntax = "proto3";
 
 package iam.v1.common;
 
+import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
 option go_package = "github.com/enterprise/erp/protos/iam/v1/common;common";
 
+// OpenAPI 全局配置
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "IAM API"
+  }
+  security_definitions: {
+    security: {
+      key: "bearer_auth"
+      value: {
+        type: TYPE_API_KEY
+        in: IN_HEADER
+        name: "Authorization"
+        description: "Bearer token for authentication"
+      }
+    }
+  }
+  security: {
+    security_requirement: {
+      key: "bearer_auth"
+      value: {}
+    }
+  }
+};
+
+// 通用错误码
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+  UNAUTHENTICATED = 1;
+  PERMISSION_DENIED = 2;
+  INVALID_ARGUMENT = 3;
+  TOKEN_EXPIRED = 4;
+  TOKEN_INVALID = 5;
+  ACCOUNT_LOCKED = 6;
+  PASSWORD_EXPIRED = 7;
+  INVALID_CLIENT = 8;
+  INVALID_GRANT = 9;
+  MFA_REQUIRED = 10;
+}
+
+// 密码策略
+message PasswordPolicy {
+  int32 min_length = 1;
+  bool require_uppercase = 2;
+  bool require_lowercase = 3;
+  bool require_number = 4;
+  bool require_special_char = 5;
+  int32 max_age_days = 6;
+  int32 history_count = 7;
+  int32 lock_after_failed_attempts = 8; // 连续失败多少次锁定
+  int32 lock_duration_minutes = 9;      // 锁定多长时间
+}
+
 // 核心用户对象
 message User {
-  string tenant_id      = 1;
-  string user_id        = 2;
-  string username       = 3;
-  string email          = 4;
-  string display_name   = 5;
-  string avatar_url     = 6;
-  bool   email_verified = 7;
-  bool   is_active      = 8;
+  string tenant_id = 1;
+  string user_id = 2;
+  string username = 3;
+  string email = 4;
+  string display_name = 5;
+  string avatar_url = 6;
+  bool email_verified = 7;
+  bool is_active = 8;
   repeated string roles = 9;
   google.protobuf.Timestamp created_at = 10;
   google.protobuf.Timestamp last_login_at = 11;
+  string phone = 12;
+  google.protobuf.Struct attributes = 13; // JSONB 扩展字段
 }
 
 // 角色
 message Role {
-  string role_id        = 1;
-  string name           = 2;
-  string description    = 3;
-  string parent_role_id = 4;     // 角色继承
-  bool   is_system      = 5;     // 系统保护角色
-  google.protobuf.Timestamp created_at = 6;
+  string role_id = 1;
+  string name = 2;
+  string description = 3;
+  string parent_id = 4; // 角色继承
+  string tenant_id = 5;
+  bool is_immutable = 6; // 系统保护角色
+  google.protobuf.Timestamp created_at = 7;
 }
 
 // 细粒度权限
 message Permission {
   string permission_id = 1;
-  string code          = 2;      // 前端权限码: user:add
-  string resource      = 3;      // resources: user
-  string action        = 4;      // action: write
-  string description   = 5;
+  string code = 2;     // 权限码: user:add
+  string resource = 3; // 资源: user
+  string action = 4;   // 动作: write
+  string description = 5;
   google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Struct conditions = 7; // JSONB 条件
+  Effect effect = 8;
+}
+
+enum Effect {
+  EFFECT_UNSPECIFIED = 0;
+  ALLOW = 1;
+  DENY = 2;
+}
+
+// 通用过滤器
+message Filter {
+  string search_query = 1;
+  repeated string fields = 2;
+  SortBy sort_by = 3;
+
+  enum SortBy {
+    NAME_ASC = 0;
+    CREATED_DESC = 1;
+  }
+}
+
+// 审计日志过滤器
+message AuditFilter {
+  Filter filter = 1;
+  repeated string user_ids = 2;
+  repeated string tenant_ids = 3;
+  repeated string actions = 4;
+}
+
+// 用户过滤器
+message UserFilter {
+  Filter filter = 1;
+  repeated string roles = 2;
+  repeated string tenant_ids = 3;
+  bool include_inactive = 4;
 }
