@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use rust_decimal::Decimal;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct RevenueContract {
     pub contract_id: Uuid,
     pub contract_number: String,
@@ -12,10 +12,11 @@ pub struct RevenueContract {
     pub company_code: String,
     pub customer: String,
     pub created_at: DateTime<Utc>,
+    #[sqlx(skip)]
     pub obligations: Vec<PerformanceObligation>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct PerformanceObligation {
     pub pob_id: Uuid,
     pub contract_id: Uuid,
@@ -28,7 +29,7 @@ pub struct PerformanceObligation {
     pub deferred_revenue: Decimal,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct RevenuePostingDocument {
     pub posting_id: Uuid,
     pub document_id: String,

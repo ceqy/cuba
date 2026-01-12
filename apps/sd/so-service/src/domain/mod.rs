@@ -3,7 +3,7 @@ use chrono::{NaiveDate, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct SalesOrder {
     pub order_id: Uuid,
     pub order_number: String,
@@ -32,13 +32,14 @@ pub struct SalesOrder {
     pub delivery_block: Option<String>,
     pub billing_block: Option<String>,
     
+    #[sqlx(skip)]
     pub items: Vec<SalesOrderItem>,
     
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct SalesOrderItem {
     pub item_id: Uuid,
     pub order_id: Uuid,
@@ -61,13 +62,11 @@ pub struct SalesOrderItem {
     
     pub higher_level_item: Option<i32>,
 
-    // NOTE: In DDD, entities might contain other entities. 
-    // For MVP, we load schedule_lines separately or embedded here if needed.
-    // We'll keep them simple for now.
+    #[sqlx(skip)]
     pub schedule_lines: Vec<SalesOrderScheduleLine>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct SalesOrderScheduleLine {
     pub schedule_line_id: Uuid,
     pub item_id: Uuid,

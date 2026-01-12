@@ -1,0 +1,127 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swagger-ui
+  namespace: cuba-system
+  labels:
+    app: swagger-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: swagger-ui
+  template:
+    metadata:
+      labels:
+        app: swagger-ui
+    spec:
+      containers:
+      - name: swagger-ui
+        image: swaggerapi/swagger-ui:v5.9.1
+        ports:
+        - containerPort: 8080
+        env:
+        - name: PERSIST_AUTHORIZATION
+          value: "true"
+        - name: URLS
+          value: "[ { url: '/specs/auth.json', name: 'Identity & Access' }, { url: '/specs/finance.json', name: 'Finance' }, { url: '/specs/sales.json', name: 'Sales' }, { url: '/specs/procurement.json', name: 'Procurement' }, { url: '/specs/manufacturing.json', name: 'Manufacturing' }, { url: '/specs/supplychain.json', name: 'Supply Chain' }, { url: '/specs/asset.json', name: 'Asset Management' }, { url: '/specs/service.json', name: 'Customer Service' }, { url: '/specs/hr.json', name: 'Human Resources' }, { url: '/specs/rd.json', name: 'R&D' } ]"
+        volumeMounts:
+        - name: docs-1
+          mountPath: /usr/share/nginx/html/specs/auth.json
+          subPath: auth.json
+        - name: docs-1
+          mountPath: /usr/share/nginx/html/specs/finance.json
+          subPath: finance.json
+        - name: docs-2
+          mountPath: /usr/share/nginx/html/specs/asset.json
+          subPath: asset.json
+        - name: docs-2
+          mountPath: /usr/share/nginx/html/specs/procurement.json
+          subPath: procurement.json
+        - name: docs-3
+          mountPath: /usr/share/nginx/html/specs/sales.json
+          subPath: sales.json
+        - name: docs-3
+          mountPath: /usr/share/nginx/html/specs/service.json
+          subPath: service.json
+        - name: docs-4
+          mountPath: /usr/share/nginx/html/specs/manufacturing.json
+          subPath: manufacturing.json
+        - name: docs-4
+          mountPath: /usr/share/nginx/html/specs/supplychain.json
+          subPath: supplychain.json
+        - name: docs-5
+          mountPath: /usr/share/nginx/html/specs/hr.json
+          subPath: hr.json
+        - name: docs-5
+          mountPath: /usr/share/nginx/html/specs/rd.json
+          subPath: rd.json
+      volumes:
+      - name: docs-1
+        configMap:
+          name: cuba-docs-1
+      - name: docs-2
+        configMap:
+          name: cuba-docs-2
+      - name: docs-3
+        configMap:
+          name: cuba-docs-3
+      - name: docs-4
+        configMap:
+          name: cuba-docs-4
+      - name: docs-5
+        configMap:
+          name: cuba-docs-5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: swagger-ui
+  namespace: cuba-system
+spec:
+  selector:
+    app: swagger-ui
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: swagger-ui-vs
+  namespace: cuba-system
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - cuba-gateway
+  http:
+  # Redirect /swagger to /swagger/ to handle relative assets
+  - match:
+    - uri:
+        exact: /swagger
+    redirect:
+      uri: /swagger/
+  
+  # Forward /swagger/ path to / on backend
+  - match:
+    - uri:
+        prefix: /swagger/
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: swagger-ui.cuba-system.svc.cluster.local
+        port:
+          number: 80
+  
+  # Serve specs (no rewrite needed for /specs/...)
+  - match:
+    - uri:
+        prefix: /specs
+    route:
+    - destination:
+        host: swagger-ui.cuba-system.svc.cluster.local
+        port:
+          number: 80

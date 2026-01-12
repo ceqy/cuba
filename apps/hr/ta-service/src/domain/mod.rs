@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Candidate {
     pub candidate_id: Uuid,
     pub first_name: String,
@@ -13,7 +13,7 @@ pub struct Candidate {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct JobApplication {
     pub application_id: Uuid,
     pub requisition_id: String,
@@ -24,11 +24,13 @@ pub struct JobApplication {
     pub notes: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    #[sqlx(skip)]
     pub candidate: Option<Candidate>,
+    #[sqlx(skip)]
     pub interviews: Vec<InterviewSchedule>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct InterviewSchedule {
     pub interview_id: Uuid,
     pub application_id: Uuid,

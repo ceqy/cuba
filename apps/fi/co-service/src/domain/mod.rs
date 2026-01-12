@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use rust_decimal::Decimal;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct AllocationRun {
     pub run_id: Uuid,
     pub controlling_area: String,
@@ -14,11 +14,13 @@ pub struct AllocationRun {
     pub test_run: bool,
     pub status: String,
     pub created_at: DateTime<Utc>,
+    #[sqlx(skip)]
     pub senders: Vec<AllocationSender>,
+    #[sqlx(skip)]
     pub receivers: Vec<AllocationReceiver>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct AllocationSender {
     pub sender_id: Uuid,
     pub run_id: Uuid,
@@ -27,7 +29,7 @@ pub struct AllocationSender {
     pub currency: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct AllocationReceiver {
     pub receiver_id: Uuid,
     pub run_id: Uuid,

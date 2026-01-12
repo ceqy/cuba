@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use rust_decimal::Decimal;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct MaintenanceNotification {
     pub notification_id: Uuid,
     pub notification_number: String,
@@ -19,7 +19,7 @@ pub struct MaintenanceNotification {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct MaintenanceOrder {
     pub order_id: Uuid,
     pub order_number: String,
@@ -37,10 +37,11 @@ pub struct MaintenanceOrder {
     pub basic_finish_date: Option<NaiveDate>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    #[sqlx(skip)]
     pub operations: Vec<MaintenanceOperation>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct MaintenanceOperation {
     pub operation_id: Uuid,
     pub order_id: Uuid,

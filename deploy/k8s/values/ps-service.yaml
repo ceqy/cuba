@@ -1,0 +1,15 @@
+# ps-service Helm Values
+replicaCount: 2
+image:
+  repository: cuba-erp/ps-service
+  tag: "latest"
+fullnameOverride: "ps-service"
+service:
+  grpcPort: 50047
+  metricsPort: 9090
+env:
+  RUST_LOG: "info"
+  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres.default.svc.cluster.local:5432/cuba_rd_ps"
+resources:
+  limits: {cpu: 500m, memory: 512Mi}
+  requests: {cpu: 100m, memory: 128Mi}

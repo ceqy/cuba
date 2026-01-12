@@ -1,0 +1,15 @@
+# vs-service Helm Values
+replicaCount: 2
+image:
+  repository: cuba-erp/vs-service
+  tag: "latest"
+fullnameOverride: "vs-service"
+service:
+  grpcPort: 50087
+  metricsPort: 9090
+env:
+  RUST_LOG: "info"
+  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres.default.svc.cluster.local:5432/cuba_sc_vs"
+resources:
+  limits: {cpu: 500m, memory: 512Mi}
+  requests: {cpu: 100m, memory: 128Mi}

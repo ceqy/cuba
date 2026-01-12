@@ -3,7 +3,7 @@ use chrono::{NaiveDate, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct MaterialStock {
     pub stock_id: Uuid,
     pub plant: String,
@@ -22,7 +22,7 @@ pub struct MaterialStock {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct MaterialDocument {
     pub document_id: Uuid,
     pub document_number: String,
@@ -33,12 +33,13 @@ pub struct MaterialDocument {
     pub reference_document: Option<String>,
     pub header_text: Option<String>,
     
+    #[sqlx(skip)]
     pub items: Vec<MaterialDocumentItem>,
     
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct MaterialDocumentItem {
     pub item_id: Uuid,
     pub document_id: Uuid,

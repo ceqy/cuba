@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use rust_decimal::Decimal;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct SensorDataPoint {
     pub data_id: Uuid,
     pub equipment_number: String,
@@ -13,7 +13,7 @@ pub struct SensorDataPoint {
     pub recorded_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct AssetHealthStatus {
     pub health_id: Uuid,
     pub equipment_number: String,
@@ -23,7 +23,7 @@ pub struct AssetHealthStatus {
     pub last_updated: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct PredictiveAlert {
     pub alert_id: Uuid,
     pub equipment_number: String,

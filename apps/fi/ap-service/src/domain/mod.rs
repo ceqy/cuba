@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Supplier aggregate root
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Supplier {
     pub id: Uuid,
     pub supplier_id: String,
@@ -41,7 +41,7 @@ pub struct Supplier {
 }
 
 /// Invoice aggregate root
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Invoice {
     pub id: Uuid,
     pub document_number: String,
@@ -71,6 +71,7 @@ pub struct Invoice {
     pub clearing_date: Option<NaiveDate>,
     
     // Line items
+    #[sqlx(skip)]
     pub items: Vec<InvoiceItem>,
     
     // Audit
@@ -106,7 +107,7 @@ impl std::fmt::Display for InvoiceStatus {
 }
 
 /// Invoice line item
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct InvoiceItem {
     pub id: Uuid,
     pub invoice_id: Uuid,
@@ -152,7 +153,7 @@ impl DebitCredit {
 }
 
 /// Open Item entity
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct OpenItem {
     pub id: Uuid,
     pub document_number: String,
@@ -178,7 +179,7 @@ pub struct OpenItem {
 }
 
 /// Payment Document
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct PaymentDocument {
     pub id: Uuid,
     pub document_number: String,

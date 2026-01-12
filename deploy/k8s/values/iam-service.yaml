@@ -1,11 +1,15 @@
+# iam-service Helm Values
+replicaCount: 2
 image:
-  repository: cuba-iam-service
-  tag: latest
-  pullPolicy: Never # Local image in Kind
-
+  repository: cuba-erp/iam-service
+  tag: "latest"
+fullnameOverride: "iam-service"
 service:
-  port: 50051
-
+  grpcPort: 50051
+  metricsPort: 9090
 env:
-  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres:5432/cuba_iam"
   RUST_LOG: "info"
+  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres.default.svc.cluster.local:5432/cuba_iam"
+resources:
+  limits: {cpu: 500m, memory: 512Mi}
+  requests: {cpu: 100m, memory: 128Mi}

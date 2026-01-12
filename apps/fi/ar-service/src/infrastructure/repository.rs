@@ -14,7 +14,7 @@ impl CustomerRepository {
     }
 
     pub async fn save(&self, customer: &Customer) -> Result<()> {
-        sqlx::query!(
+        sqlx::query(
             r#"
             INSERT INTO customers (
                 customer_id, business_partner_id, name, account_group,
@@ -27,31 +27,29 @@ impl CustomerRepository {
             ON CONFLICT (customer_id) DO UPDATE SET
                 name = EXCLUDED.name,
                 updated_at = EXCLUDED.updated_at
-            "#,
-            customer.customer_id,
-            customer.business_partner_id,
-            customer.name,
-            customer.account_group,
-            customer.street,
-            customer.city,
-            customer.postal_code,
-            customer.country,
-            customer.company_code,
-            customer.reconciliation_account,
-            customer.payment_terms,
-            customer.sales_organization,
-            customer.order_currency,
-            customer.created_at,
-            customer.updated_at
-        )
+            "#)
+            .bind(&customer.customer_id)
+            .bind(&customer.business_partner_id)
+            .bind(&customer.name)
+            .bind(&customer.account_group)
+            .bind(&customer.street)
+            .bind(&customer.city)
+            .bind(&customer.postal_code)
+            .bind(&customer.country)
+            .bind(&customer.company_code)
+            .bind(&customer.reconciliation_account)
+            .bind(&customer.payment_terms)
+            .bind(&customer.sales_organization)
+            .bind(&customer.order_currency)
+            .bind(&customer.created_at)
+            .bind(&customer.updated_at)
         .execute(&self.pool)
         .await?;
         Ok(())
     }
 
     pub async fn find_by_id(&self, customer_id: &str) -> Result<Option<Customer>> {
-        let rec = sqlx::query_as!(
-            Customer,
+        let rec = sqlx::query_as::<_, Customer>(
             r#"
             SELECT 
                 customer_id, business_partner_id, name, account_group,
@@ -61,9 +59,8 @@ impl CustomerRepository {
                 created_at, updated_at
             FROM customers
             WHERE customer_id = $1
-            "#,
-            customer_id
-        )
+            "#)
+            .bind(customer_id)
         .fetch_optional(&self.pool)
         .await?;
         Ok(rec)
@@ -86,7 +83,7 @@ impl OpenItemRepository {
         limit: i64,
         offset: i64
     ) -> Result<Vec<OpenItem>> {
-        let items = sqlx::query!(
+        let items = sqlx::query_as::<_, OpenItem>(
             r#"
             SELECT 
                 open_item_id, document_number, fiscal_year, company_code, line_item_number,
@@ -97,34 +94,14 @@ impl OpenItemRepository {
             AND ($2 = TRUE OR is_cleared = FALSE)
             ORDER BY due_date ASC
             LIMIT $3 OFFSET $4
-            "#,
-            customer_id,
-            include_cleared,
-            limit,
-            offset
-        )
+            "#)
+            .bind(customer_id)
+            .bind(include_cleared)
+            .bind(limit)
+            .bind(offset)
         .fetch_all(&self.pool)
         .await?;
 
-        let result = items.into_iter().map(|rec| OpenItem {
-            open_item_id: rec.open_item_id,
-            document_number: rec.document_number,
-            fiscal_year: rec.fiscal_year,
-            company_code: rec.company_code,
-            line_item_number: rec.line_item_number,
-            customer_id: rec.customer_id,
-            doc_type: rec.doc_type,
-            posting_date: rec.posting_date,
-            due_date: rec.due_date,
-            currency: rec.currency,
-            original_amount: rec.original_amount,
-            open_amount: rec.open_amount,
-            is_cleared: rec.is_cleared,
-            payment_block: rec.payment_block,
-            reference_document: rec.reference_document,
-            item_text: rec.item_text,
-        }).collect();
-
-        Ok(result)
+        Ok(items)
     }
 }

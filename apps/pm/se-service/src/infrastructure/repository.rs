@@ -13,46 +13,43 @@ impl SourcingRepository {
 
     pub async fn save_rfq(&self, rfq: &RFQ) -> Result<()> {
         let mut tx = self.pool.begin().await?;
-        sqlx::query!(
-            "INSERT INTO rfqs (rfq_id, rfq_number, company_code, purchasing_org, quote_deadline, status) VALUES ($1, $2, $3, $4, $5, $6)",
-            rfq.rfq_id, rfq.rfq_number, rfq.company_code, rfq.purchasing_org, rfq.quote_deadline, rfq.status
-        ).execute(&mut *tx).await?;
+        sqlx::query(
+            "INSERT INTO rfqs (rfq_id, rfq_number, company_code, purchasing_org, quote_deadline, status) VALUES ($1, $2, $3, $4, $5, $6)")
+            .bind(rfq.rfq_id)
+            .bind(&rfq.rfq_number)
+            .bind(&rfq.company_code)
+            .bind(&rfq.purchasing_org)
+            .bind(rfq.quote_deadline)
+            .bind(&rfq.status)
+        .execute(&mut *tx).await?;
 
         for item in &rfq.items {
-            sqlx::query!(
-                "INSERT INTO rfq_items (item_id, rfq_id, item_number, material, description, quantity, unit, delivery_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-                item.item_id, item.rfq_id, item.item_number, item.material, item.description, item.quantity, item.unit, item.delivery_date
-            ).execute(&mut *tx).await?;
+            sqlx::query(
+                "INSERT INTO rfq_items (item_id, rfq_id, item_number, material, description, quantity, unit, delivery_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)")
+                .bind(item.item_id)
+                .bind(item.rfq_id)
+                .bind(item.item_number)
+                .bind(&item.material)
+                .bind(&item.description)
+                .bind(item.quantity)
+                .bind(&item.unit)
+                .bind(item.delivery_date)
+            .execute(&mut *tx).await?;
         }
         tx.commit().await?;
         Ok(())
     }
 
     pub async fn find_rfq_by_number(&self, rfq_num: &str) -> Result<Option<RFQ>> {
-        let h = sqlx::query!("SELECT * FROM rfqs WHERE rfq_number = $1", rfq_num)
+        let h = sqlx::query_as::<_, RFQ>("SELECT rfq_id, rfq_number, company_code, purchasing_org, quote_deadline, status, created_at FROM rfqs WHERE rfq_number = $1")
+            .bind(rfq_num)
             .fetch_optional(&self.pool).await?;
-        if let Some(h) = h {
-            let items = sqlx::query!("SELECT * FROM rfq_items WHERE rfq_id = $1 ORDER BY item_number", h.rfq_id)
+        if let Some(mut h) = h {
+            let items = sqlx::query_as::<_, RFQItem>("SELECT * FROM rfq_items WHERE rfq_id = $1 ORDER BY item_number")
+                .bind(h.rfq_id)
                 .fetch_all(&self.pool).await?;
-            Ok(Some(RFQ {
-                rfq_id: h.rfq_id,
-                rfq_number: h.rfq_number,
-                company_code: h.company_code,
-                purchasing_org: h.purchasing_org,
-                quote_deadline: h.quote_deadline,
-                status: h.status.unwrap_or_default(),
-                created_at: h.created_at,
-                items: items.into_iter().map(|i| RFQItem {
-                    item_id: i.item_id,
-                    rfq_id: i.rfq_id,
-                    item_number: i.item_number,
-                    material: i.material,
-                    description: i.description,
-                    quantity: i.quantity,
-                    unit: i.unit.unwrap_or_default(),
-                    delivery_date: i.delivery_date,
-                }).collect(),
-            }))
+            h.items = items;
+            Ok(Some(h))
         } else {
             Ok(None)
         }
@@ -60,46 +57,43 @@ impl SourcingRepository {
 
     pub async fn save_quote(&self, quote: &SupplierQuote) -> Result<()> {
         let mut tx = self.pool.begin().await?;
-        sqlx::query!(
-            "INSERT INTO supplier_quotes (quote_id, quote_number, rfq_id, supplier_id, validity_end_date, status) VALUES ($1, $2, $3, $4, $5, $6)",
-            quote.quote_id, quote.quote_number, quote.rfq_id, quote.supplier_id, quote.validity_end_date, quote.status
-        ).execute(&mut *tx).await?;
+        sqlx::query(
+            "INSERT INTO supplier_quotes (quote_id, quote_number, rfq_id, supplier_id, validity_end_date, status) VALUES ($1, $2, $3, $4, $5, $6)")
+            .bind(quote.quote_id)
+            .bind(&quote.quote_number)
+            .bind(quote.rfq_id)
+            .bind(&quote.supplier_id)
+            .bind(quote.validity_end_date)
+            .bind(&quote.status)
+        .execute(&mut *tx).await?;
 
         for item in &quote.items {
-            sqlx::query!(
-                "INSERT INTO quote_items (quote_item_id, quote_id, rfq_item_number, quantity, unit, net_price, currency, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-                item.quote_item_id, item.quote_id, item.rfq_item_number, item.quantity, item.unit, item.net_price, item.currency, item.notes
-            ).execute(&mut *tx).await?;
+            sqlx::query(
+                "INSERT INTO quote_items (quote_item_id, quote_id, rfq_item_number, quantity, unit, net_price, currency, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)")
+                .bind(item.quote_item_id)
+                .bind(item.quote_id)
+                .bind(item.rfq_item_number)
+                .bind(item.quantity)
+                .bind(&item.unit)
+                .bind(item.net_price)
+                .bind(&item.currency)
+                .bind(&item.notes)
+            .execute(&mut *tx).await?;
         }
         tx.commit().await?;
         Ok(())
     }
 
     pub async fn find_quote_by_number(&self, quote_num: &str) -> Result<Option<SupplierQuote>> {
-        let h = sqlx::query!("SELECT * FROM supplier_quotes WHERE quote_number = $1", quote_num)
+        let h = sqlx::query_as::<_, SupplierQuote>("SELECT quote_id, quote_number, rfq_id, supplier_id, validity_end_date, status, created_at FROM supplier_quotes WHERE quote_number = $1")
+            .bind(quote_num)
             .fetch_optional(&self.pool).await?;
-        if let Some(h) = h {
-            let items = sqlx::query!("SELECT * FROM quote_items WHERE quote_id = $1", h.quote_id)
+        if let Some(mut h) = h {
+            let items = sqlx::query_as::<_, QuoteItem>("SELECT * FROM quote_items WHERE quote_id = $1")
+                .bind(h.quote_id)
                 .fetch_all(&self.pool).await?;
-            Ok(Some(SupplierQuote {
-                quote_id: h.quote_id,
-                quote_number: h.quote_number,
-                rfq_id: h.rfq_id,
-                supplier_id: h.supplier_id,
-                validity_end_date: h.validity_end_date,
-                status: h.status.unwrap_or_default(),
-                created_at: h.created_at,
-                items: items.into_iter().map(|i| QuoteItem {
-                    quote_item_id: i.quote_item_id,
-                    quote_id: i.quote_id,
-                    rfq_item_number: i.rfq_item_number,
-                    quantity: i.quantity,
-                    unit: i.unit.unwrap_or_default(),
-                    net_price: i.net_price,
-                    currency: i.currency.unwrap_or_default(),
-                    notes: i.notes,
-                }).collect(),
-            }))
+            h.items = items;
+            Ok(Some(h))
         } else {
             Ok(None)
         }

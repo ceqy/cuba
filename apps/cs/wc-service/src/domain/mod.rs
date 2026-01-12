@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use rust_decimal::Decimal;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Claim {
     pub claim_id: Uuid,
     pub customer_id: String,
@@ -15,10 +15,11 @@ pub struct Claim {
     pub status: String,
     pub attachment_urls: Vec<String>,
     pub created_at: DateTime<Utc>,
+    #[sqlx(skip)]
     pub adjudication: Option<AdjudicationResult>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct AdjudicationResult {
     pub adjudication_id: Uuid,
     pub claim_id: Uuid,

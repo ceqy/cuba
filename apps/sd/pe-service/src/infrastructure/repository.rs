@@ -12,30 +12,31 @@ impl PricingRepository {
     }
 
     pub async fn save(&self, c: &PricingCondition) -> Result<()> {
-        sqlx::query!(
+        sqlx::query(
             "INSERT INTO pricing_conditions (condition_id, condition_type, material, customer, sales_org, amount, currency, valid_from, valid_to) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            ON CONFLICT (condition_id) DO UPDATE SET amount = EXCLUDED.amount, valid_from = EXCLUDED.valid_from, valid_to = EXCLUDED.valid_to",
-            c.condition_id, c.condition_type, c.material, c.customer, c.sales_org, c.amount, c.currency, c.valid_from, c.valid_to
-        ).execute(&self.pool).await?;
+            ON CONFLICT (condition_id) DO UPDATE SET amount = EXCLUDED.amount, valid_from = EXCLUDED.valid_from, valid_to = EXCLUDED.valid_to")
+            .bind(c.condition_id)
+            .bind(&c.condition_type)
+            .bind(&c.material)
+            .bind(&c.customer)
+            .bind(&c.sales_org)
+            .bind(c.amount)
+            .bind(&c.currency)
+            .bind(c.valid_from)
+            .bind(c.valid_to)
+        .execute(&self.pool).await?;
         Ok(())
     }
 
     pub async fn find_conditions(&self, material: &str, customer: Option<&str>, sales_org: &str, pricing_date: chrono::NaiveDate) -> Result<Vec<PricingCondition>> {
-        let rows = sqlx::query!(
-            "SELECT * FROM pricing_conditions WHERE (material = $1 OR material IS NULL) AND (customer = $2 OR customer IS NULL) AND sales_org = $3 AND (valid_from IS NULL OR valid_from <= $4) AND (valid_to IS NULL OR valid_to >= $4)",
-            material, customer, sales_org, pricing_date
-        ).fetch_all(&self.pool).await?;
-        Ok(rows.into_iter().map(|r| PricingCondition {
-            condition_id: r.condition_id,
-            condition_type: r.condition_type,
-            material: r.material,
-            customer: r.customer,
-            sales_org: r.sales_org,
-            amount: r.amount,
-            currency: r.currency.unwrap_or_default(),
-            valid_from: r.valid_from,
-            valid_to: r.valid_to,
-            created_at: r.created_at,
-        }).collect())
+        let conditions = sqlx::query_as::<_, PricingCondition>(
+            "SELECT condition_id, condition_type, material, customer, sales_org, amount, COALESCE(currency, '') as currency, valid_from, valid_to, created_at FROM pricing_conditions WHERE (material = $1 OR material IS NULL) AND (customer = $2 OR customer IS NULL) AND sales_org = $3 AND (valid_from IS NULL OR valid_from <= $4) AND (valid_to IS NULL OR valid_to >= $4)"
+        )
+        .bind(material)
+        .bind(customer)
+        .bind(sales_org)
+        .bind(pricing_date)
+        .fetch_all(&self.pool).await?;
+        Ok(conditions)
     }
 }

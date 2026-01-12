@@ -3,17 +3,18 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use rust_decimal::Decimal;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct BankStatement {
     pub statement_id: Uuid,
     pub company_code: String,
     pub statement_format: String,
     pub status: String,
     pub created_at: DateTime<Utc>,
+    #[sqlx(skip)]
     pub transactions: Vec<StatementTransaction>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct StatementTransaction {
     pub transaction_id: Uuid,
     pub statement_id: Uuid,
@@ -24,7 +25,7 @@ pub struct StatementTransaction {
     pub partner_name: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct PaymentRun {
     pub run_id: Uuid,
     pub run_number: String,
@@ -32,10 +33,11 @@ pub struct PaymentRun {
     pub posting_date: Option<NaiveDate>,
     pub status: String,
     pub created_at: DateTime<Utc>,
+    #[sqlx(skip)]
     pub documents: Vec<PaymentDocument>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct PaymentDocument {
     pub doc_id: Uuid,
     pub run_id: Uuid,

@@ -13,64 +13,61 @@ impl InvoiceRepository {
 
     pub async fn save(&self, inv: &Invoice) -> Result<()> {
         let mut tx = self.pool.begin().await?;
-        sqlx::query!(
-            "INSERT INTO invoices (invoice_id, company_code, supplier_invoice_number, document_date, gross_amount, tax_amount, currency, payment_terms, header_text, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
-            inv.invoice_id, inv.company_code, inv.supplier_invoice_number, inv.document_date, inv.gross_amount, inv.tax_amount, inv.currency, inv.payment_terms, inv.header_text, inv.status
-        ).execute(&mut *tx).await?;
+        sqlx::query(
+            "INSERT INTO invoices (invoice_id, company_code, supplier_invoice_number, document_date, gross_amount, tax_amount, currency, payment_terms, header_text, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)")
+            .bind(inv.invoice_id)
+            .bind(&inv.company_code)
+            .bind(&inv.supplier_invoice_number)
+            .bind(inv.document_date)
+            .bind(inv.gross_amount)
+            .bind(inv.tax_amount)
+            .bind(&inv.currency)
+            .bind(&inv.payment_terms)
+            .bind(&inv.header_text)
+            .bind(&inv.status)
+        .execute(&mut *tx).await?;
 
         for item in &inv.items {
-            sqlx::query!(
-                "INSERT INTO invoice_items (item_id, invoice_id, item_number, po_number, po_item, material, short_text, quantity, unit, amount, tax_code) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
-                item.item_id, item.invoice_id, item.item_number, item.po_number, item.po_item, item.material, item.short_text, item.quantity, item.unit, item.amount, item.tax_code
-            ).execute(&mut *tx).await?;
+            sqlx::query(
+                "INSERT INTO invoice_items (item_id, invoice_id, item_number, po_number, po_item, material, short_text, quantity, unit, amount, tax_code) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)")
+                .bind(item.item_id)
+                .bind(item.invoice_id)
+                .bind(item.item_number)
+                .bind(&item.po_number)
+                .bind(item.po_item)
+                .bind(&item.material)
+                .bind(&item.short_text)
+                .bind(item.quantity)
+                .bind(&item.unit)
+                .bind(item.amount)
+                .bind(&item.tax_code)
+            .execute(&mut *tx).await?;
         }
         tx.commit().await?;
         Ok(())
     }
 
     pub async fn find_by_id(&self, invoice_id: uuid::Uuid) -> Result<Option<Invoice>> {
-        let h = sqlx::query!("SELECT * FROM invoices WHERE invoice_id = $1", invoice_id)
+        let h = sqlx::query_as::<_, Invoice>("SELECT invoice_id, company_code, supplier_invoice_number, document_date, posting_date, gross_amount, tax_amount, currency, payment_terms, header_text, status, document_number, created_at FROM invoices WHERE invoice_id = $1")
+            .bind(invoice_id)
             .fetch_optional(&self.pool).await?;
-        if let Some(h) = h {
-            let items = sqlx::query!("SELECT * FROM invoice_items WHERE invoice_id = $1 ORDER BY item_number", invoice_id)
+        if let Some(mut h) = h {
+            let items = sqlx::query_as::<_, InvoiceItem>("SELECT * FROM invoice_items WHERE invoice_id = $1 ORDER BY item_number")
+                .bind(invoice_id)
                 .fetch_all(&self.pool).await?;
-            Ok(Some(Invoice {
-                invoice_id: h.invoice_id,
-                company_code: h.company_code,
-                supplier_invoice_number: h.supplier_invoice_number,
-                document_date: h.document_date,
-                posting_date: h.posting_date,
-                gross_amount: h.gross_amount,
-                tax_amount: h.tax_amount.unwrap_or_default(),
-                currency: h.currency.unwrap_or_else(|| "CNY".to_string()),
-                payment_terms: h.payment_terms,
-                header_text: h.header_text,
-                status: h.status.unwrap_or_else(|| "RECEIVED".to_string()),
-                document_number: h.document_number,
-                created_at: h.created_at,
-                items: items.into_iter().map(|i| InvoiceItem {
-                    item_id: i.item_id,
-                    invoice_id: i.invoice_id,
-                    item_number: i.item_number,
-                    po_number: i.po_number,
-                    po_item: i.po_item,
-                    material: i.material,
-                    short_text: i.short_text,
-                    quantity: i.quantity,
-                    unit: i.unit.unwrap_or_else(|| "EA".to_string()),
-                    amount: i.amount,
-                    tax_code: i.tax_code,
-                }).collect(),
-            }))
+            h.items = items;
+            Ok(Some(h))
         } else {
             Ok(None)
         }
     }
 
     pub async fn update_status(&self, invoice_id: uuid::Uuid, status: &str, doc_num: Option<&str>) -> Result<()> {
-        sqlx::query!("UPDATE invoices SET status = $1, document_number = $2, posting_date = CURRENT_DATE WHERE invoice_id = $3",
-            status, doc_num, invoice_id
-        ).execute(&self.pool).await?;
+        sqlx::query("UPDATE invoices SET status = $1, document_number = $2, posting_date = CURRENT_DATE WHERE invoice_id = $3")
+            .bind(status)
+            .bind(doc_num)
+            .bind(invoice_id)
+            .execute(&self.pool).await?;
         Ok(())
     }
 }

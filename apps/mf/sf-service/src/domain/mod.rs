@@ -3,7 +3,7 @@ use chrono::{NaiveDate, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct ProductionOrder {
     pub order_id: Uuid,
     pub order_number: String,
@@ -20,10 +20,11 @@ pub struct ProductionOrder {
     pub updated_at: DateTime<Utc>,
     
     // Aggregates
+    #[sqlx(skip)]
     pub operations: Vec<ProductionOperation>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct ProductionOperation {
     pub operation_id: Uuid,
     pub order_id: Uuid,
@@ -34,7 +35,7 @@ pub struct ProductionOperation {
     pub status: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct ProductionConfirmation {
     pub confirmation_id: Uuid,
     pub confirmation_number: String,

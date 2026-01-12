@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Survey {
     pub survey_id: Uuid,
     pub title: String,
@@ -11,7 +11,7 @@ pub struct Survey {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct SurveyResponse {
     pub response_id: Uuid,
     pub survey_id: Uuid,
@@ -20,7 +20,7 @@ pub struct SurveyResponse {
     pub submitted_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Recognition {
     pub recognition_id: Uuid,
     pub giver_employee_id: String,

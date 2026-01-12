@@ -1,0 +1,15 @@
+# qi-service Helm Values
+replicaCount: 2
+image:
+  repository: cuba-erp/qi-service
+  tag: "latest"
+fullnameOverride: "qi-service"
+service:
+  grpcPort: 50076
+  metricsPort: 9090
+env:
+  RUST_LOG: "info"
+  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres.default.svc.cluster.local:5432/cuba_mf_qi"
+resources:
+  limits: {cpu: 500m, memory: 512Mi}
+  requests: {cpu: 100m, memory: 128Mi}

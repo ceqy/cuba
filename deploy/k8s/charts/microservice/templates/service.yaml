@@ -7,9 +7,13 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
+    - port: {{ .Values.service.grpcPort }}
       targetPort: grpc
       protocol: TCP
       name: grpc
+    - port: {{ .Values.service.metricsPort }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
   selector:
     {{- include "microservice.selectorLabels" . | nindent 4 }}

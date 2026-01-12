@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use rust_decimal::Decimal;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct ServiceContract {
     pub contract_id: Uuid,
     pub contract_number: String,
@@ -11,10 +11,11 @@ pub struct ServiceContract {
     pub validity_start: NaiveDate,
     pub validity_end: NaiveDate,
     pub created_at: DateTime<Utc>,
+    #[sqlx(skip)]
     pub billing_plan: Vec<BillingPlanItem>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct BillingPlanItem {
     pub item_id: Uuid,
     pub contract_id: Uuid,

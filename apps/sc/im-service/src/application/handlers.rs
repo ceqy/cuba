@@ -2,7 +2,7 @@ use std::sync::Arc;
 use crate::domain::{MaterialDocument, MaterialDocumentItem, MaterialStock};
 use crate::infrastructure::repository::InventoryRepository;
 use crate::application::commands::{PostStockMovementCommand, GetStockOverviewQuery};
-use anyhow::{Result, anyhow};
+use anyhow::Result;
 use uuid::Uuid;
 use chrono::{Utc, Datelike};
 

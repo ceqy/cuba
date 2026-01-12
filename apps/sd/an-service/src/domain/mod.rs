@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use rust_decimal::Decimal;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct SalesDimension {
     pub id: String,
     pub name: String,
@@ -11,7 +11,7 @@ pub struct SalesDimension {
     pub unit: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct TimeSeriesDataPoint {
     pub period: String,
     pub revenue: Decimal,

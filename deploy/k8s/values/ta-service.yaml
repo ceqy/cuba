@@ -1,0 +1,15 @@
+# ta-service Helm Values
+replicaCount: 2
+image:
+  repository: cuba-erp/ta-service
+  tag: "latest"
+fullnameOverride: "ta-service"
+service:
+  grpcPort: 50041
+  metricsPort: 9090
+env:
+  RUST_LOG: "info"
+  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres.default.svc.cluster.local:5432/cuba_hr_ta"
+resources:
+  limits: {cpu: 500m, memory: 512Mi}
+  requests: {cpu: 100m, memory: 128Mi}

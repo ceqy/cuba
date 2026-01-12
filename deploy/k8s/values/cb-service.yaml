@@ -1,0 +1,15 @@
+# cb-service Helm Values
+replicaCount: 2
+image:
+  repository: cuba-erp/cb-service
+  tag: "latest"
+fullnameOverride: "cb-service"
+service:
+  grpcPort: 50045
+  metricsPort: 9090
+env:
+  RUST_LOG: "info"
+  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres.default.svc.cluster.local:5432/cuba_cs_cb"
+resources:
+  limits: {cpu: 500m, memory: 512Mi}
+  requests: {cpu: 100m, memory: 128Mi}

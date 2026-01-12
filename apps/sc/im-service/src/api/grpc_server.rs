@@ -60,15 +60,17 @@ impl InventoryManagementService for ImServiceImpl {
             document_date: parse_date(&header.document_date),
             header_text: Some(header.header_text),
             reference_document: None, // Not present in common.v1 header
-            items: req.items.into_iter().map(|i| StockMovementItemCommand {
-                movement_type: i.move_type.to_string(), // Enum to string
-                material: i.material,
-                plant: i.plant,
-                storage_location: i.storage_location,
-                batch: if i.batch.is_empty() { None } else { Some(i.batch) },
-                // Use quantity_in_entry_unit based on error message inference, or check valid field
-                quantity: i.quantity.unwrap_or_default().value.parse().unwrap_or_default(), 
-                unit_of_measure: i.quantity.unwrap_or_default().unit_code,
+            items: req.items.into_iter().map(|i| {
+                let q = i.quantity.unwrap_or_default();
+                StockMovementItemCommand {
+                    movement_type: i.move_type.to_string(),
+                    material: i.material,
+                    plant: i.plant,
+                    storage_location: i.storage_location,
+                    batch: if i.batch.is_empty() { None } else { Some(i.batch) },
+                    quantity: q.value.parse().unwrap_or_default(),
+                    unit_of_measure: q.unit_code,
+                }
             }).collect(),
         };
 

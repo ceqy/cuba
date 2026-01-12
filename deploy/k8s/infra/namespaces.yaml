@@ -1,0 +1,79 @@
+# Cuba ERP Kubernetes Namespaces
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cuba-system
+  labels:
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cuba-fi
+  labels:
+    istio-injection: enabled
+    module: finance
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cuba-sd
+  labels:
+    istio-injection: enabled
+    module: sales
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cuba-pm
+  labels:
+    istio-injection: enabled
+    module: procurement
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cuba-mf
+  labels:
+    istio-injection: enabled
+    module: manufacturing
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cuba-sc
+  labels:
+    istio-injection: enabled
+    module: supplychain
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cuba-hr
+  labels:
+    istio-injection: enabled
+    module: hr
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cuba-am
+  labels:
+    istio-injection: enabled
+    module: asset
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cuba-cs
+  labels:
+    istio-injection: enabled
+    module: customerservice
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cuba-rd
+  labels:
+    istio-injection: enabled
+    module: rd

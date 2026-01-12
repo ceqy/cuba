@@ -3,7 +3,7 @@ use chrono::{NaiveDate, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct PurchaseOrder {
     pub order_id: Uuid,
     pub order_number: String,
@@ -24,13 +24,14 @@ pub struct PurchaseOrder {
     pub complete_delivery: bool,
     pub release_status: i32,
     
+    #[sqlx(skip)]
     pub items: Vec<PurchaseOrderItem>,
     
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct PurchaseOrderItem {
     pub item_id: Uuid,
     pub order_id: Uuid,
@@ -60,10 +61,11 @@ pub struct PurchaseOrderItem {
     pub requisition_item: Option<i32>,
     pub deletion_indicator: bool,
 
+    #[sqlx(skip)]
     pub schedule_lines: Vec<PurchaseOrderScheduleLine>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct PurchaseOrderScheduleLine {
     pub schedule_line_id: Uuid,
     pub item_id: Uuid,

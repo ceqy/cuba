@@ -40,7 +40,7 @@ impl Default for InvoiceStatus {
 // ============================================================================
 
 /// Customer Master Data (Aggregate Root)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Customer {
     pub customer_id: String,
     pub business_partner_id: Option<String>,
@@ -69,7 +69,7 @@ pub struct Customer {
 }
 
 /// Sales Invoice (Aggregate Root)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Invoice {
     pub invoice_id: Uuid,
     pub document_number: Option<String>,
@@ -85,13 +85,14 @@ pub struct Invoice {
     pub reference: Option<String>,
     pub status: InvoiceStatus,
     
+    #[sqlx(skip)]
     pub items: Vec<InvoiceItem>,
     
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct InvoiceItem {
     pub item_id: Uuid,
     pub line_item_number: i32,
@@ -105,7 +106,7 @@ pub struct InvoiceItem {
 }
 
 /// Open Item (Receivable) - Projection/Read Model mostly, but can be an entity for clearing
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct OpenItem {
     pub open_item_id: Uuid,
     

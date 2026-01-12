@@ -27,7 +27,7 @@ impl SpendAnalyticsService for SaServiceImpl {
         request: Request<SpendAnalysisRequest>,
     ) -> Result<Response<SpendAnalysisResponse>, Status> {
         let req = request.into_inner();
-        let time_range = req.time_range.unwrap_or_default();
+        let _time_range = req.time_range.unwrap_or_default();
         let cmd = AnalyzeSpendCommand {
             start_date: chrono::Utc::now().date_naive() - chrono::Duration::days(365),
             end_date: chrono::Utc::now().date_naive(),
@@ -71,7 +71,7 @@ impl SpendAnalyticsService for SaServiceImpl {
         &self,
         request: Request<SpendTrendRequest>,
     ) -> Result<Response<SpendTrendResponse>, Status> {
-        let req = request.into_inner();
+        let _req = request.into_inner();
         let cmd = GetTrendCommand {
             start_date: chrono::Utc::now().date_naive() - chrono::Duration::days(365),
             end_date: chrono::Utc::now().date_naive(),

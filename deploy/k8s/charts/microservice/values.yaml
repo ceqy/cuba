@@ -1,37 +1,53 @@
 # Default values for microservice.
-# This is a YAML-formatted file.
-
-replicaCount: 1
+replicaCount: 2
 
 image:
-  repository: nginx
+  repository: cuba-erp/service
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "latest"
 
 nameOverride: ""
 fullnameOverride: ""
 
 service:
   type: ClusterIP
-  port: 50051
+  grpcPort: 50051
+  metricsPort: 9090
   protocol: TCP
-  name: grpc
 
-env: {}
-#  DATABASE_URL: "postgres://..."
-#  RUST_LOG: "info"
+env:
+  RUST_LOG: "info"
+  DATABASE_URL: "postgres://postgres:postgres@postgres-service:5432/cuba"
 
 resources:
   limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
     cpu: 100m
     memory: 128Mi
-  requests:
-    cpu: 50m
-    memory: 64Mi
+
+livenessProbe:
+  grpc:
+    port: 50051
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+readinessProbe:
+  grpc:
+    port: 50051
+  initialDelaySeconds: 5
+  periodSeconds: 5
 
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
+
+# Istio sidecar injection
+podAnnotations:
+  sidecar.istio.io/inject: "true"
+
+# Database migration job
+migration:
+  enabled: true
+  image: cuba-erp/migrator

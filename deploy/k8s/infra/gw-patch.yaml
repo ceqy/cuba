@@ -1,0 +1,12 @@
+spec:
+  template:
+    spec:
+      containers:
+      - name: istio-proxy
+        volumeMounts:
+        - mountPath: /etc/istio/proto
+          name: proto-descriptor
+      volumes:
+      - name: proto-descriptor
+        configMap:
+          name: cuba-proto-descriptor

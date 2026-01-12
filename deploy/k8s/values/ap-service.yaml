@@ -1,11 +1,15 @@
+# ap-service Helm Values
+replicaCount: 2
 image:
-  repository: cuba-ap-service
-  tag: latest
-  pullPolicy: Never
-
+  repository: cuba-erp/ap-service
+  tag: "latest"
+fullnameOverride: "ap-service"
 service:
-  port: 50053
-
+  grpcPort: 50053
+  metricsPort: 9090
 env:
-  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres:5432/cuba_fi_ap"
   RUST_LOG: "info"
+  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres.default.svc.cluster.local:5432/cuba_fi_ap"
+resources:
+  limits: {cpu: 500m, memory: 512Mi}
+  requests: {cpu: 100m, memory: 128Mi}

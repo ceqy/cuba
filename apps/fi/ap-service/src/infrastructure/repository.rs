@@ -16,7 +16,7 @@ impl SupplierRepository {
     }
 
     pub async fn find_by_id(&self, id: Uuid) -> Result<Option<Supplier>, sqlx::Error> {
-        let row = sqlx::query(
+        let row = sqlx::query_as::<_, Supplier>(
             r#"
             SELECT id, supplier_id, business_partner_id, name, account_group,
                    street, city, postal_code, country, telephone, email,
@@ -29,31 +29,11 @@ impl SupplierRepository {
         .fetch_optional(&self.pool)
         .await?;
 
-        Ok(row.map(|r| Supplier {
-            id: r.get("id"),
-            supplier_id: r.get("supplier_id"),
-            business_partner_id: r.get("business_partner_id"),
-            name: r.get("name"),
-            account_group: r.get("account_group"),
-            street: r.get("street"),
-            city: r.get("city"),
-            postal_code: r.get("postal_code"),
-            country: r.get("country"),
-            telephone: r.get("telephone"),
-            email: r.get("email"),
-            company_code: r.get("company_code"),
-            reconciliation_account: r.get("reconciliation_account"),
-            payment_terms: r.get("payment_terms"),
-            check_double_invoice: r.get("check_double_invoice"),
-            purchasing_organization: r.get("purchasing_organization"),
-            order_currency: r.get("order_currency"),
-            created_at: r.get("created_at"),
-            updated_at: r.get("updated_at"),
-        }))
+        Ok(row)
     }
 
     pub async fn find_by_supplier_id(&self, supplier_id: &str) -> Result<Option<Supplier>, sqlx::Error> {
-        let row = sqlx::query(
+        let row = sqlx::query_as::<_, Supplier>(
             r#"
             SELECT id, supplier_id, business_partner_id, name, account_group,
                    street, city, postal_code, country, telephone, email,
@@ -66,27 +46,7 @@ impl SupplierRepository {
         .fetch_optional(&self.pool)
         .await?;
 
-        Ok(row.map(|r| Supplier {
-            id: r.get("id"),
-            supplier_id: r.get("supplier_id"),
-            business_partner_id: r.get("business_partner_id"),
-            name: r.get("name"),
-            account_group: r.get("account_group"),
-            street: r.get("street"),
-            city: r.get("city"),
-            postal_code: r.get("postal_code"),
-            country: r.get("country"),
-            telephone: r.get("telephone"),
-            email: r.get("email"),
-            company_code: r.get("company_code"),
-            reconciliation_account: r.get("reconciliation_account"),
-            payment_terms: r.get("payment_terms"),
-            check_double_invoice: r.get("check_double_invoice"),
-            purchasing_organization: r.get("purchasing_organization"),
-            order_currency: r.get("order_currency"),
-            created_at: r.get("created_at"),
-            updated_at: r.get("updated_at"),
-        }))
+        Ok(row)
     }
 
     pub async fn save(&self, supplier: &Supplier) -> Result<(), sqlx::Error> {
@@ -182,35 +142,13 @@ impl OpenItemRepository {
             "#
         };
 
-        let rows = sqlx::query(query)
+        let items = sqlx::query_as::<_, OpenItem>(query)
             .bind(supplier_id)
             .bind(company_code)
             .fetch_all(&self.pool)
             .await?;
 
-        Ok(rows.iter().map(|r| OpenItem {
-            id: r.get("id"),
-            document_number: r.get("document_number"),
-            company_code: r.get("company_code"),
-            fiscal_year: r.get("fiscal_year"),
-            line_item_number: r.get("line_item_number"),
-            supplier_id: r.get("supplier_id"),
-            account_type: r.get("account_type"),
-            posting_date: r.get("posting_date"),
-            due_date: r.get("due_date"),
-            baseline_date: r.get("baseline_date"),
-            currency: r.get("currency"),
-            original_amount: r.get("original_amount"),
-            open_amount: r.get("open_amount"),
-            is_cleared: r.get("is_cleared"),
-            clearing_document: r.get("clearing_document"),
-            clearing_date: r.get("clearing_date"),
-            reference_document: r.get("reference_document"),
-            item_text: r.get("item_text"),
-            payment_block: r.get("payment_block"),
-            created_at: r.get("created_at"),
-            updated_at: r.get("updated_at"),
-        }).collect())
+        Ok(items)
     }
 
     pub async fn save(&self, item: &OpenItem) -> Result<(), sqlx::Error> {

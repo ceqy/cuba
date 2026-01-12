@@ -4,8 +4,43 @@ metadata:
   name: postgres-init-scripts
 data:
   init-dbs.sql: |
-    CREATE DATABASE cuba_gl;
+    CREATE DATABASE cuba_am_ah;
+    CREATE DATABASE cuba_am_eh;
+    CREATE DATABASE cuba_am_gs;
+    CREATE DATABASE cuba_am_pm;
+    CREATE DATABASE cuba_cs_cb;
+    CREATE DATABASE cuba_cs_fd;
+    CREATE DATABASE cuba_cs_wc;
     CREATE DATABASE cuba_fi_ap;
+    CREATE DATABASE cuba_fi_ar;
+    CREATE DATABASE cuba_fi_co;
+    CREATE DATABASE cuba_fi_gl;
+    CREATE DATABASE cuba_fi_tr;
+    CREATE DATABASE cuba_hr_ex;
+    CREATE DATABASE cuba_hr_ta;
+    CREATE DATABASE cuba_iam;
+    CREATE DATABASE cuba_mf_kb;
+    CREATE DATABASE cuba_mf_om;
+    CREATE DATABASE cuba_mf_pp;
+    CREATE DATABASE cuba_mf_qi;
+    CREATE DATABASE cuba_mf_sf;
+    CREATE DATABASE cuba_pm_ct;
+    CREATE DATABASE cuba_pm_iv;
+    CREATE DATABASE cuba_pm_po;
+    CREATE DATABASE cuba_pm_sa;
+    CREATE DATABASE cuba_pm_se;
+    CREATE DATABASE cuba_rd_pl;
+    CREATE DATABASE cuba_rd_ps;
+    CREATE DATABASE cuba_sc_bt;
+    CREATE DATABASE cuba_sc_df;
+    CREATE DATABASE cuba_sc_im;
+    CREATE DATABASE cuba_sc_tp;
+    CREATE DATABASE cuba_sc_vs;
+    CREATE DATABASE cuba_sc_wm;
+    CREATE DATABASE cuba_sd_an;
+    CREATE DATABASE cuba_sd_pe;
+    CREATE DATABASE cuba_sd_rr;
+    CREATE DATABASE cuba_sd_so;
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -34,7 +69,7 @@ spec:
         - name: POSTGRES_PASSWORD
           value: postgres
         - name: POSTGRES_DB
-          value: cuba_iam
+          value: postgres
         volumeMounts:
         - name: init-scripts
           mountPath: /docker-entrypoint-initdb.d

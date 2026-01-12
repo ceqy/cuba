@@ -2,9 +2,10 @@ apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
   name: cuba-gateway
+  namespace: cuba-system
 spec:
   selector:
-    istio: ingressgateway # use istio default controller
+    istio: ingressgateway
   servers:
   - port:
       number: 80
@@ -12,38 +13,462 @@ spec:
       protocol: HTTP
     hosts:
     - "*"
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: cuba-tls-secret
+    hosts:
+    - "*"
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: cuba-vs
+  namespace: cuba-system
 spec:
   hosts:
   - "*"
   gateways:
   - cuba-gateway
   http:
+  # ============================================================================
+  # IAM (认证授权)
+  # ============================================================================
   - match:
     - uri:
         prefix: /api/v1/auth
+    - uri:
+        prefix: /iam.v1
     route:
     - destination:
-        host: iam-service
+        host: iam-service.cuba-system.svc.cluster.local
         port:
           number: 50051
+
+  # ============================================================================
+  # FI (财务模块) - 5 services
+  # ============================================================================
   - match:
     - uri:
         prefix: /api/v1/gl
+    - uri:
+        prefix: /finance.gl.v1
     route:
     - destination:
-        host: gl-service
+        host: gl-service.cuba-fi.svc.cluster.local
         port:
           number: 50052
   - match:
     - uri:
         prefix: /api/v1/ap
+    - uri:
+        prefix: /finance.ap.v1
     route:
     - destination:
-        host: ap-service
+        host: ap-service.cuba-fi.svc.cluster.local
         port:
           number: 50053
+  - match:
+    - uri:
+        prefix: /api/v1/ar
+    - uri:
+        prefix: /finance.ar.v1
+    route:
+    - destination:
+        host: ar-service.cuba-fi.svc.cluster.local
+        port:
+          number: 50054
+  - match:
+    - uri:
+        prefix: /api/v1/co
+    - uri:
+        prefix: /finance.co.v1
+    route:
+    - destination:
+        host: co-service.cuba-fi.svc.cluster.local
+        port:
+          number: 50055
+  - match:
+    - uri:
+        prefix: /api/v1/tr
+    - uri:
+        prefix: /finance.tr.v1
+    route:
+    - destination:
+        host: tr-service.cuba-fi.svc.cluster.local
+        port:
+          number: 50056
+
+  # ============================================================================
+  # SD (销售模块) - 4 services
+  # ============================================================================
+  - match:
+    - uri:
+        prefix: /api/v1/sales/order
+    - uri:
+        prefix: /sales.so.v1
+    route:
+    - destination:
+        host: so-service.cuba-sd.svc.cluster.local
+        port:
+          number: 50060
+  - match:
+    - uri:
+        prefix: /api/v1/sales/pricing
+    - uri:
+        prefix: /sales.pe.v1
+    route:
+    - destination:
+        host: pe-service.cuba-sd.svc.cluster.local
+        port:
+          number: 50061
+  - match:
+    - uri:
+        prefix: /api/v1/sales/revenue
+    - uri:
+        prefix: /sales.rr.v1
+    route:
+    - destination:
+        host: rr-service.cuba-sd.svc.cluster.local
+        port:
+          number: 50062
+  - match:
+    - uri:
+        prefix: /api/v1/sales/analytics
+    - uri:
+        prefix: /sales.an.v1
+    route:
+    - destination:
+        host: an-service.cuba-sd.svc.cluster.local
+        port:
+          number: 50063
+
+  # ============================================================================
+  # PM (采购模块) - 5 services
+  # ============================================================================
+  - match:
+    - uri:
+        prefix: /api/v1/procurement/order
+    - uri:
+        prefix: /procurement.po.v1
+    route:
+    - destination:
+        host: po-service.cuba-pm.svc.cluster.local
+        port:
+          number: 50070
+  - match:
+    - uri:
+        prefix: /api/v1/procurement/invoice
+    - uri:
+        prefix: /procurement.iv.v1
+    route:
+    - destination:
+        host: iv-service.cuba-pm.svc.cluster.local
+        port:
+          number: 50071
+  - match:
+    - uri:
+        prefix: /api/v1/procurement/contract
+    - uri:
+        prefix: /procurement.ct.v1
+    route:
+    - destination:
+        host: ct-service.cuba-pm.svc.cluster.local
+        port:
+          number: 50072
+  - match:
+    - uri:
+        prefix: /api/v1/procurement/analytics
+    - uri:
+        prefix: /procurement.sa.v1
+    route:
+    - destination:
+        host: sa-service.cuba-pm.svc.cluster.local
+        port:
+          number: 50073
+  - match:
+    - uri:
+        prefix: /api/v1/procurement/rfq
+    - uri:
+        prefix: /procurement.se.v1
+    route:
+    - destination:
+        host: se-service.cuba-pm.svc.cluster.local
+        port:
+          number: 50082
+
+  # ============================================================================
+  # MF (制造模块) - 5 services
+  # ============================================================================
+  - match:
+    - uri:
+        prefix: /api/v1/manufacturing/production
+    - uri:
+        prefix: /manufacturing.pp.v1
+    route:
+    - destination:
+        host: pp-service.cuba-mf.svc.cluster.local
+        port:
+          number: 50074
+  - match:
+    - uri:
+        prefix: /api/v1/manufacturing/shopfloor
+    - uri:
+        prefix: /manufacturing.sf.v1
+    route:
+    - destination:
+        host: sf-service.cuba-mf.svc.cluster.local
+        port:
+          number: 50075
+  - match:
+    - uri:
+        prefix: /api/v1/manufacturing/quality
+    - uri:
+        prefix: /manufacturing.qi.v1
+    route:
+    - destination:
+        host: qi-service.cuba-mf.svc.cluster.local
+        port:
+          number: 50076
+  - match:
+    - uri:
+        prefix: /api/v1/manufacturing/kanban
+    - uri:
+        prefix: /manufacturing.kb.v1
+    route:
+    - destination:
+        host: kb-service.cuba-mf.svc.cluster.local
+        port:
+          number: 50077
+  - match:
+    - uri:
+        prefix: /api/v1/manufacturing/outsource
+    - uri:
+        prefix: /manufacturing.om.v1
+    route:
+    - destination:
+        host: om-service.cuba-mf.svc.cluster.local
+        port:
+          number: 50078
+
+  # ============================================================================
+  # SC (供应链模块) - 6 services
+  # ============================================================================
+  - match:
+    - uri:
+        prefix: /api/v1/supplychain/inventory
+    - uri:
+        prefix: /supplychain.im.v1
+    route:
+    - destination:
+        host: im-service.cuba-sc.svc.cluster.local
+        port:
+          number: 50079
+  - match:
+    - uri:
+        prefix: /api/v1/supplychain/warehouse
+    - uri:
+        prefix: /supplychain.wm.v1
+    route:
+    - destination:
+        host: wm-service.cuba-sc.svc.cluster.local
+        port:
+          number: 50080
+  - match:
+    - uri:
+        prefix: /api/v1/supplychain/batchtrace
+    - uri:
+        prefix: /supplychain.bt.v1
+    route:
+    - destination:
+        host: bt-service.cuba-sc.svc.cluster.local
+        port:
+          number: 50040
+  - match:
+    - uri:
+        prefix: /api/v1/supplychain/forecast
+    - uri:
+        prefix: /supplychain.df.v1
+    route:
+    - destination:
+        host: df-service.cuba-sc.svc.cluster.local
+        port:
+          number: 50081
+  - match:
+    - uri:
+        prefix: /api/v1/supplychain/shipment
+    - uri:
+        prefix: /supplychain.tp.v1
+    route:
+    - destination:
+        host: tp-service.cuba-sc.svc.cluster.local
+        port:
+          number: 50084
+  - match:
+    - uri:
+        prefix: /api/v1/supplychain/visibility
+    - uri:
+        prefix: /supplychain.vs.v1
+    route:
+    - destination:
+        host: vs-service.cuba-sc.svc.cluster.local
+        port:
+          number: 50087
+
+  # ============================================================================
+  # HR (人力模块) - 2 services
+  # ============================================================================
+  - match:
+    - uri:
+        prefix: /api/v1/hr/timesheet
+    - uri:
+        prefix: /hr.ta.v1
+    route:
+    - destination:
+        host: ta-service.cuba-hr.svc.cluster.local
+        port:
+          number: 50041
+  - match:
+    - uri:
+        prefix: /api/v1/hr/expense
+    - uri:
+        prefix: /hr.ex.v1
+    route:
+    - destination:
+        host: ex-service.cuba-hr.svc.cluster.local
+        port:
+          number: 50042
+
+  # ============================================================================
+  # AM (资产模块) - 4 services
+  # ============================================================================
+  - match:
+    - uri:
+        prefix: /api/v1/asset/maintenance
+    - uri:
+        prefix: /asset.pm.v1
+    route:
+    - destination:
+        host: pm-service.cuba-am.svc.cluster.local
+        port:
+          number: 50043
+  - match:
+    - uri:
+        prefix: /api/v1/asset/health
+    - uri:
+        prefix: /asset.ah.v1
+    route:
+    - destination:
+        host: ah-service.cuba-am.svc.cluster.local
+        port:
+          number: 50083
+  - match:
+    - uri:
+        prefix: /api/v1/asset/incident
+    - uri:
+        prefix: /asset.eh.v1
+    route:
+    - destination:
+        host: eh-service.cuba-am.svc.cluster.local
+        port:
+          number: 50085
+  - match:
+    - uri:
+        prefix: /api/v1/asset/geo
+    - uri:
+        prefix: /asset.gs.v1
+    route:
+    - destination:
+        host: gs-service.cuba-am.svc.cluster.local
+        port:
+          number: 50086
+
+  # ============================================================================
+  # CS (客服模块) - 3 services
+  # ============================================================================
+  - match:
+    - uri:
+        prefix: /api/v1/customer/ticket
+    - uri:
+        prefix: /customer.fd.v1
+    route:
+    - destination:
+        host: fd-service.cuba-cs.svc.cluster.local
+        port:
+          number: 50044
+  - match:
+    - uri:
+        prefix: /api/v1/customer/chatbot
+    - uri:
+        prefix: /customer.cb.v1
+    route:
+    - destination:
+        host: cb-service.cuba-cs.svc.cluster.local
+        port:
+          number: 50045
+  - match:
+    - uri:
+        prefix: /api/v1/customer/webchat
+    - uri:
+        prefix: /customer.wc.v1
+    route:
+    - destination:
+        host: wc-service.cuba-cs.svc.cluster.local
+        port:
+          number: 50046
+
+  # ============================================================================
+  # RD (研发模块) - 2 services
+  # ============================================================================
+  - match:
+    - uri:
+        prefix: /api/v1/rd/project
+    - uri:
+        prefix: /rd.ps.v1
+    route:
+    - destination:
+        host: ps-service.cuba-rd.svc.cluster.local
+        port:
+          number: 50047
+  - match:
+    - uri:
+        prefix: /api/v1/rd/portfolio
+    - uri:
+        prefix: /rd.pl.v1
+    route:
+    - destination:
+        host: pl-service.cuba-rd.svc.cluster.local
+        port:
+          number: 50048
+---
+# DestinationRule for load balancing
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: cuba-destination-rules
+  namespace: cuba-system
+spec:
+  host: "*.svc.cluster.local"
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        h2UpgradePolicy: UPGRADE
+        http2MaxRequests: 1000
+        maxRequestsPerConnection: 10
+    loadBalancer:
+      simple: ROUND_ROBIN
+---
+# PeerAuthentication for mTLS
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: cuba-mtls
+  namespace: cuba-system
+spec:
+  mtls:
+    mode: STRICT

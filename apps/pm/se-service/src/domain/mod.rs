@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use rust_decimal::Decimal;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct RFQ {
     pub rfq_id: Uuid,
     pub rfq_number: String,
@@ -12,10 +12,11 @@ pub struct RFQ {
     pub quote_deadline: Option<NaiveDate>,
     pub status: String,
     pub created_at: DateTime<Utc>,
+    #[sqlx(skip)]
     pub items: Vec<RFQItem>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct RFQItem {
     pub item_id: Uuid,
     pub rfq_id: Uuid,
@@ -27,7 +28,7 @@ pub struct RFQItem {
     pub delivery_date: Option<NaiveDate>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct SupplierQuote {
     pub quote_id: Uuid,
     pub quote_number: String,
@@ -36,10 +37,11 @@ pub struct SupplierQuote {
     pub validity_end_date: Option<NaiveDate>,
     pub status: String,
     pub created_at: DateTime<Utc>,
+    #[sqlx(skip)]
     pub items: Vec<QuoteItem>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct QuoteItem {
     pub quote_item_id: Uuid,
     pub quote_id: Uuid,

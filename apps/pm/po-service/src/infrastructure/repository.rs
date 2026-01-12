@@ -16,7 +16,7 @@ impl PurchaseOrderRepository {
         let mut tx = self.pool.begin().await?;
 
         // 1. Header
-        sqlx::query!(
+        sqlx::query(
             r#"
             INSERT INTO purchase_orders (
                 order_id, order_number, document_type, company_code, purchasing_org, purchasing_group,
@@ -26,23 +26,35 @@ impl PurchaseOrderRepository {
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
             ON CONFLICT (order_number) DO UPDATE SET
                 updated_at = EXCLUDED.updated_at
-            "#,
-            order.order_id, order.order_number, order.document_type, order.company_code,
-            order.purchasing_org, order.purchasing_group, order.supplier, order.order_date,
-            order.currency, order.payment_terms, order.incoterms, order.incoterms_location,
-            order.complete_delivery, order.release_status, order.created_at, order.updated_at
-        )
+            "#)
+            .bind(order.order_id)
+            .bind(&order.order_number)
+            .bind(order.document_type)
+            .bind(&order.company_code)
+            .bind(&order.purchasing_org)
+            .bind(&order.purchasing_group)
+            .bind(&order.supplier)
+            .bind(order.order_date)
+            .bind(&order.currency)
+            .bind(&order.payment_terms)
+            .bind(&order.incoterms)
+            .bind(&order.incoterms_location)
+            .bind(order.complete_delivery)
+            .bind(order.release_status)
+            .bind(order.created_at)
+            .bind(order.updated_at)
         .execute(&mut *tx)
         .await?;
 
         // 2. Clear items (simplified)
-        sqlx::query!("DELETE FROM purchase_order_items WHERE order_id = $1", order.order_id)
+        sqlx::query("DELETE FROM purchase_order_items WHERE order_id = $1")
+            .bind(order.order_id)
             .execute(&mut *tx)
             .await?;
             
         // 3. Insert items
         for item in &order.items {
-            sqlx::query!(
+            sqlx::query(
                 r#"
                 INSERT INTO purchase_order_items (
                     item_id, order_id, item_number, item_category, material, short_text,
@@ -51,25 +63,44 @@ impl PurchaseOrderRepository {
                     account_assignment_category, requisition_number, requisition_item, deletion_indicator
                 )
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
-                "#,
-                item.item_id, order.order_id, item.item_number, item.item_category, item.material, item.short_text,
-                item.plant, item.storage_location, item.material_group, item.quantity, item.quantity_unit,
-                item.net_price, item.price_unit, item.currency, item.gr_based_iv, item.tax_code,
-                item.account_assignment_category, item.requisition_number, item.requisition_item, item.deletion_indicator
-            )
+                "#)
+                .bind(item.item_id)
+                .bind(order.order_id)
+                .bind(item.item_number)
+                .bind(item.item_category)
+                .bind(&item.material)
+                .bind(&item.short_text)
+                .bind(&item.plant)
+                .bind(&item.storage_location)
+                .bind(&item.material_group)
+                .bind(item.quantity)
+                .bind(&item.quantity_unit)
+                .bind(item.net_price)
+                .bind(item.price_unit)
+                .bind(&item.currency)
+                .bind(item.gr_based_iv)
+                .bind(&item.tax_code)
+                .bind(&item.account_assignment_category)
+                .bind(&item.requisition_number)
+                .bind(item.requisition_item)
+                .bind(item.deletion_indicator)
             .execute(&mut *tx)
             .await?;
             
             for sl in &item.schedule_lines {
-                 sqlx::query!(
+                 sqlx::query(
                     r#"
                     INSERT INTO purchase_order_schedule_lines (
                         schedule_line_id, item_id, schedule_line_number, delivery_date, scheduled_quantity, goods_receipt_quantity
                     )
                     VALUES ($1, $2, $3, $4, $5, $6)
-                    "#,
-                    sl.schedule_line_id, item.item_id, sl.schedule_line_number, sl.delivery_date, sl.scheduled_quantity, sl.goods_receipt_quantity
-                 )
+                    "#)
+                    .bind(sl.schedule_line_id)
+                    .bind(item.item_id)
+                    .bind(sl.schedule_line_number)
+                    .bind(sl.delivery_date)
+                    .bind(sl.scheduled_quantity)
+                    .bind(sl.goods_receipt_quantity)
                  .execute(&mut *tx)
                  .await?;
             }
@@ -80,7 +111,7 @@ impl PurchaseOrderRepository {
     }
 
     pub async fn find_by_number(&self, order_number: &str) -> Result<Option<PurchaseOrder>> {
-        let rec = sqlx::query!(
+        let h = sqlx::query_as::<_, PurchaseOrder>(
             r#"
             SELECT 
                 order_id, order_number, document_type, company_code, purchasing_org, purchasing_group,
@@ -88,70 +119,30 @@ impl PurchaseOrderRepository {
                 complete_delivery, release_status, created_at, updated_at
             FROM purchase_orders 
             WHERE order_number = $1
-            "#,
-            order_number
-        ).fetch_optional(&self.pool).await?;
+            "#)
+            .bind(order_number)
+        .fetch_optional(&self.pool).await?;
 
-        if let Some(h) = rec {
-            let items_recs = sqlx::query!(
-                r#"SELECT * FROM purchase_order_items WHERE order_id = $1 ORDER BY item_number ASC"#,
-                h.order_id
-            ).fetch_all(&self.pool).await?;
+        if let Some(mut h) = h {
+            let items_recs = sqlx::query_as::<_, PurchaseOrderItem>(
+                r#"SELECT * FROM purchase_order_items WHERE order_id = $1 ORDER BY item_number ASC"#)
+                .bind(h.order_id)
+            .fetch_all(&self.pool).await?;
             
             let mut items = Vec::new();
-            for i in items_recs {
-                 let sl_recs = sqlx::query_as!(
-                    PurchaseOrderScheduleLine,
+            for mut i in items_recs {
+                 let sl_recs = sqlx::query_as::<_, PurchaseOrderScheduleLine>(
                     r#"SELECT 
                          schedule_line_id, item_id, schedule_line_number, delivery_date, scheduled_quantity, goods_receipt_quantity
-                       FROM purchase_order_schedule_lines WHERE item_id = $1 ORDER BY schedule_line_number ASC"#,
-                    i.item_id
-                 ).fetch_all(&self.pool).await?;
+                       FROM purchase_order_schedule_lines WHERE item_id = $1 ORDER BY schedule_line_number ASC"#)
+                    .bind(i.item_id)
+                 .fetch_all(&self.pool).await?;
                  
-                 items.push(PurchaseOrderItem {
-                     item_id: i.item_id,
-                     order_id: i.order_id,
-                     item_number: i.item_number,
-                     item_category: i.item_category,
-                     material: i.material,
-                     short_text: i.short_text,
-                     plant: i.plant,
-                     storage_location: i.storage_location,
-                     material_group: i.material_group,
-                     quantity: i.quantity,
-                     quantity_unit: i.quantity_unit,
-                     net_price: i.net_price,
-                     price_unit: i.price_unit.unwrap_or(1),
-                     currency: i.currency,
-                     gr_based_iv: i.gr_based_iv.unwrap_or(true),
-                     tax_code: i.tax_code,
-                     account_assignment_category: i.account_assignment_category,
-                     requisition_number: i.requisition_number,
-                     requisition_item: i.requisition_item,
-                     deletion_indicator: i.deletion_indicator.unwrap_or(false),
-                     schedule_lines: sl_recs,
-                 });
+                 i.schedule_lines = sl_recs;
+                 items.push(i);
             }
-
-            Ok(Some(PurchaseOrder {
-                order_id: h.order_id,
-                order_number: h.order_number,
-                document_type: h.document_type,
-                company_code: h.company_code,
-                purchasing_org: h.purchasing_org,
-                purchasing_group: h.purchasing_group,
-                supplier: h.supplier,
-                order_date: h.order_date,
-                currency: h.currency,
-                payment_terms: h.payment_terms,
-                incoterms: h.incoterms,
-                incoterms_location: h.incoterms_location,
-                complete_delivery: h.complete_delivery.unwrap_or(false),
-                release_status: h.release_status,
-                items,
-                created_at: h.created_at,
-                updated_at: h.updated_at,
-            }))
+            h.items = items;
+            Ok(Some(h))
         } else {
             Ok(None)
         }

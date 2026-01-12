@@ -1,0 +1,152 @@
+# Cuba ERP Authorization Policies
+# Allow all traffic from istio-ingressgateway and internal services
+
+# Cuba System
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-all-cuba-system
+  namespace: cuba-system
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    - source:
+        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+---
+# Cuba FI
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-all-cuba-fi
+  namespace: cuba-fi
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    - source:
+        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+---
+# Cuba SD
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-all-cuba-sd
+  namespace: cuba-sd
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    - source:
+        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+---
+# Cuba PM
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-all-cuba-pm
+  namespace: cuba-pm
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    - source:
+        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+---
+# Cuba MF
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-all-cuba-mf
+  namespace: cuba-mf
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    - source:
+        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+---
+# Cuba SC
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-all-cuba-sc
+  namespace: cuba-sc
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    - source:
+        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+---
+# Cuba HR
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-all-cuba-hr
+  namespace: cuba-hr
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    - source:
+        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+---
+# Cuba AM
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-all-cuba-am
+  namespace: cuba-am
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    - source:
+        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+---
+# Cuba CS
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-all-cuba-cs
+  namespace: cuba-cs
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    - source:
+        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+---
+# Cuba RD
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-all-cuba-rd
+  namespace: cuba-rd
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    - source:
+        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]

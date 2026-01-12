@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct InspectionLot {
     pub lot_id: Uuid,
     pub inspection_lot_number: String,
@@ -22,10 +22,11 @@ pub struct InspectionLot {
     pub updated_at: DateTime<Utc>,
     
     // Aggregates
+    #[sqlx(skip)]
     pub characteristics: Vec<InspectionCharacteristic>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct InspectionCharacteristic {
     pub char_id: Uuid,
     pub lot_id: Uuid,

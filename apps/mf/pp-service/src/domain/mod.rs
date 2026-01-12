@@ -3,7 +3,7 @@ use chrono::{NaiveDate, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct PlannedOrder {
     pub planned_order_id: Uuid,
     pub planned_order_number: String,
