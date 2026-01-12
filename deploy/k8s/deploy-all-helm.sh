@@ -41,7 +41,9 @@ SERVICES=(
   "cs/wc-service"
   "rd/ps-service"
   "rd/pl-service"
-  "iam/iam-service"
+  "iam/auth-service"
+  "iam/rbac-service"
+  "iam/oauth-service"
 )
 
 echo "=== Deploying All Services via Helm ==="
@@ -75,7 +77,7 @@ for entry in "${SERVICES[@]}"; do
 
   NAMESPACE="cuba-${domain}"
   if [[ "$domain" == "iam" ]]; then
-      NAMESPACE="cuba-system"
+      NAMESPACE="cuba-iam"
   fi
   
   echo "Deploying $service to namespace $NAMESPACE..."

@@ -35,20 +35,44 @@ spec:
   - cuba-gateway
   http:
   # ============================================================================
-  # IAM (认证授权)
+  # IAM - Auth Service (认证)
   # ============================================================================
   - match:
     - uri:
         prefix: /api/v1/auth
     - uri:
-        prefix: /api/v1/rbac
-    - uri:
-        prefix: /iam.v1
+        prefix: /iam.auth.v1
     route:
     - destination:
-        host: iam-service.cuba-system.svc.cluster.local
+        host: auth-service.cuba-iam.svc.cluster.local
         port:
           number: 50051
+  # ============================================================================
+  # IAM - RBAC Service (权限)
+  # ============================================================================
+  - match:
+    - uri:
+        prefix: /api/v1/rbac
+    - uri:
+        prefix: /iam.rbac.v1
+    route:
+    - destination:
+        host: rbac-service.cuba-iam.svc.cluster.local
+        port:
+          number: 50052
+  # ============================================================================
+  # IAM - OAuth Service (OAuth2)
+  # ============================================================================
+  - match:
+    - uri:
+        prefix: /api/v1/oauth2
+    - uri:
+        prefix: /iam.oauth.v1
+    route:
+    - destination:
+        host: oauth-service.cuba-iam.svc.cluster.local
+        port:
+          number: 50053
 
   # ============================================================================
   # FI (财务模块) - 5 services
