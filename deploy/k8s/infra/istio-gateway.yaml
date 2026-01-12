@@ -41,6 +41,8 @@ spec:
     - uri:
         prefix: /api/v1/auth
     - uri:
+        prefix: /api/v1/rbac
+    - uri:
         prefix: /iam.v1
     route:
     - destination:

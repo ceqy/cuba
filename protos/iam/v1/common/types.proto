@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package iam.v1.common;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/enterprise/erp/protos/iam/v1/common;common";
+
+// 核心用户对象
+message User {
+  string tenant_id      = 1;
+  string user_id        = 2;
+  string username       = 3;
+  string email          = 4;
+  string display_name   = 5;
+  string avatar_url     = 6;
+  bool   email_verified = 7;
+  bool   is_active      = 8;
+  repeated string roles = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp last_login_at = 11;
+}
+
+// 角色
+message Role {
+  string role_id        = 1;
+  string name           = 2;
+  string description    = 3;
+  string parent_role_id = 4;     // 角色继承
+  bool   is_system      = 5;     // 系统保护角色
+  google.protobuf.Timestamp created_at = 6;
+}
+
+// 细粒度权限
+message Permission {
+  string permission_id = 1;
+  string code          = 2;      // 前端权限码: user:add
+  string resource      = 3;      // resources: user
+  string action        = 4;      // action: write
+  string description   = 5;
+  google.protobuf.Timestamp created_at = 6;
+}

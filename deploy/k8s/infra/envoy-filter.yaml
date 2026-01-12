@@ -25,9 +25,8 @@ spec:
           "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_json_transcoder.v3.GrpcJsonTranscoder
           proto_descriptor: "/etc/istio/proto/proto.pb"
           services:
-          - "iam.v1.AuthService"
-          # TODO: Add other services after verifying package names.
-          # - "finance.gl.v1.GlJournalEntryService"
+          - "iam.v1.auth.AuthService"
+          - "iam.v1.rbac.RbacService"
 
           print_options:
             add_whitespace: true

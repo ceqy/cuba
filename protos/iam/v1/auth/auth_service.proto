@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package iam.v1.auth;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "iam/v1/common/types.proto";
+// 确保 common/common.proto 存在且被正确引用
+import "common/common.proto"; 
+
+option go_package = "github.com/enterprise/erp/protos/iam/v1/auth;authv1";
+
+service AuthService {
+  // 注册
+  rpc Register(RegisterRequest) returns (RegisterResponse) {
+    option (google.api.http) = { post: "/api/v1/auth/register" body: "*" };
+  }
+
+  // 登录
+  rpc Login(LoginRequest) returns (LoginResponse) {
+    option (google.api.http) = { post: "/api/v1/auth/login" body: "*" };
+  }
+
+  // 获取当前用户信息
+  rpc GetCurrentUser(google.protobuf.Empty) returns (iam.v1.common.User) {
+    option (google.api.http) = { get: "/api/v1/auth/me" };
+  }
+
+  // 修改密码
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse) {
+    option (google.api.http) = { post: "/api/v1/auth/password/change" body: "*" };
+  }
+  
+  // 获取当前用户权限码 (Frontend usage)
+  rpc GetPermCodes(google.protobuf.Empty) returns (GetPermCodesResponse) {
+    option (google.api.http) = { get: "/api/v1/auth/codes" };
+  }
+}
+
+message RegisterRequest {
+  string username = 1;
+  string password = 2;
+  string email = 3;
+  string tenant_id = 4;
+}
+
+message RegisterResponse {
+  string user_id = 1;
+  string username = 2;
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+  string tenant_id = 3;
+}
+
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int32 expires_in = 3;
+  string token_type = 4;
+}
+
+message ChangePasswordRequest {
+  string old_password = 1;
+  string new_password = 2;
+}
+
+message ChangePasswordResponse {
+  bool success = 1;
+}
+
+message GetPermCodesResponse {
+    repeated string codes = 1;
+}

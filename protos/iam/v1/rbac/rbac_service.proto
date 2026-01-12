@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package iam.v1.rbac;
+
+import "google/api/annotations.proto";
+import "iam/v1/common/types.proto";
+import "common/common.proto";
+
+option go_package = "github.com/enterprise/erp/protos/iam/v1/rbac;rbacv1";
+
+service RBACService {
+  // --- Role Management ---
+
+  // 创建角色
+  rpc CreateRole(CreateRoleRequest) returns (iam.v1.common.Role) {
+    option (google.api.http) = { post: "/api/v1/rbac/roles" body: "*" };
+  }
+
+  // 获取角色列表
+  rpc ListRoles(.common.v1.PaginationRequest) returns (ListRolesResponse) {
+    option (google.api.http) = { get: "/api/v1/rbac/roles" };
+  }
+  
+  // 删除角色
+  rpc DeleteRole(DeleteRoleRequest) returns (.common.v1.BatchOperationResult) {
+      option (google.api.http) = { delete: "/api/v1/rbac/roles/{role_id}" };
+  }
+
+  // --- Permission Management ---
+
+  // 列出所有权限定义
+  rpc ListPermissions(.common.v1.PaginationRequest) returns (ListPermissionsResponse) {
+      option (google.api.http) = { get: "/api/v1/rbac/permissions" };
+  }
+
+  // 给角色赋予权限
+  rpc GrantPermissionsToRole(GrantPermissionsRequest) returns (GrantPermissionsResponse) {
+    option (google.api.http) = { post: "/api/v1/rbac/roles/{role_id}/permissions" body: "*" };
+  }
+
+  // --- Access Control ---
+
+  // 检查权限
+  rpc CheckPermissions(CheckPermissionsRequest) returns (CheckPermissionsResponse) {
+    option (google.api.http) = { post: "/api/v1/rbac/permissions/check" body: "*" };
+  }
+}
+
+message CreateRoleRequest {
+    string name = 1;
+    string description = 2;
+    string parent_role_id = 3;
+}
+
+message ListRolesResponse {
+    repeated iam.v1.common.Role roles = 1;
+    .common.v1.PaginationResponse pagination = 2;
+}
+
+message DeleteRoleRequest {
+    string role_id = 1;
+}
+
+message ListPermissionsResponse {
+    repeated iam.v1.common.Permission permissions = 1;
+    .common.v1.PaginationResponse pagination = 2;
+}
+
+message GrantPermissionsRequest {
+    string role_id = 1;
+    repeated string permission_ids = 2;
+}
+
+message GrantPermissionsResponse {
+    bool success = 1;
+}
+
+message CheckPermissionsRequest {
+    string user_id = 1; 
+    repeated string permissions = 2; // e.g., ["user:read", "user:write"]
+}
+
+message CheckPermissionsResponse {
+    bool authorized = 1;
+    repeated string missing_permissions = 2;
+}

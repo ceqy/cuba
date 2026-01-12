@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package iam.v1.oauth;
+
+import "google/api/annotations.proto";
+
+option go_package = "github.com/enterprise/erp/protos/iam/v1/oauth;oauthv1";
+
+service OAuthService {
+  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse) {
+    option (google.api.http) = { get: "/api/v1/oauth2/authorize" };
+  }
+
+  rpc Token(TokenRequest) returns (TokenResponse) {
+    option (google.api.http) = { post: "/api/v1/oauth2/token" body: "*" };
+  }
+}
+
+message AuthorizeRequest {
+    string response_type = 1;
+    string client_id = 2;
+    string redirect_uri = 3;
+    string scope = 4;
+    string state = 5;
+}
+
+message AuthorizeResponse {
+    string code = 1;
+    string state = 2;
+}
+
+message TokenRequest {
+    string grant_type = 1;
+    string code = 2;
+    string redirect_uri = 3;
+    string client_id = 4;
+    string client_secret = 5;
+}
+
+message TokenResponse {
+    string access_token = 1;
+    string token_type = 2;
+    int32 expires_in = 3;
+    string refresh_token = 4;
+}

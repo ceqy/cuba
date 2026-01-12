@@ -32,6 +32,7 @@ pub struct User {
     pub email: String,
     pub password_hash: String,
     pub tenant_id: Option<String>,
+    pub roles: Vec<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -53,6 +54,7 @@ impl User {
             email,
             password_hash,
             tenant_id,
+            roles: Vec::new(),
             created_at: now,
             updated_at: now,
         }
