@@ -6,3 +6,4 @@ lint:
   except:
     - PACKAGE_VERSION_SUFFIX
     - FIELD_LOWER_SNAKE_CASE
+  allow_comment_ignores: true

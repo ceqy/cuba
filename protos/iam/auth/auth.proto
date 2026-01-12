@@ -1,15 +1,15 @@
 syntax = "proto3";
 
-package iam.v1.auth;
+
+package iam.auth.v1;
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
-import "iam/v1/common/types.proto";
-// 确保 common/common.proto 存在且被正确引用
-import "common/common.proto"; 
+import "common/types.proto";
+ 
 
 option go_package = "github.com/enterprise/erp/protos/iam/v1/auth;authv1";
 
@@ -227,8 +227,8 @@ message ValidateTokenResponse {
 }
 
 message GetCurrentUserResponse {
-  iam.v1.common.User user = 1;
-  repeated iam.v1.common.Role roles = 2;
+  common.v1.User user = 1;
+  repeated common.v1.Role roles = 2;
 }
 
 message ChangePasswordRequest {
@@ -246,7 +246,7 @@ message UpdateProfileRequest {
 }
 
 message UpdateProfileResponse {
-  iam.v1.common.User user = 1;
+  common.v1.User user = 1;
 }
 
 message Enable2FAResponse {
@@ -272,10 +272,10 @@ message Verify2FACodeRequest {
 
 enum LogLevel {
   LOG_LEVEL_UNSPECIFIED = 0;
-  INFO = 1;
-  WARN = 2;
-  ERROR = 3;
-  SECURITY = 4;
+  LOG_LEVEL_INFO = 1;
+  LOG_LEVEL_WARN = 2;
+  LOG_LEVEL_ERROR = 3;
+  LOG_LEVEL_SECURITY = 4;
 }
 
 message AuditLog {
@@ -289,7 +289,7 @@ message AuditLog {
 }
 
 message GetAuditLogsRequest {
-  iam.v1.common.AuditFilter filter = 1;
+  common.v1.AuditFilter filter = 1;
   google.protobuf.Timestamp from = 2;
   google.protobuf.Timestamp to = 3;
 }

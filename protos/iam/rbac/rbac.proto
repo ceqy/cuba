@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-package iam.v1.rbac;
+package iam.rbac.v1;
 
 import "google/api/annotations.proto";
 import "google/protobuf/field_mask.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
-import "iam/v1/common/types.proto";
+import "common/types.proto";
 import "common/common.proto";
 
 option go_package = "github.com/enterprise/erp/protos/iam/v1/rbac;rbacv1";
@@ -14,7 +14,7 @@ service RBACService {
   // --- Role Management ---
 
   // 创建角色
-  rpc CreateRole(CreateRoleRequest) returns (iam.v1.common.Role) {
+  rpc CreateRole(CreateRoleRequest) returns (common.v1.Role) {
     option (google.api.http) = { post: "/api/v1/rbac/roles" body: "*" };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "RBAC"
@@ -25,7 +25,7 @@ service RBACService {
   }
 
   // 更新角色（部分字段）
-  rpc UpdateRole(UpdateRoleRequest) returns (iam.v1.common.Role) {
+  rpc UpdateRole(UpdateRoleRequest) returns (common.v1.Role) {
     option (google.api.http) = { patch: "/api/v1/rbac/roles/{role_id}" body: "*" };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "RBAC"
@@ -128,17 +128,17 @@ message CreateRoleRequest {
 
 message UpdateRoleRequest {
   string role_id = 1;
-  iam.v1.common.Role role = 2;
+  common.v1.Role role = 2;
   google.protobuf.FieldMask update_mask = 3;
 }
 
 message ListRolesRequest {
   .common.v1.PaginationRequest pagination = 1;
-  iam.v1.common.Filter filter = 2;
+  common.v1.Filter filter = 2;
 }
 
 message ListRolesResponse {
-  repeated iam.v1.common.Role roles = 1;
+  repeated common.v1.Role roles = 1;
   .common.v1.PaginationResponse pagination = 2;
 }
 
@@ -147,7 +147,7 @@ message DeleteRoleRequest {
 }
 
 message ListPermissionsResponse {
-  repeated iam.v1.common.Permission permissions = 1;
+  repeated common.v1.Permission permissions = 1;
   .common.v1.PaginationResponse pagination = 2;
 }
 
