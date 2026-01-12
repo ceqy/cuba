@@ -54,8 +54,10 @@ DBS=(
   # RD
   "cuba_rd_pl"
   "cuba_rd_ps"
-  # Core
-  "cuba_iam"
+  # IAM (Split into 3 services)
+  "cuba_iam_auth"
+  "cuba_iam_rbac"
+  "cuba_iam_oauth"
   "cuba_admin"
   "cuba_gl" # Legacy/Alias for compat
 )

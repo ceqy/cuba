@@ -17,9 +17,12 @@ scaffold() {
 }
 
 # --- Core ---
-# iam-service (50051) - Skipped (Exists)
 # gl-service (50052) - Skipped (Exists)
-# ap-service (50053) - Pilot (Already done, but script is idempotent-ish)
+
+# --- IAM (Split into 3 services) ---
+# auth-service (50051) - Manual (Already done)
+# rbac-service (50052) - Manual (Already done)
+# oauth-service (50053) - Manual (Already done)
 
 # --- FI ---
 # scaffold "ap-service" "fi/ap" "cuba_fi_ap" # Already done manually
