@@ -117,6 +117,17 @@ service RBACService {
       deprecated: false
     };
   }
+
+  // 获取用户拥有的角色
+  rpc GetUserRoles(GetUserRolesRequest) returns (GetUserRolesResponse) {
+    option (google.api.http) = { get: "/api/v1/rbac/users/{user_id}/roles" };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "RBAC"
+      summary: "获取用户角色"
+      security: { security_requirement: { key: "bearer_auth" } }
+      deprecated: false
+    };
+  }
 }
 
 message CreateRoleRequest {
@@ -187,4 +198,12 @@ message CheckPermissionsResponse {
   bool authorized = 1;
   map<string, bool> permission_results = 2;
   repeated string missing_permissions = 3;
+}
+
+message GetUserRolesRequest {
+  string user_id = 1;
+}
+
+message GetUserRolesResponse {
+  repeated common.v1.Role roles = 1;
 }

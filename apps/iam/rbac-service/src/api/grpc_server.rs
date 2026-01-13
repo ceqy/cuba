@@ -131,4 +131,20 @@ impl<R: RoleRepository + 'static, P: PermissionRepository + 'static> RbacService
             missing_permissions: missing,
         }))
     }
+
+    async fn get_user_roles(&self, request: Request<GetUserRolesRequest>) -> Result<Response<GetUserRolesResponse>, Status> {
+        let req = request.into_inner();
+        let roles = self.role_repository.find_by_user_id(&req.user_id).await.map_err(|e| Status::internal(e.to_string()))?;
+        Ok(Response::new(GetUserRolesResponse {
+            roles: roles.into_iter().map(|r| common_proto::Role {
+                role_id: r.id,
+                name: r.name,
+                description: r.description,
+                parent_id: r.parent_id.unwrap_or_default(),
+                tenant_id: r.tenant_id,
+                is_immutable: r.is_immutable,
+                created_at: Some(prost_types::Timestamp::from(std::time::SystemTime::from(r.created_at))),
+            }).collect(),
+        }))
+    }
 }

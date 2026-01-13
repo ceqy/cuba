@@ -2,14 +2,14 @@ use tonic::{Request, Response, Status};
 use crate::infrastructure::grpc::iam::auth::v1::auth_service_server::AuthService;
 use crate::infrastructure::grpc::iam::auth::v1::*;
 use crate::infrastructure::grpc::common::v1 as common_proto;
-use crate::application::handlers::{RegisterUserHandler, LoginUserHandler};
+use crate::application::{RegisterUserHandler, LoginUserHandler, RefreshTokenHandler};
 use crate::domain::repositories::UserRepository;
-use crate::infrastructure::JwtTokenService;
 use std::sync::Arc;
 
 pub struct AuthServiceImpl {
     register_handler: Arc<RegisterUserHandler>,
     login_handler: Arc<LoginUserHandler>,
+    refresh_token_handler: Arc<RefreshTokenHandler>,
     user_repository: Arc<dyn UserRepository<Id = String> + Send + Sync>,
 }
 
@@ -17,11 +17,13 @@ impl AuthServiceImpl {
     pub fn new(
         register_handler: Arc<RegisterUserHandler>,
         login_handler: Arc<LoginUserHandler>,
+        refresh_token_handler: Arc<RefreshTokenHandler>,
         user_repository: Arc<dyn UserRepository<Id = String> + Send + Sync>,
     ) -> Self {
         Self {
             register_handler,
             login_handler,
+            refresh_token_handler,
             user_repository,
         }
     }
@@ -44,15 +46,18 @@ impl AuthService for AuthServiceImpl {
     }
 
     async fn login(&self, request: Request<LoginRequest>) -> Result<Response<LoginResponse>, Status> {
-        let req = request.into_inner();
+        let user_agent = request.metadata().get("user-agent").and_then(|v| v.to_str().ok()).map(|s| s.to_string());
+        let ip_address = request.metadata().get("x-forwarded-for").and_then(|v| v.to_str().ok()).map(|s| s.to_string());
         
-        match self.login_handler.handle(req.username, req.password, req.tenant_id).await {
-            Ok((token, _user)) => Ok(Response::new(LoginResponse {
+        let req = request.into_inner();
+
+        match self.login_handler.handle(req.username, req.password, req.tenant_id, user_agent, ip_address).await {
+            Ok((token, refresh_token, session_id, _user)) => Ok(Response::new(LoginResponse {
                 access_token: token,
-                refresh_token: "".to_string(), // TODO
+                refresh_token,
                 expires_in: 86400,
                 token_type: "Bearer".to_string(),
-                session_id: "".to_string(),
+                session_id,
                 locked_until: None,
                 password_expires_at: None,
                 mfa_required: false,
@@ -65,8 +70,17 @@ impl AuthService for AuthServiceImpl {
          Ok(Response::new(LogoutResponse { success: true }))
     }
     
-    async fn refresh_token(&self, _request: Request<RefreshTokenRequest>) -> Result<Response<RefreshTokenResponse>, Status> {
-        Err(Status::unimplemented("Not implemented"))
+    async fn refresh_token(&self, request: Request<RefreshTokenRequest>) -> Result<Response<RefreshTokenResponse>, Status> {
+        let req = request.into_inner();
+        match self.refresh_token_handler.handle(req.refresh_token).await {
+            Ok((access_token, refresh_token)) => Ok(Response::new(RefreshTokenResponse {
+                access_token,
+                refresh_token,
+                expires_in: 86400,
+                token_type: "Bearer".to_string(),
+            })),
+            Err(e) => Err(Status::unauthenticated(e.to_string())),
+        }
     }
     
     async fn validate_token(&self, _request: Request<ValidateTokenRequest>) -> Result<Response<ValidateTokenResponse>, Status> {

@@ -4,10 +4,11 @@ use tracing::info;
 use std::sync::Arc;
 use auth_service::infrastructure::grpc::iam::auth::v1::auth_service_server::AuthServiceServer;
 use auth_service::api::grpc_server::AuthServiceImpl;
-use auth_service::infrastructure::persistence::postgres_user_repository::PostgresUserRepository;
+use auth_service::infrastructure::persistence::{PostgresUserRepository, PostgresUserSessionRepository};
 use auth_service::infrastructure::bcrypt_password_service::BcryptPasswordService;
 use auth_service::infrastructure::jwt_token_service::JwtTokenService;
-use auth_service::application::handlers::{RegisterUserHandler, LoginUserHandler};
+use auth_service::infrastructure::rbac_client::RbacClient;
+use auth_service::application::handlers::{RegisterUserHandler, LoginUserHandler, RefreshTokenHandler};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -22,15 +23,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Infrastructure
     let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
+    let session_repo = Arc::new(PostgresUserSessionRepository::new(pool.clone()));
     let password_service = Arc::new(BcryptPasswordService::default());
     let token_service = Arc::new(JwtTokenService::new("super_secret_key".to_string())); // TODO: Env
     
+    // RBAC Client (connecting to the service in K8s or local)
+    let rbac_addr = std::env::var("RBAC_SERVICE_ADDR").unwrap_or_else(|_| "http://rbac-service.cuba-iam.svc.cluster.local:50052".to_string());
+    let rbac_client = Arc::new(RbacClient::new(rbac_addr).await?);
+    
     // Handlers
     let register_handler = Arc::new(RegisterUserHandler::new(user_repo.clone(), password_service.clone()));
-    let login_handler = Arc::new(LoginUserHandler::new(user_repo.clone(), password_service.clone(), token_service.clone()));
+    let login_handler = Arc::new(LoginUserHandler::new(
+        user_repo.clone(), 
+        session_repo.clone(),
+        rbac_client.clone(),
+        password_service.clone(), 
+        token_service.clone()
+    ));
+    let refresh_token_handler = Arc::new(RefreshTokenHandler::new(
+        user_repo.clone(),
+        session_repo.clone(),
+        rbac_client.clone(),
+        token_service.clone()
+    ));
     
     // Service
-    let auth_service = AuthServiceImpl::new(register_handler, login_handler, user_repo.clone());
+    let auth_service = AuthServiceImpl::new(
+        register_handler, 
+        login_handler, 
+        refresh_token_handler,
+        user_repo.clone()
+    );
     
     // Reflection
     let descriptor = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));

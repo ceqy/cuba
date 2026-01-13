@@ -35,4 +35,8 @@ impl JwtTokenService {
         let token = encode(&Header::default(), &claims, &EncodingKey::from_secret(self.secret.as_bytes()))?;
         Ok(token)
     }
+
+    pub fn generate_refresh_token(&self) -> String {
+        uuid::Uuid::new_v4().to_string()
+    }
 }

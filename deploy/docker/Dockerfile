@@ -11,7 +11,6 @@ COPY Cargo.toml Cargo.lock ./
 COPY libs/ libs/
 COPY protos/ protos/
 COPY third_party/ third_party/
-COPY .sqlx/ .sqlx/
 
 # Copy service source
 ARG SERVICE_PATH

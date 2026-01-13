@@ -44,7 +44,9 @@ SERVICES=(
   "cs/wc-service:wc-service"
   "rd/ps-service:ps-service"
   "rd/pl-service:pl-service"
-  "iam/iam-service:iam-service"
+  "iam/auth-service:auth-service"
+  "iam/rbac-service:rbac-service"
+  "iam/oauth-service:oauth-service"
 )
 
 echo "=== Building Cuba ERP Docker Images ==="

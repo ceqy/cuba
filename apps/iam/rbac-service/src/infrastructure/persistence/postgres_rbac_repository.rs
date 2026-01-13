@@ -69,7 +69,7 @@ impl RoleRepository for PostgresRbacRepository {
         Ok(())
     }
 
-    async fn delete(&self, id: &str) -> Result<(), anyhow::Error> {
+    async fn delete(&self, id: &str) -> anyhow::Result<()> {
         sqlx::query("DELETE FROM roles WHERE id = $1")
             .bind(id)
             .execute(&self.pool)
@@ -77,13 +77,14 @@ impl RoleRepository for PostgresRbacRepository {
         Ok(())
     }
 
-    async fn find_by_user_id(&self, user_id: &str) -> Result<Vec<Role>, anyhow::Error> {
+    async fn find_by_user_id(&self, user_id: &str) -> anyhow::Result<Vec<Role>> {
         let rows = sqlx::query(
             "SELECT r.* FROM roles r JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = $1"
         )
         .bind(user_id)
         .fetch_all(&self.pool)
         .await?;
+        
         let mut roles = Vec::new();
         for row in rows {
             roles.push(Role {
@@ -99,7 +100,7 @@ impl RoleRepository for PostgresRbacRepository {
         Ok(roles)
     }
 
-    async fn grant_permissions(&self, role_id: &str, permission_ids: &[String]) -> Result<(), anyhow::Error> {
+    async fn grant_permissions(&self, role_id: &str, permission_ids: &[String]) -> anyhow::Result<()> {
         for perm_id in permission_ids {
             sqlx::query("INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
                 .bind(role_id)
