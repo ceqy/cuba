@@ -1,15 +1,40 @@
-# oauth-service Helm Values
-replicaCount: 2
-image:
-  repository: cuba-erp/oauth-service
-  tag: "latest"
-fullnameOverride: "oauth-service"
-service:
-  grpcPort: 50053
-  metricsPort: 9090
-env:
-  RUST_LOG: "info"
-  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres.default.svc.cluster.local:5432/cuba_iam_oauth"
-resources:
-  limits: {cpu: 500m, memory: 512Mi}
-  requests: {cpu: 100m, memory: 128Mi}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth-service
+  namespace: cuba-iam
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oauth-service
+  template:
+    metadata:
+      labels:
+        app: oauth-service
+    spec:
+      containers:
+      - name: oauth-service
+        image: cuba-erp/oauth-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 50053
+        env:
+        - name: DATABASE_URL
+          value: "postgres://postgres:postgres@postgres.cuba-infra.svc.cluster.local:5432/cuba_iam_oauth"
+        - name: JWT_SECRET
+          value: "cuba-secret-key-change-me"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth-service
+  namespace: cuba-iam
+spec:
+  selector:
+    app: oauth-service
+  ports:
+  - port: 50053
+    targetPort: 50053
+    nodePort: 30053
+  type: NodePort

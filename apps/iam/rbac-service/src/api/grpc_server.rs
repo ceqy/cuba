@@ -43,19 +43,34 @@ impl<R: RoleRepository + 'static, P: PermissionRepository + 'static> RbacService
 
     async fn update_role(&self, request: Request<UpdateRoleRequest>) -> Result<Response<common_proto::Role>, Status> {
         let req = request.into_inner();
-        let role = req.role.ok_or_else(|| Status::invalid_argument("role is required"))?;
-        let response_role = role.clone();
-        let domain_role = crate::domain::Role {
-            id: req.role_id,
-            name: role.name,
-            description: role.description,
-            parent_id: if role.parent_id.is_empty() { None } else { Some(role.parent_id) },
-            tenant_id: role.tenant_id,
-            is_immutable: role.is_immutable,
-            created_at: chrono::Utc::now(), // TODO: preserve original
-        };
-        self.role_repository.save(&domain_role).await.map_err(|e| Status::internal(e.to_string()))?;
-        Ok(Response::new(response_role))
+        let role_id = req.role_id;
+        
+        let mut existing = self.role_repository.find_by_id(&role_id).await
+            .map_err(|e| Status::internal(e.to_string()))?
+            .ok_or_else(|| Status::not_found("Role not found"))?;
+
+        if existing.is_immutable {
+            return Err(Status::permission_denied("Cannot update immutable role"));
+        }
+
+        if let Some(role_update) = req.role {
+            existing.name = role_update.name;
+            existing.description = role_update.description;
+            existing.parent_id = if role_update.parent_id.is_empty() { None } else { Some(role_update.parent_id) };
+            // Note: tenant_id and is_immutable usually shouldn't be updated via this simple path
+        }
+
+        self.role_repository.save(&existing).await.map_err(|e| Status::internal(e.to_string()))?;
+        
+        Ok(Response::new(common_proto::Role {
+            role_id: existing.id,
+            name: existing.name,
+            description: existing.description,
+            parent_id: existing.parent_id.unwrap_or_default(),
+            tenant_id: existing.tenant_id,
+            is_immutable: existing.is_immutable,
+            created_at: Some(prost_types::Timestamp::from(std::time::SystemTime::from(existing.created_at))),
+        }))
     }
 
     async fn list_roles(&self, _request: Request<ListRolesRequest>) -> Result<Response<ListRolesResponse>, Status> {
@@ -75,7 +90,16 @@ impl<R: RoleRepository + 'static, P: PermissionRepository + 'static> RbacService
     }
 
     async fn delete_role(&self, request: Request<DeleteRoleRequest>) -> Result<Response<common_proto::BatchOperationResult>, Status> {
-        self.role_repository.delete(&request.into_inner().role_id).await.map_err(|e| Status::internal(e.to_string()))?;
+        let role_id = request.into_inner().role_id;
+        let existing = self.role_repository.find_by_id(&role_id).await
+            .map_err(|e| Status::internal(e.to_string()))?
+            .ok_or_else(|| Status::not_found("Role not found"))?;
+
+        if existing.is_immutable {
+            return Err(Status::permission_denied("Cannot delete immutable role"));
+        }
+
+        self.role_repository.delete(&role_id).await.map_err(|e| Status::internal(e.to_string()))?;
         Ok(Response::new(common_proto::BatchOperationResult { success_count: 1, failure_count: 0, errors: vec![] }))
     }
 

@@ -63,6 +63,9 @@ uuid = { version = "1.11", features = ["v4", "v7", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 bcrypt = "0.16"
 jsonwebtoken = "9.3"
+base64 = "0.22"
+sha2 = "0.10"
+rand = "0.8"
 reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 
 # Build Dependencies

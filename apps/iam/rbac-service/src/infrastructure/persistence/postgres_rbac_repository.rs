@@ -79,7 +79,15 @@ impl RoleRepository for PostgresRbacRepository {
 
     async fn find_by_user_id(&self, user_id: &str) -> anyhow::Result<Vec<Role>> {
         let rows = sqlx::query(
-            "SELECT r.* FROM roles r JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = $1"
+            "WITH RECURSIVE role_hierarchy AS (
+                SELECT role_id FROM user_roles WHERE user_id = $1
+                UNION
+                SELECT r.parent_id FROM roles r
+                JOIN role_hierarchy rh ON r.id = rh.role_id
+                WHERE r.parent_id IS NOT NULL
+            )
+            SELECT r.* FROM roles r 
+            JOIN role_hierarchy rh ON r.id = rh.role_id"
         )
         .bind(user_id)
         .fetch_all(&self.pool)
@@ -152,10 +160,16 @@ impl PermissionRepository for PostgresRbacRepository {
 
     async fn find_by_user_id(&self, user_id: &str) -> Result<Vec<Permission>, anyhow::Error> {
         let rows = sqlx::query(
-            "SELECT DISTINCT p.* FROM permissions p 
-             JOIN role_permissions rp ON p.id = rp.permission_id 
-             JOIN user_roles ur ON rp.role_id = ur.role_id 
-             WHERE ur.user_id = $1"
+            "WITH RECURSIVE role_hierarchy AS (
+                SELECT role_id FROM user_roles WHERE user_id = $1
+                UNION
+                SELECT r.parent_id FROM roles r
+                JOIN role_hierarchy rh ON r.id = rh.role_id
+                WHERE r.parent_id IS NOT NULL
+            )
+            SELECT DISTINCT p.* FROM permissions p 
+            JOIN role_permissions rp ON p.id = rp.permission_id 
+            JOIN role_hierarchy rh ON rp.role_id = rh.role_id"
         )
         .bind(user_id)
         .fetch_all(&self.pool)
