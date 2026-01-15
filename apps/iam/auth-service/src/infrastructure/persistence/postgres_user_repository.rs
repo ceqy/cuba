@@ -136,4 +136,41 @@ impl UserRepository for PostgresUserRepository {
             Ok(None)
         }
     }
+
+    async fn list_users(&self, offset: i64, limit: i64) -> Result<(Vec<User>, i64), anyhow::Error> {
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users")
+            .fetch_one(&self.pool)
+            .await?;
+
+        let rows = sqlx::query("SELECT * FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2")
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(&self.pool)
+            .await?;
+
+        let mut users = Vec::new();
+        for row in rows {
+             let id: String = row.try_get("id")?;
+             let roles: Vec<String> = sqlx::query_scalar(
+                 "SELECT r.name FROM roles r JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = $1"
+             )
+             .bind(&id)
+             .fetch_all(&self.pool)
+             .await
+             .unwrap_or_default();
+
+             users.push(User {
+                 id,
+                 username: row.try_get("username")?,
+                 email: row.try_get("email")?,
+                 password_hash: row.try_get("password_hash")?,
+                 tenant_id: row.try_get("tenant_id")?,
+                 roles, 
+                 created_at: row.try_get("created_at")?,
+                 updated_at: row.try_get("updated_at")?,
+             });
+        }
+        
+        Ok((users, count))
+    }
 }

@@ -144,4 +144,43 @@ impl AuthService for AuthServiceImpl {
         // Complex permission logic belongs in RBAC service or shared lib.
         Ok(Response::new(GetPermCodesResponse { codes: vec![] }))
     }
+
+    async fn list_users(&self, request: Request<ListUsersRequest>) -> Result<Response<ListUsersResponse>, Status> {
+        let req = request.into_inner();
+        let pagination = req.pagination.unwrap_or_default();
+        let page = if pagination.page < 1 { 1 } else { pagination.page };
+        let page_size = if pagination.page_size < 1 { 10 } else { pagination.page_size };
+        let offset = (page as i64 - 1) * page_size as i64;
+        
+        match self.user_repository.list_users(offset, page_size as i64).await {
+            Ok((users, total_count)) => {
+                let proto_users = users.into_iter().map(|u| common_proto::User {
+                    user_id: u.id,
+                    username: u.username,
+                    email: u.email,
+                    tenant_id: u.tenant_id,
+                    roles: u.roles,
+                    created_at: Some(prost_types::Timestamp::from(std::time::SystemTime::from(u.created_at))),
+                    last_login_at: None,
+                    avatar_url: "".to_string(),
+                    display_name: "".to_string(),
+                    phone: "".to_string(),
+                    email_verified: false,
+                    is_active: true,
+                    attributes: None,
+                }).collect();
+
+                Ok(Response::new(ListUsersResponse {
+                    users: proto_users,
+                    pagination: Some(common_proto::PaginationResponse {
+                        current_page: page,
+                        page_size,
+                        total_items: total_count,
+                        total_pages: (total_count as f32 / page_size as f32).ceil() as i32,
+                    }),
+                }))
+            }
+            Err(e) => Err(Status::internal(e.to_string())),
+        }
+    }
 }
