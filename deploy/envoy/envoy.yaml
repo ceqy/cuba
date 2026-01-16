@@ -57,6 +57,64 @@ static_resources:
                           route:
                             cluster: oauth_service
                             timeout: 30s
+
+                        # ============================================
+                        # Finance: GL Service Routes
+                        # ============================================
+                        - match:
+                            prefix: "/fi.gl.v1.GlJournalEntryService"
+                          route:
+                            cluster: gl_service
+                            timeout: 30s
+                        - match:
+                            prefix: "/api/v1/finance/gl"
+                          route:
+                            cluster: gl_service
+                            timeout: 30s
+                        # ============================================
+                        # Finance: AP/AR Service Routes
+                        # ============================================
+                        - match:
+                            prefix: "/fi.ap.v1.AccountsReceivablePayableService"
+                          route:
+                            cluster: ap_service
+                            timeout: 30s
+                        - match:
+                            prefix: "/api/v1/finance/arap"
+                          route:
+                            cluster: ap_service
+                            timeout: 30s
+                        # ============================================
+                        # Finance: CO Service Routes
+                        # ============================================
+                        - match:
+                            prefix: "/fi.co.v1.ControllingAllocationService"
+                          route:
+                            cluster: co_service
+                            timeout: 30s
+                        - match:
+                            prefix: "/api/v1/finance/cost-center-allocation"
+                          route:
+                            cluster: co_service
+                            timeout: 30s
+                        - match:
+                            prefix: "/api/v1/finance/allocation-result"
+                          route:
+                            cluster: co_service
+                            timeout: 30s
+                        # ============================================
+                        # Finance: TR Service Routes
+                        # ============================================
+                        - match:
+                            prefix: "/fi.tr.v1.TreasuryService"
+                          route:
+                            cluster: tr_service
+                            timeout: 30s
+                        - match:
+                            prefix: "/api/v1/finance/treasury"
+                          route:
+                            cluster: tr_service
+                            timeout: 30s
                       cors:
                         allow_origin_string_match:
                           - prefix: "*"
@@ -74,6 +132,10 @@ static_resources:
                         - "iam.auth.v1.AuthService"
                         - "iam.rbac.v1.RBACService"
                         - "iam.oauth.v1.OAuthService"
+                        - "fi.gl.v1.GlJournalEntryService"
+                        - "fi.ap.v1.AccountsReceivablePayableService"
+                        - "fi.co.v1.ControllingAllocationService"
+                        - "fi.tr.v1.TreasuryService"
                       print_options:
                         add_whitespace: true
                         always_print_primitive_fields: true
@@ -138,6 +200,76 @@ static_resources:
                     socket_address:
                       address: oauth-service.cuba-iam.svc.cluster.local
                       port_value: 50053
+
+    # GL Service (port 50052)
+    - name: gl_service
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      http2_protocol_options: {}
+      load_assignment:
+        cluster_name: gl_service
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: gl-service.cuba-fi.svc.cluster.local
+                      port_value: 50052
+
+    # AP/AR Service (port 50053 - AP / 50054 - AR, mapping AP route to AP service for now, usually needs separate clusters or unified one if they share binary)
+    # Note: Using ap-service for ARAP requests. If AR is separate, we need accurate routing.
+    # Assuming consolidated proto for now, but deploying separately.
+    # The proto puts everything under AccountsReceivablePayableService.
+    # We will point 'ap_service' cluster to ap-service K8s service.
+    # If AR endpoints are needed, we might need granular matching or a shared ingress.
+    # For simplicity, let's map ap_service cluster to ap-service.
+    - name: ap_service
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      http2_protocol_options: {}
+      load_assignment:
+        cluster_name: ap_service
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: ap-service.cuba-fi.svc.cluster.local
+                      port_value: 50053
+
+    # CO Service (port 50055)
+    - name: co_service
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      http2_protocol_options: {}
+      load_assignment:
+        cluster_name: co_service
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: co-service.cuba-fi.svc.cluster.local
+                      port_value: 50067
+
+    # TR Service (port 50056)
+    - name: tr_service
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      http2_protocol_options: {}
+      load_assignment:
+        cluster_name: tr_service
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: tr-service.cuba-fi.svc.cluster.local
+                      port_value: 50056
 
 admin:
   address:

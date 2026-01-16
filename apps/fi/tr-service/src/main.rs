@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     cuba_telemetry::init_telemetry();
     dotenv().ok();
     
-    let addr = "0.0.0.0:50071".parse()?;
+    let addr = "0.0.0.0:50056".parse()?;
     info!("Starting FI Treasury Service on {}", addr);
 
     // GL Service Endpoint
