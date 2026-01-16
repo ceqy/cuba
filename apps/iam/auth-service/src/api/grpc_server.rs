@@ -183,4 +183,61 @@ impl AuthService for AuthServiceImpl {
             Err(e) => Err(Status::internal(e.to_string())),
         }
     }
+
+    async fn admin_update_user(&self, request: Request<AdminUpdateUserRequest>) -> Result<Response<AdminUpdateUserResponse>, Status> {
+        let req = request.into_inner();
+        let user_id = req.user_id;
+
+        // 1. Fetch user
+        let mut user = match self.user_repository.find_by_id(&user_id).await {
+            Ok(Some(u)) => u,
+            Ok(None) => return Err(Status::not_found("User not found")),
+            Err(e) => return Err(Status::internal(e.to_string())),
+        };
+
+        // 2. Update fields
+        if !req.email.is_empty() {
+             user.email = req.email;
+        }
+        // Simplified: assuming display_name is not stored in auth service yet or reusing username
+        
+        // 3. Password reset if provided
+        if !req.password.is_empty() {
+             user.password_hash = bcrypt::hash(&req.password, bcrypt::DEFAULT_COST)
+                .map_err(|e| Status::internal(format!("Failed to hash password: {}", e)))?;
+        }
+
+        user.updated_at = chrono::Utc::now();
+
+        // 4. Save
+        self.user_repository.update(&user).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        // 5. Return updated user 
+        Ok(Response::new(AdminUpdateUserResponse {
+             user: Some(common_proto::User {
+                user_id: user.id,
+                username: user.username,
+                email: user.email,
+                tenant_id: user.tenant_id,
+                roles: user.roles,
+                created_at: Some(prost_types::Timestamp::from(std::time::SystemTime::from(user.created_at))),
+                last_login_at: None,
+                avatar_url: "".to_string(),
+                display_name: "".to_string(),
+                phone: "".to_string(),
+                email_verified: false,
+                is_active: true,
+                attributes: None,
+            })
+        }))
+    }
+
+    async fn delete_user(&self, request: Request<DeleteUserRequest>) -> Result<Response<DeleteUserResponse>, Status> {
+        let req = request.into_inner();
+        self.user_repository.delete(&req.user_id).await
+             .map_err(|e| Status::internal(e.to_string()))?;
+        
+        Ok(Response::new(DeleteUserResponse { success: true }))
+    }
 }

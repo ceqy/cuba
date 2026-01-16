@@ -173,4 +173,42 @@ impl UserRepository for PostgresUserRepository {
         
         Ok((users, count))
     }
+
+    async fn delete(&self, user_id: &str) -> Result<(), anyhow::Error> {
+        let mut tx = self.pool.begin().await?;
+        
+        // Delete user roles first (fkey constraint, though usually cascade)
+        sqlx::query("DELETE FROM user_roles WHERE user_id = $1")
+            .bind(user_id)
+            .execute(&mut *tx)
+            .await?;
+            
+        // Delete user
+        sqlx::query("DELETE FROM users WHERE id = $1")
+            .bind(user_id)
+            .execute(&mut *tx)
+            .await?;
+            
+        tx.commit().await?;
+        Ok(())
+    }
+
+    async fn update(&self, user: &User) -> Result<(), anyhow::Error> {
+        sqlx::query(
+            "UPDATE users SET 
+             email = $1, 
+             password_hash = $2, 
+             updated_at = $3,
+             username = $4
+             WHERE id = $5"
+        )
+        .bind(&user.email)
+        .bind(&user.password_hash)
+        .bind(user.updated_at)
+        .bind(&user.username)
+        .bind(&user.id)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
 }
