@@ -2,12 +2,14 @@ use tonic::transport::Server;
 use tracing::info;
 use dotenvy::dotenv;
 use std::sync::Arc;
+use tokio::sync::Mutex;
 use cuba_database::{DatabaseConfig, init_pool};
 
 use ar_service::api::grpc_server::ArServiceImpl;
 use ar_service::api::proto::fi::ap::v1::accounts_receivable_payable_service_server::AccountsReceivablePayableServiceServer;
-use ar_service::infrastructure::repository::{CustomerRepository, OpenItemRepository};
-use ar_service::application::handlers::{PostCustomerHandler, ListOpenItemsHandler};
+use ar_service::infrastructure::repository::{CustomerRepository, OpenItemRepository, InvoiceRepository};
+use ar_service::infrastructure::gl_client::GlClient;
+use ar_service::application::handlers::{PostCustomerHandler, ListOpenItemsHandler, PostSalesInvoiceHandler};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -18,6 +20,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = "0.0.0.0:50054".parse()?;
     info!("Starting AR Service on {}", addr);
 
+    // GL Service Endpoint (from env or default)
+    let gl_endpoint = std::env::var("GL_SERVICE_URL")
+        .unwrap_or_else(|_| "http://localhost:50051".to_string());
+    info!("GL Service endpoint: {}", gl_endpoint);
+
     // Database
     let db_config = DatabaseConfig::default();
     let pool = init_pool(&db_config).await?;
@@ -25,19 +32,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Run migrations
     let migrator = sqlx::migrate!("./migrations");
     cuba_database::run_migrations(&pool, &migrator).await?;
+
+    // GL Client
+    let gl_client = Arc::new(Mutex::new(
+        GlClient::new(&gl_endpoint).await
+            .map_err(|e| format!("Failed to connect to GL service: {}", e))?
+    ));
     
     // Infrastructure
     let customer_repo = Arc::new(CustomerRepository::new(pool.clone()));
     let open_item_repo = Arc::new(OpenItemRepository::new(pool.clone()));
+    let invoice_repo = Arc::new(InvoiceRepository::new(pool.clone()));
     
     // Application Handlers
     let post_customer_handler = Arc::new(PostCustomerHandler::new(customer_repo.clone()));
     let list_open_items_handler = Arc::new(ListOpenItemsHandler::new(open_item_repo.clone()));
+    let post_sales_invoice_handler = Arc::new(PostSalesInvoiceHandler::new(
+        customer_repo.clone(),
+        invoice_repo.clone(),
+        gl_client.clone(),
+    ));
     
     // API
     let ar_service = ArServiceImpl::new(
         post_customer_handler,
         list_open_items_handler,
+        post_sales_invoice_handler,
     );
     
     // Reflection Service

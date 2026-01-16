@@ -7,14 +7,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let protos_dir = root.join("protos");
     let third_party = root.join("third_party");
 
-    let proto_path = protos_dir.join("fi/tr/tr.proto"); 
+    let tr_proto = protos_dir.join("fi/tr/tr.proto");
+    let gl_proto = protos_dir.join("fi/gl/gl.proto");
     let common_proto = protos_dir.join("common/common.proto");
 
     tonic_prost_build::configure()
         .build_server(true)
+        .build_client(true) // Need client for GL service
         .file_descriptor_set_path(out_dir.join("descriptor.bin"))
         .compile_protos(
-            &[proto_path, common_proto],
+            &[tr_proto, gl_proto, common_proto],
             &[protos_dir, third_party],
         )?;
 

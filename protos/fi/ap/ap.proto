@@ -227,10 +227,18 @@ service AccountsReceivablePayableService {
   // === 发票全生命周期 ===
   // --------------------------------------------------------------------------
 
-  // 发票过账（FB60/FB70/MIRO）
+  // 发票过账（FB60/FB70/MIRO）- AP 供应商发票
   rpc PostInvoice(PostInvoiceRequest) returns (PostInvoiceResponse) {
     option (google.api.http) = {
       post: "/api/v1/finance/arap/invoices"
+      body: "*"
+    };
+  }
+
+  // 销售发票过账 (FB70) - AR 客户发票
+  rpc PostSalesInvoice(PostSalesInvoiceRequest) returns (PostSalesInvoiceResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/arap/sales-invoices"
       body: "*"
     };
   }
@@ -741,6 +749,18 @@ message PostInvoiceRequest {
 }
 
 message PostInvoiceResponse {
+  common.v1.SystemDocumentReference document = 1;
+}
+
+// 销售发票过账请求 (AR)
+message PostSalesInvoiceRequest {
+  string company_code = 1;          // 公司代码
+  string customer_id = 2;           // 客户ID
+  repeated AccountingDocumentItem items = 3;  // 发票行项目
+}
+
+// 销售发票过账响应 (AR)
+message PostSalesInvoiceResponse {
   common.v1.SystemDocumentReference document = 1;
 }
 

@@ -3,8 +3,8 @@
 use tonic::{Request, Response, Status};
 use std::sync::Arc;
 
-use crate::application::commands::{PostSupplierCommand, ListOpenItemsQuery};
-use crate::application::handlers::{PostSupplierHandler, ListOpenItemsHandler};
+use crate::application::commands::{PostSupplierCommand, ListOpenItemsQuery, PostInvoiceCommand};
+use crate::application::handlers::{PostSupplierHandler, ListOpenItemsHandler, PostInvoiceHandler};
 
 // Use the properly structured proto modules
 use crate::api::proto::fi::ap::v1 as ap_v1;
@@ -14,20 +14,26 @@ use ap_v1::accounts_receivable_payable_service_server::AccountsReceivablePayable
 use ap_v1::*;
 use common_v1::*;
 
+use chrono::Datelike;
+use std::str::FromStr;
+
 /// gRPC Service Implementation
 pub struct ApServiceImpl {
     post_supplier_handler: Arc<PostSupplierHandler>,
     list_open_items_handler: Arc<ListOpenItemsHandler>,
+    post_invoice_handler: Arc<PostInvoiceHandler>,
 }
 
 impl ApServiceImpl {
     pub fn new(
         post_supplier_handler: Arc<PostSupplierHandler>,
         list_open_items_handler: Arc<ListOpenItemsHandler>,
+        post_invoice_handler: Arc<PostInvoiceHandler>,
     ) -> Self {
         Self {
             post_supplier_handler,
             list_open_items_handler,
+            post_invoice_handler,
         }
     }
 }
@@ -142,11 +148,9 @@ impl AccountsReceivablePayableService for ApServiceImpl {
         let proto_items = items.into_iter().map(|item| {
             OpenItem {
                 document_reference: Some(common_v1::SystemDocumentReference {
-                    // system_id: "SAP_S4".to_string(), // Removed
                     document_number: item.document_number,
-                    fiscal_year: item.fiscal_year, // Correct type: i32
+                    fiscal_year: item.fiscal_year,
                     company_code: item.company_code,
-                    // item_number: item.line_item_number.to_string(), // Removed
                     document_type: "KR".to_string(), // Default to Vendor Invoice
                     document_category: "".to_string(),
                 }),
@@ -197,10 +201,50 @@ impl AccountsReceivablePayableService for ApServiceImpl {
 
     async fn post_invoice(
         &self,
-        _request: Request<PostInvoiceRequest>,
+        request: Request<PostInvoiceRequest>,
     ) -> Result<Response<PostInvoiceResponse>, Status> {
-        // TODO: Implement PostInvoiceHandler
-        Err(Status::unimplemented("Not implemented"))
+        let req = request.into_inner();
+
+        // Defaults since Proto doesn't have these fields
+        let now = chrono::Utc::now().date_naive();
+        // Assuming first item currency or default CNY
+        let currency = req.items.first()
+            .and_then(|i| i.amount.as_ref())
+            .map(|a| a.currency_code.clone())
+            .unwrap_or_else(|| "CNY".to_string());
+
+        let cmd = crate::application::commands::PostInvoiceCommand {
+            company_code: req.company_code.clone(),
+            supplier_id: req.account_id, // Assuming account_id is supplier_id
+            document_date: now,
+            posting_date: now,
+            currency,
+            reference_document: None,
+            header_text: None,
+            items: req.items.into_iter().map(|item| {
+                crate::application::commands::InvoiceItemCommand {
+                    gl_account: item.gl_account,
+                    debit_credit: item.debit_credit_indicator,
+                    amount: rust_decimal::Decimal::from_str(&item.amount.unwrap_or_default().value).unwrap_or_default(),
+                    cost_center: if item.cost_center.is_empty() { None } else { Some(item.cost_center) },
+                    item_text: if item.item_text.is_empty() { None } else { Some(item.item_text) },
+                    purchase_order: None, 
+                    po_item_number: None,
+                }
+            }).collect(),
+        };
+
+        let invoice = self.post_invoice_handler.handle(cmd).await?;
+
+        Ok(Response::new(PostInvoiceResponse {
+            document: Some(common_v1::SystemDocumentReference {
+                document_number: invoice.document_number,
+                fiscal_year: invoice.fiscal_year,
+                company_code: invoice.company_code,
+                document_type: "KR".to_string(),
+                document_category: "".to_string(),
+            }),
+        }))
     }
 
     async fn reverse_document(
@@ -246,4 +290,5 @@ impl AccountsReceivablePayableService for ApServiceImpl {
     async fn export_report(&self, _r: Request<ExportReportRequest>) -> Result<Response<ExportReportResponse>, Status> { Err(Status::unimplemented("")) }
     async fn subscribe_to_events(&self, _r: Request<SubscribeToEventsRequest>) -> Result<Response<SubscribeToEventsResponse>, Status> { Err(Status::unimplemented("")) }
     async fn list_event_types(&self, _r: Request<ListEventTypesRequest>) -> Result<Response<ListEventTypesResponse>, Status> { Err(Status::unimplemented("")) }
+    async fn post_sales_invoice(&self, _r: Request<PostSalesInvoiceRequest>) -> Result<Response<PostSalesInvoiceResponse>, Status> { Err(Status::unimplemented("Handled by AR Service")) }
 }

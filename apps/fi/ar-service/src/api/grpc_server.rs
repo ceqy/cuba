@@ -1,8 +1,9 @@
 use tonic::{Request, Response, Status};
 use std::sync::Arc;
+use std::str::FromStr;
 
 use crate::application::commands::{PostCustomerCommand, ListOpenItemsQuery};
-use crate::application::handlers::{PostCustomerHandler, ListOpenItemsHandler};
+use crate::application::handlers::{PostCustomerHandler, ListOpenItemsHandler, PostSalesInvoiceHandler};
 
 use crate::api::proto::fi::ap::v1 as ap_v1;
 use crate::api::proto::common::v1 as common_v1;
@@ -14,16 +15,19 @@ use common_v1::*;
 pub struct ArServiceImpl {
     post_customer_handler: Arc<PostCustomerHandler>,
     list_open_items_handler: Arc<ListOpenItemsHandler>,
+    post_sales_invoice_handler: Arc<PostSalesInvoiceHandler>,
 }
 
 impl ArServiceImpl {
     pub fn new(
         post_customer_handler: Arc<PostCustomerHandler>,
         list_open_items_handler: Arc<ListOpenItemsHandler>,
+        post_sales_invoice_handler: Arc<PostSalesInvoiceHandler>,
     ) -> Self {
         Self {
             post_customer_handler,
             list_open_items_handler,
+            post_sales_invoice_handler,
         }
     }
 }
@@ -182,7 +186,53 @@ impl AccountsReceivablePayableService for ArServiceImpl {
     // ----------------------------------------------------------------
     async fn get_account_balance(&self, _r: Request<GetAccountBalanceRequest>) -> Result<Response<GetAccountBalanceResponse>, Status> { Err(Status::unimplemented("")) }
     async fn get_aging_analysis(&self, _r: Request<GetAgingAnalysisRequest>) -> Result<Response<GetAgingAnalysisResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn post_invoice(&self, _r: Request<PostInvoiceRequest>) -> Result<Response<PostInvoiceResponse>, Status> { Err(Status::unimplemented("TODO")) }
+    async fn post_invoice(&self, _r: Request<PostInvoiceRequest>) -> Result<Response<PostInvoiceResponse>, Status> { Err(Status::unimplemented("Handled by AP Service")) }
+    
+    async fn post_sales_invoice(
+        &self,
+        request: Request<PostSalesInvoiceRequest>,
+    ) -> Result<Response<PostSalesInvoiceResponse>, Status> {
+        let req = request.into_inner();
+
+        // Default dates if not provided by Proto
+        let now = chrono::Utc::now().date_naive();
+        let currency = req.items.first()
+            .and_then(|i| i.amount.as_ref())
+            .map(|a| a.currency_code.clone())
+            .unwrap_or_else(|| "CNY".to_string());
+
+        let cmd = crate::application::commands::PostSalesInvoiceCommand {
+            company_code: req.company_code.clone(),
+            customer_id: req.customer_id,
+            document_date: now,
+            posting_date: now,
+            currency,
+            reference_document: None,
+            header_text: None,
+            items: req.items.into_iter().map(|item| {
+                crate::application::commands::SalesInvoiceItemCommand {
+                    gl_account: item.gl_account,
+                    debit_credit: item.debit_credit_indicator,
+                    amount: rust_decimal::Decimal::from_str(&item.amount.unwrap_or_default().value).unwrap_or_default(),
+                    cost_center: if item.cost_center.is_empty() { None } else { Some(item.cost_center) },
+                    item_text: if item.item_text.is_empty() { None } else { Some(item.item_text) },
+                }
+            }).collect(),
+        };
+
+        let invoice = self.post_sales_invoice_handler.handle(cmd).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(PostSalesInvoiceResponse {
+            document: Some(common_v1::SystemDocumentReference {
+                document_number: invoice.document_number.unwrap_or_default(),
+                fiscal_year: invoice.fiscal_year,
+                company_code: invoice.company_code,
+                document_type: "DR".to_string(), // Customer Invoice
+                document_category: "".to_string(),
+            }),
+        }))
+    }
     async fn reverse_document(&self, _r: Request<ReverseDocumentRequest>) -> Result<Response<ReverseDocumentResponse>, Status> { Err(Status::unimplemented("")) }
     async fn verify_invoice(&self, _r: Request<VerifyInvoiceRequest>) -> Result<Response<VerifyInvoiceResponse>, Status> { Err(Status::unimplemented("")) }
     async fn generate_statement(&self, _r: Request<GenerateStatementRequest>) -> Result<Response<GenerateStatementResponse>, Status> { Err(Status::unimplemented("")) }

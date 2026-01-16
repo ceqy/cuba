@@ -66,7 +66,7 @@ pub struct Invoice {
     pub header_text: Option<String>,
     
     // Status
-    pub status: InvoiceStatus,
+    pub status: String, // InvoiceStatus
     pub clearing_document: Option<String>,
     pub clearing_date: Option<NaiveDate>,
     
@@ -78,34 +78,7 @@ pub struct Invoice {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub enum InvoiceStatus {
-    Open,
-    Cleared,
-    Reversed,
-}
-
-impl From<&str> for InvoiceStatus {
-    fn from(s: &str) -> Self {
-        match s {
-            "CLEARED" => InvoiceStatus::Cleared,
-            "REVERSED" => InvoiceStatus::Reversed,
-            _ => InvoiceStatus::Open,
-        }
-    }
-}
-
-impl std::fmt::Display for InvoiceStatus {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            InvoiceStatus::Open => write!(f, "OPEN"),
-            InvoiceStatus::Cleared => write!(f, "CLEARED"),
-            InvoiceStatus::Reversed => write!(f, "REVERSED"),
-        }
-    }
-}
-
+// ...
 /// Invoice line item
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct InvoiceItem {
@@ -113,7 +86,7 @@ pub struct InvoiceItem {
     pub invoice_id: Uuid,
     pub line_item_number: i32,
     pub gl_account: String,
-    pub debit_credit_indicator: DebitCredit,
+    pub debit_credit_indicator: String, // DebitCredit (S/H)
     pub amount: Decimal,
     pub cost_center: Option<String>,
     pub profit_center: Option<String>,

@@ -54,6 +54,37 @@ impl TreasuryRepository {
         }
     }
 
+    /// List bank statements with optional company_code filter and pagination
+    pub async fn list_statements(
+        &self,
+        company_code: Option<&str>,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<BankStatement>> {
+        let statements = if let Some(cc) = company_code {
+            sqlx::query_as::<_, BankStatement>(
+                "SELECT statement_id, company_code, statement_format, status, created_at 
+                 FROM bank_statements 
+                 WHERE company_code = $1 
+                 ORDER BY created_at DESC 
+                 LIMIT $2 OFFSET $3")
+                .bind(cc)
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(&self.pool).await?
+        } else {
+            sqlx::query_as::<_, BankStatement>(
+                "SELECT statement_id, company_code, statement_format, status, created_at 
+                 FROM bank_statements 
+                 ORDER BY created_at DESC 
+                 LIMIT $1 OFFSET $2")
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(&self.pool).await?
+        };
+        Ok(statements)
+    }
+
     pub async fn save_payment_run(&self, run: &PaymentRun) -> Result<()> {
         let mut tx = self.pool.begin().await?;
         sqlx::query(
@@ -95,5 +126,45 @@ impl TreasuryRepository {
         } else {
             Ok(None)
         }
+    }
+
+    /// List payment runs with optional status filter and pagination
+    pub async fn list_payment_runs(
+        &self,
+        status: Option<&str>,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<PaymentRun>> {
+        let runs = if let Some(s) = status {
+            sqlx::query_as::<_, PaymentRun>(
+                "SELECT run_id, run_number, company_codes, posting_date, status, created_at 
+                 FROM payment_runs 
+                 WHERE status = $1 
+                 ORDER BY created_at DESC 
+                 LIMIT $2 OFFSET $3")
+                .bind(s)
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(&self.pool).await?
+        } else {
+            sqlx::query_as::<_, PaymentRun>(
+                "SELECT run_id, run_number, company_codes, posting_date, status, created_at 
+                 FROM payment_runs 
+                 ORDER BY created_at DESC 
+                 LIMIT $1 OFFSET $2")
+                .bind(limit)
+                .bind(offset)
+                .fetch_all(&self.pool).await?
+        };
+        Ok(runs)
+    }
+
+    /// Update payment run status
+    pub async fn update_run_status(&self, run_id: uuid::Uuid, status: &str) -> Result<()> {
+        sqlx::query("UPDATE payment_runs SET status = $1 WHERE run_id = $2")
+            .bind(status)
+            .bind(run_id)
+            .execute(&self.pool).await?;
+        Ok(())
     }
 }

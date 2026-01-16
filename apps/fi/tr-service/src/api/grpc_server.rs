@@ -124,9 +124,156 @@ impl TreasuryService for TrServiceImpl {
         }))
     }
 
-    // Stubs
-    async fn list_bank_statements(&self, _r: Request<ListBankStatementsRequest>) -> Result<Response<ListBankStatementsResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn cancel_payment_run(&self, _r: Request<CancelPaymentRunRequest>) -> Result<Response<common_v1::JobInfo>, Status> { Err(Status::unimplemented("")) }
-    async fn list_payment_runs(&self, _r: Request<ListPaymentRunsRequest>) -> Result<Response<ListPaymentRunsResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn get_job_status(&self, _r: Request<GetJobStatusRequest>) -> Result<Response<common_v1::JobInfo>, Status> { Err(Status::unimplemented("")) }
+    // Stubs -> Implemented
+    async fn list_bank_statements(
+        &self,
+        request: Request<ListBankStatementsRequest>,
+    ) -> Result<Response<ListBankStatementsResponse>, Status> {
+        let req = request.into_inner();
+        let pagination = req.pagination.unwrap_or_default();
+        let limit = pagination.page_size.max(10).min(100) as i64;
+        let offset = (pagination.page.max(1) - 1) as i64 * limit;
+        let company_code = if req.company_code.is_empty() { None } else { Some(req.company_code.as_str()) };
+
+        let statements = self.repo.list_statements(company_code, limit, offset).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        let current_page = (offset / limit + 1) as i32;
+        Ok(Response::new(ListBankStatementsResponse {
+            statements: statements.into_iter().map(|s| BankStatementSummary {
+                statement_id: s.statement_id.to_string(),
+                statement_date: Some(prost_types::Timestamp {
+                    seconds: s.created_at.timestamp(),
+                    nanos: 0,
+                }),
+                company_code: s.company_code,
+            }).collect(),
+            pagination: Some(common_v1::PaginationResponse {
+                current_page,
+                page_size: limit as i32,
+                total_items: 0, // TODO: count query
+                total_pages: 1,
+            }),
+        }))
+    }
+
+    async fn cancel_payment_run(
+        &self,
+        request: Request<CancelPaymentRunRequest>,
+    ) -> Result<Response<common_v1::JobInfo>, Status> {
+        let req = request.into_inner();
+        let run_id = uuid::Uuid::parse_str(&req.run_id)
+            .map_err(|_| Status::invalid_argument("Invalid UUID"))?;
+
+        // Update status to CANCELLED
+        self.repo.update_run_status(run_id, "CANCELLED").await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(common_v1::JobInfo {
+            job_id: req.run_id,
+            job_type: "PAYMENT_RUN".to_string(),
+            status: common_v1::JobStatus::Cancelled as i32,
+            progress_percentage: 0,
+            messages: vec![common_v1::ApiMessage {
+                r#type: "INFO".to_string(),
+                code: "".to_string(),
+                message: "Payment run cancelled".to_string(),
+                target: "".to_string(),
+            }],
+            error_detail: "".to_string(),
+            created_at: None,
+            started_at: None,
+            completed_at: None,
+        }))
+    }
+
+    async fn list_payment_runs(
+        &self,
+        request: Request<ListPaymentRunsRequest>,
+    ) -> Result<Response<ListPaymentRunsResponse>, Status> {
+        let req = request.into_inner();
+        let pagination = req.pagination.unwrap_or_default();
+        let limit = pagination.page_size.max(10).min(100) as i64;
+        let offset = (pagination.page.max(1) - 1) as i64 * limit;
+
+        let runs = self.repo.list_payment_runs(None, limit, offset).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        let current_page = (offset / limit + 1) as i32;
+        Ok(Response::new(ListPaymentRunsResponse {
+            payment_runs: runs.into_iter().map(|r| PaymentRunSummary {
+                run_id: r.run_id.to_string(),
+                run_date: Some(prost_types::Timestamp {
+                    seconds: r.created_at.timestamp(),
+                    nanos: 0,
+                }),
+                status: match r.status.as_str() {
+                    "COMPLETED" => common_v1::JobStatus::Completed as i32,
+                    "RUNNING" => common_v1::JobStatus::Running as i32,
+                    "CANCELLED" => common_v1::JobStatus::Cancelled as i32,
+                    "FAILED" => common_v1::JobStatus::Failed as i32,
+                    _ => common_v1::JobStatus::Pending as i32,
+                },
+            }).collect(),
+            pagination: Some(common_v1::PaginationResponse {
+                current_page,
+                page_size: limit as i32,
+                total_items: 0,
+                total_pages: 1,
+            }),
+        }))
+    }
+
+    async fn get_job_status(
+        &self,
+        request: Request<GetJobStatusRequest>,
+    ) -> Result<Response<common_v1::JobInfo>, Status> {
+        let req = request.into_inner();
+        
+        // Try to find as payment run
+        if let Ok(run_id) = uuid::Uuid::parse_str(&req.job_id) {
+            if let Some(run) = self.repo.find_run_by_id(run_id).await
+                .map_err(|e| Status::internal(e.to_string()))? {
+                return Ok(Response::new(common_v1::JobInfo {
+                    job_id: run.run_id.to_string(),
+                    job_type: "PAYMENT_RUN".to_string(),
+                    status: match run.status.as_str() {
+                        "COMPLETED" => common_v1::JobStatus::Completed as i32,
+                        "RUNNING" => common_v1::JobStatus::Running as i32,
+                        "CANCELLED" => common_v1::JobStatus::Cancelled as i32,
+                        "FAILED" => common_v1::JobStatus::Failed as i32,
+                        _ => common_v1::JobStatus::Pending as i32,
+                    },
+                    progress_percentage: if run.status == "COMPLETED" { 100 } else { 0 },
+                    messages: vec![],
+                    error_detail: "".to_string(),
+                    created_at: None,
+                    started_at: None,
+                    completed_at: None,
+                }));
+            }
+            
+            // Try as bank statement
+            if let Some(stmt) = self.repo.find_statement_by_id(run_id).await
+                .map_err(|e| Status::internal(e.to_string()))? {
+                return Ok(Response::new(common_v1::JobInfo {
+                    job_id: stmt.statement_id.to_string(),
+                    job_type: "BANK_STATEMENT".to_string(),
+                    status: match stmt.status.as_str() {
+                        "PROCESSED" => common_v1::JobStatus::Completed as i32,
+                        "PROCESSING" => common_v1::JobStatus::Running as i32,
+                        _ => common_v1::JobStatus::Pending as i32,
+                    },
+                    progress_percentage: if stmt.status == "PROCESSED" { 100 } else { 0 },
+                    messages: vec![],
+                    error_detail: "".to_string(),
+                    created_at: None,
+                    started_at: None,
+                    completed_at: None,
+                }));
+            }
+        }
+        
+        Err(Status::not_found("Job not found"))
+    }
 }

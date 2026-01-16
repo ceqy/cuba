@@ -28,5 +28,27 @@ pub struct ListOpenItemsQuery {
     pub company_code: String,
     pub include_cleared: bool,
     pub page_size: i32,
-    pub page_token: Option<String>, // Usually just page number for simple cases
+    pub page_token: Option<String>,
+}
+
+/// Command to post a sales invoice (FB70 - Customer Invoice)
+#[derive(Debug, Clone, Deserialize)]
+pub struct PostSalesInvoiceCommand {
+    pub company_code: String,
+    pub customer_id: String,
+    pub document_date: NaiveDate,
+    pub posting_date: NaiveDate,
+    pub currency: String,
+    pub reference_document: Option<String>,
+    pub header_text: Option<String>,
+    pub items: Vec<SalesInvoiceItemCommand>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SalesInvoiceItemCommand {
+    pub gl_account: String,
+    pub debit_credit: String, // S or H
+    pub amount: Decimal,
+    pub cost_center: Option<String>,
+    pub item_text: Option<String>,
 }

@@ -1,8 +1,9 @@
 use async_trait::async_trait;
 use sqlx::PgPool;
-use crate::domain::{Customer, OpenItem};
+use crate::domain::{Customer, OpenItem, Invoice, InvoiceItem};
 use anyhow::Result;
 use rust_decimal::Decimal;
+use uuid::Uuid;
 
 pub struct CustomerRepository {
     pool: PgPool,
@@ -65,6 +66,10 @@ impl CustomerRepository {
         .await?;
         Ok(rec)
     }
+
+    pub async fn find_by_customer_id(&self, customer_id: &str) -> Result<Option<Customer>> {
+        self.find_by_id(customer_id).await
+    }
 }
 
 pub struct OpenItemRepository {
@@ -103,5 +108,84 @@ impl OpenItemRepository {
         .await?;
 
         Ok(items)
+    }
+}
+
+// Invoice Repository (AR Sales Invoices)
+pub struct InvoiceRepository {
+    pool: PgPool,
+}
+
+impl InvoiceRepository {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+
+    pub async fn save(&self, invoice: &Invoice) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
+
+        // Serialize status to string
+        let status_str = match invoice.status {
+            crate::domain::InvoiceStatus::Draft => "DRAFT",
+            crate::domain::InvoiceStatus::Posted => "POSTED",
+            crate::domain::InvoiceStatus::Cancelled => "CANCELLED",
+        };
+
+        sqlx::query(
+            r#"
+            INSERT INTO invoices (
+                invoice_id, document_number, company_code, fiscal_year,
+                document_date, posting_date, customer_id, currency,
+                total_amount, reference, status, created_at, updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            ON CONFLICT (invoice_id) DO UPDATE SET
+                status = EXCLUDED.status,
+                updated_at = EXCLUDED.updated_at
+            "#)
+            .bind(invoice.invoice_id)
+            .bind(&invoice.document_number)
+            .bind(&invoice.company_code)
+            .bind(invoice.fiscal_year)
+            .bind(invoice.document_date)
+            .bind(invoice.posting_date)
+            .bind(&invoice.customer_id)
+            .bind(&invoice.currency)
+            .bind(invoice.total_amount)
+            .bind(&invoice.reference)
+            .bind(status_str)
+            .bind(invoice.created_at)
+            .bind(invoice.updated_at)
+            .execute(&mut *tx)
+            .await?;
+
+        // Save items
+        for item in &invoice.items {
+            sqlx::query(
+                r#"
+                INSERT INTO invoice_items (
+                    item_id, invoice_id, line_item_number, description,
+                    quantity, unit_price, total_price, gl_account,
+                    tax_code, profit_center
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                ON CONFLICT (item_id) DO NOTHING
+                "#)
+                .bind(item.item_id)
+                .bind(invoice.invoice_id)
+                .bind(item.line_item_number)
+                .bind(&item.description)
+                .bind(item.quantity)
+                .bind(item.unit_price)
+                .bind(item.total_price)
+                .bind(&item.gl_account)
+                .bind(&item.tax_code)
+                .bind(&item.profit_center)
+                .execute(&mut *tx)
+                .await?;
+        }
+
+        tx.commit().await?;
+        Ok(())
     }
 }
