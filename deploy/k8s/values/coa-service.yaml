@@ -1,0 +1,99 @@
+# coa-service Helm Values
+# Chart of Accounts (COA) Service Configuration
+replicaCount: 2
+
+image:
+  repository: cuba-erp/coa-service
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+fullnameOverride: "coa-service"
+
+service:
+  type: ClusterIP
+  grpcPort: 50060
+  metricsPort: 9090
+
+env:
+  RUST_LOG: "info"
+  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres.default.svc.cluster.local:5432/cuba_fi_coa"
+  SERVICE_NAME: "coa-service"
+  SERVICE_VERSION: "1.0.0"
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+livenessProbe:
+  grpc:
+    port: 50060
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 3
+
+readinessProbe:
+  grpc:
+    port: 50060
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  successThreshold: 1
+  failureThreshold: 3
+
+# Database migration job
+migration:
+  enabled: true
+  image:
+    repository: cuba-erp/coa-service
+    tag: "latest"
+  env:
+    DATABASE_URL: "postgres://postgres:postgres@cuba-postgres.default.svc.cluster.local:5432/cuba_fi_coa"
+  backoffLimit: 3
+  restartPolicy: Never
+
+# Service Account
+serviceAccount:
+  create: true
+  name: "coa-service"
+  annotations: {}
+
+# Pod Security
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+# Node Selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9090"
+  prometheus.io/path: "/metrics"

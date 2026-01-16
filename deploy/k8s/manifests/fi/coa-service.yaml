@@ -1,0 +1,275 @@
+# COA Service Kubernetes Manifest
+# Chart of Accounts Service Deployment
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: finance
+  labels:
+    name: finance
+    istio-injection: enabled
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: coa-service
+  namespace: finance
+  labels:
+    app: coa-service
+    service: coa-service
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coa-service-config
+  namespace: finance
+data:
+  RUST_LOG: "info"
+  SERVICE_NAME: "coa-service"
+  SERVICE_VERSION: "1.0.0"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: coa-service-secrets
+  namespace: finance
+type: Opaque
+stringData:
+  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres.default.svc.cluster.local:5432/cuba_fi_coa"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coa-service
+  namespace: finance
+  labels:
+    app: coa-service
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: coa-service
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: coa-service
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: coa-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: coa-service
+          image: cuba-erp/coa-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: grpc
+              containerPort: 50060
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: coa-service-config
+            - secretRef:
+                name: coa-service-secrets
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            grpc:
+              port: 50060
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            grpc:
+              port: 50060
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /.cache
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coa-service
+  namespace: finance
+  labels:
+    app: coa-service
+    service: coa-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 50060
+      targetPort: 50060
+      protocol: TCP
+      name: grpc
+    - port: 9090
+      targetPort: 9090
+      protocol: TCP
+      name: metrics
+  selector:
+    app: coa-service
+
+---
+# Database Migration Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: coa-service-migration
+  namespace: finance
+  labels:
+    app: coa-service
+    job: migration
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: coa-service
+        job: migration
+    spec:
+      serviceAccountName: coa-service
+      restartPolicy: Never
+      containers:
+        - name: migration
+          image: cuba-erp/coa-service:latest
+          command: ["sqlx"]
+          args: ["migrate", "run", "--source", "/app/migrations"]
+          envFrom:
+            - secretRef:
+                name: coa-service-secrets
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+
+---
+# Horizontal Pod Autoscaler (HPA)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: coa-service-hpa
+  namespace: finance
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: coa-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+# Pod Disruption Budget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: coa-service-pdb
+  namespace: finance
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: coa-service
+
+---
+# Istio VirtualService
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: coa-service
+  namespace: finance
+spec:
+  hosts:
+    - coa-service
+    - coa-service.finance.svc.cluster.local
+  gateways:
+    - mesh
+  grpc:
+    - match:
+        - port: 50060
+      route:
+        - destination:
+            host: coa-service.finance.svc.cluster.local
+            port:
+              number: 50060
+
+---
+# Istio DestinationRule
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: coa-service
+  namespace: finance
+spec:
+  host: coa-service.finance.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 100
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 2
+    loadBalancer:
+      simple: ROUND_ROBIN
+    outlierDetection:
+      consecutiveErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 50

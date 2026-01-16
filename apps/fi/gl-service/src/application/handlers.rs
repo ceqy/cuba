@@ -3,6 +3,7 @@ use crate::application::commands::{CreateJournalEntryCommand, PostJournalEntryCo
 use crate::application::queries::{GetJournalEntryQuery, ListJournalEntriesQuery};
 use crate::domain::aggregates::journal_entry::{JournalEntry, LineItem, DebitCredit, PostingStatus};
 use crate::domain::repositories::JournalRepository;
+use crate::domain::services::AccountValidationService;
 use cuba_core::domain::Entity;
 use uuid::Uuid;
 use chrono::Utc;
@@ -10,14 +11,48 @@ use rust_decimal::Decimal;
 
 pub struct CreateJournalEntryHandler<R> {
     repository: Arc<R>,
+    account_validation: Option<Arc<AccountValidationService>>,
 }
 
 impl<R: JournalRepository> CreateJournalEntryHandler<R> {
     pub fn new(repository: Arc<R>) -> Self {
-        Self { repository }
+        Self {
+            repository,
+            account_validation: None,
+        }
+    }
+
+    pub fn with_account_validation(mut self, validation: Arc<AccountValidationService>) -> Self {
+        self.account_validation = Some(validation);
+        self
     }
 
     pub async fn handle(&self, cmd: CreateJournalEntryCommand) -> Result<JournalEntry, Box<dyn std::error::Error + Send + Sync>> {
+        // Validate accounts if COA service is available
+        if let Some(validator) = &self.account_validation {
+            let account_codes: Vec<String> = cmd.lines.iter()
+                .map(|l| l.account_id.clone())
+                .collect();
+
+            tracing::info!("Validating {} accounts via COA service", account_codes.len());
+
+            match validator.validate_journal_entry_accounts(
+                account_codes,
+                &cmd.company_code,
+                cmd.posting_date.naive_local().date(),
+            ).await {
+                Ok(_) => {
+                    tracing::info!("All accounts validated successfully");
+                }
+                Err(e) => {
+                    tracing::error!("Account validation failed: {}", e);
+                    return Err(format!("科目验证失败: {}", e).into());
+                }
+            }
+        } else {
+            tracing::warn!("COA service not available, skipping account validation");
+        }
+
         let lines: Vec<LineItem> = cmd.lines.into_iter().enumerate().map(|(i, l)| -> Result<LineItem, Box<dyn std::error::Error + Send + Sync>> {
             Ok(LineItem {
                 id: Uuid::new_v4(),
@@ -29,7 +64,7 @@ impl<R: JournalRepository> CreateJournalEntryHandler<R> {
                     _ => return Err(format!("Invalid debit/credit indicator: {}", l.debit_credit).into()),
                 },
                 amount: l.amount,
-                local_amount: l.amount, // Simplified: assume local currency for now or same amount
+                local_amount: l.amount,
                 cost_center: l.cost_center,
                 profit_center: l.profit_center,
                 text: l.text,
@@ -45,11 +80,10 @@ impl<R: JournalRepository> CreateJournalEntryHandler<R> {
             cmd.currency,
             cmd.reference,
             lines,
-            None, // tenant_id
+            None,
         )?;
 
         if cmd.post_immediately {
-            // In a real app, generate doc number from sequence
             let doc_num = format!("DOC-{}-{}", entry.fiscal_year, Uuid::new_v4().simple().to_string().chars().take(8).collect::<String>());
             entry.post(doc_num)?;
         }
@@ -77,7 +111,6 @@ impl<R: JournalRepository> PostJournalEntryHandler<R> {
             return Ok(entry);
         }
 
-        // Generate doc number
         let doc_num = format!("DOC-{}-{}", entry.fiscal_year, Uuid::new_v4().simple().to_string().chars().take(8).collect::<String>());
         entry.post(doc_num)?;
 

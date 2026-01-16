@@ -1,0 +1,755 @@
+// ============================================================================
+// /finance/coa-service (版本 1.0 - 会计科目表管理服务)
+// 描述: 提供会计科目表（Chart of Accounts）主数据管理，涵盖：
+//       科目主数据、科目层级、科目分组、科目验证、科目查询、
+//       批量导入导出、多语言支持、多公司代码支持、审计追踪等。
+// ----------------------------------------------------------------------------
+// 设计基线（SAP S/4HANA SKA1/SKB1 表结构）：
+// - SKA1: 总账科目主记录（科目表）
+// - SKB1: 总账科目主记录（公司代码）
+// - SKAT: 总账科目主记录（科目表/文本）
+// - 支持多级科目层级结构
+// - 支持科目组和科目性质分类
+// - 提供科目验证服务供其他服务调用
+// ============================================================================
+
+syntax = "proto3";
+
+package fi.coa.v1;
+
+option go_package = "github.com/enterprise/erp/protos/fi/coa;coa";
+
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+import "common/common.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+// OpenAPI 全局配置
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Chart of Accounts Service API"
+    version: "1.0.0"
+    description: "会计科目表管理服务 - 提供科目主数据创建、查询、验证及层级管理功能"
+    contact: {
+      name: "COA Team"
+      email: "coa@company.com"
+    }
+  }
+  host: "localhost:8080"
+  base_path: "/"
+  schemes: HTTP
+  schemes: HTTPS
+  consumes: "application/json"
+  produces: "application/json"
+  security_definitions: {
+    security: {
+      key: "bearer_auth"
+      value: {
+        type: TYPE_API_KEY
+        in: IN_HEADER
+        name: "Authorization"
+        description: "Bearer token for authentication"
+      }
+    }
+  }
+  security: {
+    security_requirement: {
+      key: "bearer_auth"
+      value: {}
+    }
+  }
+  tags: {
+    name: "GL Account Management"
+    description: "会计科目主数据管理"
+  }
+  tags: {
+    name: "Account Validation"
+    description: "科目验证服务"
+  }
+  tags: {
+    name: "Account Hierarchy"
+    description: "科目层级管理"
+  }
+  tags: {
+    name: "Batch Operations"
+    description: "批量操作"
+  }
+};
+
+// ============================================================================
+// 服务定义: ChartOfAccountsService
+// ============================================================================
+
+service ChartOfAccountsService {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "会计科目表管理服务"
+    external_docs: {
+      url: "https://docs.company.com/coa";
+      description: "COA 服务详细文档";
+    }
+  };
+
+  // --------------------------------------------------------------------------
+  // === 科目主数据管理 ===
+  // --------------------------------------------------------------------------
+
+  // 创建科目
+  rpc CreateGlAccount(CreateGlAccountRequest) returns (GlAccountResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/coa/accounts"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "GL Account Management"
+      summary: "创建会计科目"
+    };
+  }
+
+  // 获取科目详情
+  rpc GetGlAccount(GetGlAccountRequest) returns (GlAccountDetail) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/coa/accounts/{account_code}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "GL Account Management"
+      summary: "获取科目详情"
+    };
+  }
+
+  // 更新科目
+  rpc UpdateGlAccount(UpdateGlAccountRequest) returns (GlAccountResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/finance/coa/accounts/{account_code}"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "GL Account Management"
+      summary: "更新科目信息"
+    };
+  }
+
+  // 删除科目（软删除/停用）
+  rpc DeleteGlAccount(DeleteGlAccountRequest) returns (GlAccountResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/finance/coa/accounts/{account_code}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "GL Account Management"
+      summary: "删除/停用科目"
+    };
+  }
+
+  // 查询科目列表
+  rpc ListGlAccounts(ListGlAccountsRequest) returns (ListGlAccountsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/coa/accounts"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "GL Account Management"
+      summary: "查询科目列表"
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // === 科目验证服务 ===
+  // --------------------------------------------------------------------------
+
+  // 验证科目是否存在且可用
+  rpc ValidateGlAccount(ValidateGlAccountRequest) returns (ValidateGlAccountResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/coa/accounts:validate"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Account Validation"
+      summary: "验证科目"
+    };
+  }
+
+  // 批量验证科目
+  rpc BatchValidateGlAccounts(BatchValidateGlAccountsRequest) returns (BatchValidateGlAccountsResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/coa/accounts:batchValidate"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Account Validation"
+      summary: "批量验证科目"
+    };
+  }
+
+  // 检查科目是否可过账
+  rpc CheckAccountPostable(CheckAccountPostableRequest) returns (CheckAccountPostableResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/coa/accounts/{account_code}:checkPostable"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Account Validation"
+      summary: "检查科目是否可过账"
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // === 科目层级管理 ===
+  // --------------------------------------------------------------------------
+
+  // 获取科目层级树
+  rpc GetAccountHierarchy(GetAccountHierarchyRequest) returns (AccountHierarchyResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/coa/accounts/hierarchy"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Account Hierarchy"
+      summary: "获取科目层级树"
+    };
+  }
+
+  // 获取科目的子科目列表
+  rpc ListChildAccounts(ListChildAccountsRequest) returns (ListChildAccountsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/coa/accounts/{parent_account_code}/children"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Account Hierarchy"
+      summary: "获取子科目列表"
+    };
+  }
+
+  // 获取科目路径（从根到当前科目）
+  rpc GetAccountPath(GetAccountPathRequest) returns (GetAccountPathResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/coa/accounts/{account_code}/path"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Account Hierarchy"
+      summary: "获取科目路径"
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // === 科目分组管理 ===
+  // --------------------------------------------------------------------------
+
+  // 创建科目组
+  rpc CreateAccountGroup(CreateAccountGroupRequest) returns (AccountGroupResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/coa/account-groups"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "GL Account Management"
+      summary: "创建科目组"
+    };
+  }
+
+  // 查询科目组列表
+  rpc ListAccountGroups(ListAccountGroupsRequest) returns (ListAccountGroupsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/coa/account-groups"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "GL Account Management"
+      summary: "查询科目组列表"
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // === 批量操作 ===
+  // --------------------------------------------------------------------------
+
+  // 批量创建科目
+  rpc BatchCreateGlAccounts(BatchCreateGlAccountsRequest) returns (BatchCreateGlAccountsResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/coa/accounts:batchCreate"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Batch Operations"
+      summary: "批量创建科目"
+    };
+  }
+
+  // 批量更新科目
+  rpc BatchUpdateGlAccounts(BatchUpdateGlAccountsRequest) returns (BatchUpdateGlAccountsResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/coa/accounts:batchUpdate"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Batch Operations"
+      summary: "批量更新科目"
+    };
+  }
+
+  // 导入科目表（CSV/Excel）
+  rpc ImportAccounts(ImportAccountsRequest) returns (ImportAccountsResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/coa/accounts:import"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Batch Operations"
+      summary: "导入科目表"
+    };
+  }
+
+  // 导出科目表
+  rpc ExportAccounts(ExportAccountsRequest) returns (ExportAccountsResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/coa/accounts:export"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Batch Operations"
+      summary: "导出科目表"
+    };
+  }
+}
+
+// ============================================================================
+// 数据结构: 枚举定义
+// ============================================================================
+
+// 科目性质/类型（Financial Statement Item）
+enum AccountNature {
+  ACCOUNT_NATURE_UNSPECIFIED = 0;
+  ACCOUNT_NATURE_ASSET = 1;              // 资产 (Assets)
+  ACCOUNT_NATURE_LIABILITY = 2;          // 负债 (Liabilities)
+  ACCOUNT_NATURE_EQUITY = 3;             // 权益 (Equity)
+  ACCOUNT_NATURE_REVENUE = 4;            // 收入 (Revenue)
+  ACCOUNT_NATURE_EXPENSE = 5;            // 费用 (Expense)
+  ACCOUNT_NATURE_PROFIT_LOSS = 6;        // 损益 (P&L)
+}
+
+// 科目余额方向
+enum BalanceIndicator {
+  BALANCE_INDICATOR_UNSPECIFIED = 0;
+  BALANCE_INDICATOR_DEBIT = 1;           // 借方余额 (Debit)
+  BALANCE_INDICATOR_CREDIT = 2;          // 贷方余额 (Credit)
+}
+
+// 科目级次
+enum AccountLevel {
+  ACCOUNT_LEVEL_UNSPECIFIED = 0;
+  ACCOUNT_LEVEL_1 = 1;                   // 一级科目
+  ACCOUNT_LEVEL_2 = 2;                   // 二级科目
+  ACCOUNT_LEVEL_3 = 3;                   // 三级科目
+  ACCOUNT_LEVEL_4 = 4;                   // 四级科目
+  ACCOUNT_LEVEL_5 = 5;                   // 五级科目
+}
+
+// 科目状态
+enum AccountStatus {
+  ACCOUNT_STATUS_UNSPECIFIED = 0;
+  ACCOUNT_STATUS_ACTIVE = 1;             // 激活
+  ACCOUNT_STATUS_INACTIVE = 2;           // 停用
+  ACCOUNT_STATUS_BLOCKED = 3;            // 冻结
+  ACCOUNT_STATUS_MARKED_FOR_DELETION = 4; // 标记为删除
+}
+
+// 科目分类（Account Group）
+enum AccountCategory {
+  ACCOUNT_CATEGORY_UNSPECIFIED = 0;
+  ACCOUNT_CATEGORY_BALANCE_SHEET = 1;    // 资产负债表科目
+  ACCOUNT_CATEGORY_INCOME_STATEMENT = 2; // 损益表科目
+  ACCOUNT_CATEGORY_STATISTICAL = 3;      // 统计科目
+  ACCOUNT_CATEGORY_NON_OPERATING = 4;    // 非营业科目
+}
+
+// 科目控制（Account Control）
+enum AccountControl {
+  ACCOUNT_CONTROL_UNSPECIFIED = 0;
+  ACCOUNT_CONTROL_LINE_ITEM_DISPLAY = 1; // 行项目显示 (Line Item Display)
+  ACCOUNT_CONTROL_OPEN_ITEM_MANAGEMENT = 2; // 未清项管理 (Open Item Management)
+  ACCOUNT_CONTROL_COST_ELEMENT = 3;      // 成本要素 (Cost Element)
+  ACCOUNT_CONTROL_TAX_RELEVANT = 4;      // 税务相关 (Tax Relevant)
+}
+
+// 导出格式
+enum ExportFormat {
+  EXPORT_FORMAT_UNSPECIFIED = 0;
+  EXPORT_FORMAT_CSV = 1;
+  EXPORT_FORMAT_EXCEL = 2;
+  EXPORT_FORMAT_JSON = 3;
+  EXPORT_FORMAT_XML = 4;
+  EXPORT_FORMAT_PDF = 5;
+}
+
+// ============================================================================
+// 数据结构: 核心模型
+// ============================================================================
+
+// 会计科目主数据（类似 SAP SKA1/SKB1）
+message GlAccountMaster {
+  // 基础信息
+  string chart_of_accounts = 1;          // 科目表代码 (KTOPL)
+  string account_code = 2;               // 科目代码 (SAKNR) - 最多10位
+  string account_name = 3;               // 科目名称 (TXT50)
+  string account_name_long = 4;          // 科目长名称 (TXT20)
+
+  // 科目分类
+  AccountNature account_nature = 5;      // 科目性质
+  AccountCategory account_category = 6;  // 科目分类
+  string account_group = 7;              // 科目组 (KTOKS)
+
+  // 层级信息
+  AccountLevel account_level = 8;        // 科目级次
+  string parent_account = 9;             // 父科目代码
+  bool is_leaf_account = 10;             // 是否末级科目
+
+  // 控制信息
+  bool is_postable = 11;                 // 是否可过账 (对应 SAP 统驭科目逻辑)
+  bool is_cost_element = 12;             // 是否成本要素
+  bool line_item_display = 13;           // 行项目显示 (XOPVW)
+  bool open_item_management = 14;        // 未清项管理 (XKRES)
+  BalanceIndicator balance_indicator = 15; // 余额方向
+
+  // 财务属性
+  string currency = 16;                  // 科目币种（空表示使用公司代码币种）
+  bool only_local_currency = 17;         // 仅本币过账 (XGKON)
+  bool exchange_rate_diff = 18;          // 汇兑差异科目
+
+  // 税务
+  bool tax_relevant = 19;                // 税务相关科目
+  string tax_category = 20;              // 税种
+
+  // 状态与有效性
+  AccountStatus status = 21;             // 科目状态
+  google.protobuf.Timestamp valid_from = 22; // 有效起始日期
+  google.protobuf.Timestamp valid_to = 23;   // 有效结束日期
+
+  // 多语言文本
+  repeated AccountText texts = 24;       // 多语言描述
+
+  // 控制字段
+  repeated AccountControl controls = 25; // 控制标识
+
+  // 审计
+  common.v1.AuditData audit = 26;
+}
+
+// 公司代码级科目数据（类似 SAP SKB1）
+message CompanyCodeAccountData {
+  string company_code = 1;               // 公司代码 (BUKRS)
+  string account_code = 2;               // 科目代码 (SAKNR)
+
+  // 公司代码级控制
+  bool posting_blocked = 3;              // 过账冻结 (XSPEB)
+  string reconciliation_account_type = 4; // 统驭科目类型 (KOART: D/K/S)
+  string field_status_group = 5;         // 字段状态组 (FSTAG)
+
+  // 自动过账
+  bool automatic_postings = 6;           // 自动过账标识
+  string sort_key = 7;                   // 排序码 (ZUAWA)
+
+  // 税务
+  string tax_code = 8;                   // 默认税码
+
+  // 现金流量
+  string cash_flow_category = 9;         // 现金流量分类
+
+  // 审计
+  common.v1.AuditData audit = 10;
+}
+
+// 科目文本（多语言）
+message AccountText {
+  string language_code = 1;              // 语言代码 (SPRAS: EN/ZH/DE)
+  string short_text = 2;                 // 短文本 (20字符)
+  string medium_text = 3;                // 中文本 (50字符)
+  string long_text = 4;                  // 长文本 (不限)
+}
+
+// 科目详情（聚合对象）
+message GlAccountDetail {
+  GlAccountMaster master_data = 1;       // 科目主数据
+  repeated CompanyCodeAccountData company_code_data = 2; // 公司代码数据
+  AccountHierarchyInfo hierarchy_info = 3; // 层级信息
+  repeated GlAccountSummary child_accounts = 4; // 子科目列表
+}
+
+// 科目层级信息
+message AccountHierarchyInfo {
+  string account_code = 1;
+  AccountLevel level = 2;
+  string parent_account = 3;
+  int32 depth = 4;                       // 深度（从根节点开始）
+  string full_path = 5;                  // 完整路径（如：1000/1001/1001001）
+  bool has_children = 6;                 // 是否有子科目
+}
+
+// 科目摘要（列表用）
+message GlAccountSummary {
+  string account_code = 1;
+  string account_name = 2;
+  AccountNature account_nature = 3;
+  AccountLevel account_level = 4;
+  bool is_postable = 5;
+  AccountStatus status = 6;
+  string parent_account = 7;
+}
+
+// 科目组
+message AccountGroup {
+  string group_code = 1;                 // 科目组代码
+  string group_name = 2;                 // 科目组名称
+  string description = 3;                // 描述
+  AccountNature account_nature = 4;      // 科目性质
+  string number_range_from = 5;          // 编号范围起始
+  string number_range_to = 6;            // 编号范围结束
+  common.v1.AuditData audit = 7;
+}
+
+// 科目验证结果
+message AccountValidationResult {
+  string account_code = 1;
+  bool is_valid = 2;                     // 是否有效
+  bool exists = 3;                       // 是否存在
+  bool is_active = 4;                    // 是否激活
+  bool is_postable = 5;                  // 是否可过账
+  AccountStatus status = 6;              // 科目状态
+  repeated common.v1.ApiMessage messages = 7; // 验证消息
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// --------------------------------------------------------------------------
+// 科目管理
+// --------------------------------------------------------------------------
+
+message CreateGlAccountRequest {
+  GlAccountMaster account = 1;
+  repeated CompanyCodeAccountData company_code_data = 2;
+  common.v1.RequestContext context = 99;
+}
+
+message GlAccountResponse {
+  bool success = 1;
+  string account_code = 2;
+  repeated common.v1.ApiMessage messages = 3;
+}
+
+message GetGlAccountRequest {
+  string chart_of_accounts = 1;
+  string account_code = 2;
+  string company_code = 3;               // 可选：获取公司代码级数据
+  bool include_hierarchy = 4;            // 是否包含层级信息
+  bool include_children = 5;             // 是否包含子科目
+  common.v1.RequestContext context = 99;
+}
+
+message UpdateGlAccountRequest {
+  string account_code = 1;
+  GlAccountMaster account = 2;
+  repeated string update_mask = 3;       // 更新字段掩码
+  common.v1.RequestContext context = 99;
+}
+
+message DeleteGlAccountRequest {
+  string chart_of_accounts = 1;
+  string account_code = 2;
+  bool soft_delete = 3;                  // true=软删除（停用），false=物理删除
+  common.v1.RequestContext context = 99;
+}
+
+message ListGlAccountsRequest {
+  string chart_of_accounts = 1;
+  string company_code = 2;               // 可选：按公司代码过滤
+
+  // 过滤条件
+  AccountNature account_nature = 3;
+  AccountCategory account_category = 4;
+  AccountLevel account_level = 5;
+  repeated AccountStatus status_filter = 6;
+  bool postable_only = 7;                // 仅可过账科目
+  string parent_account = 8;             // 按父科目过滤
+  string account_group = 9;              // 按科目组过滤
+  string search_term = 10;               // 搜索词（科目代码或名称）
+
+  common.v1.PaginationRequest pagination = 98;
+  common.v1.RequestContext context = 99;
+}
+
+message ListGlAccountsResponse {
+  repeated GlAccountSummary accounts = 1;
+  common.v1.PaginationResponse pagination = 2;
+}
+
+// --------------------------------------------------------------------------
+// 验证服务
+// --------------------------------------------------------------------------
+
+message ValidateGlAccountRequest {
+  string chart_of_accounts = 1;
+  string account_code = 2;
+  string company_code = 3;               // 可选：验证公司代码级数据
+  bool check_postable = 4;               // 是否检查可过账
+  google.protobuf.Timestamp posting_date = 5; // 过账日期（用于检查有效期）
+  common.v1.RequestContext context = 99;
+}
+
+message ValidateGlAccountResponse {
+  AccountValidationResult result = 1;
+}
+
+message BatchValidateGlAccountsRequest {
+  string chart_of_accounts = 1;
+  repeated string account_codes = 2;
+  string company_code = 3;
+  common.v1.RequestContext context = 99;
+}
+
+message BatchValidateGlAccountsResponse {
+  repeated AccountValidationResult results = 1;
+  int32 total_count = 2;
+  int32 valid_count = 3;
+  int32 invalid_count = 4;
+}
+
+message CheckAccountPostableRequest {
+  string chart_of_accounts = 1;
+  string account_code = 2;
+  string company_code = 3;
+  google.protobuf.Timestamp posting_date = 4;
+  common.v1.RequestContext context = 99;
+}
+
+message CheckAccountPostableResponse {
+  bool is_postable = 1;
+  string reason = 2;                     // 不可过账原因
+  repeated common.v1.ApiMessage messages = 3;
+}
+
+// --------------------------------------------------------------------------
+// 层级管理
+// --------------------------------------------------------------------------
+
+message GetAccountHierarchyRequest {
+  string chart_of_accounts = 1;
+  string root_account = 2;               // 可选：从指定科目开始
+  int32 max_depth = 3;                   // 最大深度（0表示不限）
+  AccountNature account_nature = 4;      // 可选：按科目性质过滤
+  common.v1.RequestContext context = 99;
+}
+
+message AccountHierarchyResponse {
+  repeated AccountHierarchyNode nodes = 1;
+}
+
+message AccountHierarchyNode {
+  string account_code = 1;
+  string account_name = 2;
+  AccountLevel level = 3;
+  bool is_postable = 4;
+  repeated AccountHierarchyNode children = 5; // 子节点
+}
+
+message ListChildAccountsRequest {
+  string chart_of_accounts = 1;
+  string parent_account_code = 2;
+  bool direct_children_only = 3;        // true=仅直接子科目，false=所有后代
+  common.v1.RequestContext context = 99;
+}
+
+message ListChildAccountsResponse {
+  repeated GlAccountSummary accounts = 1;
+}
+
+message GetAccountPathRequest {
+  string chart_of_accounts = 1;
+  string account_code = 2;
+  common.v1.RequestContext context = 99;
+}
+
+message GetAccountPathResponse {
+  repeated GlAccountSummary path = 1;    // 从根到当前科目的路径
+  string full_path_string = 2;           // 路径字符串（如：1000/1001/1001001）
+}
+
+// --------------------------------------------------------------------------
+// 科目组管理
+// --------------------------------------------------------------------------
+
+message CreateAccountGroupRequest {
+  AccountGroup group = 1;
+  common.v1.RequestContext context = 99;
+}
+
+message AccountGroupResponse {
+  bool success = 1;
+  string group_code = 2;
+  repeated common.v1.ApiMessage messages = 3;
+}
+
+message ListAccountGroupsRequest {
+  string chart_of_accounts = 1;
+  AccountNature account_nature = 2;
+  common.v1.RequestContext context = 99;
+}
+
+message ListAccountGroupsResponse {
+  repeated AccountGroup groups = 1;
+}
+
+// --------------------------------------------------------------------------
+// 批量操作
+// --------------------------------------------------------------------------
+
+message BatchCreateGlAccountsRequest {
+  repeated CreateGlAccountRequest accounts = 1;
+  bool continue_on_error = 2;            // 遇到错误是否继续
+  common.v1.RequestContext context = 99;
+}
+
+message BatchCreateGlAccountsResponse {
+  common.v1.BatchOperationResult result = 1;
+  repeated GlAccountResponse responses = 2;
+}
+
+message BatchUpdateGlAccountsRequest {
+  repeated UpdateGlAccountRequest accounts = 1;
+  bool continue_on_error = 2;
+  common.v1.RequestContext context = 99;
+}
+
+message BatchUpdateGlAccountsResponse {
+  common.v1.BatchOperationResult result = 1;
+  repeated GlAccountResponse responses = 2;
+}
+
+message ImportAccountsRequest {
+  common.v1.ImportFormat format = 1;     // 导入格式
+  bytes file_content = 2;                // 文件内容
+  string chart_of_accounts = 3;
+  bool validate_only = 4;                // 仅验证不导入
+  bool update_existing = 5;              // 是否更新已存在的科目
+  common.v1.RequestContext context = 99;
+}
+
+message ImportAccountsResponse {
+  bool success = 1;
+  int32 total_records = 2;
+  int32 imported_count = 3;
+  int32 updated_count = 4;
+  int32 failed_count = 5;
+  repeated common.v1.ErrorDetail errors = 6;
+  string job_id = 7;                     // 异步作业ID（大文件导入）
+}
+
+message ExportAccountsRequest {
+  string chart_of_accounts = 1;
+  ExportFormat format = 2;
+  ListGlAccountsRequest filter = 3;      // 使用查询条件作为导出过滤器
+  common.v1.RequestContext context = 99;
+}
+
+message ExportAccountsResponse {
+  bool success = 1;
+  bytes file_content = 2;                // 文件内容（小文件）
+  string download_url = 3;               // 下载链接（大文件）
+  string file_name = 4;
+  string mime_type = 5;
+}
