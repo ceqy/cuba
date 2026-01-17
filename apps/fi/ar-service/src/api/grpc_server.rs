@@ -184,8 +184,113 @@ impl AccountsReceivablePayableService for ArServiceImpl {
     // ----------------------------------------------------------------
     // Stub Implementations (Same as AP Service)
     // ----------------------------------------------------------------
-    async fn get_account_balance(&self, _r: Request<GetAccountBalanceRequest>) -> Result<Response<GetAccountBalanceResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn get_aging_analysis(&self, _r: Request<GetAgingAnalysisRequest>) -> Result<Response<GetAgingAnalysisResponse>, Status> { Err(Status::unimplemented("")) }
+    async fn get_account_balance(&self, request: Request<GetAccountBalanceRequest>) -> Result<Response<GetAccountBalanceResponse>, Status> {
+        let req = request.into_inner();
+
+        // List all open items for the customer
+        let query = ListOpenItemsQuery {
+            customer_id: req.business_partner_id.clone(),
+            company_code: req.company_code.clone(),
+            include_cleared: false,
+            page_size: 1000,
+            page_token: None,
+        };
+
+        let items = self.list_open_items_handler.handle(query).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        // Calculate total balance
+        let mut total_balance = rust_decimal::Decimal::ZERO;
+        let currency = items.first().map(|i| i.currency.clone()).unwrap_or_else(|| "CNY".to_string());
+
+        for item in &items {
+            total_balance += item.open_amount;
+        }
+
+        Ok(Response::new(GetAccountBalanceResponse {
+            balance: Some(to_proto_money(total_balance, &currency)),
+        }))
+    }
+
+    async fn get_aging_analysis(&self, request: Request<GetAgingAnalysisRequest>) -> Result<Response<GetAgingAnalysisResponse>, Status> {
+        let req = request.into_inner();
+
+        // List all open items
+        let query = ListOpenItemsQuery {
+            customer_id: req.business_partner_id.clone(),
+            company_code: req.company_code.clone(),
+            include_cleared: false,
+            page_size: 1000,
+            page_token: None,
+        };
+
+        let items = self.list_open_items_handler.handle(query).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        // Calculate aging buckets
+        let today = chrono::Utc::now().naive_utc().date();
+        let mut current = rust_decimal::Decimal::ZERO;
+        let mut days_1_30 = rust_decimal::Decimal::ZERO;
+        let mut days_31_60 = rust_decimal::Decimal::ZERO;
+        let mut days_61_90 = rust_decimal::Decimal::ZERO;
+        let mut days_over_90 = rust_decimal::Decimal::ZERO;
+
+        for item in &items {
+            let days_overdue = (today - item.due_date).num_days();
+
+            if days_overdue <= 0 {
+                current += item.open_amount;
+            } else if days_overdue <= 30 {
+                days_1_30 += item.open_amount;
+            } else if days_overdue <= 60 {
+                days_31_60 += item.open_amount;
+            } else if days_overdue <= 90 {
+                days_61_90 += item.open_amount;
+            } else {
+                days_over_90 += item.open_amount;
+            }
+        }
+
+        let currency = items.first().map(|i| i.currency.clone()).unwrap_or_else(|| "CNY".to_string());
+        let total = current + days_1_30 + days_31_60 + days_61_90 + days_over_90;
+
+        Ok(Response::new(GetAgingAnalysisResponse {
+            analysis: Some(ap_v1::AgingAnalysis {
+                as_of_date: Some(prost_types::Timestamp {
+                    seconds: today.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
+                    nanos: 0,
+                }),
+                total_open_amount: Some(to_proto_money(total, &currency)),
+                overdue_buckets: vec![
+                    ap_v1::AgingBucket {
+                        days_from: 0,
+                        days_to: 0,
+                        amount: Some(to_proto_money(current, &currency)),
+                    },
+                    ap_v1::AgingBucket {
+                        days_from: 1,
+                        days_to: 30,
+                        amount: Some(to_proto_money(days_1_30, &currency)),
+                    },
+                    ap_v1::AgingBucket {
+                        days_from: 31,
+                        days_to: 60,
+                        amount: Some(to_proto_money(days_31_60, &currency)),
+                    },
+                    ap_v1::AgingBucket {
+                        days_from: 61,
+                        days_to: 90,
+                        amount: Some(to_proto_money(days_61_90, &currency)),
+                    },
+                    ap_v1::AgingBucket {
+                        days_from: 91,
+                        days_to: 999,
+                        amount: Some(to_proto_money(days_over_90, &currency)),
+                    },
+                ],
+            }),
+        }))
+    }
     async fn post_invoice(&self, _r: Request<PostInvoiceRequest>) -> Result<Response<PostInvoiceResponse>, Status> { Err(Status::unimplemented("Handled by AP Service")) }
     
     async fn post_sales_invoice(
