@@ -7,7 +7,7 @@ use ar_service::api::grpc_server::ArServiceImpl;
 use ar_service::api::proto::fi::ap::v1::accounts_receivable_payable_service_server::AccountsReceivablePayableServiceServer;
 use ar_service::infrastructure::repository::{CustomerRepository, OpenItemRepository, InvoiceRepository};
 use ar_service::infrastructure::gl_client::GlClient;
-use ar_service::application::handlers::{PostCustomerHandler, ListOpenItemsHandler, PostSalesInvoiceHandler};
+use ar_service::application::handlers::{PostCustomerHandler, ListOpenItemsHandler, PostSalesInvoiceHandler, ClearOpenItemsHandler, PartialClearHandler};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -48,12 +48,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         invoice_repo.clone(),
         gl_client.clone(),
     ));
-    
+    let clear_open_items_handler = Arc::new(ClearOpenItemsHandler::new(open_item_repo.clone()));
+    let partial_clear_handler = Arc::new(PartialClearHandler::new(open_item_repo.clone()));
+
     // API
     let ar_service = ArServiceImpl::new(
         post_customer_handler,
         list_open_items_handler,
         post_sales_invoice_handler,
+        clear_open_items_handler,
+        partial_clear_handler,
     );
     
     // Reflection Service

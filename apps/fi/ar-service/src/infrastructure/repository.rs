@@ -98,6 +98,60 @@ impl OpenItemRepository {
 
         Ok(items)
     }
+
+    /// 批量清账
+    pub async fn clear_items(
+        &self,
+        item_ids: &[Uuid],
+        clearing_document: &str,
+        clearing_date: chrono::NaiveDate,
+    ) -> Result<i64> {
+        let mut query_builder = sqlx::QueryBuilder::new(
+            "UPDATE open_items SET is_cleared = true, open_amount = 0, clearing_document = "
+        );
+        query_builder.push_bind(clearing_document);
+        query_builder.push(", clearing_date = ");
+        query_builder.push_bind(clearing_date);
+        query_builder.push(", updated_at = NOW() WHERE open_item_id IN (");
+
+        let mut separated = query_builder.separated(", ");
+        for id in item_ids {
+            separated.push_bind(id);
+        }
+        separated.push_unseparated(")");
+
+        let result = query_builder.build().execute(&self.pool).await?;
+        Ok(result.rows_affected() as i64)
+    }
+
+    /// 部分清账
+    pub async fn partial_clear(
+        &self,
+        item_id: Uuid,
+        amount_to_clear: Decimal,
+        clearing_document: &str,
+        clearing_date: chrono::NaiveDate,
+    ) -> Result<()> {
+        sqlx::query(
+            r#"
+            UPDATE open_items
+            SET open_amount = open_amount - $2,
+                is_cleared = CASE WHEN (open_amount - $2) <= 0 THEN true ELSE is_cleared END,
+                clearing_document = CASE WHEN (open_amount - $2) <= 0 THEN $3 ELSE clearing_document END,
+                clearing_date = CASE WHEN (open_amount - $2) <= 0 THEN $4 ELSE clearing_date END,
+                updated_at = NOW()
+            WHERE open_item_id = $1
+            "#
+        )
+        .bind(item_id)
+        .bind(amount_to_clear)
+        .bind(clearing_document)
+        .bind(clearing_date)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
 }
 
 // Invoice Repository (AR Sales Invoices)
