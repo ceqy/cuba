@@ -418,6 +418,7 @@ impl AccountsReceivablePayableService for ApServiceImpl {
         let query = ListOpenItemsQuery {
             business_partner_id: req.business_partner_id.clone(),
             company_code: req.company_code.clone(),
+            account_type: "K".to_string(), // K for vendor
             include_cleared: true, // Include all items for statement
             page_size: 1000,
             page_token: None,
@@ -474,6 +475,7 @@ impl AccountsReceivablePayableService for ApServiceImpl {
         let query = ListOpenItemsQuery {
             business_partner_id: req.business_partner_id.clone(),
             company_code: req.company_code.clone(),
+            account_type: "K".to_string(), // K for vendor
             include_cleared: false,
             page_size: 1000,
             page_token: None,
@@ -488,13 +490,8 @@ impl AccountsReceivablePayableService for ApServiceImpl {
 
         for item in items {
             let identifier = ap_v1::OpenItemIdentifier {
-                document: Some(common_v1::SystemDocumentReference {
-                    document_number: item.document_number.clone(),
-                    fiscal_year: item.fiscal_year,
-                    company_code: item.company_code.clone(),
-                    document_type: item.account_type.clone(),
-                    document_category: "".to_string(),
-                }),
+                document_number: item.document_number.clone(),
+                fiscal_year: item.fiscal_year,
                 line_item_number: item.line_item_number,
             };
 
@@ -609,13 +606,8 @@ impl AccountsReceivablePayableService for ApServiceImpl {
             let entry = supplier_map.entry(supplier_id.clone()).or_insert((rust_decimal::Decimal::ZERO, vec![]));
             entry.0 += item.open_amount;
             entry.1.push(ap_v1::OpenItemIdentifier {
-                document: Some(common_v1::SystemDocumentReference {
-                    document_number: item.document_number,
-                    fiscal_year: item.fiscal_year,
-                    company_code: item.company_code,
-                    document_type: item.account_type.clone(),
-                    document_category: "".to_string(),
-                }),
+                document_number: item.document_number,
+                fiscal_year: item.fiscal_year,
                 line_item_number: item.line_item_number,
             });
         }

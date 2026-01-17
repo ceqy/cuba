@@ -440,13 +440,8 @@ impl AccountsReceivablePayableService for ArServiceImpl {
 
         for item in items {
             let identifier = ap_v1::OpenItemIdentifier {
-                document: Some(common_v1::SystemDocumentReference {
-                    document_number: item.document_number.clone(),
-                    fiscal_year: item.fiscal_year,
-                    company_code: item.company_code.clone(),
-                    document_type: item.doc_type.clone(),
-                    document_category: "".to_string(),
-                }),
+                document_number: item.document_number.clone(),
+                fiscal_year: item.fiscal_year,
                 line_item_number: item.line_item_number,
             };
 
