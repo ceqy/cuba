@@ -8,10 +8,10 @@ use std::str::FromStr;
 use crate::infrastructure::grpc::fi::gl::v1::gl_journal_entry_service_server::GlJournalEntryService;
 use crate::infrastructure::grpc::fi::gl::v1::*;
 use crate::application::handlers::{
-    CreateJournalEntryHandler, GetJournalEntryHandler, ListJournalEntriesHandler, PostJournalEntryHandler, ReverseJournalEntryHandler, DeleteJournalEntryHandler
+    CreateJournalEntryHandler, GetJournalEntryHandler, ListJournalEntriesHandler, PostJournalEntryHandler, ReverseJournalEntryHandler, DeleteJournalEntryHandler, ParkJournalEntryHandler, UpdateJournalEntryHandler
 };
 use crate::application::commands::{
-    CreateJournalEntryCommand, PostJournalEntryCommand, ReverseJournalEntryCommand, LineItemDTO
+    CreateJournalEntryCommand, PostJournalEntryCommand, ReverseJournalEntryCommand, LineItemDTO, ParkJournalEntryCommand, UpdateJournalEntryCommand
 };
 use crate::application::queries::{
     GetJournalEntryQuery, ListJournalEntriesQuery
@@ -25,6 +25,8 @@ pub struct GlServiceImpl<R> {
     post_handler: Arc<PostJournalEntryHandler<R>>,
     reverse_handler: Arc<ReverseJournalEntryHandler<R>>,
     delete_handler: Arc<DeleteJournalEntryHandler<R>>,
+    park_handler: Arc<ParkJournalEntryHandler<R>>,
+    update_handler: Arc<UpdateJournalEntryHandler<R>>,
 }
 
 impl<R: JournalRepository> GlServiceImpl<R> {
@@ -35,6 +37,8 @@ impl<R: JournalRepository> GlServiceImpl<R> {
         post_handler: Arc<PostJournalEntryHandler<R>>,
         reverse_handler: Arc<ReverseJournalEntryHandler<R>>,
         delete_handler: Arc<DeleteJournalEntryHandler<R>>,
+        park_handler: Arc<ParkJournalEntryHandler<R>>,
+        update_handler: Arc<UpdateJournalEntryHandler<R>>,
     ) -> Self {
         Self {
             create_handler,
@@ -43,6 +47,8 @@ impl<R: JournalRepository> GlServiceImpl<R> {
             post_handler,
             reverse_handler,
             delete_handler,
+            park_handler,
+            update_handler,
         }
     }
 }
@@ -247,8 +253,50 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
     async fn simulate_journal_entry(&self, _request: Request<SimulateJournalEntryRequest>) -> Result<Response<SimulationResponse>, Status> {
         Err(Status::unimplemented("Not implemented"))
     }
-    async fn update_journal_entry(&self, _request: Request<UpdateJournalEntryRequest>) -> Result<Response<JournalEntryResponse>, Status> {
-        Err(Status::unimplemented("Not implemented"))
+    async fn update_journal_entry(&self, request: Request<UpdateJournalEntryRequest>) -> Result<Response<JournalEntryResponse>, Status> {
+        let req = request.into_inner();
+        let id = Uuid::parse_str(&req.journal_entry_id)
+            .map_err(|_| Status::invalid_argument("Invalid journal entry ID"))?;
+
+        // Extract update fields from header if provided
+        let (posting_date, document_date, reference) = if let Some(header) = req.header {
+            (
+                header.posting_date.map(|ts| {
+                    NaiveDate::from_ymd_opt(1970, 1, 1).unwrap() + chrono::Duration::days(ts.seconds / 86400)
+                }),
+                header.document_date.map(|ts| {
+                    NaiveDate::from_ymd_opt(1970, 1, 1).unwrap() + chrono::Duration::days(ts.seconds / 86400)
+                }),
+                if header.reference_document.is_empty() { None } else { Some(header.reference_document) }
+            )
+        } else {
+            (None, None, None)
+        };
+
+        let cmd = UpdateJournalEntryCommand {
+            id,
+            posting_date,
+            document_date,
+            reference,
+            lines: None, // Update does not support changing line items
+        };
+
+        let entry = self.update_handler.handle(cmd).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(JournalEntryResponse {
+            success: true,
+            document_reference: entry.document_number.map(|doc_num| {
+                crate::infrastructure::grpc::common::v1::SystemDocumentReference {
+                    document_number: doc_num,
+                    fiscal_year: entry.fiscal_year,
+                    company_code: entry.company_code.clone(),
+                    document_type: "SA".to_string(),
+                    document_category: "".to_string(),
+                }
+            }),
+            messages: vec![],
+        }))
     }
     async fn delete_journal_entry(&self, request: Request<DeleteJournalEntryRequest>) -> Result<Response<JournalEntryResponse>, Status> {
         let req = request.into_inner();
@@ -373,8 +421,53 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
             messages,
         }))
     }
-    async fn park_journal_entry(&self, _request: Request<ParkJournalEntryRequest>) -> Result<Response<ParkJournalEntryResponse>, Status> {
-         Err(Status::unimplemented("Not implemented"))
+    async fn park_journal_entry(&self, request: Request<ParkJournalEntryRequest>) -> Result<Response<ParkJournalEntryResponse>, Status> {
+        let req = request.into_inner();
+
+        let header = req.header.ok_or_else(|| Status::invalid_argument("Missing header"))?;
+
+        // Convert line items
+        let lines: Vec<LineItemDTO> = req.line_items.into_iter().map(|item| {
+            LineItemDTO {
+                account_id: item.gl_account,
+                debit_credit: item.debit_credit_indicator,
+                amount: Decimal::from_str(&item.amount_in_document_currency.unwrap_or_default().value).unwrap_or_default(),
+                cost_center: if item.cost_center.is_empty() { None } else { Some(item.cost_center) },
+                profit_center: if item.profit_center.is_empty() { None } else { Some(item.profit_center) },
+                text: if item.text.is_empty() { None } else { Some(item.text) },
+            }
+        }).collect();
+
+        // Create journal entry command with post_immediately = false
+        let cmd = CreateJournalEntryCommand {
+            company_code: header.company_code,
+            fiscal_year: header.fiscal_year,
+            posting_date: header.posting_date.map(|ts| {
+                NaiveDate::from_ymd_opt(1970, 1, 1).unwrap() + chrono::Duration::days(ts.seconds / 86400)
+            }).unwrap_or_else(|| chrono::Utc::now().date_naive()),
+            document_date: header.document_date.map(|ts| {
+                NaiveDate::from_ymd_opt(1970, 1, 1).unwrap() + chrono::Duration::days(ts.seconds / 86400)
+            }).unwrap_or_else(|| chrono::Utc::now().date_naive()),
+            currency: header.currency,
+            reference: if header.reference_document.is_empty() { None } else { Some(header.reference_document) },
+            lines,
+            post_immediately: false, // Create in draft state
+        };
+
+        // Create entry
+        let mut entry = self.create_handler.handle(cmd).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        // Park it (validate and change status to Parked)
+        let park_cmd = ParkJournalEntryCommand { id: entry.id };
+        entry = self.park_handler.handle(park_cmd).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        Ok(Response::new(ParkJournalEntryResponse {
+            success: true,
+            parked_document_reference: None, // Parked documents don't have document numbers yet
+            messages: vec![],
+        }))
     }
     async fn batch_create_journal_entries(&self, request: Request<BatchCreateJournalEntriesRequest>) -> Result<Response<BatchCreateJournalEntriesResponse>, Status> {
         let req = request.into_inner();
@@ -578,6 +671,7 @@ fn map_to_summary(entry: crate::domain::aggregates::journal_entry::JournalEntry)
         header_text: entry.reference.unwrap_or_default(),
         status: match entry.status {
             crate::domain::aggregates::journal_entry::PostingStatus::Draft => JournalEntryStatus::Draft as i32,
+            crate::domain::aggregates::journal_entry::PostingStatus::Parked => JournalEntryStatus::Draft as i32,
             crate::domain::aggregates::journal_entry::PostingStatus::Posted => JournalEntryStatus::Posted as i32,
             crate::domain::aggregates::journal_entry::PostingStatus::Reversed => JournalEntryStatus::Reversed as i32,
         },
@@ -642,6 +736,7 @@ fn map_to_detail(entry: crate::domain::aggregates::journal_entry::JournalEntry) 
         tax_items: vec![],
         status: match entry.status {
             crate::domain::aggregates::journal_entry::PostingStatus::Draft => JournalEntryStatus::Draft as i32,
+            crate::domain::aggregates::journal_entry::PostingStatus::Parked => JournalEntryStatus::Draft as i32,
             crate::domain::aggregates::journal_entry::PostingStatus::Posted => JournalEntryStatus::Posted as i32,
             crate::domain::aggregates::journal_entry::PostingStatus::Reversed => JournalEntryStatus::Reversed as i32,
         },

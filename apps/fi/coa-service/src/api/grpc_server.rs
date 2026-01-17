@@ -505,10 +505,51 @@ impl ChartOfAccountsService for CoaGrpcService {
 
     async fn batch_update_gl_accounts(
         &self,
-        _request: Request<BatchUpdateGlAccountsRequest>,
+        request: Request<BatchUpdateGlAccountsRequest>,
     ) -> Result<Response<BatchUpdateGlAccountsResponse>, Status> {
-        // 批量更新需要更复杂的逻辑，暂时返回未实现
-        Err(Status::unimplemented("Batch update requires additional implementation"))
+        let req = request.into_inner();
+        let continue_on_error = req.continue_on_error;
+
+        let mut responses = Vec::new();
+        let mut success_count = 0;
+        let mut failure_count = 0;
+
+        for update_req in req.accounts {
+            // Call update_gl_account for each request
+            let result = self.update_gl_account(Request::new(update_req)).await;
+
+            match result {
+                Ok(resp) => {
+                    success_count += 1;
+                    responses.push(resp.into_inner());
+                }
+                Err(e) => {
+                    failure_count += 1;
+                    if !continue_on_error {
+                        return Err(e);
+                    }
+                    // Create error response
+                    responses.push(proto::GlAccountResponse {
+                        success: false,
+                        account: None,
+                        messages: vec![proto::common::v1::ApiMessage {
+                            r#type: "error".to_string(),
+                            code: "UPDATE_FAILED".to_string(),
+                            message: e.to_string(),
+                        }],
+                    });
+                }
+            }
+        }
+
+        Ok(Response::new(proto::BatchUpdateGlAccountsResponse {
+            result: Some(proto::common::v1::BatchOperationResult {
+                total_count: (success_count + failure_count) as i32,
+                success_count: success_count as i32,
+                failure_count: failure_count as i32,
+            }),
+            responses,
+        }))
     }
 
     async fn import_accounts(

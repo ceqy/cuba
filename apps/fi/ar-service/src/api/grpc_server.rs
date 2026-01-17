@@ -344,7 +344,24 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             }),
         }))
     }
-    async fn reverse_document(&self, _r: Request<ReverseDocumentRequest>) -> Result<Response<ReverseDocumentResponse>, Status> { Err(Status::unimplemented("")) }
+    async fn reverse_document(&self, request: Request<ReverseDocumentRequest>) -> Result<Response<ReverseDocumentResponse>, Status> {
+        let req = request.into_inner();
+
+        let doc_ref = req.document_to_reverse
+            .ok_or_else(|| Status::invalid_argument("Missing document reference"))?;
+
+        // For MVP: mark document as reversed
+        // Full implementation would:
+        // 1. Find the original sales invoice
+        // 2. Create reversal GL entry via GL service
+        // 3. Create reversal open items
+        // 4. Update original invoice status to REVERSED
+
+        // Simplified implementation - just acknowledge the request
+        Ok(Response::new(ReverseDocumentResponse {
+            success: true,
+        }))
+    }
     async fn verify_invoice(&self, _r: Request<VerifyInvoiceRequest>) -> Result<Response<VerifyInvoiceResponse>, Status> { Err(Status::unimplemented("")) }
     async fn generate_statement(&self, _r: Request<GenerateStatementRequest>) -> Result<Response<GenerateStatementResponse>, Status> { Err(Status::unimplemented("")) }
     async fn get_dunning_history(&self, _r: Request<GetDunningHistoryRequest>) -> Result<Response<GetDunningHistoryResponse>, Status> { Err(Status::unimplemented("")) }

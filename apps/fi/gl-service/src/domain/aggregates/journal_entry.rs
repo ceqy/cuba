@@ -8,6 +8,7 @@ use thiserror::Error;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PostingStatus {
     Draft,
+    Parked,
     Posted,
     Reversed,
 }
@@ -22,6 +23,7 @@ impl  ToString for PostingStatus {
     fn to_string(&self) -> String {
         match self {
             PostingStatus::Draft => "DRAFT".to_string(),
+            PostingStatus::Parked => "PARKED".to_string(),
             PostingStatus::Posted => "POSTED".to_string(),
             PostingStatus::Reversed => "REVERSED".to_string(),
         }
@@ -33,6 +35,7 @@ impl std::str::FromStr for PostingStatus {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
             "DRAFT" => Ok(PostingStatus::Draft),
+            "PARKED" => Ok(PostingStatus::Parked),
             "POSTED" => Ok(PostingStatus::Posted),
             "REVERSED" => Ok(PostingStatus::Reversed),
             _ => Err(format!("Invalid status: {}", s)),
@@ -214,6 +217,50 @@ impl JournalEntry {
     /// 标记原凭证为已冲销
     pub fn mark_as_reversed(&mut self) {
         self.status = PostingStatus::Reversed;
+    }
+
+    /// 暂存凭证 (Park)
+    pub fn park(&mut self) -> Result<(), JournalEntryError> {
+        if self.status == PostingStatus::Posted {
+            return Err(JournalEntryError::AlreadyPosted);
+        }
+
+        // 验证借贷平衡
+        self.validate_balance()?;
+
+        self.status = PostingStatus::Parked;
+        Ok(())
+    }
+
+    /// 更新凭证 (仅限 Draft 或 Parked 状态)
+    pub fn update(
+        &mut self,
+        posting_date: Option<NaiveDate>,
+        document_date: Option<NaiveDate>,
+        reference: Option<String>,
+        lines: Option<Vec<LineItem>>,
+    ) -> Result<(), JournalEntryError> {
+        if self.status == PostingStatus::Posted || self.status == PostingStatus::Reversed {
+            return Err(JournalEntryError::AlreadyPosted);
+        }
+
+        if let Some(pd) = posting_date {
+            self.posting_date = pd;
+        }
+        if let Some(dd) = document_date {
+            self.document_date = dd;
+        }
+        if let Some(r) = reference {
+            self.reference = Some(r);
+        }
+        if let Some(l) = lines {
+            if l.is_empty() {
+                return Err(JournalEntryError::EmptyLines);
+            }
+            self.lines = l;
+        }
+
+        Ok(())
     }
 }
 

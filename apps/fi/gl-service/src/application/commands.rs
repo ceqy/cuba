@@ -36,3 +36,17 @@ pub struct ReverseJournalEntryCommand {
     pub reversal_reason: String,
     pub posting_date: Option<NaiveDate>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct ParkJournalEntryCommand {
+    pub id: Uuid,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateJournalEntryCommand {
+    pub id: Uuid,
+    pub posting_date: Option<NaiveDate>,
+    pub document_date: Option<NaiveDate>,
+    pub reference: Option<String>,
+    pub lines: Option<Vec<LineItemDTO>>,
+}

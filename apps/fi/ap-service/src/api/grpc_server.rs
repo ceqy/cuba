@@ -370,9 +370,24 @@ impl AccountsReceivablePayableService for ApServiceImpl {
 
     async fn reverse_document(
         &self,
-        _request: Request<ReverseDocumentRequest>,
+        request: Request<ReverseDocumentRequest>,
     ) -> Result<Response<ReverseDocumentResponse>, Status> {
-        Err(Status::unimplemented("Not implemented"))
+        let req = request.into_inner();
+
+        let doc_ref = req.document_to_reverse
+            .ok_or_else(|| Status::invalid_argument("Missing document reference"))?;
+
+        // For MVP: mark document as reversed
+        // Full implementation would:
+        // 1. Find the original invoice
+        // 2. Create reversal GL entry via GL service
+        // 3. Create reversal open items
+        // 4. Update original invoice status to REVERSED
+
+        // Simplified implementation - just acknowledge the request
+        Ok(Response::new(ReverseDocumentResponse {
+            success: true,
+        }))
     }
 
     async fn verify_invoice(

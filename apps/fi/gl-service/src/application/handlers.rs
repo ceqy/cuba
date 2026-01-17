@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use crate::application::commands::{CreateJournalEntryCommand, PostJournalEntryCommand, ReverseJournalEntryCommand};
+use crate::application::commands::{CreateJournalEntryCommand, PostJournalEntryCommand, ReverseJournalEntryCommand, ParkJournalEntryCommand, UpdateJournalEntryCommand};
 use crate::application::queries::{GetJournalEntryQuery, ListJournalEntriesQuery};
 use crate::domain::aggregates::journal_entry::{JournalEntry, LineItem, DebitCredit, PostingStatus};
 use crate::domain::repositories::JournalRepository;
@@ -219,5 +219,69 @@ impl<R: JournalRepository> DeleteJournalEntryHandler<R> {
 
         self.repository.delete(&id).await?;
         Ok(())
+    }
+}
+
+pub struct ParkJournalEntryHandler<R> {
+    repository: Arc<R>,
+}
+
+impl<R: JournalRepository> ParkJournalEntryHandler<R> {
+    pub fn new(repository: Arc<R>) -> Self {
+        Self { repository }
+    }
+
+    pub async fn handle(&self, cmd: ParkJournalEntryCommand) -> Result<JournalEntry, Box<dyn std::error::Error + Send + Sync>> {
+        let mut entry = self.repository.find_by_id(&cmd.id).await?
+            .ok_or("Journal entry not found")?;
+
+        entry.park()?;
+        self.repository.save(&entry).await?;
+
+        Ok(entry)
+    }
+}
+
+pub struct UpdateJournalEntryHandler<R> {
+    repository: Arc<R>,
+}
+
+impl<R: JournalRepository> UpdateJournalEntryHandler<R> {
+    pub fn new(repository: Arc<R>) -> Self {
+        Self { repository }
+    }
+
+    pub async fn handle(&self, cmd: UpdateJournalEntryCommand) -> Result<JournalEntry, Box<dyn std::error::Error + Send + Sync>> {
+        let mut entry = self.repository.find_by_id(&cmd.id).await?
+            .ok_or("Journal entry not found")?;
+
+        // Convert LineItemDTO to LineItem if provided
+        let lines = if let Some(line_dtos) = cmd.lines {
+            let converted_lines: Vec<LineItem> = line_dtos.into_iter().enumerate().map(|(i, l)| -> Result<LineItem, Box<dyn std::error::Error + Send + Sync>> {
+                Ok(LineItem {
+                    id: Uuid::new_v4(),
+                    line_number: (i + 1) as i32,
+                    account_id: l.account_id,
+                    debit_credit: match l.debit_credit.as_str() {
+                        "S" | "D" => DebitCredit::Debit,
+                        "H" | "C" => DebitCredit::Credit,
+                        _ => return Err(format!("Invalid debit/credit indicator: {}", l.debit_credit).into()),
+                    },
+                    amount: l.amount,
+                    local_amount: l.amount,
+                    cost_center: l.cost_center,
+                    profit_center: l.profit_center,
+                    text: l.text,
+                })
+            }).collect::<Result<Vec<_>, _>>()?;
+            Some(converted_lines)
+        } else {
+            None
+        };
+
+        entry.update(cmd.posting_date, cmd.document_date, cmd.reference, lines)?;
+        self.repository.save(&entry).await?;
+
+        Ok(entry)
     }
 }
