@@ -1,9 +1,6 @@
 use tonic::transport::Server;
 use tracing::info;
-use dotenvy::dotenv;
 use std::sync::Arc;
-use cuba_database::{DatabaseConfig, init_pool};
-
 use sa_service::api::grpc_server::SaServiceImpl;
 use sa_service::api::proto::pm::sa::v1::spend_analytics_service_server::SpendAnalyticsServiceServer;
 use sa_service::infrastructure::repository::SpendRepository;
@@ -11,14 +8,10 @@ use sa_service::application::handlers::SpendHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cuba_telemetry::init_telemetry();
-    dotenv().ok();
-    
-    let addr = "0.0.0.0:50077".parse()?;
-    info!("Starting PM Spend Analytics Service on {}", addr);
-
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50077).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     let migrator = sqlx::migrate!("./migrations");
     cuba_database::run_migrations(&pool, &migrator).await?;

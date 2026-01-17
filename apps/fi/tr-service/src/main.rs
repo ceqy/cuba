@@ -1,9 +1,7 @@
 use tonic::transport::Server;
 use tracing::info;
-use dotenvy::dotenv;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use cuba_database::{DatabaseConfig, init_pool};
 
 use tr_service::api::grpc_server::TrServiceImpl;
 use tr_service::api::proto::fi::tr::v1::treasury_service_server::TreasuryServiceServer;
@@ -13,19 +11,15 @@ use tr_service::application::handlers::TreasuryHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cuba_telemetry::init_telemetry();
-    dotenv().ok();
-    
-    let addr = "0.0.0.0:50056".parse()?;
-    info!("Starting FI Treasury Service on {}", addr);
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50056).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     // GL Service Endpoint
     let gl_endpoint = std::env::var("GL_SERVICE_URL")
         .unwrap_or_else(|_| "http://localhost:50051".to_string());
     info!("GL Service endpoint: {}", gl_endpoint);
-
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
 
     let migrator = sqlx::migrate!("./migrations");
     cuba_database::run_migrations(&pool, &migrator).await?;

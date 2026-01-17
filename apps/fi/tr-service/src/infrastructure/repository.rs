@@ -2,14 +2,9 @@ use sqlx::PgPool;
 use crate::domain::{BankStatement, StatementTransaction, PaymentRun, PaymentDocument};
 use anyhow::Result;
 
-pub struct TreasuryRepository {
-    pool: PgPool,
-}
+cuba_database::define_repository!(TreasuryRepository);
 
 impl TreasuryRepository {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
 
     pub async fn save_statement(&self, stmt: &BankStatement) -> Result<()> {
         let mut tx = self.pool.begin().await?;

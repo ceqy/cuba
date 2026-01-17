@@ -1,9 +1,6 @@
 use tonic::transport::Server;
 use tracing::info;
-use dotenvy::dotenv;
 use std::sync::Arc;
-use cuba_database::{DatabaseConfig, init_pool};
-
 use pp_service::api::grpc_server::PpServiceImpl;
 use pp_service::api::proto::mf::pp::v1::production_planning_service_server::ProductionPlanningServiceServer;
 use pp_service::infrastructure::repository::PlannedOrderRepository;

@@ -1,9 +1,6 @@
 use tonic::transport::Server;
 use tracing::info;
-use dotenvy::dotenv;
 use std::sync::Arc;
-use cuba_database::{DatabaseConfig, init_pool};
-
 use po_service::api::grpc_server::PoServiceImpl;
 use po_service::api::proto::pm::po::v1::purchase_order_service_server::PurchaseOrderServiceServer;
 use po_service::infrastructure::repository::PurchaseOrderRepository;

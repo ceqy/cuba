@@ -8,6 +8,7 @@ edition.workspace = true
 cuba-core = { workspace = true }
 cuba-database = { workspace = true }
 cuba-telemetry = { workspace = true }
+cuba-service = { path = "../../../libs/cuba-service" }
 cuba-cqrs = { workspace = true }
 
 # External

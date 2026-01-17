@@ -1,9 +1,6 @@
 use tonic::transport::Server;
 use tracing::info;
-use dotenvy::dotenv;
 use std::sync::Arc;
-use cuba_database::{DatabaseConfig, init_pool};
-
 use am_pm_service::api::grpc_server::PmServiceImpl;
 use am_pm_service::api::proto::am::pm::v1::asset_maintenance_service_server::AssetMaintenanceServiceServer;
 use am_pm_service::infrastructure::repository::MaintenanceRepository;
@@ -11,14 +8,10 @@ use am_pm_service::application::handlers::MaintenanceHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cuba_telemetry::init_telemetry();
-    dotenv().ok();
-    
-    let addr = "0.0.0.0:50061".parse()?;
-    info!("Starting AM Plant Maintenance Service on {}", addr);
-
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50061).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     let migrator = sqlx::migrate!("./migrations");
     cuba_database::run_migrations(&pool, &migrator).await?;

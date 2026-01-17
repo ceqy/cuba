@@ -1,8 +1,6 @@
 use tonic::transport::Server;
 use tracing::info;
-use dotenvy::dotenv;
 use std::sync::Arc;
-use cuba_database::{DatabaseConfig, init_pool};
 
 use ah_service::api::grpc_server::AhServiceImpl;
 use ah_service::api::proto::am::ah::v1::intelligent_asset_health_service_server::IntelligentAssetHealthServiceServer;
@@ -11,14 +9,10 @@ use ah_service::application::handlers::HealthHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cuba_telemetry::init_telemetry();
-    dotenv().ok();
-    
-    let addr = "0.0.0.0:50083".parse()?;
-    info!("Starting AM Intelligent Asset Health Service on {}", addr);
-
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50083).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     let migrator = sqlx::migrate!("./migrations");
     cuba_database::run_migrations(&pool, &migrator).await?;

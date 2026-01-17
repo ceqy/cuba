@@ -9,6 +9,7 @@ cuba-core = { workspace = true }
 cuba-database = { workspace = true }
 cuba-telemetry = { workspace = true }
 cuba-cqrs = { workspace = true }
+cuba-service = { path = "../../../libs/cuba-service" }
 
 # External
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

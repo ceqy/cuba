@@ -39,7 +39,7 @@ impl<R: JournalRepository> CreateJournalEntryHandler<R> {
             match validator.validate_journal_entry_accounts(
                 account_codes,
                 &cmd.company_code,
-                cmd.posting_date.naive_local().date(),
+                cmd.posting_date,
             ).await {
                 Ok(_) => {
                     tracing::info!("All accounts validated successfully");

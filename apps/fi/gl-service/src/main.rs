@@ -10,20 +10,15 @@ use gl_service::application::handlers::{
     ListJournalEntriesHandler,
     PostJournalEntryHandler,
 };
-use cuba_database::{DatabaseConfig, init_pool};
 use std::sync::Arc;
 use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cuba_telemetry::init_telemetry();
-
-    let addr = "0.0.0.0:50060".parse()?;
-    info!("Starting GL Service on {}", addr);
-
-    // Database
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50060).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     // Run migrations
     let migrator = sqlx::migrate!("./migrations");

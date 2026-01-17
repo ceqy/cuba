@@ -1,9 +1,6 @@
 use tonic::transport::Server;
 use tracing::info;
-use dotenvy::dotenv;
 use std::sync::Arc;
-use cuba_database::{DatabaseConfig, init_pool};
-
 use se_service::api::grpc_server::SeServiceImpl;
 use se_service::api::proto::pm::se::v1::sourcing_event_service_server::SourcingEventServiceServer;
 use se_service::infrastructure::repository::SourcingRepository;
@@ -11,14 +8,10 @@ use se_service::application::handlers::SourcingHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cuba_telemetry::init_telemetry();
-    dotenv().ok();
-    
-    let addr = "0.0.0.0:50082".parse()?;
-    info!("Starting PM Sourcing Event Service on {}", addr);
-
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50082).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     let migrator = sqlx::migrate!("./migrations");
     cuba_database::run_migrations(&pool, &migrator).await?;

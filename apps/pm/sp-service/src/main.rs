@@ -1,5 +1,4 @@
 use tonic::transport::Server;
-use cuba_database::{DatabaseConfig, init_pool};
 use tracing::info;
 
 #[tokio::main]

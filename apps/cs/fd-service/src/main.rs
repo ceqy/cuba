@@ -1,9 +1,6 @@
 use tonic::transport::Server;
 use tracing::info;
-use dotenvy::dotenv;
 use std::sync::Arc;
-use cuba_database::{DatabaseConfig, init_pool};
-
 use fd_service::api::grpc_server::FdServiceImpl;
 use fd_service::api::proto::cs::fd::v1::field_service_dispatch_service_server::FieldServiceDispatchServiceServer;
 use fd_service::infrastructure::repository::ServiceOrderRepository;
@@ -11,14 +8,10 @@ use fd_service::application::handlers::ServiceHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cuba_telemetry::init_telemetry();
-    dotenv().ok();
-    
-    let addr = "0.0.0.0:50064".parse()?;
-    info!("Starting CS Field Service Dispatch Service on {}", addr);
-
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50064).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     let migrator = sqlx::migrate!("./migrations");
     cuba_database::run_migrations(&pool, &migrator).await?;

@@ -1,5 +1,4 @@
 use tonic::transport::Server;
-use cuba_database::{DatabaseConfig, init_pool};
 use tracing::info;
 use std::sync::Arc;
 use auth_service::infrastructure::grpc::iam::auth::v1::auth_service_server::AuthServiceServer;
@@ -12,14 +11,10 @@ use auth_service::application::handlers::{RegisterUserHandler, LoginUserHandler,
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cuba_telemetry::init_telemetry();
-    
-    let addr = "0.0.0.0:50051".parse()?;
-    info!("Starting auth-service on {}", addr);
-
-    // Database
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50051).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     // Infrastructure
     let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));

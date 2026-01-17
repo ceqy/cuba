@@ -1,9 +1,6 @@
 use tonic::transport::Server;
 use tracing::info;
-use dotenvy::dotenv;
 use std::sync::Arc;
-use cuba_database::{DatabaseConfig, init_pool};
-
 use qi_service::api::grpc_server::QiServiceImpl;
 use qi_service::api::proto::mf::qi::v1::quality_inspection_service_server::QualityInspectionServiceServer;
 use qi_service::infrastructure::repository::InspectionLotRepository;

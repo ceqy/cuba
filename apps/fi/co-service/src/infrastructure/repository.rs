@@ -2,14 +2,9 @@ use sqlx::PgPool;
 use crate::domain::{AllocationRun, AllocationSender, AllocationReceiver};
 use anyhow::Result;
 
-pub struct AllocationRepository {
-    pool: PgPool,
-}
+cuba_database::define_repository!(AllocationRepository);
 
 impl AllocationRepository {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
 
     pub async fn save_run(&self, run: &AllocationRun) -> Result<()> {
         let mut tx = self.pool.begin().await?;

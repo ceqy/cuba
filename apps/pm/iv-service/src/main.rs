@@ -1,9 +1,6 @@
 use tonic::transport::Server;
 use tracing::info;
-use dotenvy::dotenv;
 use std::sync::Arc;
-use cuba_database::{DatabaseConfig, init_pool};
-
 use iv_service::api::grpc_server::IvServiceImpl;
 use iv_service::api::proto::pm::iv::v1::invoice_processing_service_server::InvoiceProcessingServiceServer;
 use iv_service::infrastructure::repository::InvoiceRepository;
@@ -11,14 +8,10 @@ use iv_service::application::handlers::InvoiceHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cuba_telemetry::init_telemetry();
-    dotenv().ok();
-    
-    let addr = "0.0.0.0:50069".parse()?;
-    info!("Starting PM Invoice Processing Service on {}", addr);
-
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50069).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     let migrator = sqlx::migrate!("./migrations");
     cuba_database::run_migrations(&pool, &migrator).await?;

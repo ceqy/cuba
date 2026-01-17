@@ -11,10 +11,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &["../../../protos", "../../../third_party"],
         )?;
 
-    // Compile COA service protos (client only)
+    // Compile COA service protos (client only) - use extern_path to reference common proto
     tonic_prost_build::configure()
         .build_server(false)
         .build_client(true)
+        .extern_path(".common.v1", "crate::infrastructure::grpc::common::v1")
         .compile_protos(
             &["../../../protos/fi/coa/coa.proto"],
             &["../../../protos", "../../../third_party"],

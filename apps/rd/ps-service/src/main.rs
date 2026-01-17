@@ -1,9 +1,6 @@
 use tonic::transport::Server;
 use tracing::info;
-use dotenvy::dotenv;
 use std::sync::Arc;
-use cuba_database::{DatabaseConfig, init_pool};
-
 use ps_service::api::grpc_server::PsServiceImpl;
 use ps_service::api::proto::rd::ps::v1::project_cost_controlling_service_server::ProjectCostControllingServiceServer;
 use ps_service::infrastructure::repository::ProjectCostRepository;
@@ -11,14 +8,10 @@ use ps_service::application::handlers::ProjectCostHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cuba_telemetry::init_telemetry();
-    dotenv().ok();
-    
-    let addr = "0.0.0.0:50068".parse()?;
-    info!("Starting RD Project Cost Controlling Service on {}", addr);
-
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50068).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     let migrator = sqlx::migrate!("./migrations");
     cuba_database::run_migrations(&pool, &migrator).await?;

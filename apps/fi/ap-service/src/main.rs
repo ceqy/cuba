@@ -1,9 +1,8 @@
 use tonic::transport::Server;
-use cuba_database::{DatabaseConfig, init_pool};
 use tracing::info;
 use std::sync::Arc;
-use dotenvy::dotenv;
 use tokio::sync::Mutex;
+
 
 use ap_service::api::grpc_server::ApServiceImpl;
 use ap_service::api::proto::fi::ap::v1::accounts_receivable_payable_service_server::AccountsReceivablePayableServiceServer;
@@ -13,22 +12,15 @@ use ap_service::application::handlers::{PostSupplierHandler, ListOpenItemsHandle
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv().ok(); // Load .env
-    cuba_telemetry::init_telemetry();
-    
-    // Config
-    let addr = "0.0.0.0:50061".parse()?;
-    info!("Starting ap-service on {}", addr);
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50061).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     // GL Service Endpoint (from env or default)
     let gl_endpoint = std::env::var("GL_SERVICE_URL")
         .unwrap_or_else(|_| "http://gl-service.cuba-fi.svc.cluster.local:50060".to_string());
     info!("GL Service endpoint: {}", gl_endpoint);
-
-    // Database
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
-    info!("Connected to database: {}", db_config.url);
 
     // GL Client
     let gl_client = Arc::new(Mutex::new(

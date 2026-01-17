@@ -84,3 +84,71 @@ where
     }
 }
 
+
+use std::marker::PhantomData;
+
+/// Generic Repository Structure
+pub struct Repository<T> {
+    pub pool: DbPool,
+    _marker: PhantomData<T>,
+}
+
+impl<T> Repository<T> {
+    pub fn new(pool: DbPool) -> Self {
+        Self {
+            pool,
+            _marker: PhantomData,
+        }
+    }
+}
+
+/// Macro to define a repository struct with common boilerplate.
+/// 
+/// # Example
+/// ```ignore
+/// use cuba_database::define_repository;
+/// 
+/// define_repository!(SupplierRepository);
+/// define_repository!(InvoiceRepository, OpenItemRepository);
+/// ```
+/// 
+/// This generates:
+/// ```ignore
+/// pub struct SupplierRepository {
+///     pool: sqlx::PgPool,
+/// }
+/// 
+/// impl SupplierRepository {
+///     pub fn new(pool: sqlx::PgPool) -> Self {
+///         Self { pool }
+///     }
+///     
+///     pub fn pool(&self) -> &sqlx::PgPool {
+///         &self.pool
+///     }
+/// }
+/// ```
+#[macro_export]
+macro_rules! define_repository {
+    ($($name:ident),+ $(,)?) => {
+        $(
+            pub struct $name {
+                pool: sqlx::PgPool,
+            }
+            
+            impl $name {
+                pub fn new(pool: sqlx::PgPool) -> Self {
+                    Self { pool }
+                }
+                
+                #[allow(dead_code)]
+                pub fn pool(&self) -> &sqlx::PgPool {
+                    &self.pool
+                }
+            }
+        )+
+    };
+}
+
+// Re-export sqlx for use in the macro
+pub use sqlx;

@@ -1,19 +1,13 @@
 //! PostgreSQL Repository implementations for AP Service
 
-use sqlx::{PgPool, Row};
+use sqlx::PgPool;
 use uuid::Uuid;
 use crate::domain::{Supplier, Invoice, OpenItem, InvoiceItem};
-use chrono::{DateTime, Utc};
 
-/// Supplier Repository
-pub struct SupplierRepository {
-    pool: PgPool,
-}
+// Define all repositories using the macro
+cuba_database::define_repository!(SupplierRepository, OpenItemRepository, InvoiceRepository);
 
 impl SupplierRepository {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
 
     pub async fn find_by_id(&self, id: Uuid) -> Result<Option<Supplier>, sqlx::Error> {
         let row = sqlx::query_as::<_, Supplier>(
@@ -104,15 +98,7 @@ impl SupplierRepository {
     }
 }
 
-/// Open Items Repository
-pub struct OpenItemRepository {
-    pool: PgPool,
-}
-
 impl OpenItemRepository {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
 
     pub async fn list_by_supplier(
         &self, 
@@ -198,15 +184,7 @@ impl OpenItemRepository {
     }
 }
 
-/// Invoice Repository
-pub struct InvoiceRepository {
-    pool: PgPool,
-}
-
 impl InvoiceRepository {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
 
     pub async fn find_by_id(&self, id: Uuid) -> Result<Option<Invoice>, sqlx::Error> {
         // Fetch header

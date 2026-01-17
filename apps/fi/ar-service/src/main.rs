@@ -1,9 +1,7 @@
 use tonic::transport::Server;
 use tracing::info;
-use dotenvy::dotenv;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use cuba_database::{DatabaseConfig, init_pool};
 
 use ar_service::api::grpc_server::ArServiceImpl;
 use ar_service::api::proto::fi::ap::v1::accounts_receivable_payable_service_server::AccountsReceivablePayableServiceServer;
@@ -13,21 +11,19 @@ use ar_service::application::handlers::{PostCustomerHandler, ListOpenItemsHandle
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cuba_telemetry::init_telemetry();
-    dotenv().ok();
-    
-    // Assign a default port for AR, e.g. 50054 (AP is 53)
-    let addr = "0.0.0.0:50054".parse()?;
-    info!("Starting AR Service on {}", addr);
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50054).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     // GL Service Endpoint (from env or default)
     let gl_endpoint = std::env::var("GL_SERVICE_URL")
         .unwrap_or_else(|_| "http://localhost:50051".to_string());
     info!("GL Service endpoint: {}", gl_endpoint);
 
-    // Database
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
+    // Run migrations
+    let migrator = sqlx::migrate!("./migrations");
+    cuba_database::run_migrations(&pool, &migrator).await?;
 
     // Run migrations
     let migrator = sqlx::migrate!("./migrations");

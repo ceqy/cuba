@@ -1,9 +1,6 @@
 use tonic::transport::Server;
 use tracing::info;
-use dotenvy::dotenv;
 use std::sync::Arc;
-use cuba_database::{DatabaseConfig, init_pool};
-
 use so_service::api::grpc_server::SoServiceImpl;
 use so_service::api::proto::sd::so::v1::sales_order_fulfillment_service_server::SalesOrderFulfillmentServiceServer;
 use so_service::infrastructure::repository::SalesOrderRepository;

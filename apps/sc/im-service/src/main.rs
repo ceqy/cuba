@@ -1,8 +1,6 @@
 use tonic::transport::Server;
 use tracing::info;
-use dotenvy::dotenv;
 use std::sync::Arc;
-use cuba_database::{DatabaseConfig, init_pool};
 
 use im_service::api::grpc_server::ImServiceImpl;
 use im_service::api::proto::sc::im::v1::inventory_management_service_server::InventoryManagementServiceServer;
@@ -11,16 +9,10 @@ use im_service::application::handlers::{PostStockMovementHandler, GetStockOvervi
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cuba_telemetry::init_telemetry();
-    dotenv().ok();
-    
-    // Port 50056
-    let addr = "0.0.0.0:50056".parse()?;
-    info!("Starting SC Inventory Management Service on {}", addr);
-
-    // Database
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50056).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     // Run migrations
     let migrator = sqlx::migrate!("./migrations");

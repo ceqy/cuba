@@ -1,9 +1,6 @@
 use tonic::transport::Server;
 use tracing::info;
-use dotenvy::dotenv;
 use std::sync::Arc;
-use cuba_database::{DatabaseConfig, init_pool};
-
 use ta_service::api::grpc_server::TaServiceImpl;
 use ta_service::api::proto::hr::ta::v1::talent_acquisition_service_server::TalentAcquisitionServiceServer;
 use ta_service::infrastructure::repository::TalentRepository;
@@ -11,14 +8,10 @@ use ta_service::application::handlers::TalentHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cuba_telemetry::init_telemetry();
-    dotenv().ok();
-    
-    let addr = "0.0.0.0:50062".parse()?;
-    info!("Starting HR Talent Acquisition Service on {}", addr);
-
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50062).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     let migrator = sqlx::migrate!("./migrations");
     cuba_database::run_migrations(&pool, &migrator).await?;

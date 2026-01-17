@@ -1,8 +1,6 @@
 use tonic::transport::Server;
 use tracing::info;
-use dotenvy::dotenv;
 use std::sync::Arc;
-use cuba_database::{DatabaseConfig, init_pool};
 use rust_decimal::Decimal;
 
 use sf_service::api::grpc_server::SfServiceImpl;

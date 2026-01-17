@@ -13,6 +13,7 @@ cuba-cqrs.workspace = true
 cuba-database.workspace = true
 cuba-messaging.workspace = true
 cuba-telemetry.workspace = true
+cuba-service = { path = "../../../libs/cuba-service" }
 tokio.workspace = true
 async-trait.workspace = true
 tonic.workspace = true

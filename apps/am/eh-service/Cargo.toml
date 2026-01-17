@@ -11,6 +11,7 @@ cuba-errors.workspace = true
 anyhow.workspace = true
 cuba-database.workspace = true
 cuba-telemetry.workspace = true
+cuba-service = { path = "../../../libs/cuba-service" }
 tokio.workspace = true
 tonic.workspace = true
 tonic-prost.workspace = true

@@ -1,9 +1,7 @@
 use tonic::transport::Server;
 use tracing::info;
-use dotenvy::dotenv;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use cuba_database::{DatabaseConfig, init_pool};
 
 use co_service::api::grpc_server::CoServiceImpl;
 use co_service::api::proto::fi::co::v1::controlling_allocation_service_server::ControllingAllocationServiceServer;
@@ -13,19 +11,15 @@ use co_service::application::handlers::AllocationHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cuba_telemetry::init_telemetry();
-    dotenv().ok();
-    
-    let addr = "0.0.0.0:50067".parse()?;
-    info!("Starting FI Controlling Allocation Service on {}", addr);
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50067).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     // GL Service Endpoint
     let gl_endpoint = std::env::var("GL_SERVICE_URL")
         .unwrap_or_else(|_| "http://localhost:50051".to_string());
     info!("GL Service endpoint: {}", gl_endpoint);
-
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
 
     let migrator = sqlx::migrate!("./migrations");
     cuba_database::run_migrations(&pool, &migrator).await?;

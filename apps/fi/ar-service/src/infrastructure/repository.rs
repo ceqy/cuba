@@ -5,14 +5,10 @@ use anyhow::Result;
 use rust_decimal::Decimal;
 use uuid::Uuid;
 
-pub struct CustomerRepository {
-    pool: PgPool,
-}
+// Define all repositories using the macro
+cuba_database::define_repository!(CustomerRepository, OpenItemRepository, InvoiceRepository);
 
 impl CustomerRepository {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
 
     pub async fn save(&self, customer: &Customer) -> Result<()> {
         sqlx::query(
@@ -72,14 +68,7 @@ impl CustomerRepository {
     }
 }
 
-pub struct OpenItemRepository {
-    pool: PgPool,
-}
-
 impl OpenItemRepository {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
 
     pub async fn list_by_customer(
         &self,
@@ -112,14 +101,7 @@ impl OpenItemRepository {
 }
 
 // Invoice Repository (AR Sales Invoices)
-pub struct InvoiceRepository {
-    pool: PgPool,
-}
-
 impl InvoiceRepository {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
 
     pub async fn save(&self, invoice: &Invoice) -> Result<()> {
         let mut tx = self.pool.begin().await?;
