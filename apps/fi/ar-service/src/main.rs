@@ -12,7 +12,7 @@ use ar_service::application::handlers::{PostCustomerHandler, ListOpenItemsHandle
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Bootstrap Service
-    let context = cuba_service::ServiceBootstrapper::run(50054).await?;
+    let context = cuba_service::ServiceBootstrapper::run(50062).await?;
     let pool = context.db_pool;
     let addr = context.addr;
 

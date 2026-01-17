@@ -138,13 +138,29 @@ pub struct ListJournalEntriesHandler<R> {
     repository: Arc<R>,
 }
 
+/// Result with pagination info
+pub struct PaginatedResult<T> {
+    pub items: Vec<T>,
+    pub total_items: i64,
+    pub page: u64,
+    pub page_size: u64,
+}
+
 impl<R: JournalRepository> ListJournalEntriesHandler<R> {
     pub fn new(repository: Arc<R>) -> Self {
         Self { repository }
     }
 
-    pub async fn handle(&self, query: ListJournalEntriesQuery) -> Result<Vec<JournalEntry>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn handle(&self, query: ListJournalEntriesQuery) -> Result<PaginatedResult<JournalEntry>, Box<dyn std::error::Error + Send + Sync>> {
         let status = query.status.as_deref();
-        self.repository.search(&query.company_code, status, query.page, query.page_size).await
+        let items = self.repository.search(&query.company_code, status, query.page, query.page_size).await?;
+        let total_items = self.repository.count(&query.company_code, status).await?;
+
+        Ok(PaginatedResult {
+            items,
+            total_items,
+            page: query.page,
+            page_size: query.page_size,
+        })
     }
 }

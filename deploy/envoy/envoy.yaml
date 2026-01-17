@@ -239,7 +239,7 @@ static_resources:
                       address: ap-service.cuba-fi.svc.cluster.local
                       port_value: 50061
 
-    # CO Service (port 50055)
+    # CO Service (port 50063)
     - name: co_service
       connect_timeout: 5s
       type: STRICT_DNS
@@ -253,9 +253,9 @@ static_resources:
                   address:
                     socket_address:
                       address: co-service.cuba-fi.svc.cluster.local
-                      port_value: 50067
+                      port_value: 50063
 
-    # TR Service (port 50056)
+    # TR Service (port 50064)
     - name: tr_service
       connect_timeout: 5s
       type: STRICT_DNS
@@ -269,7 +269,7 @@ static_resources:
                   address:
                     socket_address:
                       address: tr-service.cuba-fi.svc.cluster.local
-                      port_value: 50056
+                      port_value: 50064
 
 admin:
   address:

@@ -162,4 +162,17 @@ impl TreasuryRepository {
             .execute(&self.pool).await?;
         Ok(())
     }
+
+    /// Count bank statements with optional company_code filter
+    pub async fn count_statements(&self, company_code: Option<&str>) -> Result<i64> {
+        let count: (i64,) = if let Some(cc) = company_code {
+            sqlx::query_as("SELECT COUNT(*) FROM bank_statements WHERE company_code = $1")
+                .bind(cc)
+                .fetch_one(&self.pool).await?
+        } else {
+            sqlx::query_as("SELECT COUNT(*) FROM bank_statements")
+                .fetch_one(&self.pool).await?
+        };
+        Ok(count.0)
+    }
 }

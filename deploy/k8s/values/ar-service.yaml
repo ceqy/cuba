@@ -5,7 +5,7 @@ image:
   tag: "latest"
 fullnameOverride: "ar-service"
 service:
-  grpcPort: 50054
+  grpcPort: 50062
   metricsPort: 9090
 
 # Database configuration (credentials from Secret)

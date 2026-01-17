@@ -5,7 +5,7 @@ image:
   tag: "latest"
 fullnameOverride: "co-service"
 service:
-  grpcPort: 50067
+  grpcPort: 50063
   metricsPort: 9090
 
 # Database configuration (credentials from Secret)

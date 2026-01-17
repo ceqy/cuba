@@ -124,15 +124,20 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
         };
 
         match self.list_handler.handle(query.clone()).await {
-            Ok(entries) => {
-                let items: Vec<JournalEntrySummary> = entries.into_iter().map(map_to_summary).collect();
+            Ok(result) => {
+                let items: Vec<JournalEntrySummary> = result.items.into_iter().map(map_to_summary).collect();
+                let total_pages = if result.page_size > 0 {
+                    ((result.total_items as u64 + result.page_size - 1) / result.page_size) as i32
+                } else {
+                    0
+                };
                 Ok(Response::new(ListJournalEntriesResponse {
                     entries: items,
                     pagination: Some(crate::infrastructure::grpc::common::v1::PaginationResponse {
-                        total_items: 0, // TODO
-                        total_pages: 0,
-                        current_page: query.page as i32,
-                        page_size: query.page_size as i32,
+                        total_items: result.total_items,
+                        total_pages,
+                        current_page: result.page as i32,
+                        page_size: result.page_size as i32,
                     })
                 }))
             }

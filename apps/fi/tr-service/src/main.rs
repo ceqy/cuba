@@ -12,7 +12,7 @@ use tr_service::application::handlers::TreasuryHandler;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Bootstrap Service
-    let context = cuba_service::ServiceBootstrapper::run(50056).await?;
+    let context = cuba_service::ServiceBootstrapper::run(50064).await?;
     let pool = context.db_pool;
     let addr = context.addr;
 

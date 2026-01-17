@@ -88,8 +88,14 @@ impl ChartOfAccountsService for CoaGrpcService {
                     tax_relevant: account.tax_relevant,
                     tax_category: account.tax_category.unwrap_or_default(),
                     status: proto_account_status(&account.status) as i32,
-                    valid_from: None, // TODO: convert timestamp
-                    valid_to: None,
+                    valid_from: account.valid_from.map(|dt| prost_types::Timestamp {
+                        seconds: dt.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
+                        nanos: 0,
+                    }),
+                    valid_to: account.valid_to.map(|dt| prost_types::Timestamp {
+                        seconds: dt.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
+                        nanos: 0,
+                    }),
                     texts: vec![],
                     controls: vec![],
                     audit: None,
@@ -180,7 +186,13 @@ impl ChartOfAccountsService for CoaGrpcService {
                     exists: result.exists,
                     is_active: result.is_active,
                     is_postable: result.is_postable,
-                    status: 0, // TODO: map status
+                    status: if result.is_valid {
+                        proto::AccountStatus::Active as i32
+                    } else if !result.exists {
+                        proto::AccountStatus::Inactive as i32
+                    } else {
+                        proto::AccountStatus::Blocked as i32
+                    },
                     messages: result
                         .error_message
                         .map(|msg| vec![proto::common::v1::ApiMessage {

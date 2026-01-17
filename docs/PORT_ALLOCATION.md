@@ -23,14 +23,14 @@
 | oauth-service | 50053 | OAuth2 服务 |
 
 ### FI - Finance (50060-50069)
-| 服务 | 端口 | 说明 | 原端口 | 状态 |
-|------|------|------|--------|------|
-| gl-service | 50060 | 总账 | 50052 ⚠️ | 需修改 |
-| ap-service | 50061 | 应付账款 | 50053 ⚠️ | 需修改 |
-| ar-service | 50062 | 应收账款 | 50054 | OK |
-| co-service | 50063 | 成本控制 | 50055 | OK |
-| tr-service | 50064 | 资金管理 | 50056 | OK |
-| coa-service | 50065 | 会计科目表 | 50057 | OK |
+| 服务 | 端口 | 说明 | 状态 |
+|------|------|------|------|
+| gl-service | 50060 | 总账 | OK |
+| ap-service | 50061 | 应付账款 | OK |
+| ar-service | 50062 | 应收账款 | OK |
+| co-service | 50063 | 成本控制 | OK |
+| tr-service | 50064 | 资金管理 | OK |
+| coa-service | 50065 | 会计科目表 | OK |
 
 ### SD - Sales & Distribution (50070-50079)
 | 服务 | 端口 | 说明 |
@@ -96,32 +96,10 @@
 | pl-service | 50140 | 产品生命周期 |
 | ps-service | 50141 | 项目管理 |
 
-## 端口冲突修复清单
-
-### 需要修改的服务
-
-1. **gl-service**: 50052 → 50060
-   - 文件: `apps/fi/gl-service/src/main.rs`
-   - 配置: `deploy/k8s/values/gl-service.yaml`
-   - Envoy: `deploy/envoy/envoy.yaml`
-
-2. **ap-service**: 50053 → 50061
-   - 文件: `apps/fi/ap-service/src/main.rs`
-   - 配置: `deploy/k8s/values/ap-service.yaml`
-   - Envoy: `deploy/envoy/envoy.yaml`
-
-## 修改步骤
-
-1. 更新服务代码中的端口号
-2. 更新 K8s Deployment 配置
-3. 更新 Envoy 网关路由配置
-4. 更新服务间调用的端点地址
-5. 更新文档和注释
-
 ## 验证清单
 
-- [ ] 所有服务端口无冲突
-- [ ] Envoy 路由配置正确
-- [ ] 服务间调用端点正确
-- [ ] K8s Service 端口映射正确
-- [ ] 文档已更新
+- [x] 所有服务端口无冲突
+- [x] Envoy 路由配置正确
+- [x] 服务间调用端点正确
+- [x] K8s Service 端口映射正确
+- [x] 文档已更新

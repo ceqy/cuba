@@ -5,7 +5,7 @@ image:
   tag: "latest"
 fullnameOverride: "coa-service"
 service:
-  grpcPort: 50060
+  grpcPort: 50065
   metricsPort: 9090
 
 # Database configuration (credentials from Secret)
@@ -29,14 +29,14 @@ env:
   targetCPUUtilizationPercentage: 80
   targetMemoryUtilizationPercentage: 80
   grpc:
-    port: 50060
+    port: 50065
   initialDelaySeconds: 30
   periodSeconds: 10
   timeoutSeconds: 5
   successThreshold: 1
   failureThreshold: 3
   grpc:
-    port: 50060
+    port: 50065
   initialDelaySeconds: 10
   periodSeconds: 5
   timeoutSeconds: 3

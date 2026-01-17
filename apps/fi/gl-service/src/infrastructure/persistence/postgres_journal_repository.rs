@@ -4,10 +4,15 @@ use uuid::Uuid;
 use std::error::Error;
 use std::str::FromStr;
 use rust_decimal::Decimal;
-use chrono::{NaiveDate, Utc};
+use chrono::{NaiveDate, Utc, Datelike};
 use crate::domain::aggregates::journal_entry::{JournalEntry, LineItem, PostingStatus, DebitCredit};
 use crate::domain::repositories::JournalRepository;
 use cuba_database::DbPool;
+
+/// Calculate fiscal period from posting date (1-12 for months, 13-16 for special periods)
+fn calculate_fiscal_period(posting_date: NaiveDate) -> i32 {
+    posting_date.month() as i32
+}
 
 pub struct PostgresJournalRepository {
     pool: DbPool,
@@ -43,7 +48,7 @@ impl JournalRepository for PostgresJournalRepository {
         .bind(&entry.document_number)
         .bind(&entry.company_code)
         .bind(entry.fiscal_year)
-        .bind(1) // TODO: Calculate fiscal period based on posting date
+        .bind(calculate_fiscal_period(entry.posting_date))
         .bind(entry.posting_date)
         .bind(entry.document_date)
         .bind(entry.status.to_string())
@@ -190,5 +195,23 @@ impl JournalRepository for PostgresJournalRepository {
          }
          
          Ok(entries)
+    }
+
+    async fn count(&self, company_code: &str, status: Option<&str>) -> Result<i64, Box<dyn Error + Send + Sync>> {
+        let mut query_builder = sqlx::QueryBuilder::new(
+            "SELECT COUNT(*) as count FROM journal_entries WHERE company_code = "
+        );
+        query_builder.push_bind(company_code);
+
+        if let Some(s) = status {
+            query_builder.push(" AND status = ");
+            query_builder.push_bind(s.to_uppercase());
+        }
+
+        let query = query_builder.build();
+        let row = query.fetch_one(&self.pool).await?;
+        let count: i64 = row.get("count");
+
+        Ok(count)
     }
 }

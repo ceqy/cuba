@@ -138,6 +138,14 @@ impl TreasuryService for TrServiceImpl {
         let statements = self.repo.list_statements(company_code, limit, offset).await
             .map_err(|e| Status::internal(e.to_string()))?;
 
+        let total_items = self.repo.count_statements(company_code).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+        let total_pages = if limit > 0 {
+            ((total_items + limit - 1) / limit) as i32
+        } else {
+            1
+        };
+
         let current_page = (offset / limit + 1) as i32;
         Ok(Response::new(ListBankStatementsResponse {
             statements: statements.into_iter().map(|s| BankStatementSummary {
@@ -151,8 +159,8 @@ impl TreasuryService for TrServiceImpl {
             pagination: Some(common_v1::PaginationResponse {
                 current_page,
                 page_size: limit as i32,
-                total_items: 0, // TODO: count query
-                total_pages: 1,
+                total_items: total_items,
+                total_pages,
             }),
         }))
     }

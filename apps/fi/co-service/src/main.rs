@@ -12,7 +12,7 @@ use co_service::application::handlers::AllocationHandler;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Bootstrap Service
-    let context = cuba_service::ServiceBootstrapper::run(50067).await?;
+    let context = cuba_service::ServiceBootstrapper::run(50063).await?;
     let pool = context.db_pool;
     let addr = context.addr;
 

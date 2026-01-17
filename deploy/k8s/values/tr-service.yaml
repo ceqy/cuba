@@ -5,7 +5,7 @@ image:
   tag: "latest"
 fullnameOverride: "tr-service"
 service:
-  grpcPort: 50056
+  grpcPort: 50064
   metricsPort: 9090
 
 # Database configuration (credentials from Secret)
