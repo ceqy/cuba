@@ -117,8 +117,56 @@ impl ChartOfAccountsService for CoaGrpcService {
         &self,
         request: Request<UpdateGlAccountRequest>,
     ) -> Result<Response<GlAccountResponse>, Status> {
-        // TODO: Implement update logic
-        Err(Status::unimplemented("Not yet implemented"))
+        let req = request.into_inner();
+        let account_data = req.account.ok_or_else(|| Status::invalid_argument("account is required"))?;
+
+        // 获取现有科目
+        let existing = self.app_service
+            .get_account(&account_data.chart_of_accounts, &req.account_code)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?
+            .ok_or_else(|| Status::not_found("Account not found"))?;
+
+        // 创建更新后的科目
+        let mut account = existing;
+        account.account_name = account_data.account_name;
+        account.account_name_long = if account_data.account_name_long.is_empty() {
+            None
+        } else {
+            Some(account_data.account_name_long)
+        };
+        account.account_group = if account_data.account_group.is_empty() {
+            None
+        } else {
+            Some(account_data.account_group)
+        };
+        account.is_postable = account_data.is_postable;
+        account.is_cost_element = account_data.is_cost_element;
+        account.line_item_display = account_data.line_item_display;
+        account.open_item_management = account_data.open_item_management;
+        account.tax_relevant = account_data.tax_relevant;
+        account.tax_category = if account_data.tax_category.is_empty() {
+            None
+        } else {
+            Some(account_data.tax_category)
+        };
+        account.currency = if account_data.currency.is_empty() {
+            None
+        } else {
+            Some(account_data.currency)
+        };
+        account.only_local_currency = account_data.only_local_currency;
+        account.exchange_rate_diff = account_data.exchange_rate_diff;
+        account.changed_at = Some(chrono::Utc::now());
+
+        match self.app_service.update_account(account).await {
+            Ok(_) => Ok(Response::new(GlAccountResponse {
+                success: true,
+                account_code: req.account_code,
+                messages: vec![],
+            })),
+            Err(e) => Err(Status::internal(e.to_string())),
+        }
     }
 
     async fn delete_gl_account(
@@ -210,16 +258,95 @@ impl ChartOfAccountsService for CoaGrpcService {
 
     async fn batch_validate_gl_accounts(
         &self,
-        _request: Request<BatchValidateGlAccountsRequest>,
+        request: Request<BatchValidateGlAccountsRequest>,
     ) -> Result<Response<BatchValidateGlAccountsResponse>, Status> {
-        Err(Status::unimplemented("Not yet implemented"))
+        let req = request.into_inner();
+        let posting_date = chrono::Utc::now().naive_utc().date();
+
+        let account_codes: Vec<String> = req.account_codes.clone();
+
+        match self
+            .app_service
+            .batch_validate_accounts(&req.chart_of_accounts, account_codes, posting_date)
+            .await
+        {
+            Ok(results) => {
+                let total_count = results.len() as i32;
+                let valid_count = results.iter().filter(|r| r.is_valid).count() as i32;
+                let invalid_count = total_count - valid_count;
+
+                let validation_results: Vec<proto::AccountValidationResult> = results
+                    .into_iter()
+                    .zip(req.account_codes.iter())
+                    .map(|(r, code)| proto::AccountValidationResult {
+                        account_code: code.clone(),
+                        is_valid: r.is_valid,
+                        exists: r.exists,
+                        is_active: r.is_active,
+                        is_postable: r.is_postable,
+                        status: if r.is_valid {
+                            proto::AccountStatus::Active as i32
+                        } else if !r.exists {
+                            proto::AccountStatus::Inactive as i32
+                        } else {
+                            proto::AccountStatus::Blocked as i32
+                        },
+                        messages: r
+                            .error_message
+                            .map(|msg| vec![proto::common::v1::ApiMessage {
+                                r#type: "error".to_string(),
+                                code: "VALIDATION_ERROR".to_string(),
+                                message: msg,
+                                target: String::new(),
+                            }])
+                            .unwrap_or_default(),
+                    })
+                    .collect();
+
+                Ok(Response::new(BatchValidateGlAccountsResponse {
+                    results: validation_results,
+                    total_count,
+                    valid_count,
+                    invalid_count,
+                }))
+            }
+            Err(e) => Err(Status::internal(e.to_string())),
+        }
     }
 
     async fn check_account_postable(
         &self,
-        _request: Request<CheckAccountPostableRequest>,
+        request: Request<CheckAccountPostableRequest>,
     ) -> Result<Response<CheckAccountPostableResponse>, Status> {
-        Err(Status::unimplemented("Not yet implemented"))
+        let req = request.into_inner();
+
+        // 解析过账日期，如果没有提供则使用当前日期
+        let posting_date = req.posting_date
+            .map(|ts| chrono::NaiveDateTime::from_timestamp_opt(ts.seconds, 0)
+                .map(|dt| dt.date())
+                .unwrap_or_else(|| chrono::Utc::now().naive_utc().date()))
+            .unwrap_or_else(|| chrono::Utc::now().naive_utc().date());
+
+        match self
+            .app_service
+            .validate_account(&req.chart_of_accounts, &req.account_code, posting_date)
+            .await
+        {
+            Ok(result) => Ok(Response::new(CheckAccountPostableResponse {
+                is_postable: result.is_postable,
+                reason: result.error_message.clone().unwrap_or_default(),
+                messages: result
+                    .error_message
+                    .map(|msg| vec![proto::common::v1::ApiMessage {
+                        r#type: if result.is_postable { "info" } else { "error" }.to_string(),
+                        code: if result.is_postable { "OK" } else { "NOT_POSTABLE" }.to_string(),
+                        message: msg,
+                        target: String::new(),
+                    }])
+                    .unwrap_or_default(),
+            })),
+            Err(e) => Err(Status::internal(e.to_string())),
+        }
     }
 
     async fn get_account_hierarchy(
