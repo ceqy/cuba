@@ -139,4 +139,34 @@ impl CoaApplicationService {
         }
         Ok(results)
     }
+
+    /// 查询子科目列表
+    pub async fn list_child_accounts(
+        &self,
+        chart_code: &str,
+        parent_account: &str,
+    ) -> anyhow::Result<Vec<GlAccount>> {
+        self.repository.find_children(chart_code, parent_account).await
+    }
+
+    /// 查询科目路径（从根到当前科目的所有祖先）
+    pub async fn get_account_path(
+        &self,
+        chart_code: &str,
+        account_code: &str,
+    ) -> anyhow::Result<Vec<GlAccount>> {
+        self.repository.find_ancestors(chart_code, account_code).await
+    }
+
+    /// 批量创建科目
+    pub async fn batch_create_accounts(
+        &self,
+        accounts: Vec<GlAccount>,
+    ) -> anyhow::Result<Vec<String>> {
+        // 验证所有科目代码
+        for account in &accounts {
+            account.validate_account_code().map_err(anyhow::Error::msg)?;
+        }
+        self.repository.batch_create(&accounts).await
+    }
 }

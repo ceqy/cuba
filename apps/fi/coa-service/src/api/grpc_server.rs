@@ -351,65 +351,205 @@ impl ChartOfAccountsService for CoaGrpcService {
 
     async fn get_account_hierarchy(
         &self,
-        _request: Request<GetAccountHierarchyRequest>,
+        request: Request<GetAccountHierarchyRequest>,
     ) -> Result<Response<AccountHierarchyResponse>, Status> {
-        Err(Status::unimplemented("Not yet implemented"))
+        let req = request.into_inner();
+
+        // 获取所有科目并构建层级
+        match self.app_service.list_accounts(&req.chart_of_accounts).await {
+            Ok(accounts) => {
+                // 找到根节点（没有父科目的科目）
+                let max_depth = if req.max_depth > 0 { req.max_depth } else { 10 };
+                let nodes: Vec<proto::AccountHierarchyNode> = accounts
+                    .iter()
+                    .filter(|a| a.parent_account.is_none() || a.parent_account.as_ref().map(|p| p.is_empty()).unwrap_or(true))
+                    .map(|a| build_hierarchy_node(a, &accounts, max_depth))
+                    .collect();
+
+                Ok(Response::new(AccountHierarchyResponse { nodes }))
+            }
+            Err(e) => Err(Status::internal(e.to_string())),
+        }
     }
 
     async fn list_child_accounts(
         &self,
-        _request: Request<ListChildAccountsRequest>,
+        request: Request<ListChildAccountsRequest>,
     ) -> Result<Response<ListChildAccountsResponse>, Status> {
-        Err(Status::unimplemented("Not yet implemented"))
+        let req = request.into_inner();
+
+        match self
+            .app_service
+            .list_child_accounts(&req.chart_of_accounts, &req.parent_account_code)
+            .await
+        {
+            Ok(children) => {
+                let accounts: Vec<proto::GlAccountSummary> = children
+                    .into_iter()
+                    .map(|a| proto::GlAccountSummary {
+                        account_code: a.account_code,
+                        account_name: a.account_name,
+                        account_nature: proto_account_nature(&a.account_nature) as i32,
+                        account_level: proto_account_level(a.account_level) as i32,
+                        is_postable: a.is_postable,
+                        status: proto_account_status(&a.status) as i32,
+                        parent_account: a.parent_account.unwrap_or_default(),
+                    })
+                    .collect();
+
+                Ok(Response::new(ListChildAccountsResponse { accounts }))
+            }
+            Err(e) => Err(Status::internal(e.to_string())),
+        }
     }
 
     async fn get_account_path(
         &self,
-        _request: Request<GetAccountPathRequest>,
+        request: Request<GetAccountPathRequest>,
     ) -> Result<Response<GetAccountPathResponse>, Status> {
-        Err(Status::unimplemented("Not yet implemented"))
+        let req = request.into_inner();
+
+        match self
+            .app_service
+            .get_account_path(&req.chart_of_accounts, &req.account_code)
+            .await
+        {
+            Ok(ancestors) => {
+                let full_path_string = ancestors
+                    .iter()
+                    .map(|a| a.account_code.as_str())
+                    .collect::<Vec<_>>()
+                    .join("/");
+
+                let path: Vec<proto::GlAccountSummary> = ancestors
+                    .into_iter()
+                    .map(|a| proto::GlAccountSummary {
+                        account_code: a.account_code,
+                        account_name: a.account_name,
+                        account_nature: proto_account_nature(&a.account_nature) as i32,
+                        account_level: proto_account_level(a.account_level) as i32,
+                        is_postable: a.is_postable,
+                        status: proto_account_status(&a.status) as i32,
+                        parent_account: a.parent_account.unwrap_or_default(),
+                    })
+                    .collect();
+
+                Ok(Response::new(GetAccountPathResponse {
+                    path,
+                    full_path_string,
+                }))
+            }
+            Err(e) => Err(Status::internal(e.to_string())),
+        }
     }
 
     async fn create_account_group(
         &self,
         _request: Request<CreateAccountGroupRequest>,
     ) -> Result<Response<AccountGroupResponse>, Status> {
-        Err(Status::unimplemented("Not yet implemented"))
+        // 科目组功能需要额外的数据库表支持，暂时返回未实现
+        Err(Status::unimplemented("Account group management requires additional database setup"))
     }
 
     async fn list_account_groups(
         &self,
         _request: Request<ListAccountGroupsRequest>,
     ) -> Result<Response<ListAccountGroupsResponse>, Status> {
-        Err(Status::unimplemented("Not yet implemented"))
+        // 科目组功能需要额外的数据库表支持，暂时返回未实现
+        Err(Status::unimplemented("Account group management requires additional database setup"))
     }
 
     async fn batch_create_gl_accounts(
         &self,
-        _request: Request<BatchCreateGlAccountsRequest>,
+        request: Request<BatchCreateGlAccountsRequest>,
     ) -> Result<Response<BatchCreateGlAccountsResponse>, Status> {
-        Err(Status::unimplemented("Not yet implemented"))
+        let req = request.into_inner();
+
+        let accounts: Vec<crate::domain::GlAccount> = req
+            .accounts
+            .into_iter()
+            .filter_map(|acc| acc.account)
+            .map(|a| crate::domain::GlAccount::new(
+                a.chart_of_accounts,
+                a.account_code,
+                a.account_name,
+                convert_account_nature(a.account_nature),
+                a.account_category.to_string(),
+            ))
+            .collect();
+
+        match self.app_service.batch_create_accounts(accounts).await {
+            Ok(created_codes) => {
+                let responses: Vec<GlAccountResponse> = created_codes
+                    .into_iter()
+                    .map(|code| GlAccountResponse {
+                        success: true,
+                        account_code: code,
+                        messages: vec![],
+                    })
+                    .collect();
+
+                let result_len = responses.len() as i32;
+                Ok(Response::new(BatchCreateGlAccountsResponse {
+                    result: Some(proto::common::v1::BatchOperationResult {
+                        success_count: result_len,
+                        failure_count: 0,
+                        errors: vec![],
+                    }),
+                    responses,
+                }))
+            }
+            Err(e) => Err(Status::internal(e.to_string())),
+        }
     }
 
     async fn batch_update_gl_accounts(
         &self,
         _request: Request<BatchUpdateGlAccountsRequest>,
     ) -> Result<Response<BatchUpdateGlAccountsResponse>, Status> {
-        Err(Status::unimplemented("Not yet implemented"))
+        // 批量更新需要更复杂的逻辑，暂时返回未实现
+        Err(Status::unimplemented("Batch update requires additional implementation"))
     }
 
     async fn import_accounts(
         &self,
         _request: Request<ImportAccountsRequest>,
     ) -> Result<Response<ImportAccountsResponse>, Status> {
-        Err(Status::unimplemented("Not yet implemented"))
+        // 导入功能需要文件解析支持，暂时返回未实现
+        Err(Status::unimplemented("Import requires file parsing implementation"))
     }
 
     async fn export_accounts(
         &self,
         _request: Request<ExportAccountsRequest>,
     ) -> Result<Response<ExportAccountsResponse>, Status> {
-        Err(Status::unimplemented("Not yet implemented"))
+        // 导出功能需要文件生成支持，暂时返回未实现
+        Err(Status::unimplemented("Export requires file generation implementation"))
+    }
+}
+
+// Helper function to build hierarchy node recursively
+fn build_hierarchy_node(
+    account: &crate::domain::GlAccount,
+    all_accounts: &[crate::domain::GlAccount],
+    remaining_depth: i32,
+) -> proto::AccountHierarchyNode {
+    let children: Vec<proto::AccountHierarchyNode> = if remaining_depth > 0 {
+        all_accounts
+            .iter()
+            .filter(|a| a.parent_account.as_ref() == Some(&account.account_code))
+            .map(|a| build_hierarchy_node(a, all_accounts, remaining_depth - 1))
+            .collect()
+    } else {
+        vec![]
+    };
+
+    proto::AccountHierarchyNode {
+        account_code: account.account_code.clone(),
+        account_name: account.account_name.clone(),
+        level: proto_account_level(account.account_level) as i32,
+        is_postable: account.is_postable,
+        children,
     }
 }
 

@@ -20,6 +20,9 @@ pub trait GlAccountRepository: Send + Sync {
     async fn find_by_nature(&self, chart_code: &str, nature: &AccountNature) -> anyhow::Result<Vec<GlAccount>>;
     async fn find_postable_accounts(&self, chart_code: &str) -> anyhow::Result<Vec<GlAccount>>;
     async fn validate_account(&self, chart_code: &str, account_code: &str, posting_date: NaiveDate) -> anyhow::Result<AccountValidationResult>;
+    async fn find_children(&self, chart_code: &str, parent_account: &str) -> anyhow::Result<Vec<GlAccount>>;
+    async fn find_ancestors(&self, chart_code: &str, account_code: &str) -> anyhow::Result<Vec<GlAccount>>;
+    async fn batch_create(&self, accounts: &[GlAccount]) -> anyhow::Result<Vec<String>>;
 }
 
 /// PostgreSQL 科目仓储实现
@@ -236,6 +239,101 @@ impl GlAccountRepository for PgGlAccountRepository {
             is_postable: result.get::<Option<bool>, _>("is_postable").unwrap_or(false),
             error_message: result.get::<Option<String>, _>("error_message"),
         })
+    }
+
+    async fn find_children(&self, chart_code: &str, parent_account: &str) -> anyhow::Result<Vec<GlAccount>> {
+        let rows = sqlx::query_as::<_, GlAccount>(
+            "SELECT * FROM gl_accounts WHERE chart_code = $1 AND parent_account = $2 ORDER BY account_code",
+        )
+        .bind(chart_code)
+        .bind(parent_account)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rows)
+    }
+
+    async fn find_ancestors(&self, chart_code: &str, account_code: &str) -> anyhow::Result<Vec<GlAccount>> {
+        // 递归查询祖先科目
+        let rows = sqlx::query_as::<_, GlAccount>(
+            r#"
+            WITH RECURSIVE ancestors AS (
+                SELECT * FROM gl_accounts
+                WHERE chart_code = $1 AND account_code = $2
+                UNION ALL
+                SELECT g.* FROM gl_accounts g
+                INNER JOIN ancestors a ON g.chart_code = a.chart_code AND g.account_code = a.parent_account
+            )
+            SELECT * FROM ancestors WHERE account_code != $2 ORDER BY account_level
+            "#,
+        )
+        .bind(chart_code)
+        .bind(account_code)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rows)
+    }
+
+    async fn batch_create(&self, accounts: &[GlAccount]) -> anyhow::Result<Vec<String>> {
+        let mut tx = self.pool.begin().await?;
+        let mut created_codes = Vec::new();
+
+        for account in accounts {
+            sqlx::query(
+                r#"
+                INSERT INTO gl_accounts (
+                    id, chart_code, account_code, account_name, account_name_long,
+                    account_nature, account_category, account_group,
+                    account_level, parent_account, is_leaf_account, full_path, depth,
+                    is_postable, is_cost_element, line_item_display, open_item_management,
+                    balance_indicator, currency, only_local_currency, exchange_rate_diff,
+                    tax_relevant, tax_category, status, valid_from, valid_to,
+                    created_by, created_at, tenant_id
+                ) VALUES (
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+                    $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26,
+                    $27, $28, $29
+                )
+                "#,
+            )
+            .bind(account.id)
+            .bind(&account.chart_code)
+            .bind(&account.account_code)
+            .bind(&account.account_name)
+            .bind(&account.account_name_long)
+            .bind(account.account_nature.clone())
+            .bind(&account.account_category)
+            .bind(&account.account_group)
+            .bind(account.account_level)
+            .bind(&account.parent_account)
+            .bind(account.is_leaf_account)
+            .bind(&account.full_path)
+            .bind(account.depth)
+            .bind(account.is_postable)
+            .bind(account.is_cost_element)
+            .bind(account.line_item_display)
+            .bind(account.open_item_management)
+            .bind(account.balance_indicator.clone())
+            .bind(&account.currency)
+            .bind(account.only_local_currency)
+            .bind(account.exchange_rate_diff)
+            .bind(account.tax_relevant)
+            .bind(&account.tax_category)
+            .bind(account.status.clone())
+            .bind(account.valid_from)
+            .bind(account.valid_to)
+            .bind(&account.created_by)
+            .bind(account.created_at)
+            .bind(&account.tenant_id)
+            .execute(&mut *tx)
+            .await?;
+
+            created_codes.push(account.account_code.clone());
+        }
+
+        tx.commit().await?;
+        Ok(created_codes)
     }
 }
 
