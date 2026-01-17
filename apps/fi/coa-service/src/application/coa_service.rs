@@ -1,5 +1,4 @@
 // COA Application Service - COA 应用服务
-use async_trait::async_trait;
 use chrono::NaiveDate;
 use std::sync::Arc;
 

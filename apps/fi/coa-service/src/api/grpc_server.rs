@@ -322,8 +322,8 @@ impl ChartOfAccountsService for CoaGrpcService {
 
         // 解析过账日期，如果没有提供则使用当前日期
         let posting_date = req.posting_date
-            .map(|ts| chrono::NaiveDateTime::from_timestamp_opt(ts.seconds, 0)
-                .map(|dt| dt.date())
+            .map(|ts| chrono::DateTime::from_timestamp(ts.seconds, 0)
+                .map(|dt| dt.naive_utc().date())
                 .unwrap_or_else(|| chrono::Utc::now().naive_utc().date()))
             .unwrap_or_else(|| chrono::Utc::now().naive_utc().date());
 
@@ -531,11 +531,12 @@ impl ChartOfAccountsService for CoaGrpcService {
                     // Create error response
                     responses.push(proto::GlAccountResponse {
                         success: false,
-                        account: None,
+                        account_code: String::new(),
                         messages: vec![proto::common::v1::ApiMessage {
                             r#type: "error".to_string(),
                             code: "UPDATE_FAILED".to_string(),
                             message: e.to_string(),
+                            target: String::new(),
                         }],
                     });
                 }
@@ -544,9 +545,9 @@ impl ChartOfAccountsService for CoaGrpcService {
 
         Ok(Response::new(proto::BatchUpdateGlAccountsResponse {
             result: Some(proto::common::v1::BatchOperationResult {
-                total_count: (success_count + failure_count) as i32,
                 success_count: success_count as i32,
                 failure_count: failure_count as i32,
+                errors: vec![],
             }),
             responses,
         }))

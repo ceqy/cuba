@@ -1,12 +1,11 @@
 // Repository implementation - 仓储实现
 use async_trait::async_trait;
 use chrono::NaiveDate;
-use sqlx::{PgPool, Postgres, Transaction};
+use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::domain::{
-    AccountGroup, AccountNature, AccountStatus, AccountText, AccountValidationResult,
-    BalanceIndicator, CompanyCodeAccountData, GlAccount,
+    AccountNature, AccountStatus, AccountValidationResult, BalanceIndicator, GlAccount,
 };
 
 /// 科目仓储trait

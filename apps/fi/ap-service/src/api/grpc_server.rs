@@ -17,6 +17,7 @@ use chrono::Datelike;
 use std::str::FromStr;
 
 /// gRPC Service Implementation
+#[allow(dead_code)]
 pub struct ApServiceImpl {
     post_supplier_handler: Arc<PostSupplierHandler>,
     list_open_items_handler: Arc<ListOpenItemsHandler>,

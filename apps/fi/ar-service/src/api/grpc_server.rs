@@ -12,6 +12,7 @@ use crate::api::proto::common::v1 as common_v1;
 use ap_v1::accounts_receivable_payable_service_server::AccountsReceivablePayableService;
 use ap_v1::*;
 
+#[allow(dead_code)]
 pub struct ArServiceImpl {
     post_customer_handler: Arc<PostCustomerHandler>,
     list_open_items_handler: Arc<ListOpenItemsHandler>,
