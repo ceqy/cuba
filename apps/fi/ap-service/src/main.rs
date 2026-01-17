@@ -8,7 +8,7 @@ use ap_service::api::grpc_server::ApServiceImpl;
 use ap_service::api::proto::fi::ap::v1::accounts_receivable_payable_service_server::AccountsReceivablePayableServiceServer;
 use ap_service::infrastructure::repository::{SupplierRepository, OpenItemRepository, InvoiceRepository};
 use ap_service::infrastructure::gl_client::GlClient;
-use ap_service::application::handlers::{PostSupplierHandler, ListOpenItemsHandler, PostInvoiceHandler};
+use ap_service::application::handlers::{PostSupplierHandler, ListOpenItemsHandler, PostInvoiceHandler, GetInvoiceHandler, ApproveInvoiceHandler, RejectInvoiceHandler};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -41,12 +41,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         supplier_repo.clone(),
         gl_client.clone(),
     ));
+    let get_invoice_handler = Arc::new(GetInvoiceHandler::new(invoice_repo.clone()));
+    let approve_invoice_handler = Arc::new(ApproveInvoiceHandler::new(invoice_repo.clone()));
+    let reject_invoice_handler = Arc::new(RejectInvoiceHandler::new(invoice_repo.clone()));
 
     // Service
     let ap_service = ApServiceImpl::new(
         post_supplier_handler,
         list_open_items_handler,
         post_invoice_handler,
+        get_invoice_handler,
+        approve_invoice_handler,
+        reject_invoice_handler,
     );
 
     // Reflection

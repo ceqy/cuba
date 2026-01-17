@@ -215,6 +215,114 @@ impl ListOpenItemsHandler {
     }
 }
 
+/// Handler for getting invoice details
+pub struct GetInvoiceHandler {
+    invoice_repo: Arc<InvoiceRepository>,
+}
+
+impl GetInvoiceHandler {
+    pub fn new(invoice_repo: Arc<InvoiceRepository>) -> Self {
+        Self { invoice_repo }
+    }
+
+    pub async fn handle(&self, id: Uuid) -> Result<Invoice, AppError> {
+        self.invoice_repo
+            .find_by_id(id)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?
+            .ok_or_else(|| AppError::NotFound("Invoice not found".to_string()))
+    }
+}
+
+/// Handler for listing invoices
+pub struct ListInvoicesHandler {
+    invoice_repo: Arc<InvoiceRepository>,
+}
+
+impl ListInvoicesHandler {
+    pub fn new(invoice_repo: Arc<InvoiceRepository>) -> Self {
+        Self { invoice_repo }
+    }
+
+    pub async fn handle(
+        &self,
+        company_code: &str,
+        status: Option<&str>,
+        page: u64,
+        page_size: u64,
+    ) -> Result<(Vec<Invoice>, i64), AppError> {
+        let invoices = self.invoice_repo
+            .list(company_code, status, page, page_size)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+        let total_count = self.invoice_repo
+            .count(company_code, status)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok((invoices, total_count))
+    }
+}
+
+/// Handler for approving invoices
+pub struct ApproveInvoiceHandler {
+    invoice_repo: Arc<InvoiceRepository>,
+}
+
+impl ApproveInvoiceHandler {
+    pub fn new(invoice_repo: Arc<InvoiceRepository>) -> Self {
+        Self { invoice_repo }
+    }
+
+    pub async fn handle(&self, id: Uuid) -> Result<(), AppError> {
+        // Check invoice exists
+        let _invoice = self.invoice_repo
+            .find_by_id(id)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?
+            .ok_or_else(|| AppError::NotFound("Invoice not found".to_string()))?;
+
+        // Update status to APPROVED
+        self.invoice_repo
+            .update_status(id, "APPROVED")
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(())
+    }
+}
+
+/// Handler for rejecting invoices
+pub struct RejectInvoiceHandler {
+    invoice_repo: Arc<InvoiceRepository>,
+}
+
+impl RejectInvoiceHandler {
+    pub fn new(invoice_repo: Arc<InvoiceRepository>) -> Self {
+        Self { invoice_repo }
+    }
+
+    pub async fn handle(&self, id: Uuid, reason: Option<String>) -> Result<(), AppError> {
+        // Check invoice exists
+        let _invoice = self.invoice_repo
+            .find_by_id(id)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?
+            .ok_or_else(|| AppError::NotFound("Invoice not found".to_string()))?;
+
+        // Update status to REJECTED
+        self.invoice_repo
+            .update_status(id, "REJECTED")
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+        // TODO: Store rejection reason
+
+        Ok(())
+    }
+}
+
 /// Application error types
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {

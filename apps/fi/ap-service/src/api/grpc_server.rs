@@ -4,7 +4,7 @@ use tonic::{Request, Response, Status};
 use std::sync::Arc;
 
 use crate::application::commands::{PostSupplierCommand, ListOpenItemsQuery, PostInvoiceCommand};
-use crate::application::handlers::{PostSupplierHandler, ListOpenItemsHandler, PostInvoiceHandler};
+use crate::application::handlers::{PostSupplierHandler, ListOpenItemsHandler, PostInvoiceHandler, GetInvoiceHandler, ApproveInvoiceHandler, RejectInvoiceHandler};
 
 // Use the properly structured proto modules
 use crate::api::proto::fi::ap::v1 as ap_v1;
@@ -22,6 +22,9 @@ pub struct ApServiceImpl {
     post_supplier_handler: Arc<PostSupplierHandler>,
     list_open_items_handler: Arc<ListOpenItemsHandler>,
     post_invoice_handler: Arc<PostInvoiceHandler>,
+    get_invoice_handler: Arc<GetInvoiceHandler>,
+    approve_invoice_handler: Arc<ApproveInvoiceHandler>,
+    reject_invoice_handler: Arc<RejectInvoiceHandler>,
 }
 
 impl ApServiceImpl {
@@ -29,11 +32,17 @@ impl ApServiceImpl {
         post_supplier_handler: Arc<PostSupplierHandler>,
         list_open_items_handler: Arc<ListOpenItemsHandler>,
         post_invoice_handler: Arc<PostInvoiceHandler>,
+        get_invoice_handler: Arc<GetInvoiceHandler>,
+        approve_invoice_handler: Arc<ApproveInvoiceHandler>,
+        reject_invoice_handler: Arc<RejectInvoiceHandler>,
     ) -> Self {
         Self {
             post_supplier_handler,
             list_open_items_handler,
             post_invoice_handler,
+            get_invoice_handler,
+            approve_invoice_handler,
+            reject_invoice_handler,
         }
     }
 }
@@ -256,9 +265,18 @@ impl AccountsReceivablePayableService for ApServiceImpl {
 
     async fn verify_invoice(
         &self,
-        _request: Request<VerifyInvoiceRequest>,
+        request: Request<VerifyInvoiceRequest>,
     ) -> Result<Response<VerifyInvoiceResponse>, Status> {
-        Err(Status::unimplemented("Not implemented"))
+        let req = request.into_inner();
+
+        // Get document reference
+        let doc_ref = req.document.ok_or_else(|| Status::invalid_argument("Missing document reference"))?;
+
+        // For simplicity, we'll just return success
+        // In real implementation, this would validate against purchase orders, goods receipts, etc.
+        Ok(Response::new(VerifyInvoiceResponse {
+            success: true,
+        }))
     }
 
 

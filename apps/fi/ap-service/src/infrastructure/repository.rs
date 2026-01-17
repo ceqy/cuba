@@ -1,6 +1,6 @@
 //! PostgreSQL Repository implementations for AP Service
 
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 use uuid::Uuid;
 use crate::domain::{Supplier, Invoice, OpenItem, InvoiceItem};
 
@@ -297,6 +297,102 @@ impl InvoiceRepository {
         }
 
         tx.commit().await?;
+        Ok(())
+    }
+
+    pub async fn list(
+        &self,
+        company_code: &str,
+        status: Option<&str>,
+        page: u64,
+        page_size: u64,
+    ) -> Result<Vec<Invoice>, sqlx::Error> {
+        let offset = (page - 1) * page_size;
+
+        let mut query_builder = sqlx::QueryBuilder::new(
+            r#"
+            SELECT id, document_number, company_code, fiscal_year, document_type,
+                   supplier_id, document_date, posting_date, due_date, baseline_date,
+                   currency, total_amount, tax_amount, reference_document, header_text,
+                   status, clearing_document, clearing_date, created_at, updated_at
+            FROM invoices WHERE company_code =
+            "#
+        );
+        query_builder.push_bind(company_code);
+
+        if let Some(s) = status {
+            query_builder.push(" AND status = ");
+            query_builder.push_bind(s.to_uppercase());
+        }
+
+        query_builder.push(" ORDER BY created_at DESC LIMIT ");
+        query_builder.push_bind(page_size as i64);
+        query_builder.push(" OFFSET ");
+        query_builder.push_bind(offset as i64);
+
+        let invoices = query_builder
+            .build_query_as::<Invoice>()
+            .fetch_all(&self.pool)
+            .await?;
+
+        // Load items for each invoice
+        let mut result = Vec::new();
+        for mut invoice in invoices {
+            let items = sqlx::query_as::<_, InvoiceItem>(
+                r#"
+                SELECT id, invoice_id, line_item_number, gl_account, debit_credit_indicator,
+                       amount, cost_center, profit_center, item_text, purchase_order,
+                       po_item_number, goods_receipt, gr_item_number, quantity, unit_of_measure
+                FROM invoice_items WHERE invoice_id = $1
+                ORDER BY line_item_number ASC
+                "#
+            )
+            .bind(invoice.id)
+            .fetch_all(&self.pool)
+            .await?;
+
+            invoice.items = items;
+            result.push(invoice);
+        }
+
+        Ok(result)
+    }
+
+    pub async fn count(&self, company_code: &str, status: Option<&str>) -> Result<i64, sqlx::Error> {
+        let mut query_builder = sqlx::QueryBuilder::new(
+            "SELECT COUNT(*) as count FROM invoices WHERE company_code = "
+        );
+        query_builder.push_bind(company_code);
+
+        if let Some(s) = status {
+            query_builder.push(" AND status = ");
+            query_builder.push_bind(s.to_uppercase());
+        }
+
+        let query = query_builder.build();
+        let row = query.fetch_one(&self.pool).await?;
+        let count: i64 = row.get("count");
+
+        Ok(count)
+    }
+
+    pub async fn update_status(
+        &self,
+        id: Uuid,
+        status: &str,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            UPDATE invoices
+            SET status = $2, updated_at = NOW()
+            WHERE id = $1
+            "#
+        )
+        .bind(id)
+        .bind(status)
+        .execute(&self.pool)
+        .await?;
+
         Ok(())
     }
 }
