@@ -405,7 +405,7 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
         let mut messages = vec![];
 
         // Check if header exists
-        let header = match req.header {
+        let _header = match req.header {
             Some(h) => h,
             None => {
                 return Ok(Response::new(ValidationResponse {
@@ -526,17 +526,17 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
         };
 
         // Create entry
-        let mut entry = self.create_handler.handle(cmd).await
+        let entry = self.create_handler.handle(cmd).await
             .map_err(|e| Status::internal(e.to_string()))?;
 
         // Park it (validate and change status to Parked)
         let park_cmd = ParkJournalEntryCommand { id: entry.id };
-        entry = self.park_handler.handle(park_cmd).await
+        self.park_handler.handle(park_cmd).await
             .map_err(|e| Status::internal(e.to_string()))?;
 
         Ok(Response::new(ParkJournalEntryResponse {
             success: true,
-            parked_document_reference: None, // Parked documents don't have document numbers yet
+            parked_document_reference: None,
             messages: vec![],
         }))
     }

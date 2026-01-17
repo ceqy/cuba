@@ -9,8 +9,8 @@ pub mod coa_proto {
 
 use coa_proto::{
     chart_of_accounts_service_client::ChartOfAccountsServiceClient,
-    ValidateGlAccountRequest, ValidateGlAccountResponse,
-    BatchValidateGlAccountsRequest, BatchValidateGlAccountsResponse,
+    ValidateGlAccountRequest,
+    BatchValidateGlAccountsRequest,
 };
 
 /// COA 服务客户端

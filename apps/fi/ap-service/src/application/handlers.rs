@@ -36,7 +36,7 @@ impl PostInvoiceHandler {
         let supplier_uuid = Uuid::parse_str(&cmd.supplier_id)
             .map_err(|_| AppError::Validation("Invalid Supplier ID format".to_string()))?;
             
-        let supplier = self.supplier_repo.find_by_id(supplier_uuid).await
+        let _supplier = self.supplier_repo.find_by_id(supplier_uuid).await
             .map_err(|e: sqlx::Error| AppError::Database(e.to_string()))?
             .ok_or_else(|| AppError::NotFound("Supplier not found".to_string()))?;
 
@@ -303,7 +303,7 @@ impl RejectInvoiceHandler {
         Self { invoice_repo }
     }
 
-    pub async fn handle(&self, id: Uuid, reason: Option<String>) -> Result<(), AppError> {
+    pub async fn handle(&self, id: Uuid, _reason: Option<String>) -> Result<(), AppError> {
         // Check invoice exists
         let _invoice = self.invoice_repo
             .find_by_id(id)

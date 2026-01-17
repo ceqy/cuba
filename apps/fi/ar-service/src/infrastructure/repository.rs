@@ -1,6 +1,4 @@
-use async_trait::async_trait;
-use sqlx::PgPool;
-use crate::domain::{Customer, OpenItem, Invoice, InvoiceItem};
+use crate::domain::{Customer, OpenItem, Invoice};
 use anyhow::Result;
 use rust_decimal::Decimal;
 use uuid::Uuid;

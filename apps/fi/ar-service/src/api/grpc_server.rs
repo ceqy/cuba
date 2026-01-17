@@ -11,7 +11,6 @@ use crate::api::proto::common::v1 as common_v1;
 
 use ap_v1::accounts_receivable_payable_service_server::AccountsReceivablePayableService;
 use ap_v1::*;
-use common_v1::*;
 
 pub struct ArServiceImpl {
     post_customer_handler: Arc<PostCustomerHandler>,
@@ -348,7 +347,7 @@ impl AccountsReceivablePayableService for ArServiceImpl {
     async fn reverse_document(&self, request: Request<ReverseDocumentRequest>) -> Result<Response<ReverseDocumentResponse>, Status> {
         let req = request.into_inner();
 
-        let doc_ref = req.document_to_reverse
+        let _doc_ref = req.document_to_reverse
             .ok_or_else(|| Status::invalid_argument("Missing document reference"))?;
 
         // For MVP: mark document as reversed
@@ -534,7 +533,7 @@ impl AccountsReceivablePayableService for ArServiceImpl {
         }))
     }
     async fn execute_clearing_proposal(&self, request: Request<ExecuteClearingProposalRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> {
-        let req = request.into_inner();
+        let _req = request.into_inner();
 
         // For MVP: acknowledge the request
         // Full implementation would:

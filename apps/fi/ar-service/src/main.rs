@@ -25,10 +25,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let migrator = sqlx::migrate!("./migrations");
     cuba_database::run_migrations(&pool, &migrator).await?;
 
-    // Run migrations
-    let migrator = sqlx::migrate!("./migrations");
-    cuba_database::run_migrations(&pool, &migrator).await?;
-
     // GL Client
     let gl_client = Arc::new(Mutex::new(
         GlClient::new(&gl_endpoint).await

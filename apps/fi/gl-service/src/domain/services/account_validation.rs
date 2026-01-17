@@ -47,7 +47,7 @@ impl AccountValidationService {
         &self,
         account_codes: Vec<String>,
         company_code: &str,
-        posting_date: NaiveDate,
+        _posting_date: NaiveDate,
     ) -> Result<Vec<AccountValidationResult>, Box<dyn std::error::Error + Send + Sync>> {
         // 批量验证所有科目
         let results = self

@@ -1,6 +1,6 @@
 //! PostgreSQL Repository implementations for AP Service
 
-use sqlx::{PgPool, Row};
+use sqlx::Row;
 use uuid::Uuid;
 use crate::domain::{Supplier, Invoice, OpenItem, InvoiceItem};
 

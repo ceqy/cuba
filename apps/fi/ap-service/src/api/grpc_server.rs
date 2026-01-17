@@ -3,7 +3,7 @@
 use tonic::{Request, Response, Status};
 use std::sync::Arc;
 
-use crate::application::commands::{PostSupplierCommand, ListOpenItemsQuery, PostInvoiceCommand};
+use crate::application::commands::{PostSupplierCommand, ListOpenItemsQuery};
 use crate::application::handlers::{PostSupplierHandler, ListOpenItemsHandler, PostInvoiceHandler, GetInvoiceHandler, ApproveInvoiceHandler, RejectInvoiceHandler, ClearOpenItemsHandler, PartialClearHandler, GeneratePaymentProposalHandler, ExecutePaymentProposalHandler};
 
 // Use the properly structured proto modules
@@ -12,7 +12,6 @@ use crate::api::proto::common::v1 as common_v1;
 
 use ap_v1::accounts_receivable_payable_service_server::AccountsReceivablePayableService;
 use ap_v1::*;
-use common_v1::*;
 
 use chrono::Datelike;
 use std::str::FromStr;
@@ -374,7 +373,7 @@ impl AccountsReceivablePayableService for ApServiceImpl {
     ) -> Result<Response<ReverseDocumentResponse>, Status> {
         let req = request.into_inner();
 
-        let doc_ref = req.document_to_reverse
+        let _doc_ref = req.document_to_reverse
             .ok_or_else(|| Status::invalid_argument("Missing document reference"))?;
 
         // For MVP: mark document as reversed
@@ -397,7 +396,7 @@ impl AccountsReceivablePayableService for ApServiceImpl {
         let req = request.into_inner();
 
         // Get document reference
-        let doc_ref = req.document.ok_or_else(|| Status::invalid_argument("Missing document reference"))?;
+        let _doc_ref = req.document.ok_or_else(|| Status::invalid_argument("Missing document reference"))?;
 
         // For simplicity, we'll just return success
         // In real implementation, this would validate against purchase orders, goods receipts, etc.
@@ -467,7 +466,7 @@ impl AccountsReceivablePayableService for ApServiceImpl {
         }))
     }
     async fn get_dunning_history(&self, request: Request<GetDunningHistoryRequest>) -> Result<Response<GetDunningHistoryResponse>, Status> {
-        let req = request.into_inner();
+        let _req = request.into_inner();
 
         // For MVP: return mock dunning history
         // Full implementation would:
@@ -603,7 +602,7 @@ impl AccountsReceivablePayableService for ApServiceImpl {
         }))
     }
     async fn execute_clearing_proposal(&self, request: Request<ExecuteClearingProposalRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> {
-        let req = request.into_inner();
+        let _req = request.into_inner();
 
         // For MVP: acknowledge the request
         // Full implementation would:
@@ -762,7 +761,7 @@ impl AccountsReceivablePayableService for ApServiceImpl {
     }
 
     async fn execute_payment_proposal(&self, request: Request<ExecutePaymentProposalRequest>) -> Result<Response<PaymentExecutionResponse>, Status> {
-        let req = request.into_inner();
+        let _req = request.into_inner();
 
         // For each supplier, get their open items and create a payment document
         // In a real implementation, this would:
@@ -871,7 +870,7 @@ impl AccountsReceivablePayableService for ApServiceImpl {
         // 5. Match against open items for auto-clearing
         // 6. Create GL entries for cash movements
 
-        if let Some(stmt) = req.statement {
+        if let Some(_stmt) = req.statement {
             // Mock: Process the statement
             // In reality, would parse the lines and create documents
         }
@@ -891,7 +890,7 @@ impl AccountsReceivablePayableService for ApServiceImpl {
         Err(Status::unimplemented("Lockbox processing requires image OCR"))
     }
     async fn apply_cash(&self, request: Request<ApplyCashRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> {
-        let req = request.into_inner();
+        let _req = request.into_inner();
 
         // For MVP: acknowledge cash application
         // Full implementation would:
@@ -907,7 +906,7 @@ impl AccountsReceivablePayableService for ApServiceImpl {
         }))
     }
     async fn get_tolerance_groups(&self, request: Request<GetToleranceGroupsRequest>) -> Result<Response<GetToleranceGroupsResponse>, Status> {
-        let req = request.into_inner();
+        let _req = request.into_inner();
 
         // For MVP: return mock tolerance groups
         // Full implementation would:

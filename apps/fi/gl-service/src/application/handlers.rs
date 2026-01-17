@@ -4,10 +4,7 @@ use crate::application::queries::{GetJournalEntryQuery, ListJournalEntriesQuery}
 use crate::domain::aggregates::journal_entry::{JournalEntry, LineItem, DebitCredit, PostingStatus};
 use crate::domain::repositories::JournalRepository;
 use crate::domain::services::AccountValidationService;
-use cuba_core::domain::Entity;
 use uuid::Uuid;
-use chrono::Utc;
-use rust_decimal::Decimal;
 
 pub struct CreateJournalEntryHandler<R> {
     repository: Arc<R>,
