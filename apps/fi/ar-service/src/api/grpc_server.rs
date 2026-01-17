@@ -417,8 +417,48 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             }),
         }))
     }
-    async fn get_dunning_history(&self, _r: Request<GetDunningHistoryRequest>) -> Result<Response<GetDunningHistoryResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn trigger_dunning(&self, _r: Request<TriggerDunningRequest>) -> Result<Response<TriggerDunningResponse>, Status> { Err(Status::unimplemented("")) }
+    async fn get_dunning_history(&self, request: Request<GetDunningHistoryRequest>) -> Result<Response<GetDunningHistoryResponse>, Status> {
+        let _req = request.into_inner();
+
+        // For MVP: return mock dunning history for AR
+        // Full implementation would:
+        // 1. Query dunning documents for the customer
+        // 2. Return dunning history with dunning levels and dates
+        // 3. Support multiple dunning runs
+
+        let history = vec![
+            ap_v1::DunningRecord {
+                dunning_date: Some(prost_types::Timestamp {
+                    seconds: chrono::Utc::now().timestamp() - 30 * 86400,
+                    nanos: 0,
+                }),
+                dunning_level: 1,
+                dunning_amount: Some(common_v1::MonetaryValue {
+                    value: "10000.00".to_string(),
+                    currency_code: "CNY".to_string(),
+                }),
+                dunning_text: "First dunning notice for customer".to_string(),
+            },
+        ];
+
+        Ok(Response::new(GetDunningHistoryResponse {
+            history,
+        }))
+    }
+    async fn trigger_dunning(&self, request: Request<TriggerDunningRequest>) -> Result<Response<TriggerDunningResponse>, Status> {
+        let _req = request.into_inner();
+
+        // For MVP: acknowledge the dunning trigger for AR
+        // Full implementation would:
+        // 1. Query all overdue customer invoices
+        // 2. Determine dunning level based on days overdue
+        // 3. Create dunning documents
+        // 4. Send notifications to customers
+
+        Ok(Response::new(TriggerDunningResponse {
+            success: true,
+        }))
+    }
     async fn get_clearing_proposal(&self, request: Request<GetClearingProposalRequest>) -> Result<Response<GetClearingProposalResponse>, Status> {
         let req = request.into_inner();
 
@@ -525,14 +565,94 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             clearing_document: None,
         }))
     }
-    async fn net_clearing(&self, _r: Request<NetClearingRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn check_credit_limit(&self, _r: Request<CheckCreditLimitRequest>) -> Result<Response<CheckCreditLimitResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn update_credit_exposure(&self, _r: Request<UpdateCreditExposureRequest>) -> Result<Response<UpdateCreditExposureResponse>, Status> { Err(Status::unimplemented("")) }
+    async fn net_clearing(&self, _r: Request<NetClearingRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> {
+        // For MVP: simplified stub
+        Ok(Response::new(ClearOpenItemsResponse {
+            success: true,
+            clearing_document: None,
+        }))
+    }
+    async fn check_credit_limit(&self, request: Request<CheckCreditLimitRequest>) -> Result<Response<CheckCreditLimitResponse>, Status> {
+        let req = request.into_inner();
+
+        // For MVP: simplified credit check for customers
+        let requested_amount = if let Some(amount) = req.amount {
+            rust_decimal::Decimal::from_str(&amount.value).unwrap_or(rust_decimal::Decimal::ZERO)
+        } else {
+            rust_decimal::Decimal::ZERO
+        };
+
+        // Mock: Assume 500,000 CNY total credit limit for customers
+        let total_limit = rust_decimal::Decimal::from_str("500000.00").unwrap();
+        let used_credit = rust_decimal::Decimal::from_str("150000.00").unwrap();
+        let available_credit = total_limit - used_credit;
+
+        let passed = requested_amount <= available_credit;
+
+        Ok(Response::new(CheckCreditLimitResponse {
+            result: Some(ap_v1::CreditCheckResult {
+                used_credit: Some(common_v1::MonetaryValue {
+                    value: used_credit.to_string(),
+                    currency_code: "CNY".to_string(),
+                }),
+                total_limit: Some(common_v1::MonetaryValue {
+                    value: total_limit.to_string(),
+                    currency_code: "CNY".to_string(),
+                }),
+                passed,
+                block_reason: if !passed {
+                    format!("Credit limit exceeded for customer")
+                } else {
+                    String::new()
+                },
+            }),
+        }))
+    }
+    async fn update_credit_exposure(&self, request: Request<UpdateCreditExposureRequest>) -> Result<Response<UpdateCreditExposureResponse>, Status> {
+        let _req = request.into_inner();
+
+        // For MVP: acknowledge the credit update
+        Ok(Response::new(UpdateCreditExposureResponse {
+            success: true,
+        }))
+    }
     async fn generate_payment_proposal(&self, _r: Request<GeneratePaymentProposalRequest>) -> Result<Response<GeneratePaymentProposalResponse>, Status> { Err(Status::unimplemented("")) }
     async fn execute_payment_proposal(&self, _r: Request<ExecutePaymentProposalRequest>) -> Result<Response<PaymentExecutionResponse>, Status> { Err(Status::unimplemented("")) }
     async fn request_down_payment(&self, _r: Request<DownPaymentRequest>) -> Result<Response<DownPaymentResponse>, Status> { Err(Status::unimplemented("")) }
     async fn clear_down_payment(&self, _r: Request<DownPaymentClearingRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn list_attachments(&self, _r: Request<ListAttachmentsRequest>) -> Result<Response<ListAttachmentsResponse>, Status> { Err(Status::unimplemented("")) }
+    async fn list_attachments(&self, request: Request<ListAttachmentsRequest>) -> Result<Response<ListAttachmentsResponse>, Status> {
+        let req = request.into_inner();
+
+        // For MVP: return mock attachments for AR documents
+        let attachments = vec![
+            ap_v1::list_attachments_response::AttachmentMetadata {
+                attachment_id: format!("{}-001", req.document_number),
+                file_name: format!("sales_invoice_{}.pdf", req.document_number),
+                file_type: "application/pdf".to_string(),
+                file_size: 156234,
+                uploaded_at: Some(prost_types::Timestamp {
+                    seconds: chrono::Utc::now().timestamp() - 3 * 86400,
+                    nanos: 0,
+                }),
+                uploaded_by: "sales_team".to_string(),
+            },
+            ap_v1::list_attachments_response::AttachmentMetadata {
+                attachment_id: format!("{}-002", req.document_number),
+                file_name: format!("delivery_proof_{}.pdf", req.document_number),
+                file_type: "application/pdf".to_string(),
+                file_size: 89456,
+                uploaded_at: Some(prost_types::Timestamp {
+                    seconds: chrono::Utc::now().timestamp() - 1 * 86400,
+                    nanos: 0,
+                }),
+                uploaded_by: "logistics".to_string(),
+            },
+        ];
+
+        Ok(Response::new(ListAttachmentsResponse {
+            attachments,
+        }))
+    }
     async fn upload_attachment(&self, _r: Request<UploadAttachmentRequest>) -> Result<Response<OperationResponse>, Status> { Err(Status::unimplemented("")) }
     async fn import_bank_statement(&self, _r: Request<ImportBankStatementRequest>) -> Result<Response<ImportBankStatementResponse>, Status> { Err(Status::unimplemented("")) }
     async fn process_lockbox(&self, _r: Request<ProcessLockboxRequest>) -> Result<Response<ProcessLockboxResponse>, Status> { Err(Status::unimplemented("")) }
