@@ -3,7 +3,8 @@ use std::sync::Arc;
 use tonic::transport::Server;
 use tracing::info;
 
-use coa_service::api::grpc_server::{proto::chart_of_accounts_service_server::ChartOfAccountsServiceServer, CoaGrpcService};
+use coa_service::infrastructure::grpc::chart_of_accounts_service_server::ChartOfAccountsServiceServer;
+use coa_service::api::grpc_server::CoaGrpcService;
 use coa_service::application::CoaApplicationService;
 use coa_service::infrastructure::PgGlAccountRepository;
 

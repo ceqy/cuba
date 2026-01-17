@@ -11,16 +11,10 @@ use sf_service::application::commands::CreateProductionOrderCommand;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cuba_telemetry::init_telemetry();
-    dotenv().ok();
-    
-    // Port 50059 (PP 58, SF 59)
-    let addr = "0.0.0.0:50059".parse()?;
-    info!("Starting MF Shop Floor Service on {}", addr);
-
-    // Database
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50059).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     // Run migrations
     let migrator = sqlx::migrate!("./migrations");

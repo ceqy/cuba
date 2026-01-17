@@ -3,17 +3,10 @@ use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Init Telemetry
-    cuba_telemetry::init_telemetry();
-    
-    // 2. Load Config
-    // In a real app we might load strictly typed config, here we assume env vars.
-    let addr = "0.0.0.0:50062".parse()?;
-    info!("Starting sp-service on {}", addr);
-
-    // 3. Init Database
-    let db_config = DatabaseConfig::default();
-    let _pool = init_pool(&db_config).await?; // Pool is ready, typically passed to repositories
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50062).await?;
+    let _pool = context.db_pool;
+    let addr = context.addr;
 
     // 4. Init Reflection
     let descriptor = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));

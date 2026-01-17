@@ -4,23 +4,19 @@ use tonic::{Request, Response, Status};
 
 use crate::application::CoaApplicationService;
 
-// Include generated protobuf code
-pub mod proto {
-    tonic::include_proto!("fi.coa.v1");
-}
-
-use proto::{
-    chart_of_accounts_service_server::ChartOfAccountsService, CreateGlAccountRequest,
-    DeleteGlAccountRequest, GetGlAccountRequest, GlAccountDetail, GlAccountResponse,
-    ListGlAccountsRequest, ListGlAccountsResponse, UpdateGlAccountRequest,
-    ValidateGlAccountRequest, ValidateGlAccountResponse, BatchValidateGlAccountsRequest,
-    BatchValidateGlAccountsResponse, CheckAccountPostableRequest, CheckAccountPostableResponse,
-    GetAccountHierarchyRequest, AccountHierarchyResponse, ListChildAccountsRequest,
-    ListChildAccountsResponse, GetAccountPathRequest, GetAccountPathResponse,
-    CreateAccountGroupRequest, AccountGroupResponse, ListAccountGroupsRequest,
-    ListAccountGroupsResponse, BatchCreateGlAccountsRequest, BatchCreateGlAccountsResponse,
-    BatchUpdateGlAccountsRequest, BatchUpdateGlAccountsResponse, ImportAccountsRequest,
-    ImportAccountsResponse, ExportAccountsRequest, ExportAccountsResponse,
+use crate::infrastructure::grpc::{
+    self as proto, chart_of_accounts_service_server::ChartOfAccountsService,
+    AccountGroupResponse, AccountHierarchyResponse, BatchCreateGlAccountsRequest,
+    BatchCreateGlAccountsResponse, CreateAccountGroupRequest, CreateGlAccountRequest, DeleteGlAccountRequest,
+    ExportAccountsRequest, ExportAccountsResponse, GetAccountHierarchyRequest,
+    GetAccountPathRequest, GetAccountPathResponse, GetGlAccountRequest, GlAccountDetail,
+    GlAccountResponse, ImportAccountsRequest, ImportAccountsResponse, ListAccountGroupsRequest,
+    ListAccountGroupsResponse, ListChildAccountsRequest, ListChildAccountsResponse,
+    ListGlAccountsRequest, ListGlAccountsResponse,
+    UpdateGlAccountRequest, ValidateGlAccountRequest, ValidateGlAccountResponse,
+    BatchValidateGlAccountsRequest, BatchValidateGlAccountsResponse,
+    BatchUpdateGlAccountsRequest, BatchUpdateGlAccountsResponse,
+    CheckAccountPostableRequest, CheckAccountPostableResponse,
 };
 
 pub struct CoaGrpcService {
@@ -48,7 +44,7 @@ impl ChartOfAccountsService for CoaGrpcService {
             account_data.account_code,
             account_data.account_name,
             convert_account_nature(account_data.account_nature),
-            account_data.account_category,
+            account_data.account_category.to_string(),
         );
 
         match self.app_service.create_account(account).await {
@@ -281,33 +277,33 @@ impl ChartOfAccountsService for CoaGrpcService {
 // Helper conversion functions
 fn convert_account_nature(value: i32) -> crate::domain::AccountNature {
     match proto::AccountNature::try_from(value).ok() {
-        Some(proto::AccountNature::AccountNatureAsset) => crate::domain::AccountNature::Asset,
-        Some(proto::AccountNature::AccountNatureLiability) => crate::domain::AccountNature::Liability,
-        Some(proto::AccountNature::AccountNatureEquity) => crate::domain::AccountNature::Equity,
-        Some(proto::AccountNature::AccountNatureRevenue) => crate::domain::AccountNature::Revenue,
-        Some(proto::AccountNature::AccountNatureExpense) => crate::domain::AccountNature::Expense,
-        Some(proto::AccountNature::AccountNatureProfitLoss) => crate::domain::AccountNature::ProfitLoss,
+        Some(proto::AccountNature::Asset) => crate::domain::AccountNature::Asset,
+        Some(proto::AccountNature::Liability) => crate::domain::AccountNature::Liability,
+        Some(proto::AccountNature::Equity) => crate::domain::AccountNature::Equity,
+        Some(proto::AccountNature::Revenue) => crate::domain::AccountNature::Revenue,
+        Some(proto::AccountNature::Expense) => crate::domain::AccountNature::Expense,
+        Some(proto::AccountNature::ProfitLoss) => crate::domain::AccountNature::ProfitLoss,
         _ => crate::domain::AccountNature::Asset,
     }
 }
 
 fn proto_account_nature(nature: &crate::domain::AccountNature) -> proto::AccountNature {
     match nature {
-        crate::domain::AccountNature::Asset => proto::AccountNature::AccountNatureAsset,
-        crate::domain::AccountNature::Liability => proto::AccountNature::AccountNatureLiability,
-        crate::domain::AccountNature::Equity => proto::AccountNature::AccountNatureEquity,
-        crate::domain::AccountNature::Revenue => proto::AccountNature::AccountNatureRevenue,
-        crate::domain::AccountNature::Expense => proto::AccountNature::AccountNatureExpense,
-        crate::domain::AccountNature::ProfitLoss => proto::AccountNature::AccountNatureProfitLoss,
+        crate::domain::AccountNature::Asset => proto::AccountNature::Asset,
+        crate::domain::AccountNature::Liability => proto::AccountNature::Liability,
+        crate::domain::AccountNature::Equity => proto::AccountNature::Equity,
+        crate::domain::AccountNature::Revenue => proto::AccountNature::Revenue,
+        crate::domain::AccountNature::Expense => proto::AccountNature::Expense,
+        crate::domain::AccountNature::ProfitLoss => proto::AccountNature::ProfitLoss,
     }
 }
 
 fn proto_account_status(status: &crate::domain::AccountStatus) -> proto::AccountStatus {
     match status {
-        crate::domain::AccountStatus::Active => proto::AccountStatus::AccountStatusActive,
-        crate::domain::AccountStatus::Inactive => proto::AccountStatus::AccountStatusInactive,
-        crate::domain::AccountStatus::Blocked => proto::AccountStatus::AccountStatusBlocked,
-        crate::domain::AccountStatus::MarkedForDeletion => proto::AccountStatus::AccountStatusMarkedForDeletion,
+        crate::domain::AccountStatus::Active => proto::AccountStatus::Active,
+        crate::domain::AccountStatus::Inactive => proto::AccountStatus::Inactive,
+        crate::domain::AccountStatus::Blocked => proto::AccountStatus::Blocked,
+        crate::domain::AccountStatus::MarkedForDeletion => proto::AccountStatus::MarkedForDeletion,
     }
 }
 
@@ -324,11 +320,11 @@ fn proto_account_level(level: i32) -> proto::AccountLevel {
 
 fn proto_balance_indicator(indicator: &crate::domain::BalanceIndicator) -> proto::BalanceIndicator {
     match indicator {
-        crate::domain::BalanceIndicator::Debit => proto::BalanceIndicator::BalanceIndicatorDebit,
-        crate::domain::BalanceIndicator::Credit => proto::BalanceIndicator::BalanceIndicatorCredit,
+        crate::domain::BalanceIndicator::Debit => proto::BalanceIndicator::Debit,
+        crate::domain::BalanceIndicator::Credit => proto::BalanceIndicator::Credit,
     }
 }
 
 fn proto_account_category(_category: &str) -> proto::AccountCategory {
-    proto::AccountCategory::AccountCategoryBalanceSheet
+    proto::AccountCategory::BalanceSheet
 }

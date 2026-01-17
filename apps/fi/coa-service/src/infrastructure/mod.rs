@@ -1,4 +1,4 @@
-// Infrastructure layer - 基础设施层
+pub mod grpc;
 pub mod repository;
 
-pub use repository::*;
+pub use repository::{GlAccountRepository, PgGlAccountRepository};

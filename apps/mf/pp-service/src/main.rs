@@ -8,16 +8,10 @@ use pp_service::application::handlers::RunMrpHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cuba_telemetry::init_telemetry();
-    dotenv().ok();
-    
-    // Port 50058 (SC IM 56, PM PO 57, so MF PP 58)
-    let addr = "0.0.0.0:50058".parse()?;
-    info!("Starting MF Production Planning Service on {}", addr);
-
-    // Database
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50058).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     // Run migrations
     let migrator = sqlx::migrate!("./migrations");

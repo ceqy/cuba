@@ -8,16 +8,10 @@ use po_service::application::handlers::CreatePurchaseOrderHandler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cuba_telemetry::init_telemetry();
-    dotenv().ok();
-    
-    // Port 50057
-    let addr = "0.0.0.0:50057".parse()?;
-    info!("Starting PM Purchase Order Service on {}", addr);
-
-    // Database
-    let db_config = DatabaseConfig::default();
-    let pool = init_pool(&db_config).await?;
+    // Bootstrap Service
+    let context = cuba_service::ServiceBootstrapper::run(50057).await?;
+    let pool = context.db_pool;
+    let addr = context.addr;
 
     // Run migrations
     let migrator = sqlx::migrate!("./migrations");

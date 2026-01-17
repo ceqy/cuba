@@ -4,7 +4,8 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// 科目性质
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "account_nature", rename_all = "UPPERCASE")]
 pub enum AccountNature {
     Asset,        // 资产
     Liability,    // 负债
@@ -15,7 +16,8 @@ pub enum AccountNature {
 }
 
 /// 科目状态
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "account_status", rename_all = "UPPERCASE")]
 pub enum AccountStatus {
     Active,              // 激活
     Inactive,            // 停用
@@ -24,14 +26,17 @@ pub enum AccountStatus {
 }
 
 /// 余额方向
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "balance_indicator", rename_all = "UPPERCASE")]
 pub enum BalanceIndicator {
+    #[sqlx(rename = "D")]
     Debit,   // 借方
+    #[sqlx(rename = "C")]
     Credit,  // 贷方
 }
 
 /// 会计科目聚合根
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct GlAccount {
     pub id: Uuid,
     pub chart_code: String,

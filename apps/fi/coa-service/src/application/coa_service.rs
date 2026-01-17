@@ -20,9 +20,9 @@ impl CoaApplicationService {
     pub async fn create_account(
         &self,
         account: GlAccount,
-    ) -> Result<String, Box<dyn std::error::Error>> {
+    ) -> anyhow::Result<String> {
         // 验证科目代码格式
-        account.validate_account_code()?;
+        account.validate_account_code().map_err(anyhow::Error::msg)?;
 
         // 检查科目是否已存在
         if let Some(_existing) = self
@@ -30,7 +30,7 @@ impl CoaApplicationService {
             .find_by_code(&account.chart_code, &account.account_code)
             .await?
         {
-            return Err("科目代码已存在".into());
+            return Err(anyhow::anyhow!("科目代码已存在"));
         }
 
         // 保存科目
@@ -44,7 +44,7 @@ impl CoaApplicationService {
         &self,
         chart_code: &str,
         account_code: &str,
-    ) -> Result<Option<GlAccount>, Box<dyn std::error::Error>> {
+    ) -> anyhow::Result<Option<GlAccount>> {
         self.repository.find_by_code(chart_code, account_code).await
     }
 
@@ -52,7 +52,7 @@ impl CoaApplicationService {
     pub async fn update_account(
         &self,
         account: GlAccount,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> anyhow::Result<()> {
         // 检查科目是否存在
         if self
             .repository
@@ -60,7 +60,7 @@ impl CoaApplicationService {
             .await?
             .is_none()
         {
-            return Err("科目不存在".into());
+            return Err(anyhow::anyhow!("科目不存在"));
         }
 
         self.repository.update(&account).await
@@ -72,7 +72,7 @@ impl CoaApplicationService {
         chart_code: &str,
         account_code: &str,
         soft_delete: bool,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> anyhow::Result<()> {
         if soft_delete {
             // 软删除：标记为删除状态
             if let Some(mut account) = self.repository.find_by_code(chart_code, account_code).await? {
@@ -90,7 +90,7 @@ impl CoaApplicationService {
     pub async fn list_accounts(
         &self,
         chart_code: &str,
-    ) -> Result<Vec<GlAccount>, Box<dyn std::error::Error>> {
+    ) -> anyhow::Result<Vec<GlAccount>> {
         self.repository.find_all(chart_code).await
     }
 
@@ -99,7 +99,7 @@ impl CoaApplicationService {
         &self,
         chart_code: &str,
         nature: AccountNature,
-    ) -> Result<Vec<GlAccount>, Box<dyn std::error::Error>> {
+    ) -> anyhow::Result<Vec<GlAccount>> {
         self.repository.find_by_nature(chart_code, &nature).await
     }
 
@@ -107,7 +107,7 @@ impl CoaApplicationService {
     pub async fn list_postable_accounts(
         &self,
         chart_code: &str,
-    ) -> Result<Vec<GlAccount>, Box<dyn std::error::Error>> {
+    ) -> anyhow::Result<Vec<GlAccount>> {
         self.repository.find_postable_accounts(chart_code).await
     }
 
@@ -117,7 +117,7 @@ impl CoaApplicationService {
         chart_code: &str,
         account_code: &str,
         posting_date: NaiveDate,
-    ) -> Result<AccountValidationResult, Box<dyn std::error::Error>> {
+    ) -> anyhow::Result<AccountValidationResult> {
         self.repository
             .validate_account(chart_code, account_code, posting_date)
             .await
@@ -129,7 +129,7 @@ impl CoaApplicationService {
         chart_code: &str,
         account_codes: Vec<String>,
         posting_date: NaiveDate,
-    ) -> Result<Vec<AccountValidationResult>, Box<dyn std::error::Error>> {
+    ) -> anyhow::Result<Vec<AccountValidationResult>> {
         let mut results = Vec::new();
         for account_code in account_codes {
             let result = self
