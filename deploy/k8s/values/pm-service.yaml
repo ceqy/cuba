@@ -1,15 +1,23 @@
 # pm-service Helm Values
 replicaCount: 2
 image:
-  repository: cuba-erp/am-pm-service
+  repository: cuba-erp/pm-service
   tag: "latest"
 fullnameOverride: "pm-service"
 service:
   grpcPort: 50043
   metricsPort: 9090
+
+# Database configuration (credentials from Secret)
+database:
+  name: cuba_am_pm
+  secretName: cuba-postgres-credentials
+
 env:
   RUST_LOG: "info"
-  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres.default.svc.cluster.local:5432/cuba_am_pm"
+  limits: {cpu: 500m, memory: 512Mi}
+  requests: {cpu: 100m, memory: 128Mi}
+
 resources:
   limits: {cpu: 500m, memory: 512Mi}
   requests: {cpu: 100m, memory: 128Mi}

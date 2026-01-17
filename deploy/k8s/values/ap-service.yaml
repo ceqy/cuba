@@ -7,14 +7,16 @@ fullnameOverride: "ap-service"
 service:
   grpcPort: 50061
   metricsPort: 9090
+
+# Database configuration (credentials from Secret)
+database:
+  name: cuba_fi_ap
+  secretName: cuba-postgres-credentials
+
 env:
   RUST_LOG: "info"
   GL_SERVICE_URL: "http://gl-service.cuba-fi.svc.cluster.local:50060"
-secrets:
-  - name: DATABASE_URL
-    secretKeyRef:
-      name: database-urls
-      key: fi-ap-db-url
+
 resources:
   limits: {cpu: 500m, memory: 512Mi}
   requests: {cpu: 100m, memory: 128Mi}

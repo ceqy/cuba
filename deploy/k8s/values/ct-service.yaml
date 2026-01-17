@@ -7,9 +7,17 @@ fullnameOverride: "ct-service"
 service:
   grpcPort: 50072
   metricsPort: 9090
+
+# Database configuration (credentials from Secret)
+database:
+  name: cuba_pm_ct
+  secretName: cuba-postgres-credentials
+
 env:
   RUST_LOG: "info"
-  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres.default.svc.cluster.local:5432/cuba_pm_ct"
+  limits: {cpu: 500m, memory: 512Mi}
+  requests: {cpu: 100m, memory: 128Mi}
+
 resources:
   limits: {cpu: 500m, memory: 512Mi}
   requests: {cpu: 100m, memory: 128Mi}

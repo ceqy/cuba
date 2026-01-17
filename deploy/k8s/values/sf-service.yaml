@@ -7,9 +7,17 @@ fullnameOverride: "sf-service"
 service:
   grpcPort: 50075
   metricsPort: 9090
+
+# Database configuration (credentials from Secret)
+database:
+  name: cuba_mf_sf
+  secretName: cuba-postgres-credentials
+
 env:
   RUST_LOG: "info"
-  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres.default.svc.cluster.local:5432/cuba_mf_sf"
+  limits: {cpu: 500m, memory: 512Mi}
+  requests: {cpu: 100m, memory: 128Mi}
+
 resources:
   limits: {cpu: 500m, memory: 512Mi}
   requests: {cpu: 100m, memory: 128Mi}

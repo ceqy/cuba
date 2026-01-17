@@ -7,10 +7,18 @@ fullnameOverride: "co-service"
 service:
   grpcPort: 50067
   metricsPort: 9090
+
+# Database configuration (credentials from Secret)
+database:
+  name: cuba_fi_co
+  secretName: cuba-postgres-credentials
+
 env:
   RUST_LOG: "info"
-  DATABASE_URL: "postgres://postgres:postgres@postgres.cuba-infra.svc.cluster.local:5432/cuba_fi_co"
   GL_SERVICE_URL: "http://gl-service.cuba-fi.svc.cluster.local:50060"
+  limits: {cpu: 500m, memory: 512Mi}
+  requests: {cpu: 100m, memory: 128Mi}
+
 resources:
   limits: {cpu: 500m, memory: 512Mi}
   requests: {cpu: 100m, memory: 128Mi}

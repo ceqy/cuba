@@ -7,17 +7,21 @@ fullnameOverride: "auth-service"
 service:
   grpcPort: 50051
   metricsPort: 9090
+
+# Database configuration (credentials from Secret)
+database:
+  name: cuba_iam
+  secretName: cuba-postgres-credentials
+
+# JWT configuration (credentials from Secret)
+jwt:
+  enabled: true
+  secretName: cuba-jwt-secret
+  secretKey: secret-key
+
 env:
   RUST_LOG: "info"
-envFrom:
-  - secretRef:
-      name: database-urls
-      optional: false
-secrets:
-  - name: JWT_SECRET
-    secretKeyRef:
-      name: auth-jwt-secret
-      key: jwt-secret
+
 resources:
   limits: {cpu: 500m, memory: 512Mi}
   requests: {cpu: 100m, memory: 128Mi}

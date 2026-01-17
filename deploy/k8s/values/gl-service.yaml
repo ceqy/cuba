@@ -1,4 +1,4 @@
-# gl-service Helm Values
+# gl-service Helm Values  
 replicaCount: 2
 image:
   repository: cuba-erp/gl-service
@@ -7,13 +7,16 @@ fullnameOverride: "gl-service"
 service:
   grpcPort: 50060
   metricsPort: 9090
+
+# Database configuration (credentials from Secret)
+database:
+  name: cuba_fi_gl
+  secretName: cuba-postgres-credentials
+
 env:
   RUST_LOG: "info"
-secrets:
-  - name: DATABASE_URL
-    secretKeyRef:
-      name: database-urls
-      key: fi-gl-db-url
+  COA_SERVICE_URL: "http://coa-service.cuba-fi.svc.cluster.local:50065"
+
 resources:
   limits: {cpu: 500m, memory: 512Mi}
   requests: {cpu: 100m, memory: 128Mi}

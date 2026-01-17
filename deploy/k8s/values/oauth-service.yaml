@@ -1,46 +1,27 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: oauth-service
-  namespace: cuba-iam
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: oauth-service
-  template:
-    metadata:
-      labels:
-        app: oauth-service
-    spec:
-      containers:
-      - name: oauth-service
-        image: cuba-erp/oauth-service:latest
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 50053
-        env:
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: database-urls
-              key: iam-oauth-db-url
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: oauth-jwt-secret
-              key: jwt-secret
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: oauth-service
-  namespace: cuba-iam
-spec:
-  selector:
-    app: oauth-service
-  ports:
-  - port: 50053
-    targetPort: 50053
-    nodePort: 30053
-  type: NodePort
+# oauth-service Helm Values
+replicaCount: 2
+image:
+  repository: cuba-erp/oauth-service
+  tag: "latest"
+fullnameOverride: "oauth-service"
+service:
+  grpcPort: 
+  metricsPort: 9090
+
+# Database configuration (credentials from Secret)
+database:
+  name: cuba_iam_oauth
+  secretName: cuba-postgres-credentials
+
+# JWT configuration (credentials from Secret)
+jwt:
+  enabled: true
+  secretName: cuba-jwt-secret
+  secretKey: secret-key
+
+env:
+  RUST_LOG: "info"
+
+resources:
+  limits: {cpu: 500m, memory: 512Mi}
+  requests: {cpu: 100m, memory: 128Mi}
