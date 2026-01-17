@@ -9,6 +9,8 @@ use gl_service::application::handlers::{
     GetJournalEntryHandler,
     ListJournalEntriesHandler,
     PostJournalEntryHandler,
+    ReverseJournalEntryHandler,
+    DeleteJournalEntryHandler,
 };
 use std::sync::Arc;
 use tracing::info;
@@ -53,6 +55,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let get_handler = Arc::new(GetJournalEntryHandler::new(journal_repo.clone()));
     let list_handler = Arc::new(ListJournalEntriesHandler::new(journal_repo.clone()));
     let post_handler = Arc::new(PostJournalEntryHandler::new(journal_repo.clone()));
+    let reverse_handler = Arc::new(ReverseJournalEntryHandler::new(journal_repo.clone()));
+    let delete_handler = Arc::new(DeleteJournalEntryHandler::new(journal_repo.clone()));
 
     // API
     let gl_service = GlServiceImpl::new(
@@ -60,6 +64,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         get_handler,
         list_handler,
         post_handler,
+        reverse_handler,
+        delete_handler,
     );
 
     // Reflection Service

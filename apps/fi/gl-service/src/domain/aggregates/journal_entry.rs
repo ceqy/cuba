@@ -99,6 +99,8 @@ pub enum JournalEntryError {
     BalanceError { debit: Decimal, credit: Decimal },
     #[error("Journal entry is already posted")]
     AlreadyPosted,
+    #[error("Journal entry is not posted")]
+    NotPosted,
     #[error("Empty lines")]
     EmptyLines,
 }
@@ -159,14 +161,59 @@ impl JournalEntry {
         if self.status == PostingStatus::Posted {
             return Err(JournalEntryError::AlreadyPosted);
         }
-        
+
         self.validate_balance()?;
-        
+
         self.status = PostingStatus::Posted;
         self.document_number = Some(document_number);
         self.posted_at = Some(Utc::now());
-        
+
         Ok(())
+    }
+
+    /// 创建冲销凭证
+    pub fn create_reversal_entry(&self, reversal_date: NaiveDate) -> Result<JournalEntry, JournalEntryError> {
+        if self.status != PostingStatus::Posted {
+            return Err(JournalEntryError::NotPosted);
+        }
+
+        // 反转所有行项目的借贷方向
+        let reversed_lines: Vec<LineItem> = self.lines.iter().enumerate().map(|(i, line)| LineItem {
+            id: Uuid::new_v4(),
+            line_number: (i + 1) as i32,
+            account_id: line.account_id.clone(),
+            debit_credit: match line.debit_credit {
+                DebitCredit::Debit => DebitCredit::Credit,
+                DebitCredit::Credit => DebitCredit::Debit,
+            },
+            amount: line.amount,
+            local_amount: line.local_amount,
+            cost_center: line.cost_center.clone(),
+            profit_center: line.profit_center.clone(),
+            text: Some(format!("冲销 {}", self.document_number.as_ref().unwrap_or(&"".to_string()))),
+        }).collect();
+
+        let mut reversal_entry = JournalEntry::new(
+            self.company_code.clone(),
+            self.fiscal_year,
+            reversal_date,
+            reversal_date,
+            self.currency.clone(),
+            Some(format!("冲销 {}", self.document_number.as_ref().unwrap_or(&"".to_string()))),
+            reversed_lines,
+            self.tenant_id.clone(),
+        )?;
+
+        // 自动过账冲销凭证
+        let reversal_doc_num = format!("REV-{}", self.document_number.as_ref().unwrap_or(&Uuid::new_v4().simple().to_string()));
+        reversal_entry.post(reversal_doc_num)?;
+
+        Ok(reversal_entry)
+    }
+
+    /// 标记原凭证为已冲销
+    pub fn mark_as_reversed(&mut self) {
+        self.status = PostingStatus::Reversed;
     }
 }
 

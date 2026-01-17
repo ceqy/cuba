@@ -8,10 +8,10 @@ use std::str::FromStr;
 use crate::infrastructure::grpc::fi::gl::v1::gl_journal_entry_service_server::GlJournalEntryService;
 use crate::infrastructure::grpc::fi::gl::v1::*;
 use crate::application::handlers::{
-    CreateJournalEntryHandler, GetJournalEntryHandler, ListJournalEntriesHandler, PostJournalEntryHandler
+    CreateJournalEntryHandler, GetJournalEntryHandler, ListJournalEntriesHandler, PostJournalEntryHandler, ReverseJournalEntryHandler, DeleteJournalEntryHandler
 };
 use crate::application::commands::{
-    CreateJournalEntryCommand, PostJournalEntryCommand, LineItemDTO
+    CreateJournalEntryCommand, PostJournalEntryCommand, ReverseJournalEntryCommand, LineItemDTO
 };
 use crate::application::queries::{
     GetJournalEntryQuery, ListJournalEntriesQuery
@@ -23,6 +23,8 @@ pub struct GlServiceImpl<R> {
     get_handler: Arc<GetJournalEntryHandler<R>>,
     list_handler: Arc<ListJournalEntriesHandler<R>>,
     post_handler: Arc<PostJournalEntryHandler<R>>,
+    reverse_handler: Arc<ReverseJournalEntryHandler<R>>,
+    delete_handler: Arc<DeleteJournalEntryHandler<R>>,
 }
 
 impl<R: JournalRepository> GlServiceImpl<R> {
@@ -31,12 +33,16 @@ impl<R: JournalRepository> GlServiceImpl<R> {
         get_handler: Arc<GetJournalEntryHandler<R>>,
         list_handler: Arc<ListJournalEntriesHandler<R>>,
         post_handler: Arc<PostJournalEntryHandler<R>>,
+        reverse_handler: Arc<ReverseJournalEntryHandler<R>>,
+        delete_handler: Arc<DeleteJournalEntryHandler<R>>,
     ) -> Self {
         Self {
             create_handler,
             get_handler,
             list_handler,
             post_handler,
+            reverse_handler,
+            delete_handler,
         }
     }
 }
@@ -145,8 +151,27 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
         }
     }
 
-    async fn reverse_journal_entry(&self, _request: Request<ReverseJournalEntryRequest>) -> Result<Response<JournalEntryResponse>, Status> {
-         Err(Status::unimplemented("Not implemented"))
+    async fn reverse_journal_entry(&self, request: Request<ReverseJournalEntryRequest>) -> Result<Response<JournalEntryResponse>, Status> {
+        let req = request.into_inner();
+        let id = Uuid::parse_str(&req.journal_entry_id)
+            .map_err(|e| Status::invalid_argument(format!("Invalid UUID: {}", e)))?;
+
+        let reversal_date = req.posting_date
+            .map(|ts| chrono::DateTime::from_timestamp(ts.seconds, 0)
+                .ok_or_else(|| Status::invalid_argument("Invalid posting_date"))
+                .map(|dt| dt.naive_utc().date()))
+            .transpose()?;
+
+        let cmd = ReverseJournalEntryCommand {
+            id,
+            reversal_reason: req.reversal_reason,
+            posting_date: reversal_date,
+        };
+
+        match self.reverse_handler.handle(cmd).await {
+            Ok(reversal_entry) => Ok(Response::new(map_to_response(reversal_entry))),
+            Err(e) => Err(Status::internal(e.to_string())),
+        }
     }
     
     async fn batch_reverse_journal_entries(&self, _request: Request<BatchReverseJournalEntriesRequest>) -> Result<Response<BatchReverseJournalEntriesResponse>, Status> {
@@ -163,20 +188,279 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
     async fn update_journal_entry(&self, _request: Request<UpdateJournalEntryRequest>) -> Result<Response<JournalEntryResponse>, Status> {
         Err(Status::unimplemented("Not implemented"))
     }
-    async fn delete_journal_entry(&self, _request: Request<DeleteJournalEntryRequest>) -> Result<Response<JournalEntryResponse>, Status> {
-        Err(Status::unimplemented("Not implemented"))
+    async fn delete_journal_entry(&self, request: Request<DeleteJournalEntryRequest>) -> Result<Response<JournalEntryResponse>, Status> {
+        let req = request.into_inner();
+        let id = Uuid::parse_str(&req.journal_entry_id)
+            .map_err(|e| Status::invalid_argument(format!("Invalid UUID: {}", e)))?;
+
+        match self.delete_handler.handle(id).await {
+            Ok(_) => Ok(Response::new(JournalEntryResponse {
+                success: true,
+                document_reference: None,
+                messages: vec![crate::infrastructure::grpc::common::v1::ApiMessage {
+                    r#type: "info".to_string(),
+                    code: "DELETED".to_string(),
+                    message: "凭证已删除".to_string(),
+                    target: String::new(),
+                }],
+            })),
+            Err(e) => Err(Status::internal(e.to_string())),
+        }
     }
-    async fn post_journal_entry(&self, _request: Request<PostJournalEntryRequest>) -> Result<Response<JournalEntryResponse>, Status> {
-        Err(Status::unimplemented("Not implemented"))
+    async fn post_journal_entry(&self, request: Request<PostJournalEntryRequest>) -> Result<Response<JournalEntryResponse>, Status> {
+        let req = request.into_inner();
+        let id = Uuid::parse_str(&req.journal_entry_id)
+            .map_err(|e| Status::invalid_argument(format!("Invalid UUID: {}", e)))?;
+
+        let cmd = PostJournalEntryCommand { id };
+
+        match self.post_handler.handle(cmd).await {
+            Ok(entry) => Ok(Response::new(map_to_response(entry))),
+            Err(e) => Err(Status::internal(e.to_string())),
+        }
     }
-    async fn validate_journal_entry(&self, _request: Request<ValidateJournalEntryRequest>) -> Result<Response<ValidationResponse>, Status> {
-        Err(Status::unimplemented("Not implemented"))
+    async fn validate_journal_entry(&self, request: Request<ValidateJournalEntryRequest>) -> Result<Response<ValidationResponse>, Status> {
+        let req = request.into_inner();
+        let mut messages = vec![];
+
+        // Check if header exists
+        let header = match req.header {
+            Some(h) => h,
+            None => {
+                return Ok(Response::new(ValidationResponse {
+                    is_valid: false,
+                    messages: vec![crate::infrastructure::grpc::common::v1::ApiMessage {
+                        r#type: "error".to_string(),
+                        code: "MISSING_HEADER".to_string(),
+                        message: "缺少凭证头信息".to_string(),
+                        target: String::new(),
+                    }],
+                }));
+            }
+        };
+
+        // Check if line items exist
+        if req.line_items.is_empty() {
+            messages.push(crate::infrastructure::grpc::common::v1::ApiMessage {
+                r#type: "error".to_string(),
+                code: "EMPTY_LINES".to_string(),
+                message: "凭证没有行项目".to_string(),
+                target: String::new(),
+            });
+        }
+
+        // Validate balance
+        let mut debit_sum = Decimal::ZERO;
+        let mut credit_sum = Decimal::ZERO;
+
+        for line in &req.line_items {
+            if let Some(amount_doc) = &line.amount_in_document_currency {
+                match Decimal::from_str(&amount_doc.value) {
+                    Ok(amount) => {
+                        match line.debit_credit_indicator.as_str() {
+                            "D" | "S" => debit_sum += amount,
+                            "C" | "H" => credit_sum += amount,
+                            _ => {
+                                messages.push(crate::infrastructure::grpc::common::v1::ApiMessage {
+                                    r#type: "error".to_string(),
+                                    code: "INVALID_DEBIT_CREDIT".to_string(),
+                                    message: format!("无效的借贷标识: {}", line.debit_credit_indicator),
+                                    target: format!("line_{}", line.line_item_number),
+                                });
+                            }
+                        }
+                    }
+                    Err(_) => {
+                        messages.push(crate::infrastructure::grpc::common::v1::ApiMessage {
+                            r#type: "error".to_string(),
+                            code: "INVALID_AMOUNT".to_string(),
+                            message: format!("无效的金额: {}", amount_doc.value),
+                            target: format!("line_{}", line.line_item_number),
+                        });
+                    }
+                }
+            } else {
+                messages.push(crate::infrastructure::grpc::common::v1::ApiMessage {
+                    r#type: "error".to_string(),
+                    code: "MISSING_AMOUNT".to_string(),
+                    message: "缺少金额".to_string(),
+                    target: format!("line_{}", line.line_item_number),
+                });
+            }
+        }
+
+        let is_balanced = debit_sum == credit_sum;
+        if !is_balanced {
+            messages.push(crate::infrastructure::grpc::common::v1::ApiMessage {
+                r#type: "error".to_string(),
+                code: "BALANCE_ERROR".to_string(),
+                message: format!("借贷不平衡: 借方 = {}, 贷方 = {}", debit_sum, credit_sum),
+                target: String::new(),
+            });
+        } else if !req.line_items.is_empty() {
+            messages.push(crate::infrastructure::grpc::common::v1::ApiMessage {
+                r#type: "info".to_string(),
+                code: "BALANCE_OK".to_string(),
+                message: "借贷平衡".to_string(),
+                target: String::new(),
+            });
+        }
+
+        Ok(Response::new(ValidationResponse {
+            is_valid: is_balanced && !req.line_items.is_empty(),
+            messages,
+        }))
     }
     async fn park_journal_entry(&self, _request: Request<ParkJournalEntryRequest>) -> Result<Response<ParkJournalEntryResponse>, Status> {
          Err(Status::unimplemented("Not implemented"))
     }
-    async fn batch_create_journal_entries(&self, _request: Request<BatchCreateJournalEntriesRequest>) -> Result<Response<BatchCreateJournalEntriesResponse>, Status> {
-         Err(Status::unimplemented("Not implemented"))
+    async fn batch_create_journal_entries(&self, request: Request<BatchCreateJournalEntriesRequest>) -> Result<Response<BatchCreateJournalEntriesResponse>, Status> {
+        let req = request.into_inner();
+        let mut responses = Vec::new();
+        let mut success_count = 0;
+        let mut failure_count = 0;
+
+        for entry_req in req.entries {
+            let header = match entry_req.header {
+                Some(h) => h,
+                None => {
+                    responses.push(JournalEntryResponse {
+                        success: false,
+                        document_reference: None,
+                        messages: vec![crate::infrastructure::grpc::common::v1::ApiMessage {
+                            r#type: "error".to_string(),
+                            code: "MISSING_HEADER".to_string(),
+                            message: "缺少凭证头信息".to_string(),
+                            target: String::new(),
+                        }],
+                    });
+                    failure_count += 1;
+                    continue;
+                }
+            };
+
+            // Parse dates
+            let posting_date_ts = match header.posting_date {
+                Some(ts) => ts,
+                None => {
+                    responses.push(JournalEntryResponse {
+                        success: false,
+                        document_reference: None,
+                        messages: vec![crate::infrastructure::grpc::common::v1::ApiMessage {
+                            r#type: "error".to_string(),
+                            code: "MISSING_POSTING_DATE".to_string(),
+                            message: "缺少过账日期".to_string(),
+                            target: String::new(),
+                        }],
+                    });
+                    failure_count += 1;
+                    continue;
+                }
+            };
+
+            let posting_date = match chrono::DateTime::from_timestamp(posting_date_ts.seconds, 0) {
+                Some(dt) => dt.naive_utc().date(),
+                None => {
+                    responses.push(JournalEntryResponse {
+                        success: false,
+                        document_reference: None,
+                        messages: vec![crate::infrastructure::grpc::common::v1::ApiMessage {
+                            r#type: "error".to_string(),
+                            code: "INVALID_POSTING_DATE".to_string(),
+                            message: "无效的过账日期".to_string(),
+                            target: String::new(),
+                        }],
+                    });
+                    failure_count += 1;
+                    continue;
+                }
+            };
+
+            let document_date_ts = header.document_date.unwrap_or(posting_date_ts);
+            let document_date = chrono::DateTime::from_timestamp(document_date_ts.seconds, 0)
+                .unwrap_or(chrono::DateTime::from_timestamp(posting_date_ts.seconds, 0).unwrap())
+                .naive_utc()
+                .date();
+
+            // Parse line items
+            let lines_result: Result<Vec<LineItemDTO>, String> = entry_req.line_items.into_iter().map(|l| {
+                let amount_doc = l.amount_in_document_currency.ok_or("Missing amount")?;
+                let amount = Decimal::from_str(&amount_doc.value)
+                    .map_err(|e| format!("Invalid amount: {}", e))?;
+
+                Ok(LineItemDTO {
+                    account_id: l.gl_account,
+                    debit_credit: l.debit_credit_indicator,
+                    amount,
+                    cost_center: if l.cost_center.is_empty() { None } else { Some(l.cost_center) },
+                    profit_center: if l.profit_center.is_empty() { None } else { Some(l.profit_center) },
+                    text: if l.text.is_empty() { None } else { Some(l.text) },
+                })
+            }).collect();
+
+            let lines = match lines_result {
+                Ok(l) => l,
+                Err(e) => {
+                    responses.push(JournalEntryResponse {
+                        success: false,
+                        document_reference: None,
+                        messages: vec![crate::infrastructure::grpc::common::v1::ApiMessage {
+                            r#type: "error".to_string(),
+                            code: "INVALID_LINE_ITEMS".to_string(),
+                            message: e,
+                            target: String::new(),
+                        }],
+                    });
+                    failure_count += 1;
+                    continue;
+                }
+            };
+
+            let cmd = CreateJournalEntryCommand {
+                company_code: header.company_code.clone(),
+                fiscal_year: header.fiscal_year,
+                posting_date,
+                document_date,
+                currency: header.currency,
+                reference: if header.reference_document.is_empty() { None } else { Some(header.reference_document) },
+                lines,
+                post_immediately: entry_req.post_immediately,
+            };
+
+            match self.create_handler.handle(cmd).await {
+                Ok(entry) => {
+                    responses.push(map_to_response(entry));
+                    success_count += 1;
+                }
+                Err(e) => {
+                    responses.push(JournalEntryResponse {
+                        success: false,
+                        document_reference: Some(crate::infrastructure::grpc::common::v1::SystemDocumentReference {
+                            document_number: String::new(),
+                            company_code: header.company_code,
+                            fiscal_year: header.fiscal_year,
+                            ..Default::default()
+                        }),
+                        messages: vec![crate::infrastructure::grpc::common::v1::ApiMessage {
+                            r#type: "error".to_string(),
+                            code: "CREATE_FAILED".to_string(),
+                            message: e.to_string(),
+                            target: String::new(),
+                        }],
+                    });
+                    failure_count += 1;
+                }
+            }
+        }
+
+        Ok(Response::new(BatchCreateJournalEntriesResponse {
+            result: Some(crate::infrastructure::grpc::common::v1::BatchOperationResult {
+                success_count,
+                failure_count,
+                errors: vec![],
+            }),
+            responses,
+        }))
     }
     async fn clear_open_items(&self, _request: Request<ClearOpenItemsRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> {
         Err(Status::unimplemented("Not implemented"))

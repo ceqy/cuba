@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use crate::application::commands::{CreateJournalEntryCommand, PostJournalEntryCommand};
+use crate::application::commands::{CreateJournalEntryCommand, PostJournalEntryCommand, ReverseJournalEntryCommand};
 use crate::application::queries::{GetJournalEntryQuery, ListJournalEntriesQuery};
 use crate::domain::aggregates::journal_entry::{JournalEntry, LineItem, DebitCredit, PostingStatus};
 use crate::domain::repositories::JournalRepository;
@@ -162,5 +162,62 @@ impl<R: JournalRepository> ListJournalEntriesHandler<R> {
             page: query.page,
             page_size: query.page_size,
         })
+    }
+}
+
+pub struct ReverseJournalEntryHandler<R> {
+    repository: Arc<R>,
+}
+
+impl<R: JournalRepository> ReverseJournalEntryHandler<R> {
+    pub fn new(repository: Arc<R>) -> Self {
+        Self { repository }
+    }
+
+    pub async fn handle(&self, cmd: ReverseJournalEntryCommand) -> Result<JournalEntry, Box<dyn std::error::Error + Send + Sync>> {
+        let mut original_entry = self.repository.find_by_id(&cmd.id).await?
+            .ok_or("Journal entry not found")?;
+
+        if original_entry.status != PostingStatus::Posted {
+            return Err("只能冲销已过账的凭证".into());
+        }
+
+        // 使用提供的日期或当前日期作为冲销日期
+        let reversal_date = cmd.posting_date.unwrap_or_else(|| chrono::Utc::now().naive_utc().date());
+
+        // 创建冲销凭证
+        let reversal_entry = original_entry.create_reversal_entry(reversal_date)?;
+
+        // 保存冲销凭证
+        self.repository.save(&reversal_entry).await?;
+
+        // 标记原凭证为已冲销
+        original_entry.mark_as_reversed();
+        self.repository.save(&original_entry).await?;
+
+        Ok(reversal_entry)
+    }
+}
+
+pub struct DeleteJournalEntryHandler<R> {
+    repository: Arc<R>,
+}
+
+impl<R: JournalRepository> DeleteJournalEntryHandler<R> {
+    pub fn new(repository: Arc<R>) -> Self {
+        Self { repository }
+    }
+
+    pub async fn handle(&self, id: Uuid) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        // Check if entry exists and is in draft status
+        let entry = self.repository.find_by_id(&id).await?
+            .ok_or("Journal entry not found")?;
+
+        if entry.status != PostingStatus::Draft {
+            return Err("只能删除草稿状态的凭证".into());
+        }
+
+        self.repository.delete(&id).await?;
+        Ok(())
     }
 }

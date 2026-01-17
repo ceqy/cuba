@@ -214,4 +214,23 @@ impl JournalRepository for PostgresJournalRepository {
 
         Ok(count)
     }
+
+    async fn delete(&self, id: &Uuid) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut tx = self.pool.begin().await?;
+
+        // Delete line items first (foreign key constraint)
+        sqlx::query("DELETE FROM journal_entry_line_items WHERE journal_entry_id = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+
+        // Delete journal entry
+        sqlx::query("DELETE FROM journal_entries WHERE id = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+
+        tx.commit().await?;
+        Ok(())
+    }
 }
