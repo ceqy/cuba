@@ -388,11 +388,16 @@ impl GeneratePaymentProposalHandler {
 
     pub async fn handle(
         &self,
-        _company_code: String,
-        _payment_date: chrono::NaiveDate,
+        company_code: String,
+        payment_date: chrono::NaiveDate,
     ) -> Result<Vec<OpenItem>, AppError> {
-        // Simplified - return empty for now
-        Ok(vec![])
+        // Query all open items for the company code that are due by payment_date
+        let items = self.open_item_repo
+            .list_due_items(&company_code, payment_date)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(items)
     }
 }
 

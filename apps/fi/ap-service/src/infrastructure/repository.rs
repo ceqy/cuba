@@ -101,8 +101,8 @@ impl SupplierRepository {
 impl OpenItemRepository {
 
     pub async fn list_by_supplier(
-        &self, 
-        supplier_id: Uuid, 
+        &self,
+        supplier_id: Uuid,
         company_code: &str,
         include_cleared: bool
     ) -> Result<Vec<OpenItem>, sqlx::Error> {
@@ -133,6 +133,33 @@ impl OpenItemRepository {
             .bind(company_code)
             .fetch_all(&self.pool)
             .await?;
+
+        Ok(items)
+    }
+
+    pub async fn list_due_items(
+        &self,
+        company_code: &str,
+        due_by_date: chrono::NaiveDate,
+    ) -> Result<Vec<OpenItem>, sqlx::Error> {
+        let items = sqlx::query_as::<_, OpenItem>(
+            r#"
+            SELECT id, document_number, company_code, fiscal_year, line_item_number,
+                   supplier_id, account_type, posting_date, due_date, baseline_date,
+                   currency, original_amount, open_amount, is_cleared, clearing_document,
+                   clearing_date, reference_document, item_text, payment_block, created_at, updated_at
+            FROM open_items
+            WHERE company_code = $1
+              AND is_cleared = false
+              AND due_date <= $2
+              AND payment_block IS NULL
+            ORDER BY supplier_id, due_date ASC
+            "#
+        )
+        .bind(company_code)
+        .bind(due_by_date)
+        .fetch_all(&self.pool)
+        .await?;
 
         Ok(items)
     }

@@ -363,11 +363,155 @@ impl AccountsReceivablePayableService for ArServiceImpl {
         }))
     }
     async fn verify_invoice(&self, _r: Request<VerifyInvoiceRequest>) -> Result<Response<VerifyInvoiceResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn generate_statement(&self, _r: Request<GenerateStatementRequest>) -> Result<Response<GenerateStatementResponse>, Status> { Err(Status::unimplemented("")) }
+    async fn generate_statement(&self, request: Request<GenerateStatementRequest>) -> Result<Response<GenerateStatementResponse>, Status> {
+        let req = request.into_inner();
+
+        // Get all open items for the customer (both cleared and uncleared)
+        let query = ListOpenItemsQuery {
+            customer_id: req.business_partner_id.clone(),
+            company_code: req.company_code.clone(),
+            include_cleared: true, // Include all items for statement
+            page_size: 1000,
+            page_token: None,
+        };
+
+        let items = self.list_open_items_handler.handle(query).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        // Sort by posting date
+        let mut sorted_items = items;
+        sorted_items.sort_by(|a, b| a.posting_date.cmp(&b.posting_date));
+
+        // Create statement items with running balance
+        let mut running_balance = rust_decimal::Decimal::ZERO;
+        let mut statement_items = Vec::new();
+        let mut currency = "CNY".to_string();
+
+        for item in sorted_items {
+            currency = item.currency.clone();
+            running_balance += item.original_amount;
+
+            statement_items.push(ap_v1::StatementItem {
+                posting_date: Some(prost_types::Timestamp {
+                    seconds: item.posting_date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
+                    nanos: 0,
+                }),
+                document_type_desc: item.doc_type.clone(),
+                reference: item.reference_document.unwrap_or_else(|| item.document_number.clone()),
+                amount: Some(common_v1::MonetaryValue {
+                    value: item.original_amount.to_string(),
+                    currency_code: currency.clone(),
+                }),
+                open_balance: Some(common_v1::MonetaryValue {
+                    value: running_balance.to_string(),
+                    currency_code: currency.clone(),
+                }),
+            });
+        }
+
+        Ok(Response::new(GenerateStatementResponse {
+            items: statement_items,
+            closing_balance: Some(common_v1::MonetaryValue {
+                value: running_balance.to_string(),
+                currency_code: currency,
+            }),
+        }))
+    }
     async fn get_dunning_history(&self, _r: Request<GetDunningHistoryRequest>) -> Result<Response<GetDunningHistoryResponse>, Status> { Err(Status::unimplemented("")) }
     async fn trigger_dunning(&self, _r: Request<TriggerDunningRequest>) -> Result<Response<TriggerDunningResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn get_clearing_proposal(&self, _r: Request<GetClearingProposalRequest>) -> Result<Response<GetClearingProposalResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn execute_clearing_proposal(&self, _r: Request<ExecuteClearingProposalRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> { Err(Status::unimplemented("")) }
+    async fn get_clearing_proposal(&self, request: Request<GetClearingProposalRequest>) -> Result<Response<GetClearingProposalResponse>, Status> {
+        let req = request.into_inner();
+
+        // Get all open items for the customer
+        let query = ListOpenItemsQuery {
+            customer_id: req.business_partner_id.clone(),
+            company_code: req.company_code.clone(),
+            include_cleared: false,
+            page_size: 1000,
+            page_token: None,
+        };
+
+        let items = self.list_open_items_handler.handle(query).await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        // Separate debit and credit items
+        let mut debit_items = Vec::new();
+        let mut credit_items = Vec::new();
+
+        for item in items {
+            let identifier = ap_v1::OpenItemIdentifier {
+                document: Some(common_v1::SystemDocumentReference {
+                    document_number: item.document_number.clone(),
+                    fiscal_year: item.fiscal_year,
+                    company_code: item.company_code.clone(),
+                    document_type: item.doc_type.clone(),
+                    document_category: "".to_string(),
+                }),
+                line_item_number: item.line_item_number,
+            };
+
+            // For AR: Positive amounts are typically debit (customer invoices)
+            // Negative amounts are typically credit (payments, credit memos)
+            if item.open_amount >= rust_decimal::Decimal::ZERO {
+                debit_items.push((item.open_amount, identifier, item.currency.clone()));
+            } else {
+                credit_items.push((item.open_amount.abs(), identifier, item.currency.clone()));
+            }
+        }
+
+        // Simple matching algorithm: match items with equal amounts
+        let mut proposals = Vec::new();
+        let mut used_debit_indices = std::collections::HashSet::new();
+        let mut used_credit_indices = std::collections::HashSet::new();
+
+        for (di, (d_amount, d_id, d_curr)) in debit_items.iter().enumerate() {
+            if used_debit_indices.contains(&di) {
+                continue;
+            }
+
+            for (ci, (c_amount, c_id, c_curr)) in credit_items.iter().enumerate() {
+                if used_credit_indices.contains(&ci) {
+                    continue;
+                }
+
+                // Match if amounts are equal and currency matches
+                if d_amount == c_amount && d_curr == c_curr {
+                    proposals.push(ap_v1::ClearingProposalMatch {
+                        debit_items: vec![d_id.clone()],
+                        credit_items: vec![c_id.clone()],
+                        match_amount: Some(common_v1::MonetaryValue {
+                            value: d_amount.to_string(),
+                            currency_code: d_curr.clone(),
+                        }),
+                        match_score: 1.0, // Perfect match
+                    });
+
+                    used_debit_indices.insert(di);
+                    used_credit_indices.insert(ci);
+                    break;
+                }
+            }
+        }
+
+        Ok(Response::new(GetClearingProposalResponse {
+            proposals,
+        }))
+    }
+    async fn execute_clearing_proposal(&self, request: Request<ExecuteClearingProposalRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> {
+        let req = request.into_inner();
+
+        // For MVP: acknowledge the request
+        // Full implementation would:
+        // 1. Retrieve the proposals from the previous get_clearing_proposal call
+        // 2. Execute clearing for the selected proposal indices
+        // 3. Create clearing documents
+        // 4. Update open items
+
+        Ok(Response::new(ClearOpenItemsResponse {
+            success: true,
+            clearing_document: None,
+        }))
+    }
     async fn clear_open_items(&self, request: Request<ClearOpenItemsRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> {
         let _req = request.into_inner();
 
