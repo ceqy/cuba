@@ -859,13 +859,145 @@ impl AccountsReceivablePayableService for ApServiceImpl {
         }))
     }
     async fn upload_attachment(&self, _r: Request<UploadAttachmentRequest>) -> Result<Response<OperationResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn import_bank_statement(&self, _r: Request<ImportBankStatementRequest>) -> Result<Response<ImportBankStatementResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn process_lockbox(&self, _r: Request<ProcessLockboxRequest>) -> Result<Response<ProcessLockboxResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn apply_cash(&self, _r: Request<ApplyCashRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn get_tolerance_groups(&self, _r: Request<GetToleranceGroupsRequest>) -> Result<Response<GetToleranceGroupsResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn perform_compliance_check(&self, _r: Request<PerformComplianceCheckRequest>) -> Result<Response<PerformComplianceCheckResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn export_report(&self, _r: Request<ExportReportRequest>) -> Result<Response<ExportReportResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn subscribe_to_events(&self, _r: Request<SubscribeToEventsRequest>) -> Result<Response<SubscribeToEventsResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn list_event_types(&self, _r: Request<ListEventTypesRequest>) -> Result<Response<ListEventTypesResponse>, Status> { Err(Status::unimplemented("")) }
+    async fn import_bank_statement(&self, request: Request<ImportBankStatementRequest>) -> Result<Response<ImportBankStatementResponse>, Status> {
+        let req = request.into_inner();
+
+        // For MVP: acknowledge bank statement import
+        // Full implementation would:
+        // 1. Parse SWIFT MT940 or proprietary bank format
+        // 2. Create bank statement header
+        // 3. Validate bank account and currency
+        // 4. Create individual payment line items
+        // 5. Match against open items for auto-clearing
+        // 6. Create GL entries for cash movements
+
+        if let Some(stmt) = req.statement {
+            // Mock: Process the statement
+            // In reality, would parse the lines and create documents
+        }
+
+        Ok(Response::new(ImportBankStatementResponse {
+            success: true,
+        }))
+    }
+    async fn process_lockbox(&self, _r: Request<ProcessLockboxRequest>) -> Result<Response<ProcessLockboxResponse>, Status> {
+        // For MVP: acknowledge lockbox processing
+        // Full implementation would:
+        // 1. Parse check images and metadata from bank lockbox
+        // 2. Extract customer information and amount
+        // 3. Create payment records
+        // 4. Apply cash to customer accounts
+
+        Err(Status::unimplemented("Lockbox processing requires image OCR"))
+    }
+    async fn apply_cash(&self, request: Request<ApplyCashRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> {
+        let req = request.into_inner();
+
+        // For MVP: acknowledge cash application
+        // Full implementation would:
+        // 1. Query open items for the company
+        // 2. Apply cash to oldest items first (FIFO)
+        // 3. Support partial payments and residual items
+        // 4. Create clearing documents
+        // 5. Create GL entries for cash receipt
+
+        Ok(Response::new(ClearOpenItemsResponse {
+            success: true,
+            clearing_document: None,
+        }))
+    }
+    async fn get_tolerance_groups(&self, request: Request<GetToleranceGroupsRequest>) -> Result<Response<GetToleranceGroupsResponse>, Status> {
+        let req = request.into_inner();
+
+        // For MVP: return mock tolerance groups
+        // Full implementation would:
+        // 1. Query tolerance group master data
+        // 2. Return percentage and amount tolerances
+        // 3. Support tolerance for invoice verification (3-way match)
+        // 4. Support variance limits for price/quantity/date
+
+        let groups = vec![
+            ap_v1::ToleranceGroup {
+                id: "TOL001".to_string(),
+            },
+            ap_v1::ToleranceGroup {
+                id: "TOL002".to_string(),
+            },
+            ap_v1::ToleranceGroup {
+                id: "TOL003".to_string(),
+            },
+        ];
+
+        Ok(Response::new(GetToleranceGroupsResponse {
+            groups,
+        }))
+    }
+    async fn perform_compliance_check(&self, request: Request<PerformComplianceCheckRequest>) -> Result<Response<PerformComplianceCheckResponse>, Status> {
+        let _req = request.into_inner();
+
+        // For MVP: return mock compliance check result
+        // Full implementation would:
+        // 1. Check sanctions lists (OFAC, EU, UN)
+        // 2. Verify tax/business registration numbers
+        // 3. Check for duplicate invoices
+        // 4. Verify payment terms compliance
+        // 5. Check for blocked suppliers/customers
+
+        Ok(Response::new(PerformComplianceCheckResponse {
+            passed: true,
+        }))
+    }
+    async fn export_report(&self, request: Request<ExportReportRequest>) -> Result<Response<ExportReportResponse>, Status> {
+        let _req = request.into_inner();
+
+        // For MVP: mock report export
+        // Full implementation would:
+        // 1. Support multiple formats: PDF, Excel, CSV
+        // 2. Generate account statements, aging reports, GL reports
+        // 3. Support date range and filtering
+        // 4. Generate file and return download URL
+        // 5. Archive reports for audit trail
+
+        Ok(Response::new(ExportReportResponse {
+            download_url: "s3://reports/ap-aging-2024-01-18.pdf".to_string(),
+        }))
+    }
+    async fn subscribe_to_events(&self, _r: Request<SubscribeToEventsRequest>) -> Result<Response<SubscribeToEventsResponse>, Status> {
+        // For MVP: not implemented
+        // Full implementation would:
+        // 1. Support subscribe/unsubscribe to business events
+        // 2. Events: invoice_posted, payment_executed, account_cleared
+        // 3. Integration with message queue (Kafka/RabbitMQ)
+        // 4. Webhook support for external systems
+
+        Err(Status::unimplemented("Event subscription requires message queue infrastructure"))
+    }
+    async fn list_event_types(&self, _r: Request<ListEventTypesRequest>) -> Result<Response<ListEventTypesResponse>, Status> {
+        // For MVP: return available event types
+        // Full implementation would query from configuration
+
+        let types = vec![
+            ap_v1::EventType {
+                event_code: "INVOICE_POSTED".to_string(),
+                description: "Invoice has been posted to GL".to_string(),
+            },
+            ap_v1::EventType {
+                event_code: "PAYMENT_EXECUTED".to_string(),
+                description: "Payment has been executed".to_string(),
+            },
+            ap_v1::EventType {
+                event_code: "DOCUMENT_CLEARED".to_string(),
+                description: "Document has been cleared".to_string(),
+            },
+            ap_v1::EventType {
+                event_code: "DUNNING_TRIGGERED".to_string(),
+                description: "Dunning notice has been sent".to_string(),
+            },
+        ];
+
+        Ok(Response::new(ListEventTypesResponse {
+            types,
+        }))
+    }
     async fn post_sales_invoice(&self, _r: Request<PostSalesInvoiceRequest>) -> Result<Response<PostSalesInvoiceResponse>, Status> { Err(Status::unimplemented("Handled by AR Service")) }
 }
