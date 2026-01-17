@@ -174,8 +174,70 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
         }
     }
     
-    async fn batch_reverse_journal_entries(&self, _request: Request<BatchReverseJournalEntriesRequest>) -> Result<Response<BatchReverseJournalEntriesResponse>, Status> {
-        Err(Status::unimplemented("Not implemented"))
+    async fn batch_reverse_journal_entries(&self, request: Request<BatchReverseJournalEntriesRequest>) -> Result<Response<BatchReverseJournalEntriesResponse>, Status> {
+        let req = request.into_inner();
+        let mut responses = Vec::new();
+        let mut success_count = 0;
+        let mut failure_count = 0;
+
+        for entry_req in req.entries {
+            let id = match Uuid::parse_str(&entry_req.journal_entry_id) {
+                Ok(id) => id,
+                Err(_) => {
+                    responses.push(JournalEntryResponse {
+                        success: false,
+                        document_reference: None,
+                        messages: vec![crate::infrastructure::grpc::common::v1::ApiMessage {
+                            r#type: "error".to_string(),
+                            code: "INVALID_ID".to_string(),
+                            message: format!("无效的ID: {}", entry_req.journal_entry_id),
+                            target: entry_req.journal_entry_id.clone(),
+                        }],
+                    });
+                    failure_count += 1;
+                    continue;
+                }
+            };
+
+            let reversal_date = entry_req.posting_date
+                .and_then(|ts| chrono::DateTime::from_timestamp(ts.seconds, 0))
+                .map(|dt| dt.naive_utc().date());
+
+            let cmd = ReverseJournalEntryCommand {
+                id,
+                reversal_reason: entry_req.reversal_reason.clone(),
+                posting_date: reversal_date,
+            };
+
+            match self.reverse_handler.handle(cmd).await {
+                Ok(reversal_entry) => {
+                    responses.push(map_to_response(reversal_entry));
+                    success_count += 1;
+                }
+                Err(e) => {
+                    responses.push(JournalEntryResponse {
+                        success: false,
+                        document_reference: None,
+                        messages: vec![crate::infrastructure::grpc::common::v1::ApiMessage {
+                            r#type: "error".to_string(),
+                            code: "REVERSAL_FAILED".to_string(),
+                            message: e.to_string(),
+                            target: entry_req.journal_entry_id,
+                        }],
+                    });
+                    failure_count += 1;
+                }
+            }
+        }
+
+        Ok(Response::new(BatchReverseJournalEntriesResponse {
+            result: Some(crate::infrastructure::grpc::common::v1::BatchOperationResult {
+                success_count,
+                failure_count,
+                errors: vec![],
+            }),
+            responses,
+        }))
     }
 
     async fn stream_journal_entries(&self, _request: Request<ListJournalEntriesRequest>) -> Result<Response<Self::StreamJournalEntriesStream>, Status> {

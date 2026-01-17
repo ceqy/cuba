@@ -323,6 +323,59 @@ impl RejectInvoiceHandler {
     }
 }
 
+/// Handler for clearing open items
+pub struct ClearOpenItemsHandler {
+    open_item_repo: Arc<OpenItemRepository>,
+}
+
+impl ClearOpenItemsHandler {
+    pub fn new(open_item_repo: Arc<OpenItemRepository>) -> Self {
+        Self { open_item_repo }
+    }
+
+    pub async fn handle(
+        &self,
+        item_ids: Vec<Uuid>,
+        clearing_document: String,
+    ) -> Result<i64, AppError> {
+        let clearing_date = chrono::Utc::now().naive_utc().date();
+
+        let cleared_count = self.open_item_repo
+            .clear_items(&item_ids, &clearing_document, clearing_date)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(cleared_count)
+    }
+}
+
+/// Handler for partial clearing
+pub struct PartialClearHandler {
+    open_item_repo: Arc<OpenItemRepository>,
+}
+
+impl PartialClearHandler {
+    pub fn new(open_item_repo: Arc<OpenItemRepository>) -> Self {
+        Self { open_item_repo }
+    }
+
+    pub async fn handle(
+        &self,
+        item_id: Uuid,
+        amount_to_clear: rust_decimal::Decimal,
+        clearing_document: String,
+    ) -> Result<(), AppError> {
+        let clearing_date = chrono::Utc::now().naive_utc().date();
+
+        self.open_item_repo
+            .partial_clear(item_id, amount_to_clear, &clearing_document, clearing_date)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(())
+    }
+}
+
 /// Application error types
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
