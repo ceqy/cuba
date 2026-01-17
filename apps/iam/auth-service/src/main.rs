@@ -25,7 +25,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
     let session_repo = Arc::new(PostgresUserSessionRepository::new(pool.clone()));
     let password_service = Arc::new(BcryptPasswordService::default());
-    let token_service = Arc::new(JwtTokenService::new("super_secret_key".to_string())); // TODO: Env
+
+    // Read JWT secret from environment variable
+    let jwt_secret = std::env::var("JWT_SECRET")
+        .expect("JWT_SECRET environment variable must be set");
+    let token_service = Arc::new(JwtTokenService::new(jwt_secret));
     
     // RBAC Client (connecting to the service in K8s or local)
     let rbac_addr = std::env::var("RBAC_SERVICE_ADDR").unwrap_or_else(|_| "http://rbac-service.cuba-iam.svc.cluster.local:50052".to_string());

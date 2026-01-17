@@ -17,12 +17,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     cuba_telemetry::init_telemetry();
     
     // Config
-    let addr = "0.0.0.0:50053".parse()?;
+    let addr = "0.0.0.0:50061".parse()?;
     info!("Starting ap-service on {}", addr);
 
     // GL Service Endpoint (from env or default)
     let gl_endpoint = std::env::var("GL_SERVICE_URL")
-        .unwrap_or_else(|_| "http://localhost:50051".to_string());
+        .unwrap_or_else(|_| "http://gl-service.cuba-fi.svc.cluster.local:50060".to_string());
     info!("GL Service endpoint: {}", gl_endpoint);
 
     // Database

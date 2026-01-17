@@ -21,9 +21,15 @@ spec:
         - containerPort: 50053
         env:
         - name: DATABASE_URL
-          value: "postgres://postgres:postgres@postgres.cuba-infra.svc.cluster.local:5432/cuba_iam_oauth"
+          valueFrom:
+            secretKeyRef:
+              name: database-urls
+              key: iam-oauth-db-url
         - name: JWT_SECRET
-          value: "cuba-secret-key-change-me"
+          valueFrom:
+            secretKeyRef:
+              name: oauth-jwt-secret
+              key: jwt-secret
 ---
 apiVersion: v1
 kind: Service

@@ -215,7 +215,7 @@ static_resources:
                   address:
                     socket_address:
                       address: gl-service.cuba-fi.svc.cluster.local
-                      port_value: 50052
+                      port_value: 50060
 
     # AP/AR Service (port 50053 - AP / 50054 - AR, mapping AP route to AP service for now, usually needs separate clusters or unified one if they share binary)
     # Note: Using ap-service for ARAP requests. If AR is separate, we need accurate routing.
@@ -237,7 +237,7 @@ static_resources:
                   address:
                     socket_address:
                       address: ap-service.cuba-fi.svc.cluster.local
-                      port_value: 50053
+                      port_value: 50061
 
     # CO Service (port 50055)
     - name: co_service

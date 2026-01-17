@@ -21,8 +21,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Infrastructure
     let oauth_repo = Arc::new(PostgresOAuthRepository::new(pool.clone()));
-    
-    let jwt_secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "cuba-secret-key-change-me".to_string());
+
+    // Read JWT secret from environment variable (no default fallback for security)
+    let jwt_secret = std::env::var("JWT_SECRET")
+        .expect("JWT_SECRET environment variable must be set");
     let jwt_service = Arc::new(JwtService::new(jwt_secret));
     let crypto_service = Arc::new(CryptoService::default());
     let secret_service = Arc::new(ClientSecretService::default());

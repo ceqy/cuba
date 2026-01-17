@@ -18,7 +18,7 @@ use tracing::info;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     cuba_telemetry::init_telemetry();
 
-    let addr = "0.0.0.0:50052".parse()?;
+    let addr = "0.0.0.0:50060".parse()?;
     info!("Starting GL Service on {}", addr);
 
     // Database
@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Initialize COA client (optional - gracefully degrade if unavailable)
     let coa_endpoint = std::env::var("COA_SERVICE_URL")
-        .unwrap_or_else(|_| "http://coa-service.finance.svc.cluster.local:50060".to_string());
+        .unwrap_or_else(|_| "http://coa-service.cuba-fi.svc.cluster.local:50065".to_string());
 
     let account_validation = match CoaClient::connect(&coa_endpoint).await {
         Ok(coa_client) => {

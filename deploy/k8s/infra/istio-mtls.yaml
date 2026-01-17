@@ -1,0 +1,170 @@
+# ============================================================================
+# CUBA ERP - Istio mTLS Configuration
+# ============================================================================
+# This configuration enables mutual TLS (mTLS) for all service-to-service
+# communication within the CUBA ERP mesh.
+# ============================================================================
+
+---
+# Global mTLS Policy - STRICT mode for all namespaces
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default-mtls-strict
+  namespace: istio-system
+spec:
+  mtls:
+    mode: STRICT
+
+---
+# Namespace-specific mTLS for cuba-system
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: cuba-system-mtls
+  namespace: cuba-system
+spec:
+  mtls:
+    mode: STRICT
+
+---
+# Namespace-specific mTLS for cuba-iam
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: cuba-iam-mtls
+  namespace: cuba-iam
+spec:
+  mtls:
+    mode: STRICT
+
+---
+# Namespace-specific mTLS for cuba-fi
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: cuba-fi-mtls
+  namespace: cuba-fi
+spec:
+  mtls:
+    mode: STRICT
+
+---
+# Destination Rule - Enable mTLS for all services
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: default-mtls
+  namespace: istio-system
+spec:
+  host: "*.local"
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+
+---
+# Authorization Policy - Allow authenticated traffic only
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-authenticated-only
+  namespace: istio-system
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["*"]
+    to:
+    - operation:
+        methods: ["*"]
+
+---
+# Service-specific DestinationRule for GL Service
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: gl-service-mtls
+  namespace: cuba-fi
+spec:
+  host: gl-service.cuba-fi.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 50
+        http2MaxRequests: 100
+
+---
+# Service-specific DestinationRule for AP Service
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: ap-service-mtls
+  namespace: cuba-fi
+spec:
+  host: ap-service.cuba-fi.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 50
+        http2MaxRequests: 100
+
+---
+# Service-specific DestinationRule for AR Service
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: ar-service-mtls
+  namespace: cuba-fi
+spec:
+  host: ar-service.cuba-fi.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+
+---
+# Service-specific DestinationRule for Auth Service
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: auth-service-mtls
+  namespace: cuba-iam
+spec:
+  host: auth-service.cuba-iam.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+
+---
+# Service-specific DestinationRule for OAuth Service
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: oauth-service-mtls
+  namespace: cuba-iam
+spec:
+  host: oauth-service.cuba-iam.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+
+---
+# Service-specific DestinationRule for PostgreSQL
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: postgres-mtls
+  namespace: cuba-system
+spec:
+  host: cuba-postgres.cuba-system.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: DISABLE  # PostgreSQL uses its own TLS, disable Istio mTLS for DB connections

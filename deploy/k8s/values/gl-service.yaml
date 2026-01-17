@@ -5,11 +5,15 @@ image:
   tag: "latest"
 fullnameOverride: "gl-service"
 service:
-  grpcPort: 50052
+  grpcPort: 50060
   metricsPort: 9090
 env:
   RUST_LOG: "info"
-  DATABASE_URL: "postgres://postgres:postgres@postgres.cuba-infra.svc.cluster.local:5432/cuba_fi_gl"
+secrets:
+  - name: DATABASE_URL
+    secretKeyRef:
+      name: database-urls
+      key: fi-gl-db-url
 resources:
   limits: {cpu: 500m, memory: 512Mi}
   requests: {cpu: 100m, memory: 128Mi}

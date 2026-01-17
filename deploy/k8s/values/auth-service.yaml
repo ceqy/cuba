@@ -9,7 +9,15 @@ service:
   metricsPort: 9090
 env:
   RUST_LOG: "info"
-  DATABASE_URL: "postgres://postgres:postgres@cuba-postgres.default.svc.cluster.local:5432/cuba_iam_auth"
+envFrom:
+  - secretRef:
+      name: database-urls
+      optional: false
+secrets:
+  - name: JWT_SECRET
+    secretKeyRef:
+      name: auth-jwt-secret
+      key: jwt-secret
 resources:
   limits: {cpu: 500m, memory: 512Mi}
   requests: {cpu: 100m, memory: 128Mi}

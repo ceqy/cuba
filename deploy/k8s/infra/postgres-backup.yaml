@@ -1,0 +1,292 @@
+# ============================================================================
+# CUBA ERP - PostgreSQL Backup Configuration
+# ============================================================================
+# Automated backup strategy using CronJob and pg_dump
+# ============================================================================
+
+---
+# PersistentVolumeClaim for backup storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-backup-storage
+  namespace: cuba-system
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 100Gi
+
+---
+# ConfigMap with backup script
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-backup-script
+  namespace: cuba-system
+data:
+  backup.sh: |
+    #!/bin/bash
+    set -e
+
+    BACKUP_DIR="/backups"
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    RETENTION_DAYS=30
+
+    echo "Starting PostgreSQL backup at $TIMESTAMP"
+
+    # Create backup directory if not exists
+    mkdir -p $BACKUP_DIR
+
+    # List of databases to backup
+    DATABASES=(
+      "cuba_iam"
+      "cuba_fi_gl"
+      "cuba_fi_ap"
+      "cuba_fi_ar"
+      "cuba_fi_co"
+      "cuba_fi_tr"
+      "cuba_fi_coa"
+      "cuba_am_ah"
+      "cuba_am_eh"
+      "cuba_am_gs"
+      "cuba_am_pm"
+      "cuba_cs_cb"
+      "cuba_cs_fd"
+      "cuba_cs_wc"
+      "cuba_hr_ex"
+      "cuba_hr_ta"
+      "cuba_mf_kb"
+      "cuba_mf_om"
+      "cuba_mf_pp"
+      "cuba_mf_qi"
+      "cuba_mf_sf"
+      "cuba_pm_ct"
+      "cuba_pm_iv"
+      "cuba_pm_po"
+      "cuba_pm_sa"
+      "cuba_pm_se"
+      "cuba_rd_pl"
+      "cuba_rd_ps"
+      "cuba_sc_bt"
+      "cuba_sc_df"
+      "cuba_sc_im"
+      "cuba_sc_tp"
+      "cuba_sc_vs"
+      "cuba_sc_wm"
+      "cuba_sd_an"
+      "cuba_sd_pe"
+      "cuba_sd_rr"
+      "cuba_sd_so"
+    )
+
+    # Backup each database
+    for DB in "${DATABASES[@]}"; do
+      echo "Backing up database: $DB"
+      BACKUP_FILE="$BACKUP_DIR/${DB}_${TIMESTAMP}.sql.gz"
+
+      pg_dump -h $POSTGRES_HOST -U $POSTGRES_USER -d $DB | gzip > $BACKUP_FILE
+
+      if [ $? -eq 0 ]; then
+        echo "✓ Successfully backed up $DB to $BACKUP_FILE"
+      else
+        echo "✗ Failed to backup $DB"
+        exit 1
+      fi
+    done
+
+    # Backup global objects (roles, tablespaces)
+    echo "Backing up global objects"
+    GLOBALS_FILE="$BACKUP_DIR/globals_${TIMESTAMP}.sql.gz"
+    pg_dumpall -h $POSTGRES_HOST -U $POSTGRES_USER --globals-only | gzip > $GLOBALS_FILE
+
+    # Clean up old backups (older than RETENTION_DAYS)
+    echo "Cleaning up backups older than $RETENTION_DAYS days"
+    find $BACKUP_DIR -name "*.sql.gz" -type f -mtime +$RETENTION_DAYS -delete
+
+    # Calculate backup size
+    BACKUP_SIZE=$(du -sh $BACKUP_DIR | cut -f1)
+    echo "Total backup size: $BACKUP_SIZE"
+
+    echo "Backup completed successfully at $(date)"
+
+---
+# CronJob for daily backups (runs at 2 AM daily)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup-daily
+  namespace: cuba-system
+spec:
+  schedule: "0 2 * * *"  # 2 AM every day
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: postgres-backup
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: backup
+            image: postgres:15
+            command:
+            - /bin/bash
+            - /scripts/backup.sh
+            env:
+            - name: POSTGRES_HOST
+              value: "cuba-postgres.cuba-system.svc.cluster.local"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+            volumeMounts:
+            - name: backup-script
+              mountPath: /scripts
+              readOnly: true
+            - name: backup-storage
+              mountPath: /backups
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "200m"
+              limits:
+                memory: "1Gi"
+                cpu: "1000m"
+          volumes:
+          - name: backup-script
+            configMap:
+              name: postgres-backup-script
+              defaultMode: 0755
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: postgres-backup-storage
+
+---
+# CronJob for weekly full backups (runs at 3 AM every Sunday)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup-weekly
+  namespace: cuba-system
+spec:
+  schedule: "0 3 * * 0"  # 3 AM every Sunday
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: postgres-backup
+            type: weekly
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: backup
+            image: postgres:15
+            command:
+            - /bin/bash
+            - -c
+            - |
+              TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+              BACKUP_FILE="/backups/full_backup_${TIMESTAMP}.sql.gz"
+              echo "Starting full database backup"
+              pg_dumpall -h $POSTGRES_HOST -U $POSTGRES_USER | gzip > $BACKUP_FILE
+              echo "Full backup completed: $BACKUP_FILE"
+              ls -lh $BACKUP_FILE
+            env:
+            - name: POSTGRES_HOST
+              value: "cuba-postgres.cuba-system.svc.cluster.local"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backups
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "500m"
+              limits:
+                memory: "2Gi"
+                cpu: "2000m"
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: postgres-backup-storage
+
+---
+# Manual backup Job template (can be triggered on-demand)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgres-backup-manual
+  namespace: cuba-system
+spec:
+  template:
+    metadata:
+      labels:
+        app: postgres-backup
+        type: manual
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: backup
+        image: postgres:15
+        command:
+        - /bin/bash
+        - /scripts/backup.sh
+        env:
+        - name: POSTGRES_HOST
+          value: "cuba-postgres.cuba-system.svc.cluster.local"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: username
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: password
+        volumeMounts:
+        - name: backup-script
+          mountPath: /scripts
+          readOnly: true
+        - name: backup-storage
+          mountPath: /backups
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+      volumes:
+      - name: backup-script
+        configMap:
+          name: postgres-backup-script
+          defaultMode: 0755
+      - name: backup-storage
+        persistentVolumeClaim:
+          claimName: postgres-backup-storage

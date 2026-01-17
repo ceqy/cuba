@@ -5,12 +5,16 @@ image:
   tag: "latest"
 fullnameOverride: "ap-service"
 service:
-  grpcPort: 50053
+  grpcPort: 50061
   metricsPort: 9090
 env:
   RUST_LOG: "info"
-  DATABASE_URL: "postgres://postgres:postgres@postgres.cuba-infra.svc.cluster.local:5432/cuba_fi_ap"
-  GL_SERVICE_URL: "http://gl-service:50052"
+  GL_SERVICE_URL: "http://gl-service.cuba-fi.svc.cluster.local:50060"
+secrets:
+  - name: DATABASE_URL
+    secretKeyRef:
+      name: database-urls
+      key: fi-ap-db-url
 resources:
   limits: {cpu: 500m, memory: 512Mi}
   requests: {cpu: 100m, memory: 128Mi}
