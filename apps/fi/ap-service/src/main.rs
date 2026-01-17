@@ -8,7 +8,7 @@ use ap_service::api::grpc_server::ApServiceImpl;
 use ap_service::api::proto::fi::ap::v1::accounts_receivable_payable_service_server::AccountsReceivablePayableServiceServer;
 use ap_service::infrastructure::repository::{SupplierRepository, OpenItemRepository, InvoiceRepository};
 use ap_service::infrastructure::gl_client::GlClient;
-use ap_service::application::handlers::{PostSupplierHandler, ListOpenItemsHandler, PostInvoiceHandler, GetInvoiceHandler, ApproveInvoiceHandler, RejectInvoiceHandler, ClearOpenItemsHandler, PartialClearHandler};
+use ap_service::application::handlers::{PostSupplierHandler, ListOpenItemsHandler, PostInvoiceHandler, GetInvoiceHandler, ApproveInvoiceHandler, RejectInvoiceHandler, ClearOpenItemsHandler, PartialClearHandler, GeneratePaymentProposalHandler, ExecutePaymentProposalHandler};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -46,6 +46,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let reject_invoice_handler = Arc::new(RejectInvoiceHandler::new(invoice_repo.clone()));
     let clear_open_items_handler = Arc::new(ClearOpenItemsHandler::new(open_item_repo.clone()));
     let partial_clear_handler = Arc::new(PartialClearHandler::new(open_item_repo.clone()));
+    let generate_payment_proposal_handler = Arc::new(GeneratePaymentProposalHandler::new(open_item_repo.clone()));
+    let execute_payment_proposal_handler = Arc::new(ExecutePaymentProposalHandler::new(open_item_repo.clone()));
 
     // Service
     let ap_service = ApServiceImpl::new(
@@ -57,6 +59,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         reject_invoice_handler,
         clear_open_items_handler,
         partial_clear_handler,
+        generate_payment_proposal_handler,
+        execute_payment_proposal_handler,
     );
 
     // Reflection

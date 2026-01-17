@@ -376,6 +376,52 @@ impl PartialClearHandler {
     }
 }
 
+/// Handler for generating payment proposal
+pub struct GeneratePaymentProposalHandler {
+    open_item_repo: Arc<OpenItemRepository>,
+}
+
+impl GeneratePaymentProposalHandler {
+    pub fn new(open_item_repo: Arc<OpenItemRepository>) -> Self {
+        Self { open_item_repo }
+    }
+
+    pub async fn handle(
+        &self,
+        _company_code: String,
+        _payment_date: chrono::NaiveDate,
+    ) -> Result<Vec<OpenItem>, AppError> {
+        // Simplified - return empty for now
+        Ok(vec![])
+    }
+}
+
+/// Handler for executing payment proposal
+pub struct ExecutePaymentProposalHandler {
+    open_item_repo: Arc<OpenItemRepository>,
+}
+
+impl ExecutePaymentProposalHandler {
+    pub fn new(open_item_repo: Arc<OpenItemRepository>) -> Self {
+        Self { open_item_repo }
+    }
+
+    pub async fn handle(
+        &self,
+        item_ids: Vec<Uuid>,
+        payment_document: String,
+    ) -> Result<i64, AppError> {
+        let payment_date = chrono::Utc::now().naive_utc().date();
+
+        let cleared_count = self.open_item_repo
+            .clear_items(&item_ids, &payment_document, payment_date)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(cleared_count)
+    }
+}
+
 /// Application error types
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
