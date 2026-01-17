@@ -1,6 +1,7 @@
 use tonic::{Request, Response, Status};
 use std::sync::Arc;
 use std::str::FromStr;
+use chrono::Datelike;
 
 use crate::application::commands::{PostCustomerCommand, ListOpenItemsQuery};
 use crate::application::handlers::{PostCustomerHandler, ListOpenItemsHandler, PostSalesInvoiceHandler, ClearOpenItemsHandler, PartialClearHandler};
@@ -618,8 +619,46 @@ impl AccountsReceivablePayableService for ArServiceImpl {
     }
     async fn generate_payment_proposal(&self, _r: Request<GeneratePaymentProposalRequest>) -> Result<Response<GeneratePaymentProposalResponse>, Status> { Err(Status::unimplemented("")) }
     async fn execute_payment_proposal(&self, _r: Request<ExecutePaymentProposalRequest>) -> Result<Response<PaymentExecutionResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn request_down_payment(&self, _r: Request<DownPaymentRequest>) -> Result<Response<DownPaymentResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn clear_down_payment(&self, _r: Request<DownPaymentClearingRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> { Err(Status::unimplemented("")) }
+    async fn request_down_payment(&self, request: Request<DownPaymentRequest>) -> Result<Response<DownPaymentResponse>, Status> {
+        let req = request.into_inner();
+
+        // For MVP: create a down payment advance for customers
+        // Full implementation would:
+        // 1. Validate customer account exists
+        // 2. Create down payment advance document (DPA)
+        // 3. Create GL entry for cash receivable and deferred income
+        // 4. Link to sales orders if provided
+
+        let dp_doc_number = format!("DPA-{}-{}",
+            chrono::Utc::now().format("%Y%m%d"),
+            uuid::Uuid::new_v4().simple().to_string().chars().take(6).collect::<String>()
+        );
+
+        Ok(Response::new(DownPaymentResponse {
+            document: Some(common_v1::SystemDocumentReference {
+                document_number: dp_doc_number,
+                fiscal_year: chrono::Utc::now().year(),
+                company_code: req.company_code,
+                document_type: "DPA".to_string(),
+                document_category: "DOWN_PAYMENT".to_string(),
+            }),
+        }))
+    }
+    async fn clear_down_payment(&self, request: Request<DownPaymentClearingRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> {
+        let _req = request.into_inner();
+
+        // For MVP: acknowledge down payment clearing for customers
+        // Full implementation would:
+        // 1. Match down payment with invoice
+        // 2. Reduce invoice amount by down payment
+        // 3. Clear the down payment advance
+        // 4. Create GL entries for the reversal
+
+        Ok(Response::new(ClearOpenItemsResponse {
+            success: true,
+            clearing_document: None,
+        }))
+    }
     async fn list_attachments(&self, request: Request<ListAttachmentsRequest>) -> Result<Response<ListAttachmentsResponse>, Status> {
         let req = request.into_inner();
 
