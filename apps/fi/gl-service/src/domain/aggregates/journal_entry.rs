@@ -224,6 +224,13 @@ pub struct LineItem {
     pub ledger: String,                    // 分类账编号 (RLDNR: 0L, 1L, 2L...)
     pub ledger_type: LedgerType,           // 分类账类型
     pub ledger_amount: Option<Decimal>,    // 分类账货币金额（用于不同会计准则）
+
+    // ============================================================================
+    // 组织维度字段 (Organizational Dimensions)
+    // ============================================================================
+    pub financial_area: Option<String>,    // 财务范围 (RFAREA) - 用于合并报表
+    pub business_area: Option<String>,     // 业务范围 (RBUSA) - 用于段报告
+    pub controlling_area: Option<String>,  // 控制范围 (KOKRS) - 用于管理会计
 }
 
 impl LineItem {
@@ -249,6 +256,9 @@ impl LineItem {
             ledger: "0L".to_string(),           // 默认主分类账
             ledger_type: LedgerType::Leading,
             ledger_amount: None,
+            financial_area: None,
+            business_area: None,
+            controlling_area: None,
         }
     }
 
@@ -276,6 +286,9 @@ impl LineItem {
             ledger,
             ledger_type,
             ledger_amount: Some(amount), // 默认使用相同金额
+            financial_area: None,
+            business_area: None,
+            controlling_area: None,
         }
     }
 
@@ -302,6 +315,9 @@ impl LineItem {
             ledger: "0L".to_string(),
             ledger_type: LedgerType::Leading,
             ledger_amount: None,
+            financial_area: None,
+            business_area: None,
+            controlling_area: None,
         }
     }
 

@@ -518,6 +518,20 @@ message JournalEntryLineItem {
   //   - 财务报表：正确反映退货和调整
   //   - 清账逻辑：贷项凭证与原始发票的关联清账
   InvoiceReference invoice_reference = 57;  // 发票参考信息
+
+  // ============================================================================
+  // 催款相关字段 (Dunning Detail / MSCHL)
+  // ============================================================================
+  // 用于应收/应付账款的催款管理
+  // 场景：
+  //   - 客户逾期付款：自动生成催款函
+  //   - 多级催款：根据逾期天数升级催款级别
+  //   - 催款冻结：临时停止催款（如客户有争议）
+  // 影响：
+  //   - 现金流管理：及时催收逾期款项
+  //   - 客户关系：合理的催款策略
+  //   - 坏账控制：早期识别风险客户
+  DunningDetail dunning_detail = 58;  // 催款详细信息
 }
 
 // 发票参考信息（用于贷项凭证追溯原始发票）
@@ -538,6 +552,19 @@ message PaymentTermsDetail {
   string discount_percent_1 = 5;                // ZBD1P 第一个折扣百分比（使用字符串防精度丢失）
   string discount_percent_2 = 6;                // ZBD2P 第二个折扣百分比（使用字符串防精度丢失）
   common.v1.MonetaryValue discount_amount = 7;  // SKFBT 现金折扣金额
+}
+
+// 催款详细信息（用于应收/应付账款的催款管理）
+message DunningDetail {
+  string dunning_key = 1;                       // MSCHL 催款码（催款程序标识）
+  string dunning_block = 2;                     // MANST 催款冻结（冻结原因代码）
+  google.protobuf.Timestamp last_dunning_date = 3;  // MADAT 上次催款日期
+  google.protobuf.Timestamp dunning_date = 4;   // MANDT 催款日期（下次催款日期）
+  int32 dunning_level = 5;                      // 催款级别（1-9，级别越高越严厉）
+  string dunning_area = 6;                      // MAHNA 催款范围（用于区分不同催款策略）
+  int32 grace_period_days = 7;                  // 宽限期天数
+  common.v1.MonetaryValue dunning_charges = 8;  // 催款费用（每次催款收取的费用）
+  string dunning_clerk = 9;                     // 催款员（负责催款的人员）
 }
 
 // 凭证税行

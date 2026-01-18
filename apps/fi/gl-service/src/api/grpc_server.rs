@@ -114,6 +114,9 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 ledger: if l.ledger.is_empty() { None } else { Some(l.ledger) },
                 ledger_type: if l.ledger_type == 0 { None } else { Some(l.ledger_type) },
                 ledger_amount,
+                financial_area: if l.financial_area.is_empty() { None } else { Some(l.financial_area) },
+                business_area: if l.business_area.is_empty() { None } else { Some(l.business_area) },
+                controlling_area: if l.controlling_area.is_empty() { None } else { Some(l.controlling_area) },
             })
         }).collect();
 

@@ -73,9 +73,10 @@ impl JournalRepository for PostgresJournalRepository {
                     id, journal_entry_id, line_number, account_id,
                     debit_credit, amount, local_amount,
                     cost_center, profit_center, line_text,
-                    special_gl_indicator, ledger, ledger_type, ledger_amount
+                    special_gl_indicator, ledger, ledger_type, ledger_amount,
+                    financial_area, business_area, controlling_area
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
                 "#
             )
             .bind(line.id)
@@ -92,6 +93,9 @@ impl JournalRepository for PostgresJournalRepository {
             .bind(&line.ledger)
             .bind(i32::from(line.ledger_type))
             .bind(line.ledger_amount)
+            .bind(&line.financial_area)
+            .bind(&line.business_area)
+            .bind(&line.controlling_area)
             .execute(&mut *tx)
             .await?;
         }
@@ -124,7 +128,8 @@ impl JournalRepository for PostgresJournalRepository {
                 SELECT
                     id, line_number, account_id, debit_credit, amount, local_amount,
                     cost_center, profit_center, line_text,
-                    special_gl_indicator, ledger, ledger_type, ledger_amount
+                    special_gl_indicator, ledger, ledger_type, ledger_amount,
+                    financial_area, business_area, controlling_area
                 FROM journal_entry_lines
                 WHERE journal_entry_id = $1
                 ORDER BY line_number ASC
@@ -161,6 +166,9 @@ impl JournalRepository for PostgresJournalRepository {
                     ledger,
                     ledger_type,
                     ledger_amount: l.get("ledger_amount"),
+                    financial_area: l.get("financial_area"),
+                    business_area: l.get("business_area"),
+                    controlling_area: l.get("controlling_area"),
                 }
             }).collect();
 

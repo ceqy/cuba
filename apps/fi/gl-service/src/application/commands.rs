@@ -15,6 +15,9 @@ pub struct LineItemDTO {
     pub ledger: Option<String>,               // RLDNR: 0L, 1L, 2L...
     pub ledger_type: Option<i32>,             // 1=Leading, 2=NonLeading, 3=Extension
     pub ledger_amount: Option<Decimal>,       // Amount in ledger currency
+    pub financial_area: Option<String>,       // RFAREA: Financial area for consolidation
+    pub business_area: Option<String>,        // RBUSA: Business area for segment reporting
+    pub controlling_area: Option<String>,     // KOKRS: Controlling area for management accounting
 }
 
 #[derive(Debug, Deserialize)]

@@ -140,6 +140,14 @@ impl GlClient {
                         value: item.amount.to_string(),
                         currency_code: currency.to_string(),
                     }),
+                    // 组织维度字段
+                    financial_area: item.financial_area.unwrap_or_default(),
+                    business_area: item.business_area.unwrap_or_default(),
+                    controlling_area: item.controlling_area.unwrap_or_default(),
+                    // 其他字段
+                    payment_terms_detail: None,
+                    invoice_reference: None,
+                    dunning_detail: None,
                 }
             })
             .collect();
@@ -170,6 +178,9 @@ pub struct GlLineItem {
     pub special_gl_indicator: Option<String>, // UMSKZ: A, F, V, W
     pub ledger: Option<String>,               // 分类账
     pub ledger_type: Option<i32>,             // 分类账类型
+    pub financial_area: Option<String>,       // RFAREA: 财务范围
+    pub business_area: Option<String>,        // RBUSA: 业务范围
+    pub controlling_area: Option<String>,     // KOKRS: 控制范围
 }
 
 /// Convert NaiveDate to protobuf Timestamp

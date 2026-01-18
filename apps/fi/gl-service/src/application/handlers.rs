@@ -125,6 +125,9 @@ impl<R: JournalRepository> CreateJournalEntryHandler<R> {
                 ledger,
                 ledger_type,
                 ledger_amount: l.ledger_amount,
+                financial_area: l.financial_area,
+                business_area: l.business_area,
+                controlling_area: l.controlling_area,
             })
         }).collect::<Result<Vec<_>, _>>()?;
 
