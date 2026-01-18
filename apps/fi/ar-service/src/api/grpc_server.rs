@@ -624,12 +624,32 @@ impl AccountsReceivablePayableService for ArServiceImpl {
     async fn request_down_payment(&self, request: Request<DownPaymentRequest>) -> Result<Response<DownPaymentResponse>, Status> {
         let req = request.into_inner();
 
-        // For MVP: create a down payment advance for customers
+        // For MVP: create a down payment advance for customers (预收款)
         // Full implementation would:
         // 1. Validate customer account exists
         // 2. Create down payment advance document (DPA)
-        // 3. Create GL entry for cash receivable and deferred income
+        // 3. Create GL entry for cash receivable and deferred income with special_gl_indicator = "V"
         // 4. Link to sales orders if provided
+        //
+        // Example GL integration:
+        // let gl_line_items = vec![
+        //     GlLineItem {
+        //         gl_account: "1100".to_string(),  // Cash account
+        //         debit_credit: "S".to_string(),   // Debit
+        //         amount: req.amount,
+        //         special_gl_indicator: Some("V".to_string()),  // Advance Payment (预收款)
+        //         business_partner: Some(req.customer_id.clone()),
+        //         ...
+        //     },
+        //     GlLineItem {
+        //         gl_account: "2200".to_string(),  // AR account
+        //         debit_credit: "H".to_string(),   // Credit
+        //         amount: req.amount,
+        //         special_gl_indicator: Some("V".to_string()),  // Advance Payment (预收款)
+        //         business_partner: Some(req.customer_id.clone()),
+        //         ...
+        //     },
+        // ];
 
         let dp_doc_number = format!("DPA-{}-{}",
             chrono::Utc::now().format("%Y%m%d"),

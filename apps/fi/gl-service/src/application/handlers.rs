@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use crate::application::commands::{CreateJournalEntryCommand, PostJournalEntryCommand, ReverseJournalEntryCommand, ParkJournalEntryCommand, UpdateJournalEntryCommand};
-use crate::application::queries::{GetJournalEntryQuery, ListJournalEntriesQuery};
+use crate::application::queries::{GetJournalEntryQuery, ListJournalEntriesQuery, ListSpecialGlEntriesQuery, ListBusinessPartnerSpecialGlQuery};
 use crate::domain::aggregates::journal_entry::{JournalEntry, LineItem, DebitCredit, PostingStatus};
 use crate::domain::repositories::JournalRepository;
 use crate::domain::services::AccountValidationService;
@@ -22,6 +22,47 @@ impl<R: JournalRepository> CreateJournalEntryHandler<R> {
     pub fn with_account_validation(mut self, validation: Arc<AccountValidationService>) -> Self {
         self.account_validation = Some(validation);
         self
+    }
+
+    /// 验证特殊总账业务规则
+    fn validate_special_gl_rules(lines: &[LineItem]) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        use crate::domain::aggregates::journal_entry::SpecialGlType;
+
+        for (idx, line) in lines.iter().enumerate() {
+            let line_num = idx + 1;
+
+            match line.special_gl_indicator {
+                // 预付款业务规则
+                SpecialGlType::DownPayment => {
+                    // TODO: 预付款必须关联业务伙伴（供应商）
+                    // 当前 LineItem 结构中没有 business_partner 字段
+                    // 这个验证需要在添加 business_partner 字段后实现
+                    tracing::debug!("Line {}: Down payment detected", line_num);
+                }
+
+                // 预收款业务规则
+                SpecialGlType::AdvancePayment => {
+                    // TODO: 预收款必须关联业务伙伴（客户）
+                    // 当前 LineItem 结构中没有 business_partner 字段
+                    // 这个验证需要在添加 business_partner 字段后实现
+                    tracing::debug!("Line {}: Advance payment detected", line_num);
+                }
+
+                // 票据业务规则
+                SpecialGlType::BillOfExchange | SpecialGlType::BillDiscount => {
+                    // TODO: 票据必须有到期日信息
+                    // 当前 LineItem 结构中没有 maturity_date 字段
+                    // 这个验证需要在添加 maturity_date 字段后实现
+                    tracing::debug!("Line {}: Bill of exchange detected", line_num);
+                }
+
+                SpecialGlType::Normal => {
+                    // 普通业务，无需特殊验证
+                }
+            }
+        }
+
+        Ok(())
     }
 
     pub async fn handle(&self, cmd: CreateJournalEntryCommand) -> Result<JournalEntry, Box<dyn std::error::Error + Send + Sync>> {
@@ -86,6 +127,9 @@ impl<R: JournalRepository> CreateJournalEntryHandler<R> {
                 ledger_amount: l.ledger_amount,
             })
         }).collect::<Result<Vec<_>, _>>()?;
+
+        // 验证特殊总账业务规则
+        Self::validate_special_gl_rules(&lines)?;
 
         // Create aggregate
         let mut entry = JournalEntry::new(
@@ -318,5 +362,115 @@ impl<R: JournalRepository> UpdateJournalEntryHandler<R> {
         self.repository.save(&entry).await?;
 
         Ok(entry)
+    }
+}
+
+/// 按特殊总账类型查询处理器
+pub struct ListSpecialGlEntriesHandler<R> {
+    repository: Arc<R>,
+}
+
+impl<R: JournalRepository> ListSpecialGlEntriesHandler<R> {
+    pub fn new(repository: Arc<R>) -> Self {
+        Self { repository }
+    }
+
+    pub async fn handle(&self, query: ListSpecialGlEntriesQuery) -> Result<PaginatedResult<JournalEntry>, Box<dyn std::error::Error + Send + Sync>> {
+        use crate::domain::aggregates::journal_entry::SpecialGlType;
+
+        // 验证特殊总账类型
+        let gl_type = SpecialGlType::from_sap_code(&query.special_gl_type);
+        if !gl_type.is_special() {
+            return Err(format!("无效的特殊总账类型: {}. 有效值: A (票据), F (预付款), V (预收款), W (票据贴现)", query.special_gl_type).into());
+        }
+
+        // 获取所有凭证
+        let status = query.status.as_deref();
+        let all_items = self.repository.search(&query.company_code, status, 1, 10000).await?;
+
+        // 过滤包含指定特殊总账类型的凭证
+        let filtered_items: Vec<JournalEntry> = all_items.into_iter()
+            .filter(|entry| {
+                entry.lines.iter().any(|line| {
+                    line.special_gl_indicator == gl_type
+                })
+            })
+            .collect();
+
+        // 分页
+        let total_items = filtered_items.len() as i64;
+        let offset = ((query.page.max(1) - 1) * query.page_size) as usize;
+        let items: Vec<JournalEntry> = filtered_items.into_iter()
+            .skip(offset)
+            .take(query.page_size as usize)
+            .collect();
+
+        Ok(PaginatedResult {
+            items,
+            total_items,
+            page: query.page,
+            page_size: query.page_size,
+        })
+    }
+}
+
+/// 按业务伙伴和特殊总账类型查询处理器
+pub struct ListBusinessPartnerSpecialGlHandler<R> {
+    repository: Arc<R>,
+}
+
+impl<R: JournalRepository> ListBusinessPartnerSpecialGlHandler<R> {
+    pub fn new(repository: Arc<R>) -> Self {
+        Self { repository }
+    }
+
+    pub async fn handle(&self, query: ListBusinessPartnerSpecialGlQuery) -> Result<PaginatedResult<JournalEntry>, Box<dyn std::error::Error + Send + Sync>> {
+        use crate::domain::aggregates::journal_entry::SpecialGlType;
+
+        // 验证特殊总账类型（如果提供）
+        let gl_type_filter = if let Some(ref gl_code) = query.special_gl_type {
+            let gl_type = SpecialGlType::from_sap_code(gl_code);
+            if !gl_type.is_special() {
+                return Err(format!("无效的特殊总账类型: {}. 有效值: A (票据), F (预付款), V (预收款), W (票据贴现)", gl_code).into());
+            }
+            Some(gl_type)
+        } else {
+            None
+        };
+
+        // 获取所有凭证
+        let status = query.status.as_deref();
+        let all_items = self.repository.search(&query.company_code, status, 1, 10000).await?;
+
+        // 过滤包含指定业务伙伴和特殊总账类型的凭证
+        let filtered_items: Vec<JournalEntry> = all_items.into_iter()
+            .filter(|entry| {
+                entry.lines.iter().any(|line| {
+                    // TODO: 当前 LineItem 没有 business_partner 字段
+                    // 这个过滤逻辑需要在添加 business_partner 字段后完善
+                    // 暂时只过滤特殊总账类型
+                    if let Some(gl_type) = gl_type_filter {
+                        line.special_gl_indicator == gl_type
+                    } else {
+                        line.special_gl_indicator.is_special()
+                    }
+                })
+            })
+            .collect();
+
+        // 分页
+        let total_items = filtered_items.len() as i64;
+        let offset = ((query.page.max(1) - 1) * query.page_size) as usize;
+        let items: Vec<JournalEntry> = filtered_items.into_iter()
+            .skip(offset)
+            .take(query.page_size as usize)
+            .collect();
+
+        Ok(PaginatedResult {
+            items,
+            total_items,
+            page: query.page,
+            page_size: query.page_size,
+        })
     }
 }

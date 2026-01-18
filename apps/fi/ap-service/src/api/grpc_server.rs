@@ -787,8 +787,28 @@ impl AccountsReceivablePayableService for ApServiceImpl {
         // Full implementation would:
         // 1. Validate supplier account exists
         // 2. Create a down payment advance (APP - Advance Payment)
-        // 3. Create GL entry for cash (debit) and payable (credit)
+        // 3. Create GL entry for cash (debit) and payable (credit) with special_gl_indicator = "F"
         // 4. Link to purchase orders if provided
+        //
+        // Example GL integration:
+        // let gl_line_items = vec![
+        //     GlLineItem {
+        //         gl_account: "1100".to_string(),  // Cash account
+        //         debit_credit: "S".to_string(),   // Debit
+        //         amount: req.amount,
+        //         special_gl_indicator: Some("F".to_string()),  // Down Payment (预付款)
+        //         business_partner: Some(req.supplier_id.clone()),
+        //         ...
+        //     },
+        //     GlLineItem {
+        //         gl_account: "2100".to_string(),  // AP account
+        //         debit_credit: "H".to_string(),   // Credit
+        //         amount: req.amount,
+        //         special_gl_indicator: Some("F".to_string()),  // Down Payment (预付款)
+        //         business_partner: Some(req.supplier_id.clone()),
+        //         ...
+        //     },
+        // ];
 
         let dp_doc_number = format!("APP-{}-{}",
             chrono::Utc::now().format("%Y%m%d"),
