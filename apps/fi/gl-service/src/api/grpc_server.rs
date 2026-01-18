@@ -1044,6 +1044,8 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                             value: amt.to_string(),
                             currency_code: entry.currency.clone(),
                         }),
+                        payment_terms_detail: None,
+                        invoice_reference: None,
                     });
                 }
             }
@@ -1157,6 +1159,8 @@ fn map_to_detail(entry: crate::domain::aggregates::journal_entry::JournalEntry) 
                 value: amt.to_string(),
                 currency_code: "CNY".to_string(),
             }),
+            payment_terms_detail: None,
+            invoice_reference: None,
         }).collect(),
         tax_items: vec![],
         status: match entry.status {

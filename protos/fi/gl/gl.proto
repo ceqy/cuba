@@ -470,6 +470,58 @@ message JournalEntryLineItem {
   string ledger = 50;                      // 分类账编号 (RLDNR: 0L, 1L, 2L...)
   LedgerType ledger_type = 51;             // 分类账类型（主账/非主账/扩展账）
   common.v1.MonetaryValue amount_in_ledger_currency = 52; // 分类账货币金额（用于不同会计准则下的金额差异）
+
+  // ============================================================================
+  // 付款条件详细字段 (Payment Terms Detail)
+  // ============================================================================
+  // 用于精确计算现金折扣和到期日
+  // SAP 字段映射:
+  //   - baseline_date: ZFBDT (现金折扣基准日)
+  //   - discount_days_1: ZBD1T (第一个折扣天数)
+  //   - discount_days_2: ZBD2T (第二个折扣天数)
+  //   - net_payment_days: ZBD3T (净付款天数)
+  //   - discount_percent_1: ZBD1P (第一个折扣百分比)
+  //   - discount_percent_2: ZBD2P (第二个折扣百分比)
+  //   - discount_amount: SKFBT (现金折扣金额)
+  // 影响:
+  //   - 精确计算现金折扣金额
+  //   - 准确确定付款到期日
+  //   - 支持多级折扣（如 2/10 net 30）
+  PaymentTermsDetail payment_terms_detail = 53;
+
+  // ============================================================================
+  // 发票参考字段 (Invoice Reference / REBZG)
+  // ============================================================================
+  // 用于贷项凭证（Credit Memo）追溯原始发票
+  // 场景：
+  //   - 销售退货：需要引用原始销售发票
+  //   - 采购退货：需要引用原始采购发票
+  //   - 价格调整：需要引用原始发票进行调整
+  // 影响：
+  //   - 审计追踪：可以追溯到原始交易
+  //   - 财务报表：正确反映退货和调整
+  //   - 清账逻辑：贷项凭证与原始发票的关联清账
+  InvoiceReference invoice_reference = 57;  // 发票参考信息
+}
+
+// 发票参考信息（用于贷项凭证追溯原始发票）
+message InvoiceReference {
+  string reference_document_number = 1;  // 参考凭证号 (REBZG)
+  int32 reference_fiscal_year = 2;       // 参考会计年度 (REBZJ)
+  int32 reference_line_item = 3;         // 参考行项目号 (REBZZ)
+  string reference_document_type = 4;    // 参考凭证类型 (REBZT)
+  string reference_company_code = 5;     // 参考公司代码
+}
+
+// 付款条件详细信息（用于精确计算现金折扣和到期日）
+message PaymentTermsDetail {
+  google.protobuf.Timestamp baseline_date = 1;  // ZFBDT 现金折扣基准日
+  int32 discount_days_1 = 2;                    // ZBD1T 第一个折扣天数
+  int32 discount_days_2 = 3;                    // ZBD2T 第二个折扣天数
+  int32 net_payment_days = 4;                   // ZBD3T 净付款天数
+  string discount_percent_1 = 5;                // ZBD1P 第一个折扣百分比（使用字符串防精度丢失）
+  string discount_percent_2 = 6;                // ZBD2P 第二个折扣百分比（使用字符串防精度丢失）
+  common.v1.MonetaryValue discount_amount = 7;  // SKFBT 现金折扣金额
 }
 
 // 凭证税行
