@@ -64,6 +64,15 @@ pub struct Invoice {
     // Reference
     pub reference_document: Option<String>,
     pub header_text: Option<String>,
+
+    // ACDOCA minimal alignment
+    pub ledger: Option<String>,
+    pub special_gl_indicator: Option<String>,
+    pub payment_terms: Option<String>,
+    pub payment_method: Option<String>,
+    pub payment_block: Option<String>,
+    pub transaction_type: Option<String>,
+    pub reference_transaction_type: Option<String>,
     
     // Status
     pub status: String, // InvoiceStatus
@@ -147,6 +156,15 @@ pub struct OpenItem {
     pub reference_document: Option<String>,
     pub item_text: Option<String>,
     pub payment_block: Option<String>,
+    // ACDOCA minimal alignment
+    pub ledger: Option<String>,
+    pub special_gl_indicator: Option<String>,
+    pub payment_method: Option<String>,
+    pub payment_terms: Option<String>,
+    pub dunning_block: Option<String>,
+    pub dunning_level: Option<i32>,
+    pub transaction_type: Option<String>,
+    pub reference_transaction_type: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -173,4 +191,85 @@ pub enum PaymentStatus {
     Created,
     Executed,
     Reversed,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn invoice_supports_acdoca_fields() {
+        let invoice = Invoice {
+            id: Uuid::new_v4(),
+            document_number: "INV-TEST".to_string(),
+            company_code: "1000".to_string(),
+            fiscal_year: 2026,
+            document_type: "KR".to_string(),
+            supplier_id: Uuid::new_v4(),
+            document_date: NaiveDate::from_ymd_opt(2026, 1, 19).unwrap(),
+            posting_date: NaiveDate::from_ymd_opt(2026, 1, 19).unwrap(),
+            due_date: NaiveDate::from_ymd_opt(2026, 2, 18).unwrap(),
+            baseline_date: Some(NaiveDate::from_ymd_opt(2026, 1, 19).unwrap()),
+            currency: "CNY".to_string(),
+            total_amount: Decimal::new(10000, 2),
+            tax_amount: Decimal::ZERO,
+            reference_document: None,
+            header_text: None,
+            ledger: Some("0L".to_string()),
+            special_gl_indicator: Some("".to_string()),
+            payment_terms: Some("0001".to_string()),
+            payment_method: Some("T".to_string()),
+            payment_block: None,
+            transaction_type: Some("AP".to_string()),
+            reference_transaction_type: Some("APIN".to_string()),
+            status: "OPEN".to_string(),
+            clearing_document: None,
+            clearing_date: None,
+            items: Vec::new(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        };
+
+        assert_eq!(invoice.ledger.as_deref(), Some("0L"));
+        assert_eq!(invoice.payment_terms.as_deref(), Some("0001"));
+        assert_eq!(invoice.transaction_type.as_deref(), Some("AP"));
+    }
+
+    #[test]
+    fn open_item_supports_acdoca_fields() {
+        let item = OpenItem {
+            id: Uuid::new_v4(),
+            document_number: "INV-TEST".to_string(),
+            company_code: "1000".to_string(),
+            fiscal_year: 2026,
+            line_item_number: 1,
+            supplier_id: None,
+            account_type: "K".to_string(),
+            posting_date: NaiveDate::from_ymd_opt(2026, 1, 19).unwrap(),
+            due_date: NaiveDate::from_ymd_opt(2026, 2, 18).unwrap(),
+            baseline_date: Some(NaiveDate::from_ymd_opt(2026, 1, 19).unwrap()),
+            currency: "CNY".to_string(),
+            original_amount: Decimal::new(10000, 2),
+            open_amount: Decimal::new(10000, 2),
+            is_cleared: false,
+            clearing_document: None,
+            clearing_date: None,
+            reference_document: None,
+            item_text: None,
+            payment_block: Some("A".to_string()),
+            ledger: Some("0L".to_string()),
+            special_gl_indicator: None,
+            payment_method: Some("T".to_string()),
+            payment_terms: Some("0001".to_string()),
+            dunning_block: None,
+            dunning_level: Some(1),
+            transaction_type: Some("AP".to_string()),
+            reference_transaction_type: Some("APIN".to_string()),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        };
+
+        assert_eq!(item.payment_method.as_deref(), Some("T"));
+        assert_eq!(item.dunning_level, Some(1));
+    }
 }

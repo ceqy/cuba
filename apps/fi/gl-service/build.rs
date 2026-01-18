@@ -7,7 +7,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_client(true)
         .file_descriptor_set_path(out_dir.join("gl_descriptor.bin"))
         .compile_protos(
-            &["../../../protos/fi/gl/gl.proto", "../../../protos/common/common.proto"],
+            &[
+                "../../../protos/fi/gl/gl.proto",
+                "../../../protos/common/common.proto",
+            ],
             &["../../../protos", "../../../third_party"],
         )?;
 

@@ -36,7 +36,7 @@ impl PostInvoiceHandler {
         let supplier_uuid = Uuid::parse_str(&cmd.supplier_id)
             .map_err(|_| AppError::Validation("Invalid Supplier ID format".to_string()))?;
             
-        let _supplier = self.supplier_repo.find_by_id(supplier_uuid).await
+        let supplier = self.supplier_repo.find_by_id(supplier_uuid).await
             .map_err(|e: sqlx::Error| AppError::Database(e.to_string()))?
             .ok_or_else(|| AppError::NotFound("Supplier not found".to_string()))?;
 
@@ -85,6 +85,13 @@ impl PostInvoiceHandler {
             tax_amount: Decimal::ZERO,
             reference_document: cmd.reference_document.clone(),
             header_text: cmd.header_text.clone(),
+            ledger: cmd.ledger.clone(),
+            special_gl_indicator: None,
+            payment_terms: supplier.payment_terms.clone(),
+            payment_method: None,
+            payment_block: None,
+            transaction_type: None,
+            reference_transaction_type: None,
             status: "OPEN".to_string(),
             clearing_document: None,
             clearing_date: None,
@@ -111,6 +118,9 @@ impl PostInvoiceHandler {
                 special_gl_indicator: None, // 普通业务，特殊业务需要单独处理
                 ledger: cmd.ledger.clone(),
                 ledger_type: cmd.ledger_type,
+                financial_area: None,
+                business_area: None,
+                controlling_area: None,
             }
         }).collect();
 

@@ -26,6 +26,8 @@ impl TreasuryHandler {
             company_code: cmd.company_code,
             statement_format: "MT940".to_string(),
             status: "PROCESSED".to_string(),
+            house_bank: None,
+            bank_account: None,
             created_at: Utc::now(),
             transactions: vec![StatementTransaction {
                 transaction_id: Uuid::new_v4(),
@@ -35,6 +37,7 @@ impl TreasuryHandler {
                 currency: "CNY".to_string(),
                 memo: Some("Sample Transaction".to_string()),
                 partner_name: Some("Test Partner".to_string()),
+                transaction_type: None,
             }],
         };
         self.repo.save_statement(&stmt).await?;
@@ -62,6 +65,10 @@ impl TreasuryHandler {
                 amount: payment_amount,
                 currency: "CNY".to_string(),
                 payee_name: Some("Vendor ABC".to_string()),
+                payment_method: None,
+                house_bank: None,
+                bank_account: None,
+                transaction_type: None,
             }],
         };
         
@@ -83,6 +90,9 @@ impl TreasuryHandler {
                 special_gl_indicator: None,
                 ledger: None,
                 ledger_type: None,
+                financial_area: None,
+                business_area: None,
+                controlling_area: None,
             },
             GlLineItem {
                 gl_account: "113000".to_string(), // Bank Account
@@ -95,6 +105,9 @@ impl TreasuryHandler {
                 special_gl_indicator: None,
                 ledger: None,
                 ledger_type: None,
+                financial_area: None,
+                business_area: None,
+                controlling_area: None,
             },
         ];
 

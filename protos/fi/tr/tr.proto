@@ -161,6 +161,8 @@ message BankStatementDetail {
   common.v1.BankStatementFormat format = 3;
   repeated BankStatementTransaction transactions = 4;
   common.v1.AuditData audit_data = 5;
+  string house_bank = 6;
+  string bank_account = 7;
 }
 
 message BankStatementTransaction {
@@ -169,6 +171,7 @@ message BankStatementTransaction {
   common.v1.MonetaryValue amount = 3;
   string memo = 4;
   string partner_name = 5;
+  string transaction_type = 6;
 }
 
 message ListBankStatementsRequest {
@@ -225,6 +228,10 @@ message PaymentDocument {
   common.v1.SystemDocumentReference document_reference = 1;
   common.v1.MonetaryValue amount = 2;
   string payee_name = 3;
+  string payment_method = 4;
+  string house_bank = 5;
+  string bank_account = 6;
+  string transaction_type = 7;
 }
 
 message PaymentException {

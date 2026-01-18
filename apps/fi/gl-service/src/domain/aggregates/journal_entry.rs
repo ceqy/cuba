@@ -5,6 +5,143 @@ use uuid::Uuid;
 use cuba_core::domain::AggregateRoot;
 use thiserror::Error;
 
+/// 付款执行详细信息 (Payment Execution Detail)
+/// 用于自动付款程序（Automatic Payment Program）和付款执行
+/// SAP 字段映射: ZLSCH, HBKID, BVTYP, ZLSPR
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PaymentExecutionDetail {
+    pub payment_method: String,           // ZLSCH 付款方式（T-转账、C-支票、W-电汇、Z-其他）
+    pub house_bank: Option<String>,       // HBKID 内部银行账户标识（公司银行账户）
+    pub partner_bank_type: Option<String>, // BVTYP 业务伙伴银行类型
+    pub payment_block: Option<String>,    // ZLSPR 付款冻结（冻结原因代码）
+    pub payment_baseline_date: Option<NaiveDate>, // ZFBDT 付款基准日
+    pub payment_reference: Option<String>, // 付款参考号
+    pub payment_priority: Option<i32>,    // 付款优先级（1-9，数字越小优先级越高）
+}
+
+/// 付款条件详细信息 (Payment Terms Detail)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PaymentTermsDetail {
+    pub baseline_date: Option<NaiveDate>,    // ZFBDT 现金折扣基准日
+    pub discount_days_1: i32,                // ZBD1T 第一个折扣天数
+    pub discount_days_2: i32,                // ZBD2T 第二个折扣天数
+    pub net_payment_days: i32,               // ZBD3T 净付款天数
+    pub discount_percent_1: Option<Decimal>, // ZBD1P 折扣百分比
+    pub discount_percent_2: Option<Decimal>, // ZBD2P 折扣百分比
+    pub discount_amount: Option<Decimal>,    // SKFBT 现金折扣金额
+}
+
+/// 发票参考信息 (Invoice Reference)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct InvoiceReference {
+    pub reference_document_number: Option<String>,
+    pub reference_fiscal_year: Option<i32>,
+    pub reference_line_item: Option<i32>,
+    pub reference_document_type: Option<String>,
+    pub reference_company_code: Option<String>,
+}
+
+/// 催款详细信息 (Dunning Detail)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DunningDetail {
+    pub dunning_key: Option<String>,
+    pub dunning_block: Option<String>,
+    pub last_dunning_date: Option<NaiveDate>,
+    pub dunning_date: Option<NaiveDate>,
+    pub dunning_level: i32,
+    pub dunning_area: Option<String>,
+    pub grace_period_days: i32,
+    pub dunning_charges: Option<Decimal>,
+    pub dunning_clerk: Option<String>,
+}
+
+impl PaymentExecutionDetail {
+    /// 创建新的付款执行详细信息
+    pub fn new(payment_method: String) -> Self {
+        Self {
+            payment_method,
+            house_bank: None,
+            partner_bank_type: None,
+            payment_block: None,
+            payment_baseline_date: None,
+            payment_reference: None,
+            payment_priority: None,
+        }
+    }
+
+    /// 创建完整的付款执行详细信息
+    pub fn with_details(
+        payment_method: String,
+        house_bank: Option<String>,
+        partner_bank_type: Option<String>,
+    ) -> Self {
+        Self {
+            payment_method,
+            house_bank,
+            partner_bank_type,
+            payment_block: None,
+            payment_baseline_date: None,
+            payment_reference: None,
+            payment_priority: None,
+        }
+    }
+
+    /// 判断付款是否被冻结
+    pub fn is_blocked(&self) -> bool {
+        self.payment_block.is_some()
+    }
+
+    /// 设置付款冻结
+    pub fn with_payment_block(mut self, block_reason: String) -> Self {
+        self.payment_block = Some(block_reason);
+        self
+    }
+
+    /// 设置付款基准日
+    pub fn with_baseline_date(mut self, date: NaiveDate) -> Self {
+        self.payment_baseline_date = Some(date);
+        self
+    }
+
+    /// 设置付款参考号
+    pub fn with_reference(mut self, reference: String) -> Self {
+        self.payment_reference = Some(reference);
+        self
+    }
+
+    /// 设置付款优先级
+    pub fn with_priority(mut self, priority: i32) -> Self {
+        self.payment_priority = Some(priority);
+        self
+    }
+
+    /// 获取付款方式描述
+    pub fn payment_method_description(&self) -> &str {
+        match self.payment_method.as_str() {
+            "T" => "银行转账 (Bank Transfer)",
+            "C" => "支票 (Check)",
+            "W" => "电汇 (Wire Transfer)",
+            "Z" => "其他 (Other)",
+            _ => "未知付款方式",
+        }
+    }
+
+    /// 验证付款执行信息
+    pub fn validate(&self) -> Result<(), String> {
+        if self.payment_method.is_empty() {
+            return Err("付款方式不能为空".to_string());
+        }
+
+        if let Some(priority) = self.payment_priority {
+            if !(1..=9).contains(&priority) {
+                return Err("付款优先级必须在 1-9 之间".to_string());
+            }
+        }
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PostingStatus {
     Draft,
@@ -231,6 +368,35 @@ pub struct LineItem {
     pub financial_area: Option<String>,    // 财务范围 (RFAREA) - 用于合并报表
     pub business_area: Option<String>,     // 业务范围 (RBUSA) - 用于段报告
     pub controlling_area: Option<String>,  // 控制范围 (KOKRS) - 用于管理会计
+
+    // ============================================================================
+    // 科目分配字段 (Account Assignment / KTOSL)
+    // ============================================================================
+    pub account_assignment: Option<String>, // 科目分配 (KTOSL) - 用于自动科目确定
+
+    // ============================================================================
+    // 业务伙伴字段
+    // ============================================================================
+    pub business_partner: Option<String>,     // 业务伙伴编号 (KUNNR/LIFNR)
+    pub business_partner_type: Option<String>, // 业务伙伴类型
+
+    // ============================================================================
+    // 付款执行字段 (Payment Execution / ZLSCH)
+    // ============================================================================
+    pub payment_execution: Option<PaymentExecutionDetail>, // 付款执行详细信息
+    pub payment_terms_detail: Option<PaymentTermsDetail>,  // 付款条件详细信息
+    pub invoice_reference: Option<InvoiceReference>,       // 发票参考
+    pub dunning_detail: Option<DunningDetail>,             // 催款详细信息
+    pub transaction_type: Option<String>,                  // 业务交易类型
+    pub reference_transaction_type: Option<String>,        // 参考交易类型
+    pub trading_partner_company: Option<String>,           // 交易伙伴公司
+    pub amount_in_object_currency: Option<Decimal>,        // 对象货币金额
+    pub object_currency: Option<String>,                   // 对象货币代码
+    pub amount_in_profit_center_currency: Option<Decimal>, // 利润中心货币金额
+    pub profit_center_currency: Option<String>,            // 利润中心货币代码
+    pub amount_in_group_currency: Option<Decimal>,         // 集团货币金额
+    pub group_currency: Option<String>,                    // 集团货币代码
+    pub maturity_date: Option<NaiveDate>,                  // 到期日
 }
 
 impl LineItem {
@@ -259,6 +425,23 @@ impl LineItem {
             financial_area: None,
             business_area: None,
             controlling_area: None,
+            account_assignment: None,
+            business_partner: None,
+            business_partner_type: None,
+            payment_execution: None,
+            payment_terms_detail: None,
+            invoice_reference: None,
+            dunning_detail: None,
+            transaction_type: None,
+            reference_transaction_type: None,
+            trading_partner_company: None,
+            amount_in_object_currency: None,
+            object_currency: None,
+            amount_in_profit_center_currency: None,
+            profit_center_currency: None,
+            amount_in_group_currency: None,
+            group_currency: None,
+            maturity_date: None,
         }
     }
 
@@ -289,6 +472,23 @@ impl LineItem {
             financial_area: None,
             business_area: None,
             controlling_area: None,
+            account_assignment: None,
+            business_partner: None,
+            business_partner_type: None,
+            payment_execution: None,
+            payment_terms_detail: None,
+            invoice_reference: None,
+            dunning_detail: None,
+            transaction_type: None,
+            reference_transaction_type: None,
+            trading_partner_company: None,
+            amount_in_object_currency: None,
+            object_currency: None,
+            amount_in_profit_center_currency: None,
+            profit_center_currency: None,
+            amount_in_group_currency: None,
+            group_currency: None,
+            maturity_date: None,
         }
     }
 
@@ -318,6 +518,23 @@ impl LineItem {
             financial_area: None,
             business_area: None,
             controlling_area: None,
+            account_assignment: None,
+            business_partner: None,
+            business_partner_type: None,
+            payment_execution: None,
+            payment_terms_detail: None,
+            invoice_reference: None,
+            dunning_detail: None,
+            transaction_type: None,
+            reference_transaction_type: None,
+            trading_partner_company: None,
+            amount_in_object_currency: None,
+            object_currency: None,
+            amount_in_profit_center_currency: None,
+            profit_center_currency: None,
+            amount_in_group_currency: None,
+            group_currency: None,
+            maturity_date: None,
         }
     }
 
@@ -364,6 +581,12 @@ impl LineItem {
         self
     }
 
+    /// 设置付款执行信息
+    pub fn with_payment_execution(mut self, payment_execution: PaymentExecutionDetail) -> Self {
+        self.payment_execution = Some(payment_execution);
+        self
+    }
+
     /// 创建完整的特殊总账行项目（包含所有可选字段）
     pub fn builder() -> LineItemBuilder {
         LineItemBuilder::new()
@@ -384,6 +607,22 @@ pub struct LineItemBuilder {
     ledger: String,
     ledger_type: LedgerType,
     ledger_amount: Option<Decimal>,
+    payment_execution: Option<PaymentExecutionDetail>,
+    payment_terms_detail: Option<PaymentTermsDetail>,
+    invoice_reference: Option<InvoiceReference>,
+    dunning_detail: Option<DunningDetail>,
+    transaction_type: Option<String>,
+    reference_transaction_type: Option<String>,
+    trading_partner_company: Option<String>,
+    amount_in_object_currency: Option<Decimal>,
+    object_currency: Option<String>,
+    amount_in_profit_center_currency: Option<Decimal>,
+    profit_center_currency: Option<String>,
+    amount_in_group_currency: Option<Decimal>,
+    group_currency: Option<String>,
+    maturity_date: Option<NaiveDate>,
+    business_partner: Option<String>,
+    business_partner_type: Option<String>,
 }
 
 impl LineItemBuilder {
@@ -401,6 +640,22 @@ impl LineItemBuilder {
             ledger: "0L".to_string(),
             ledger_type: LedgerType::Leading,
             ledger_amount: None,
+            payment_execution: None,
+            payment_terms_detail: None,
+            invoice_reference: None,
+            dunning_detail: None,
+            transaction_type: None,
+            reference_transaction_type: None,
+            trading_partner_company: None,
+            amount_in_object_currency: None,
+            object_currency: None,
+            amount_in_profit_center_currency: None,
+            profit_center_currency: None,
+            amount_in_group_currency: None,
+            group_currency: None,
+            maturity_date: None,
+            business_partner: None,
+            business_partner_type: None,
         }
     }
 
@@ -464,6 +719,16 @@ impl LineItemBuilder {
         self
     }
 
+    pub fn payment_execution(mut self, payment_execution: PaymentExecutionDetail) -> Self {
+        self.payment_execution = Some(payment_execution);
+        self
+    }
+
+    pub fn payment_terms_detail(mut self, payment_terms_detail: PaymentTermsDetail) -> Self {
+        self.payment_terms_detail = Some(payment_terms_detail);
+        self
+    }
+
     pub fn build(self) -> Result<LineItem, String> {
         Ok(LineItem {
             id: Uuid::new_v4(),
@@ -479,6 +744,26 @@ impl LineItemBuilder {
             ledger: self.ledger,
             ledger_type: self.ledger_type,
             ledger_amount: self.ledger_amount,
+            financial_area: None,
+            business_area: None,
+            controlling_area: None,
+            account_assignment: None,
+            business_partner: self.business_partner,
+            business_partner_type: self.business_partner_type,
+            payment_execution: self.payment_execution,
+            payment_terms_detail: self.payment_terms_detail,
+            invoice_reference: self.invoice_reference,
+            dunning_detail: self.dunning_detail,
+            transaction_type: self.transaction_type,
+            reference_transaction_type: self.reference_transaction_type,
+            trading_partner_company: self.trading_partner_company,
+            amount_in_object_currency: self.amount_in_object_currency,
+            object_currency: self.object_currency,
+            amount_in_profit_center_currency: self.amount_in_profit_center_currency,
+            profit_center_currency: self.profit_center_currency,
+            amount_in_group_currency: self.amount_in_group_currency,
+            group_currency: self.group_currency,
+            maturity_date: self.maturity_date,
         })
     }
 }
@@ -510,6 +795,18 @@ pub struct JournalEntry {
     // ============================================================================
     pub ledger_group: Option<String>,      // 分类账组 (LDGRP)
     pub default_ledger: String,            // 默认分类账 (RLDNR)
+
+    // ============================================================================
+    // 多币种字段 (Multi-Currency Support)
+    // ============================================================================
+    pub local_currency: String,            // 本位币 (RHCUR)
+    pub group_currency: Option<String>,    // 集团货币 (RKCUR)
+    pub target_currency: Option<String>,   // 目标货币 (RTCUR)
+
+    // ============================================================================
+    // 科目表字段
+    // ============================================================================
+    pub chart_of_accounts: Option<String>, // 科目表 (KTOPL)
 }
 
 #[derive(Error, Debug)]
@@ -542,11 +839,11 @@ impl JournalEntry {
         let entry = Self {
             id: Uuid::new_v4(),
             document_number: None,
-            company_code,
+            company_code: company_code.clone(),
             fiscal_year,
             posting_date,
             document_date,
-            currency,
+            currency: currency.clone(),
             reference,
             status: PostingStatus::Draft,
             lines,
@@ -555,8 +852,12 @@ impl JournalEntry {
             tenant_id,
             ledger_group: None,
             default_ledger: "0L".to_string(),
+            local_currency: currency.clone(),
+            group_currency: None,
+            target_currency: None,
+            chart_of_accounts: None,
         };
-        
+
         Ok(entry)
     }
 
@@ -616,6 +917,26 @@ impl JournalEntry {
             ledger: line.ledger.clone(),
             ledger_type: line.ledger_type,
             ledger_amount: line.ledger_amount,
+            financial_area: line.financial_area.clone(),
+            business_area: line.business_area.clone(),
+            controlling_area: line.controlling_area.clone(),
+            account_assignment: line.account_assignment.clone(),
+            business_partner: line.business_partner.clone(),
+            business_partner_type: line.business_partner_type.clone(),
+            payment_execution: line.payment_execution.clone(),
+            payment_terms_detail: line.payment_terms_detail.clone(),
+            invoice_reference: line.invoice_reference.clone(),
+            dunning_detail: line.dunning_detail.clone(),
+            transaction_type: line.transaction_type.clone(),
+            reference_transaction_type: line.reference_transaction_type.clone(),
+            trading_partner_company: line.trading_partner_company.clone(),
+            amount_in_object_currency: line.amount_in_object_currency,
+            object_currency: line.object_currency.clone(),
+            amount_in_profit_center_currency: line.amount_in_profit_center_currency,
+            profit_center_currency: line.profit_center_currency.clone(),
+            amount_in_group_currency: line.amount_in_group_currency,
+            group_currency: line.group_currency.clone(),
+            maturity_date: line.maturity_date,
         }).collect();
 
         let mut reversal_entry = JournalEntry::new(
@@ -1534,6 +1855,228 @@ mod tests {
         let deserialized: LineItem = serde_json::from_str(&json).unwrap();
         assert_eq!(deserialized.special_gl_indicator, SpecialGlType::DownPayment);
         assert_eq!(deserialized.amount, dec!(10000.00));
+    }
+
+    // ============================================================================
+    // 付款执行字段 (Payment Execution) 测试
+    // ============================================================================
+
+    #[test]
+    fn test_payment_execution_detail_creation() {
+        // 测试创建付款执行详细信息
+        let payment_exec = PaymentExecutionDetail::new("T".to_string());
+
+        assert_eq!(payment_exec.payment_method, "T");
+        assert_eq!(payment_exec.house_bank, None);
+        assert_eq!(payment_exec.partner_bank_type, None);
+        assert_eq!(payment_exec.payment_block, None);
+        assert!(!payment_exec.is_blocked());
+    }
+
+    #[test]
+    fn test_payment_execution_with_details() {
+        // 测试创建完整的付款执行信息
+        let payment_exec = PaymentExecutionDetail::with_details(
+            "W".to_string(),
+            Some("BANK001".to_string()),
+            Some("SWIFT".to_string()),
+        );
+
+        assert_eq!(payment_exec.payment_method, "W");
+        assert_eq!(payment_exec.house_bank, Some("BANK001".to_string()));
+        assert_eq!(payment_exec.partner_bank_type, Some("SWIFT".to_string()));
+    }
+
+    #[test]
+    fn test_payment_execution_with_block() {
+        // 测试付款冻结
+        let payment_exec = PaymentExecutionDetail::new("T".to_string())
+            .with_payment_block("A".to_string());
+
+        assert!(payment_exec.is_blocked());
+        assert_eq!(payment_exec.payment_block, Some("A".to_string()));
+    }
+
+    #[test]
+    fn test_payment_execution_with_priority() {
+        // 测试付款优先级
+        let payment_exec = PaymentExecutionDetail::new("T".to_string())
+            .with_priority(1);
+
+        assert_eq!(payment_exec.payment_priority, Some(1));
+    }
+
+    #[test]
+    fn test_payment_execution_method_description() {
+        // 测试付款方式描述
+        let payment_exec_t = PaymentExecutionDetail::new("T".to_string());
+        assert_eq!(payment_exec_t.payment_method_description(), "银行转账 (Bank Transfer)");
+
+        let payment_exec_c = PaymentExecutionDetail::new("C".to_string());
+        assert_eq!(payment_exec_c.payment_method_description(), "支票 (Check)");
+
+        let payment_exec_w = PaymentExecutionDetail::new("W".to_string());
+        assert_eq!(payment_exec_w.payment_method_description(), "电汇 (Wire Transfer)");
+    }
+
+    #[test]
+    fn test_payment_execution_validation() {
+        // 测试验证付款执行信息
+        let valid_payment = PaymentExecutionDetail::new("T".to_string())
+            .with_priority(5);
+        assert!(valid_payment.validate().is_ok());
+
+        // 测试无效优先级
+        let invalid_payment = PaymentExecutionDetail::new("T".to_string())
+            .with_priority(10);
+        assert!(invalid_payment.validate().is_err());
+    }
+
+    #[test]
+    fn test_line_item_with_payment_execution() {
+        // 测试创建带付款执行信息的行项目
+        let payment_exec = PaymentExecutionDetail::with_details(
+            "T".to_string(),
+            Some("BANK001".to_string()),
+            Some("SWIFT".to_string()),
+        );
+
+        let line = LineItem::new(
+            1,
+            "2100".to_string(),
+            DebitCredit::Credit,
+            dec!(50000.00),
+            dec!(50000.00),
+        ).with_payment_execution(payment_exec.clone());
+
+        assert!(line.payment_execution.is_some());
+        let exec = line.payment_execution.unwrap();
+        assert_eq!(exec.payment_method, "T");
+        assert_eq!(exec.house_bank, Some("BANK001".to_string()));
+    }
+
+    #[test]
+    fn test_line_item_builder_with_payment_execution() {
+        // 测试使用构建器创建带付款执行信息的行项目
+        let payment_exec = PaymentExecutionDetail::new("W".to_string())
+            .with_priority(1)
+            .with_reference("PAY-2026-001".to_string());
+
+        let line = LineItem::builder()
+            .line_number(1)
+            .account_id("2100".to_string())
+            .debit_credit(DebitCredit::Credit)
+            .amount(dec!(100000.00))
+            .local_amount(dec!(100000.00))
+            .payment_execution(payment_exec)
+            .build()
+            .unwrap();
+
+        assert!(line.payment_execution.is_some());
+        let exec = line.payment_execution.unwrap();
+        assert_eq!(exec.payment_method, "W");
+        assert_eq!(exec.payment_priority, Some(1));
+        assert_eq!(exec.payment_reference, Some("PAY-2026-001".to_string()));
+    }
+
+    #[test]
+    fn test_accounts_payable_with_payment_execution() {
+        // 测试应付账款凭证带付款执行信息
+        let payment_exec = PaymentExecutionDetail::with_details(
+            "T".to_string(),
+            Some("BANK001".to_string()),
+            None,
+        ).with_baseline_date(NaiveDate::from_ymd_opt(2026, 1, 18).unwrap())
+          .with_priority(2);
+
+        let lines = vec![
+            LineItem::new(
+                1,
+                "5000".to_string(),
+                DebitCredit::Debit,
+                dec!(100000.00),
+                dec!(100000.00),
+            ),
+            LineItem::new(
+                2,
+                "2100".to_string(),
+                DebitCredit::Credit,
+                dec!(100000.00),
+                dec!(100000.00),
+            ).with_payment_execution(payment_exec),
+        ];
+
+        let entry = JournalEntry::new(
+            "1000".to_string(),
+            2026,
+            NaiveDate::from_ymd_opt(2026, 1, 18).unwrap(),
+            NaiveDate::from_ymd_opt(2026, 1, 18).unwrap(),
+            "CNY".to_string(),
+            Some("采购发票 - 带付款执行信息".to_string()),
+            lines,
+            None,
+        ).unwrap();
+
+        assert_eq!(entry.lines.len(), 2);
+        assert!(entry.lines[1].payment_execution.is_some());
+
+        let exec = entry.lines[1].payment_execution.as_ref().unwrap();
+        assert_eq!(exec.payment_method, "T");
+        assert_eq!(exec.house_bank, Some("BANK001".to_string()));
+        assert_eq!(exec.payment_priority, Some(2));
+
+        // 验证借贷平衡
+        assert!(entry.validate_balance().is_ok());
+    }
+
+    #[test]
+    fn test_payment_execution_with_block_scenario() {
+        // 测试付款冻结场景
+        let payment_exec = PaymentExecutionDetail::new("T".to_string())
+            .with_payment_block("A".to_string()); // A = 争议
+
+        let line = LineItem::new(
+            1,
+            "2100".to_string(),
+            DebitCredit::Credit,
+            dec!(50000.00),
+            dec!(50000.00),
+        ).with_payment_execution(payment_exec);
+
+        assert!(line.payment_execution.is_some());
+        let exec = line.payment_execution.unwrap();
+        assert!(exec.is_blocked());
+        assert_eq!(exec.payment_block, Some("A".to_string()));
+    }
+
+    #[test]
+    fn test_payment_execution_serialization() {
+        // 测试付款执行信息的序列化和反序列化
+        let payment_exec = PaymentExecutionDetail::with_details(
+            "W".to_string(),
+            Some("BANK001".to_string()),
+            Some("SWIFT".to_string()),
+        ).with_priority(1);
+
+        let line = LineItem::new(
+            1,
+            "2100".to_string(),
+            DebitCredit::Credit,
+            dec!(50000.00),
+            dec!(50000.00),
+        ).with_payment_execution(payment_exec);
+
+        // 序列化
+        let json = serde_json::to_string(&line).unwrap();
+        assert!(json.contains("payment_execution"));
+        assert!(json.contains("BANK001"));
+
+        // 反序列化
+        let deserialized: LineItem = serde_json::from_str(&json).unwrap();
+        assert!(deserialized.payment_execution.is_some());
+        let exec = deserialized.payment_execution.unwrap();
+        assert_eq!(exec.payment_method, "W");
+        assert_eq!(exec.house_bank, Some("BANK001".to_string()));
     }
 }
 

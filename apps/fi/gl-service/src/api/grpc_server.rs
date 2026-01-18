@@ -12,13 +12,18 @@ use crate::application::handlers::{
     CreateJournalEntryHandler, GetJournalEntryHandler, ListJournalEntriesHandler, PostJournalEntryHandler, ReverseJournalEntryHandler, DeleteJournalEntryHandler, ParkJournalEntryHandler, UpdateJournalEntryHandler
 };
 use crate::application::commands::{
-    CreateJournalEntryCommand, PostJournalEntryCommand, ReverseJournalEntryCommand, LineItemDTO, ParkJournalEntryCommand, UpdateJournalEntryCommand
+    CreateJournalEntryCommand, PostJournalEntryCommand, ReverseJournalEntryCommand, LineItemDTO,
+    ParkJournalEntryCommand, UpdateJournalEntryCommand, InvoiceReferenceDTO, DunningDetailDTO,
 };
 use crate::application::queries::{
     GetJournalEntryQuery, ListJournalEntriesQuery
 };
 use crate::domain::repositories::JournalRepository;
 use crate::domain::aggregates::journal_entry::SpecialGlType;
+use crate::api::mappers::{
+    payment_execution_from_proto, payment_execution_to_proto, payment_terms_from_proto,
+    payment_terms_to_proto,
+};
 
 pub struct GlServiceImpl<R> {
     create_handler: Arc<CreateJournalEntryHandler<R>>,
@@ -103,6 +108,93 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 Some(l.special_gl_indicator)
             };
 
+            let payment_execution = l
+                .payment_execution
+                .clone()
+                .map(payment_execution_from_proto)
+                .transpose()?;
+            let payment_terms_detail = l
+                .payment_terms_detail
+                .clone()
+                .map(payment_terms_from_proto)
+                .transpose()?;
+            let business_partner_type = match l.account_type {
+                1 => Some("CUSTOMER".to_string()),
+                2 => Some("VENDOR".to_string()),
+                _ => None,
+            };
+            let invoice_reference = l.invoice_reference.map(|ir| InvoiceReferenceDTO {
+                reference_document_number: if ir.reference_document_number.is_empty() {
+                    None
+                } else {
+                    Some(ir.reference_document_number)
+                },
+                reference_fiscal_year: if ir.reference_fiscal_year == 0 {
+                    None
+                } else {
+                    Some(ir.reference_fiscal_year)
+                },
+                reference_line_item: if ir.reference_line_item == 0 {
+                    None
+                } else {
+                    Some(ir.reference_line_item)
+                },
+                reference_document_type: if ir.reference_document_type.is_empty() {
+                    None
+                } else {
+                    Some(ir.reference_document_type)
+                },
+                reference_company_code: if ir.reference_company_code.is_empty() {
+                    None
+                } else {
+                    Some(ir.reference_company_code)
+                },
+            });
+            let dunning_detail = l.dunning_detail.map(|dd| DunningDetailDTO {
+                dunning_key: if dd.dunning_key.is_empty() { None } else { Some(dd.dunning_key) },
+                dunning_block: if dd.dunning_block.is_empty() { None } else { Some(dd.dunning_block) },
+                last_dunning_date: dd
+                    .last_dunning_date
+                    .and_then(|ts| chrono::DateTime::from_timestamp(ts.seconds, 0))
+                    .map(|dt| dt.naive_utc().date()),
+                dunning_date: dd
+                    .dunning_date
+                    .and_then(|ts| chrono::DateTime::from_timestamp(ts.seconds, 0))
+                    .map(|dt| dt.naive_utc().date()),
+                dunning_level: dd.dunning_level,
+                dunning_area: if dd.dunning_area.is_empty() { None } else { Some(dd.dunning_area) },
+                grace_period_days: dd.grace_period_days,
+                dunning_charges: dd
+                    .dunning_charges
+                    .and_then(|amt| Decimal::from_str(&amt.value).ok()),
+                dunning_clerk: if dd.dunning_clerk.is_empty() { None } else { Some(dd.dunning_clerk) },
+            });
+
+            let amount_in_object_currency = l
+                .amount_in_object_currency
+                .as_ref()
+                .and_then(|amt| Decimal::from_str(&amt.value).ok());
+            let object_currency = l
+                .amount_in_object_currency
+                .as_ref()
+                .map(|amt| amt.currency_code.clone());
+            let amount_in_profit_center_currency = l
+                .amount_in_profit_center_currency
+                .as_ref()
+                .and_then(|amt| Decimal::from_str(&amt.value).ok());
+            let profit_center_currency = l
+                .amount_in_profit_center_currency
+                .as_ref()
+                .map(|amt| amt.currency_code.clone());
+            let amount_in_group_currency = l
+                .amount_in_group_currency
+                .as_ref()
+                .and_then(|amt| Decimal::from_str(&amt.value).ok());
+            let group_currency = l
+                .amount_in_group_currency
+                .as_ref()
+                .map(|amt| amt.currency_code.clone());
+
             Ok(LineItemDTO {
                 account_id: l.gl_account,
                 debit_credit: l.debit_credit_indicator,
@@ -117,6 +209,23 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 financial_area: if l.financial_area.is_empty() { None } else { Some(l.financial_area) },
                 business_area: if l.business_area.is_empty() { None } else { Some(l.business_area) },
                 controlling_area: if l.controlling_area.is_empty() { None } else { Some(l.controlling_area) },
+                account_assignment: if l.account_assignment.is_empty() { None } else { Some(l.account_assignment) },
+                payment_execution,
+                payment_terms_detail,
+                business_partner: if l.business_partner.is_empty() { None } else { Some(l.business_partner) },
+                business_partner_type,
+                maturity_date: None,
+                invoice_reference,
+                dunning_detail,
+                transaction_type: if l.transaction_type.is_empty() { None } else { Some(l.transaction_type) },
+                reference_transaction_type: if l.reference_transaction_type.is_empty() { None } else { Some(l.reference_transaction_type) },
+                trading_partner_company: if l.trading_partner_company.is_empty() { None } else { Some(l.trading_partner_company) },
+                amount_in_object_currency,
+                object_currency,
+                amount_in_profit_center_currency,
+                profit_center_currency,
+                amount_in_group_currency,
+                group_currency,
             })
         }).collect();
 
@@ -309,6 +418,26 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 ledger: if item.ledger.is_empty() { None } else { Some(item.ledger) },
                 ledger_type: if item.ledger_type == 0 { None } else { Some(item.ledger_type) },
                 ledger_amount: item.amount_in_ledger_currency.and_then(|amt| Decimal::from_str(&amt.value).ok()),
+                financial_area: if item.financial_area.is_empty() { None } else { Some(item.financial_area) },
+                business_area: if item.business_area.is_empty() { None } else { Some(item.business_area) },
+                controlling_area: if item.controlling_area.is_empty() { None } else { Some(item.controlling_area) },
+                account_assignment: None,
+                payment_execution: None,
+                payment_terms_detail: None,
+                business_partner: None,
+                business_partner_type: None,
+                maturity_date: None,
+                invoice_reference: None,
+                dunning_detail: None,
+                transaction_type: None,
+                reference_transaction_type: None,
+                trading_partner_company: None,
+                amount_in_object_currency: None,
+                object_currency: None,
+                amount_in_profit_center_currency: None,
+                profit_center_currency: None,
+                amount_in_group_currency: None,
+                group_currency: None,
             }
         }).collect();
 
@@ -582,6 +711,26 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 ledger: if item.ledger.is_empty() { None } else { Some(item.ledger) },
                 ledger_type: if item.ledger_type == 0 { None } else { Some(item.ledger_type) },
                 ledger_amount: item.amount_in_ledger_currency.and_then(|amt| Decimal::from_str(&amt.value).ok()),
+                financial_area: if item.financial_area.is_empty() { None } else { Some(item.financial_area) },
+                business_area: if item.business_area.is_empty() { None } else { Some(item.business_area) },
+                controlling_area: if item.controlling_area.is_empty() { None } else { Some(item.controlling_area) },
+                account_assignment: None,
+                payment_execution: None,
+                payment_terms_detail: None,
+                business_partner: None,
+                business_partner_type: None,
+                maturity_date: None,
+                invoice_reference: None,
+                dunning_detail: None,
+                transaction_type: None,
+                reference_transaction_type: None,
+                trading_partner_company: None,
+                amount_in_object_currency: None,
+                object_currency: None,
+                amount_in_profit_center_currency: None,
+                profit_center_currency: None,
+                amount_in_group_currency: None,
+                group_currency: None,
             }
         }).collect();
 
@@ -704,6 +853,95 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                     Some(l.special_gl_indicator)
                 };
 
+                let payment_execution = l
+                    .payment_execution
+                    .clone()
+                    .map(payment_execution_from_proto)
+                    .transpose()
+                    .map_err(|e: Status| e.to_string())?;
+                let payment_terms_detail = l
+                    .payment_terms_detail
+                    .clone()
+                    .map(payment_terms_from_proto)
+                    .transpose()
+                    .map_err(|e: Status| e.to_string())?;
+                let business_partner_type = match l.account_type {
+                    1 => Some("CUSTOMER".to_string()),
+                    2 => Some("VENDOR".to_string()),
+                    _ => None,
+                };
+                let invoice_reference = l.invoice_reference.map(|ir| InvoiceReferenceDTO {
+                    reference_document_number: if ir.reference_document_number.is_empty() {
+                        None
+                    } else {
+                        Some(ir.reference_document_number)
+                    },
+                    reference_fiscal_year: if ir.reference_fiscal_year == 0 {
+                        None
+                    } else {
+                        Some(ir.reference_fiscal_year)
+                    },
+                    reference_line_item: if ir.reference_line_item == 0 {
+                        None
+                    } else {
+                        Some(ir.reference_line_item)
+                    },
+                    reference_document_type: if ir.reference_document_type.is_empty() {
+                        None
+                    } else {
+                        Some(ir.reference_document_type)
+                    },
+                    reference_company_code: if ir.reference_company_code.is_empty() {
+                        None
+                    } else {
+                        Some(ir.reference_company_code)
+                    },
+                });
+                let dunning_detail = l.dunning_detail.map(|dd| DunningDetailDTO {
+                    dunning_key: if dd.dunning_key.is_empty() { None } else { Some(dd.dunning_key) },
+                    dunning_block: if dd.dunning_block.is_empty() { None } else { Some(dd.dunning_block) },
+                    last_dunning_date: dd
+                        .last_dunning_date
+                        .and_then(|ts| chrono::DateTime::from_timestamp(ts.seconds, 0))
+                        .map(|dt| dt.naive_utc().date()),
+                    dunning_date: dd
+                        .dunning_date
+                        .and_then(|ts| chrono::DateTime::from_timestamp(ts.seconds, 0))
+                        .map(|dt| dt.naive_utc().date()),
+                    dunning_level: dd.dunning_level,
+                    dunning_area: if dd.dunning_area.is_empty() { None } else { Some(dd.dunning_area) },
+                    grace_period_days: dd.grace_period_days,
+                    dunning_charges: dd
+                        .dunning_charges
+                        .and_then(|amt| Decimal::from_str(&amt.value).ok()),
+                    dunning_clerk: if dd.dunning_clerk.is_empty() { None } else { Some(dd.dunning_clerk) },
+                });
+
+                let amount_in_object_currency = l
+                    .amount_in_object_currency
+                    .as_ref()
+                    .and_then(|amt| Decimal::from_str(&amt.value).ok());
+                let object_currency = l
+                    .amount_in_object_currency
+                    .as_ref()
+                    .map(|amt| amt.currency_code.clone());
+                let amount_in_profit_center_currency = l
+                    .amount_in_profit_center_currency
+                    .as_ref()
+                    .and_then(|amt| Decimal::from_str(&amt.value).ok());
+                let profit_center_currency = l
+                    .amount_in_profit_center_currency
+                    .as_ref()
+                    .map(|amt| amt.currency_code.clone());
+                let amount_in_group_currency = l
+                    .amount_in_group_currency
+                    .as_ref()
+                    .and_then(|amt| Decimal::from_str(&amt.value).ok());
+                let group_currency = l
+                    .amount_in_group_currency
+                    .as_ref()
+                    .map(|amt| amt.currency_code.clone());
+
                 Ok(LineItemDTO {
                     account_id: l.gl_account,
                     debit_credit: l.debit_credit_indicator,
@@ -715,6 +953,26 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                     ledger: if l.ledger.is_empty() { None } else { Some(l.ledger) },
                     ledger_type: if l.ledger_type == 0 { None } else { Some(l.ledger_type) },
                     ledger_amount: l.amount_in_ledger_currency.and_then(|amt| Decimal::from_str(&amt.value).ok()),
+                    financial_area: if l.financial_area.is_empty() { None } else { Some(l.financial_area) },
+                    business_area: if l.business_area.is_empty() { None } else { Some(l.business_area) },
+                    controlling_area: if l.controlling_area.is_empty() { None } else { Some(l.controlling_area) },
+                    account_assignment: None,
+                    payment_execution,
+                    payment_terms_detail,
+                    business_partner: if l.business_partner.is_empty() { None } else { Some(l.business_partner) },
+                    business_partner_type,
+                    maturity_date: None,
+                    invoice_reference,
+                    dunning_detail,
+                    transaction_type: if l.transaction_type.is_empty() { None } else { Some(l.transaction_type) },
+                    reference_transaction_type: if l.reference_transaction_type.is_empty() { None } else { Some(l.reference_transaction_type) },
+                    trading_partner_company: if l.trading_partner_company.is_empty() { None } else { Some(l.trading_partner_company) },
+                    amount_in_object_currency,
+                    object_currency,
+                    amount_in_profit_center_currency,
+                    profit_center_currency,
+                    amount_in_group_currency,
+                    group_currency,
                 })
             }).collect();
 
@@ -1026,7 +1284,7 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                         }),
                         posting_key: "".to_string(),
                         account_type: common_v1::AccountType::Gl as i32,
-                        business_partner: "".to_string(),
+                        business_partner: line.business_partner.clone().unwrap_or_default(),
                         cost_center: line.cost_center.unwrap_or_default(),
                         profit_center: line.profit_center.unwrap_or_default(),
                         segment: "".to_string(),
@@ -1036,7 +1294,10 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                         assignment_number: "".to_string(),
                         tax_code: "".to_string(),
                         tax_jurisdiction: "".to_string(),
-                        amount_in_group_currency: None,
+                        amount_in_group_currency: line.amount_in_group_currency.map(|amt| common_v1::MonetaryValue {
+                            value: amt.to_string(),
+                            currency_code: line.group_currency.clone().unwrap_or_else(|| entry.currency.clone()),
+                        }),
                         clearing_document: "".to_string(),
                         clearing_date: None,
                         quantity: None,
@@ -1047,8 +1308,56 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                             value: amt.to_string(),
                             currency_code: entry.currency.clone(),
                         }),
-                        payment_terms_detail: None,
-                        invoice_reference: None,
+                        financial_area: line.financial_area.unwrap_or_default(),
+                        business_area: line.business_area.unwrap_or_default(),
+                        controlling_area: line.controlling_area.unwrap_or_default(),
+                        payment_terms_detail: line
+                            .payment_terms_detail
+                            .as_ref()
+                            .map(|ptd| payment_terms_to_proto(ptd, &entry.currency)),
+                        invoice_reference: line.invoice_reference.as_ref().map(|ir| InvoiceReference {
+                            reference_document_number: ir.reference_document_number.clone().unwrap_or_default(),
+                            reference_fiscal_year: ir.reference_fiscal_year.unwrap_or(0),
+                            reference_line_item: ir.reference_line_item.unwrap_or(0),
+                            reference_document_type: ir.reference_document_type.clone().unwrap_or_default(),
+                            reference_company_code: ir.reference_company_code.clone().unwrap_or_default(),
+                        }),
+                        dunning_detail: line.dunning_detail.as_ref().map(|dd| DunningDetail {
+                            dunning_key: dd.dunning_key.clone().unwrap_or_default(),
+                            dunning_block: dd.dunning_block.clone().unwrap_or_default(),
+                            last_dunning_date: dd.last_dunning_date.map(|date| prost_types::Timestamp {
+                                seconds: date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
+                                nanos: 0,
+                            }),
+                            dunning_date: dd.dunning_date.map(|date| prost_types::Timestamp {
+                                seconds: date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
+                                nanos: 0,
+                            }),
+                            dunning_level: dd.dunning_level,
+                            dunning_area: dd.dunning_area.clone().unwrap_or_default(),
+                            grace_period_days: dd.grace_period_days,
+                            dunning_charges: dd.dunning_charges.map(|amt| common_v1::MonetaryValue {
+                                value: amt.to_string(),
+                                currency_code: entry.currency.clone(),
+                            }),
+                            dunning_clerk: dd.dunning_clerk.clone().unwrap_or_default(),
+                        }),
+                        account_assignment: line.account_assignment.unwrap_or_default(),
+                        amount_in_object_currency: line.amount_in_object_currency.map(|amt| common_v1::MonetaryValue {
+                            value: amt.to_string(),
+                            currency_code: line.object_currency.clone().unwrap_or_default(),
+                        }),
+                        amount_in_profit_center_currency: line.amount_in_profit_center_currency.map(|amt| common_v1::MonetaryValue {
+                            value: amt.to_string(),
+                            currency_code: line.profit_center_currency.clone().unwrap_or_default(),
+                        }),
+                        transaction_type: line.transaction_type.unwrap_or_default(),
+                        reference_transaction_type: line.reference_transaction_type.unwrap_or_default(),
+                        trading_partner_company: line.trading_partner_company.unwrap_or_default(),
+                        payment_execution: line.payment_execution.as_ref().map(payment_execution_to_proto),
+                        internal_trading_detail: None,
+                        field_split_detail: None,
+                        local_gaap_detail: None,
                     });
                 }
             }
@@ -1102,6 +1411,7 @@ fn map_to_summary(entry: crate::domain::aggregates::journal_entry::JournalEntry)
 }
 
 fn map_to_detail(entry: crate::domain::aggregates::journal_entry::JournalEntry) -> JournalEntryDetail {
+    let currency_code = entry.currency.clone();
     JournalEntryDetail {
         document_reference: Some(crate::infrastructure::grpc::common::v1::SystemDocumentReference {
             document_number: entry.document_number.clone().unwrap_or_default(),
@@ -1125,6 +1435,10 @@ fn map_to_detail(entry: crate::domain::aggregates::journal_entry::JournalEntry) 
             ledger_group: entry.ledger_group.unwrap_or_default(),
             default_ledger: entry.default_ledger.clone(),
             audit: None,
+            local_currency: "".to_string(),
+            group_currency: "".to_string(),
+            target_currency: "".to_string(),
+            chart_of_accounts: entry.chart_of_accounts.unwrap_or_default(),
         }),
         line_items: entry.lines.into_iter().map(|l| JournalEntryLineItem {
             line_item_number: l.line_number,
@@ -1132,21 +1446,28 @@ fn map_to_detail(entry: crate::domain::aggregates::journal_entry::JournalEntry) 
             debit_credit_indicator: l.debit_credit.as_char().to_string(),
             amount_in_document_currency: Some(crate::infrastructure::grpc::common::v1::MonetaryValue {
                 value: l.amount.to_string(),
-                currency_code: "CNY".to_string(),
+                currency_code: currency_code.clone(),
             }),
             amount_in_local_currency: Some(crate::infrastructure::grpc::common::v1::MonetaryValue {
                  value: l.local_amount.to_string(),
-                 currency_code: "CNY".to_string(),
+                 currency_code: currency_code.clone(),
             }),
             cost_center: l.cost_center.unwrap_or_default(),
             profit_center: l.profit_center.unwrap_or_default(),
             text: l.text.unwrap_or_default(),
             special_gl_indicator: l.special_gl_indicator.to_sap_code().to_string(),
+            // Organizational dimensions
+            financial_area: l.financial_area.unwrap_or_default(),
+            business_area: l.business_area.unwrap_or_default(),
+            controlling_area: l.controlling_area.unwrap_or_default(),
             // Defaults
             posting_key: "".to_string(),
             account_type: crate::infrastructure::grpc::common::v1::AccountType::Gl as i32,
-            business_partner: "".to_string(),
-            amount_in_group_currency: None,
+            business_partner: l.business_partner.unwrap_or_default(),
+            amount_in_group_currency: l.amount_in_group_currency.map(|amt| crate::infrastructure::grpc::common::v1::MonetaryValue {
+                value: amt.to_string(),
+                currency_code: l.group_currency.clone().unwrap_or_else(|| currency_code.clone()),
+            }),
             segment: "".to_string(),
             internal_order: "".to_string(),
             wbs_element: "".to_string(),
@@ -1160,10 +1481,55 @@ fn map_to_detail(entry: crate::domain::aggregates::journal_entry::JournalEntry) 
             ledger_type: l.ledger_type as i32,
             amount_in_ledger_currency: l.ledger_amount.map(|amt| crate::infrastructure::grpc::common::v1::MonetaryValue {
                 value: amt.to_string(),
-                currency_code: "CNY".to_string(),
+                currency_code: currency_code.clone(),
             }),
-            payment_terms_detail: None,
-            invoice_reference: None,
+            payment_terms_detail: l
+                .payment_terms_detail
+                .as_ref()
+                .map(|ptd| payment_terms_to_proto(ptd, &currency_code)),
+            invoice_reference: l.invoice_reference.as_ref().map(|ir| InvoiceReference {
+                reference_document_number: ir.reference_document_number.clone().unwrap_or_default(),
+                reference_fiscal_year: ir.reference_fiscal_year.unwrap_or(0),
+                reference_line_item: ir.reference_line_item.unwrap_or(0),
+                reference_document_type: ir.reference_document_type.clone().unwrap_or_default(),
+                reference_company_code: ir.reference_company_code.clone().unwrap_or_default(),
+            }),
+            dunning_detail: l.dunning_detail.as_ref().map(|dd| DunningDetail {
+                dunning_key: dd.dunning_key.clone().unwrap_or_default(),
+                dunning_block: dd.dunning_block.clone().unwrap_or_default(),
+                last_dunning_date: dd.last_dunning_date.map(|date| prost_types::Timestamp {
+                    seconds: date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
+                    nanos: 0,
+                }),
+                dunning_date: dd.dunning_date.map(|date| prost_types::Timestamp {
+                    seconds: date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
+                    nanos: 0,
+                }),
+                dunning_level: dd.dunning_level,
+                dunning_area: dd.dunning_area.clone().unwrap_or_default(),
+                grace_period_days: dd.grace_period_days,
+                dunning_charges: dd.dunning_charges.map(|amt| crate::infrastructure::grpc::common::v1::MonetaryValue {
+                    value: amt.to_string(),
+                    currency_code: currency_code.clone(),
+                }),
+                dunning_clerk: dd.dunning_clerk.clone().unwrap_or_default(),
+            }),
+            account_assignment: l.account_assignment.unwrap_or_default(),
+            amount_in_object_currency: l.amount_in_object_currency.map(|amt| crate::infrastructure::grpc::common::v1::MonetaryValue {
+                value: amt.to_string(),
+                currency_code: l.object_currency.clone().unwrap_or_default(),
+            }),
+            amount_in_profit_center_currency: l.amount_in_profit_center_currency.map(|amt| crate::infrastructure::grpc::common::v1::MonetaryValue {
+                value: amt.to_string(),
+                currency_code: l.profit_center_currency.clone().unwrap_or_default(),
+            }),
+            transaction_type: l.transaction_type.unwrap_or_default(),
+            reference_transaction_type: l.reference_transaction_type.unwrap_or_default(),
+            trading_partner_company: l.trading_partner_company.unwrap_or_default(),
+            payment_execution: l.payment_execution.as_ref().map(payment_execution_to_proto),
+            internal_trading_detail: None,
+            field_split_detail: None,
+            local_gaap_detail: None,
         }).collect(),
         tax_items: vec![],
         status: match entry.status {

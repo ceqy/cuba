@@ -1,10 +1,13 @@
 use async_trait::async_trait;
 use sqlx::Row;
+use sqlx::types::Json;
 use uuid::Uuid;
 use std::error::Error;
 use std::str::FromStr;
 use chrono::{NaiveDate, Datelike};
-use crate::domain::aggregates::journal_entry::{JournalEntry, LineItem, PostingStatus, DebitCredit};
+use crate::domain::aggregates::journal_entry::{
+    JournalEntry, LineItem, PostingStatus, DebitCredit, PaymentExecutionDetail
+};
 use crate::domain::repositories::JournalRepository;
 use cuba_database::DbPool;
 
@@ -67,6 +70,42 @@ impl JournalRepository for PostgresJournalRepository {
 
         // Insert Lines
         for line in &entry.lines {
+            // 序列化付款字段为 JSONB
+            let payment_execution_json: Option<Json<PaymentExecutionDetail>> =
+                line.payment_execution.as_ref().map(|pe| Json(pe.clone()));
+            let payment_terms_detail_json: Option<Json<crate::domain::aggregates::journal_entry::PaymentTermsDetail>> =
+                line.payment_terms_detail.as_ref().map(|ptd| Json(ptd.clone()));
+
+            let (reference_document_number, reference_fiscal_year, reference_line_item, reference_document_type, reference_company_code) =
+                if let Some(reference) = &line.invoice_reference {
+                    (
+                        reference.reference_document_number.clone(),
+                        reference.reference_fiscal_year,
+                        reference.reference_line_item,
+                        reference.reference_document_type.clone(),
+                        reference.reference_company_code.clone(),
+                    )
+                } else {
+                    (None, None, None, None, None)
+                };
+
+            let (dunning_key, dunning_block, last_dunning_date, dunning_date, dunning_level, dunning_area, grace_period_days, dunning_charges, dunning_clerk) =
+                if let Some(dunning) = &line.dunning_detail {
+                    (
+                        dunning.dunning_key.clone(),
+                        dunning.dunning_block.clone(),
+                        dunning.last_dunning_date,
+                        dunning.dunning_date,
+                        dunning.dunning_level,
+                        dunning.dunning_area.clone(),
+                        dunning.grace_period_days,
+                        dunning.dunning_charges,
+                        dunning.dunning_clerk.clone(),
+                    )
+                } else {
+                    (None, None, None, None, 0, None, 0, None, None)
+                };
+
             sqlx::query(
                 r#"
                 INSERT INTO journal_entry_lines (
@@ -74,10 +113,26 @@ impl JournalRepository for PostgresJournalRepository {
                     debit_credit, amount, local_amount,
                     cost_center, profit_center, line_text,
                     special_gl_indicator, ledger, ledger_type, ledger_amount,
-                    financial_area, business_area, controlling_area
+                    financial_area, business_area, controlling_area,
+                    account_assignment, business_partner,
+                    reference_document_number, reference_fiscal_year, reference_line_item,
+                    reference_document_type, reference_company_code,
+                    transaction_type, reference_transaction_type, trading_partner_company,
+                    amount_in_object_currency, object_currency,
+                    amount_in_profit_center_currency, profit_center_currency,
+                    amount_in_group_currency, group_currency,
+                    dunning_key, dunning_block, last_dunning_date, dunning_date, dunning_level,
+                    dunning_area, grace_period_days, dunning_charges, dunning_clerk,
+                    payment_execution, payment_terms_detail
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-                "#
+                VALUES (
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+                    $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+                    $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
+                    $31, $32, $33, $34, $35, $36, $37, $38, $39, $40,
+                    $41, $42, $43, $44
+                )
+                "#,
             )
             .bind(line.id)
             .bind(entry.id)
@@ -96,6 +151,33 @@ impl JournalRepository for PostgresJournalRepository {
             .bind(&line.financial_area)
             .bind(&line.business_area)
             .bind(&line.controlling_area)
+            .bind(&line.account_assignment)
+            .bind(&line.business_partner)
+            .bind(&reference_document_number)
+            .bind(reference_fiscal_year)
+            .bind(reference_line_item)
+            .bind(&reference_document_type)
+            .bind(&reference_company_code)
+            .bind(&line.transaction_type)
+            .bind(&line.reference_transaction_type)
+            .bind(&line.trading_partner_company)
+            .bind(line.amount_in_object_currency)
+            .bind(&line.object_currency)
+            .bind(line.amount_in_profit_center_currency)
+            .bind(&line.profit_center_currency)
+            .bind(line.amount_in_group_currency)
+            .bind(&line.group_currency)
+            .bind(&dunning_key)
+            .bind(&dunning_block)
+            .bind(last_dunning_date)
+            .bind(dunning_date)
+            .bind(dunning_level)
+            .bind(&dunning_area)
+            .bind(grace_period_days)
+            .bind(dunning_charges)
+            .bind(&dunning_clerk)
+            .bind(&payment_execution_json)
+            .bind(&payment_terms_detail_json)
             .execute(&mut *tx)
             .await?;
         }
@@ -129,7 +211,17 @@ impl JournalRepository for PostgresJournalRepository {
                     id, line_number, account_id, debit_credit, amount, local_amount,
                     cost_center, profit_center, line_text,
                     special_gl_indicator, ledger, ledger_type, ledger_amount,
-                    financial_area, business_area, controlling_area
+                    financial_area, business_area, controlling_area,
+                    account_assignment, business_partner,
+                    reference_document_number, reference_fiscal_year, reference_line_item,
+                    reference_document_type, reference_company_code,
+                    transaction_type, reference_transaction_type, trading_partner_company,
+                    amount_in_object_currency, object_currency,
+                    amount_in_profit_center_currency, profit_center_currency,
+                    amount_in_group_currency, group_currency,
+                    dunning_key, dunning_block, last_dunning_date, dunning_date, dunning_level,
+                    dunning_area, grace_period_days, dunning_charges, dunning_clerk,
+                    payment_execution, payment_terms_detail
                 FROM journal_entry_lines
                 WHERE journal_entry_id = $1
                 ORDER BY line_number ASC
@@ -152,6 +244,70 @@ impl JournalRepository for PostgresJournalRepository {
                 let ledger_type_int: i32 = l.get::<Option<i32>, _>("ledger_type").unwrap_or(1);
                 let ledger_type = crate::domain::aggregates::journal_entry::LedgerType::from(ledger_type_int);
 
+                // 读取付款执行字段
+                let payment_execution: Option<PaymentExecutionDetail> = l
+                    .get::<Option<Json<PaymentExecutionDetail>>, _>("payment_execution")
+                    .map(|j| j.0);
+                let payment_terms_detail: Option<crate::domain::aggregates::journal_entry::PaymentTermsDetail> = l
+                    .get::<Option<Json<crate::domain::aggregates::journal_entry::PaymentTermsDetail>>, _>("payment_terms_detail")
+                    .map(|j| j.0);
+
+                let reference_document_number: Option<String> = l.get("reference_document_number");
+                let reference_fiscal_year: Option<i32> = l.get("reference_fiscal_year");
+                let reference_line_item: Option<i32> = l.get("reference_line_item");
+                let reference_document_type: Option<String> = l.get("reference_document_type");
+                let reference_company_code: Option<String> = l.get("reference_company_code");
+                let invoice_reference = if reference_document_number.is_some()
+                    || reference_fiscal_year.is_some()
+                    || reference_line_item.is_some()
+                    || reference_document_type.is_some()
+                    || reference_company_code.is_some()
+                {
+                    Some(crate::domain::aggregates::journal_entry::InvoiceReference {
+                        reference_document_number,
+                        reference_fiscal_year,
+                        reference_line_item,
+                        reference_document_type,
+                        reference_company_code,
+                    })
+                } else {
+                    None
+                };
+
+                let dunning_key: Option<String> = l.get("dunning_key");
+                let dunning_block: Option<String> = l.get("dunning_block");
+                let last_dunning_date: Option<chrono::NaiveDate> = l.get("last_dunning_date");
+                let dunning_date: Option<chrono::NaiveDate> = l.get("dunning_date");
+                let dunning_level: i32 = l.get::<Option<i32>, _>("dunning_level").unwrap_or(0);
+                let dunning_area: Option<String> = l.get("dunning_area");
+                let grace_period_days: i32 = l.get::<Option<i32>, _>("grace_period_days").unwrap_or(0);
+                let dunning_charges: Option<rust_decimal::Decimal> = l.get("dunning_charges");
+                let dunning_clerk: Option<String> = l.get("dunning_clerk");
+                let dunning_detail = if dunning_key.is_some()
+                    || dunning_block.is_some()
+                    || last_dunning_date.is_some()
+                    || dunning_date.is_some()
+                    || dunning_level != 0
+                    || dunning_area.is_some()
+                    || grace_period_days != 0
+                    || dunning_charges.is_some()
+                    || dunning_clerk.is_some()
+                {
+                    Some(crate::domain::aggregates::journal_entry::DunningDetail {
+                        dunning_key,
+                        dunning_block,
+                        last_dunning_date,
+                        dunning_date,
+                        dunning_level,
+                        dunning_area,
+                        grace_period_days,
+                        dunning_charges,
+                        dunning_clerk,
+                    })
+                } else {
+                    None
+                };
+
                 LineItem {
                     id: l.get("id"),
                     line_number: l.get("line_number"),
@@ -169,6 +325,23 @@ impl JournalRepository for PostgresJournalRepository {
                     financial_area: l.get("financial_area"),
                     business_area: l.get("business_area"),
                     controlling_area: l.get("controlling_area"),
+                    account_assignment: l.get("account_assignment"),
+                    business_partner: l.get("business_partner"),
+                    business_partner_type: None,
+                    payment_execution,
+                    payment_terms_detail,
+                    invoice_reference,
+                    dunning_detail,
+                    transaction_type: l.get("transaction_type"),
+                    reference_transaction_type: l.get("reference_transaction_type"),
+                    trading_partner_company: l.get("trading_partner_company"),
+                    amount_in_object_currency: l.get("amount_in_object_currency"),
+                    object_currency: l.get("object_currency"),
+                    amount_in_profit_center_currency: l.get("amount_in_profit_center_currency"),
+                    profit_center_currency: l.get("profit_center_currency"),
+                    amount_in_group_currency: l.get("amount_in_group_currency"),
+                    group_currency: l.get("group_currency"),
+                    maturity_date: None,
                 }
             }).collect();
 
@@ -189,6 +362,10 @@ impl JournalRepository for PostgresJournalRepository {
                 // 并行会计默认值（从数据库读取时暂时使用默认值）
                 ledger_group: None,
                 default_ledger: "0L".to_string(),
+                chart_of_accounts: None,
+                local_currency: "CNY".to_string(),
+                group_currency: None,
+                target_currency: None,
             }))
         } else {
             Ok(None)

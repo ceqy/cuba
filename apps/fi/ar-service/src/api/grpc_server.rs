@@ -178,7 +178,18 @@ impl AccountsReceivablePayableService for ArServiceImpl {
                 reference_document: item.reference_document.unwrap_or_default(),
                 item_text: item.item_text.unwrap_or_default(),
                 installments: vec![],
-                ledger: None,
+                baseline_date: item.baseline_date.map(|date| prost_types::Timestamp {
+                    seconds: date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
+                    nanos: 0,
+                }),
+                payment_terms: item.payment_terms.unwrap_or_default(),
+                payment_method: item.payment_method.unwrap_or_default(),
+                special_gl_indicator: item.special_gl_indicator.unwrap_or_default(),
+                dunning_block: item.dunning_block.unwrap_or_default(),
+                dunning_level: item.dunning_level.unwrap_or(0),
+                transaction_type: item.transaction_type.unwrap_or_default(),
+                reference_transaction_type: item.reference_transaction_type.unwrap_or_default(),
+                ledger: item.ledger,
             }
         }).collect();
 

@@ -1,5 +1,5 @@
-use tonic::transport::Server;
 use gl_service::infrastructure::grpc::fi::gl::v1::gl_journal_entry_service_server::GlJournalEntryServiceServer;
+use tonic::transport::Server;
 use tracing::info;
 
 #[tokio::main]
@@ -23,7 +23,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Reflection Service
     let reflection_service = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(gl_service::infrastructure::grpc::fi::gl::v1::FILE_DESCRIPTOR_SET)
+        .register_encoded_file_descriptor_set(
+            gl_service::infrastructure::grpc::fi::gl::v1::FILE_DESCRIPTOR_SET,
+        )
         .build_v1()?;
 
     info!("GL Service listening on {}", addr);

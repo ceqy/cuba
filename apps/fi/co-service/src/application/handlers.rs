@@ -41,6 +41,11 @@ impl AllocationHandler {
                 sender_object: "CCTR-1000".to_string(),
                 sent_amount: sender_amount,
                 currency: "CNY".to_string(),
+                cost_center: Some("CCTR-1000".to_string()),
+                profit_center: None,
+                segment: None,
+                internal_order: None,
+                wbs_element: None,
             }],
             receivers: vec![AllocationReceiver {
                 receiver_id: Uuid::new_v4(),
@@ -48,6 +53,11 @@ impl AllocationHandler {
                 receiver_object: "CCTR-2000".to_string(),
                 received_amount: sender_amount,
                 currency: "CNY".to_string(),
+                cost_center: Some("CCTR-2000".to_string()),
+                profit_center: None,
+                segment: None,
+                internal_order: None,
+                wbs_element: None,
             }],
         };
         
@@ -74,6 +84,9 @@ impl AllocationHandler {
                 special_gl_indicator: None,
                 ledger: None,
                 ledger_type: None,
+                financial_area: None,
+                business_area: None,
+                controlling_area: None,
             },
             GlLineItem {
                 gl_account: "6100".to_string(), // Sending CC expense
@@ -86,6 +99,9 @@ impl AllocationHandler {
                 special_gl_indicator: None,
                 ledger: None,
                 ledger_type: None,
+                financial_area: None,
+                business_area: None,
+                controlling_area: None,
             },
         ];
 

@@ -9,16 +9,18 @@ impl TreasuryRepository {
     pub async fn save_statement(&self, stmt: &BankStatement) -> Result<()> {
         let mut tx = self.pool.begin().await?;
         sqlx::query(
-            "INSERT INTO bank_statements (statement_id, company_code, statement_format, status) VALUES ($1, $2, $3, $4)")
+            "INSERT INTO bank_statements (statement_id, company_code, statement_format, status, house_bank, bank_account) VALUES ($1, $2, $3, $4, $5, $6)")
             .bind(stmt.statement_id)
             .bind(&stmt.company_code)
             .bind(&stmt.statement_format)
             .bind(&stmt.status)
+            .bind(&stmt.house_bank)
+            .bind(&stmt.bank_account)
         .execute(&mut *tx).await?;
 
         for t in &stmt.transactions {
             sqlx::query(
-                "INSERT INTO statement_transactions (transaction_id, statement_id, value_date, amount, currency, memo, partner_name) VALUES ($1, $2, $3, $4, $5, $6, $7)")
+                "INSERT INTO statement_transactions (transaction_id, statement_id, value_date, amount, currency, memo, partner_name, transaction_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)")
                 .bind(t.transaction_id)
                 .bind(t.statement_id)
                 .bind(t.value_date)
@@ -26,6 +28,7 @@ impl TreasuryRepository {
                 .bind(&t.currency)
                 .bind(&t.memo)
                 .bind(&t.partner_name)
+                .bind(&t.transaction_type)
             .execute(&mut *tx).await?;
         }
         tx.commit().await?;
@@ -34,7 +37,7 @@ impl TreasuryRepository {
 
     pub async fn find_statement_by_id(&self, id: uuid::Uuid) -> Result<Option<BankStatement>> {
         let h = sqlx::query_as::<_, BankStatement>(
-            "SELECT statement_id, company_code, statement_format, status, created_at FROM bank_statements WHERE statement_id = $1")
+            "SELECT statement_id, company_code, statement_format, status, house_bank, bank_account, created_at FROM bank_statements WHERE statement_id = $1")
             .bind(id)
             .fetch_optional(&self.pool).await?;
         
@@ -58,7 +61,7 @@ impl TreasuryRepository {
     ) -> Result<Vec<BankStatement>> {
         let statements = if let Some(cc) = company_code {
             sqlx::query_as::<_, BankStatement>(
-                "SELECT statement_id, company_code, statement_format, status, created_at 
+                "SELECT statement_id, company_code, statement_format, status, house_bank, bank_account, created_at 
                  FROM bank_statements 
                  WHERE company_code = $1 
                  ORDER BY created_at DESC 
@@ -69,7 +72,7 @@ impl TreasuryRepository {
                 .fetch_all(&self.pool).await?
         } else {
             sqlx::query_as::<_, BankStatement>(
-                "SELECT statement_id, company_code, statement_format, status, created_at 
+                "SELECT statement_id, company_code, statement_format, status, house_bank, bank_account, created_at 
                  FROM bank_statements 
                  ORDER BY created_at DESC 
                  LIMIT $1 OFFSET $2")
@@ -93,7 +96,7 @@ impl TreasuryRepository {
 
         for d in &run.documents {
             sqlx::query(
-                "INSERT INTO payment_documents (doc_id, run_id, document_number, fiscal_year, amount, currency, payee_name) VALUES ($1, $2, $3, $4, $5, $6, $7)")
+                "INSERT INTO payment_documents (doc_id, run_id, document_number, fiscal_year, amount, currency, payee_name, payment_method, house_bank, bank_account, transaction_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)")
                 .bind(d.doc_id)
                 .bind(d.run_id)
                 .bind(&d.document_number)
@@ -101,6 +104,10 @@ impl TreasuryRepository {
                 .bind(d.amount)
                 .bind(&d.currency)
                 .bind(&d.payee_name)
+                .bind(&d.payment_method)
+                .bind(&d.house_bank)
+                .bind(&d.bank_account)
+                .bind(&d.transaction_type)
             .execute(&mut *tx).await?;
         }
         tx.commit().await?;

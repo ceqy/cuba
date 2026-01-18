@@ -111,7 +111,10 @@ impl OpenItemRepository {
             SELECT id, document_number, company_code, fiscal_year, line_item_number,
                    supplier_id, account_type, posting_date, due_date, baseline_date,
                    currency, original_amount, open_amount, is_cleared, clearing_document,
-                   clearing_date, reference_document, item_text, payment_block, created_at, updated_at
+                   clearing_date, reference_document, item_text, payment_block,
+                   ledger, special_gl_indicator, payment_method, payment_terms,
+                   dunning_block, dunning_level, transaction_type, reference_transaction_type,
+                   created_at, updated_at
             FROM open_items
             WHERE supplier_id = $1 AND company_code = $2
             ORDER BY due_date ASC
@@ -121,7 +124,10 @@ impl OpenItemRepository {
             SELECT id, document_number, company_code, fiscal_year, line_item_number,
                    supplier_id, account_type, posting_date, due_date, baseline_date,
                    currency, original_amount, open_amount, is_cleared, clearing_document,
-                   clearing_date, reference_document, item_text, payment_block, created_at, updated_at
+                   clearing_date, reference_document, item_text, payment_block,
+                   ledger, special_gl_indicator, payment_method, payment_terms,
+                   dunning_block, dunning_level, transaction_type, reference_transaction_type,
+                   created_at, updated_at
             FROM open_items
             WHERE supplier_id = $1 AND company_code = $2 AND is_cleared = false
             ORDER BY due_date ASC
@@ -147,7 +153,10 @@ impl OpenItemRepository {
             SELECT id, document_number, company_code, fiscal_year, line_item_number,
                    supplier_id, account_type, posting_date, due_date, baseline_date,
                    currency, original_amount, open_amount, is_cleared, clearing_document,
-                   clearing_date, reference_document, item_text, payment_block, created_at, updated_at
+                   clearing_date, reference_document, item_text, payment_block,
+                   ledger, special_gl_indicator, payment_method, payment_terms,
+                   dunning_block, dunning_level, transaction_type, reference_transaction_type,
+                   created_at, updated_at
             FROM open_items
             WHERE company_code = $1
               AND is_cleared = false
@@ -171,9 +180,13 @@ impl OpenItemRepository {
                 id, document_number, company_code, fiscal_year, line_item_number,
                 supplier_id, account_type, posting_date, due_date, baseline_date,
                 currency, original_amount, open_amount, is_cleared, clearing_document,
-                clearing_date, reference_document, item_text, payment_block, created_at, updated_at
+                clearing_date, reference_document, item_text, payment_block,
+                ledger, special_gl_indicator, payment_method, payment_terms,
+                dunning_block, dunning_level, transaction_type, reference_transaction_type,
+                created_at, updated_at
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+                $21, $22, $23, $24, $25, $26, $27, $28, $29
             )
             ON CONFLICT (document_number, company_code, fiscal_year, line_item_number) DO UPDATE SET
                 open_amount = EXCLUDED.open_amount,
@@ -202,6 +215,14 @@ impl OpenItemRepository {
         .bind(&item.reference_document)
         .bind(&item.item_text)
         .bind(&item.payment_block)
+        .bind(&item.ledger)
+        .bind(&item.special_gl_indicator)
+        .bind(&item.payment_method)
+        .bind(&item.payment_terms)
+        .bind(&item.dunning_block)
+        .bind(item.dunning_level)
+        .bind(&item.transaction_type)
+        .bind(&item.reference_transaction_type)
         .bind(item.created_at)
         .bind(item.updated_at)
         .execute(&self.pool)
@@ -274,6 +295,8 @@ impl InvoiceRepository {
             SELECT id, document_number, company_code, fiscal_year, document_type,
                    supplier_id, document_date, posting_date, due_date, baseline_date,
                    currency, total_amount, tax_amount, reference_document, header_text,
+                   ledger, special_gl_indicator, payment_terms, payment_method, payment_block,
+                   transaction_type, reference_transaction_type,
                    status, clearing_document, clearing_date, created_at, updated_at
             FROM invoices WHERE id = $1
             "#
@@ -314,9 +337,12 @@ impl InvoiceRepository {
                 id, document_number, company_code, fiscal_year, document_type,
                 supplier_id, document_date, posting_date, due_date, baseline_date,
                 currency, total_amount, tax_amount, reference_document, header_text,
+                ledger, special_gl_indicator, payment_terms, payment_method, payment_block,
+                transaction_type, reference_transaction_type,
                 status, clearing_document, clearing_date, created_at, updated_at
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
+                $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26
             ) 
             ON CONFLICT (document_number, company_code, fiscal_year) DO NOTHING
             "#
@@ -336,6 +362,13 @@ impl InvoiceRepository {
         .bind(invoice.tax_amount)
         .bind(&invoice.reference_document)
         .bind(&invoice.header_text)
+        .bind(&invoice.ledger)
+        .bind(&invoice.special_gl_indicator)
+        .bind(&invoice.payment_terms)
+        .bind(&invoice.payment_method)
+        .bind(&invoice.payment_block)
+        .bind(&invoice.transaction_type)
+        .bind(&invoice.reference_transaction_type)
         .bind(invoice.status.to_string())
         .bind(&invoice.clearing_document)
         .bind(invoice.clearing_date)
@@ -395,6 +428,8 @@ impl InvoiceRepository {
             SELECT id, document_number, company_code, fiscal_year, document_type,
                    supplier_id, document_date, posting_date, due_date, baseline_date,
                    currency, total_amount, tax_amount, reference_document, header_text,
+                   ledger, special_gl_indicator, payment_terms, payment_method, payment_block,
+                   transaction_type, reference_transaction_type,
                    status, clearing_document, clearing_date, created_at, updated_at
             FROM invoices WHERE company_code =
             "#

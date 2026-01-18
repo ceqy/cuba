@@ -1,0 +1,13 @@
+[package]
+name = "cuba-workflow"
+version = "0.1.0"
+edition = "2021"
+description = "通用工作流和状态历史追踪库"
+
+[dependencies]
+async-trait.workspace = true
+serde.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+sqlx.workspace = true

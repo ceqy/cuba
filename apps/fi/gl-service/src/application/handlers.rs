@@ -1,7 +1,10 @@
 use std::sync::Arc;
 use crate::application::commands::{CreateJournalEntryCommand, PostJournalEntryCommand, ReverseJournalEntryCommand, ParkJournalEntryCommand, UpdateJournalEntryCommand};
 use crate::application::queries::{GetJournalEntryQuery, ListJournalEntriesQuery, ListSpecialGlEntriesQuery, ListBusinessPartnerSpecialGlQuery};
-use crate::domain::aggregates::journal_entry::{JournalEntry, LineItem, DebitCredit, PostingStatus};
+use crate::domain::aggregates::journal_entry::{
+    JournalEntry, LineItem, DebitCredit, PostingStatus, PaymentTermsDetail, InvoiceReference,
+    DunningDetail,
+};
 use crate::domain::repositories::JournalRepository;
 use crate::domain::services::AccountValidationService;
 use uuid::Uuid;
@@ -107,6 +110,62 @@ impl<R: JournalRepository> CreateJournalEntryHandler<R> {
                 crate::domain::aggregates::journal_entry::LedgerType::Leading
             };
 
+            // 转换付款执行信息
+            let payment_execution = l.payment_execution.map(|pe| {
+                let mut detail = crate::domain::aggregates::journal_entry::PaymentExecutionDetail::new(
+                    pe.payment_method,
+                );
+                if let Some(bank) = pe.house_bank {
+                    detail.house_bank = Some(bank);
+                }
+                if let Some(bank_type) = pe.partner_bank_type {
+                    detail.partner_bank_type = Some(bank_type);
+                }
+                if let Some(block) = pe.payment_block {
+                    detail.payment_block = Some(block);
+                }
+                if let Some(baseline) = pe.payment_baseline_date {
+                    detail.payment_baseline_date = Some(baseline);
+                }
+                if let Some(reference) = pe.payment_reference {
+                    detail.payment_reference = Some(reference);
+                }
+                if let Some(priority) = pe.payment_priority {
+                    detail.payment_priority = Some(priority);
+                }
+                detail
+            });
+
+            let payment_terms_detail = l.payment_terms_detail.map(|ptd| PaymentTermsDetail {
+                baseline_date: ptd.baseline_date,
+                discount_days_1: ptd.discount_days_1,
+                discount_days_2: ptd.discount_days_2,
+                net_payment_days: ptd.net_payment_days,
+                discount_percent_1: ptd.discount_percent_1,
+                discount_percent_2: ptd.discount_percent_2,
+                discount_amount: ptd.discount_amount,
+            });
+
+            let invoice_reference = l.invoice_reference.map(|ir| InvoiceReference {
+                reference_document_number: ir.reference_document_number,
+                reference_fiscal_year: ir.reference_fiscal_year,
+                reference_line_item: ir.reference_line_item,
+                reference_document_type: ir.reference_document_type,
+                reference_company_code: ir.reference_company_code,
+            });
+
+            let dunning_detail = l.dunning_detail.map(|dd| DunningDetail {
+                dunning_key: dd.dunning_key,
+                dunning_block: dd.dunning_block,
+                last_dunning_date: dd.last_dunning_date,
+                dunning_date: dd.dunning_date,
+                dunning_level: dd.dunning_level,
+                dunning_area: dd.dunning_area,
+                grace_period_days: dd.grace_period_days,
+                dunning_charges: dd.dunning_charges,
+                dunning_clerk: dd.dunning_clerk,
+            });
+
             Ok(LineItem {
                 id: Uuid::new_v4(),
                 line_number: (i + 1) as i32,
@@ -128,6 +187,23 @@ impl<R: JournalRepository> CreateJournalEntryHandler<R> {
                 financial_area: l.financial_area,
                 business_area: l.business_area,
                 controlling_area: l.controlling_area,
+                account_assignment: l.account_assignment,
+                business_partner: l.business_partner,
+                business_partner_type: l.business_partner_type,
+                payment_execution,
+                payment_terms_detail,
+                invoice_reference,
+                dunning_detail,
+                transaction_type: l.transaction_type,
+                reference_transaction_type: l.reference_transaction_type,
+                trading_partner_company: l.trading_partner_company,
+                amount_in_object_currency: l.amount_in_object_currency,
+                object_currency: l.object_currency,
+                amount_in_profit_center_currency: l.amount_in_profit_center_currency,
+                profit_center_currency: l.profit_center_currency,
+                amount_in_group_currency: l.amount_in_group_currency,
+                group_currency: l.group_currency,
+                maturity_date: l.maturity_date,
             })
         }).collect::<Result<Vec<_>, _>>()?;
 
@@ -336,6 +412,62 @@ impl<R: JournalRepository> UpdateJournalEntryHandler<R> {
                     crate::domain::aggregates::journal_entry::LedgerType::Leading
                 };
 
+                // 转换付款执行信息
+                let payment_execution = l.payment_execution.map(|pe| {
+                    let mut detail = crate::domain::aggregates::journal_entry::PaymentExecutionDetail::new(
+                        pe.payment_method,
+                    );
+                    if let Some(bank) = pe.house_bank {
+                        detail.house_bank = Some(bank);
+                    }
+                    if let Some(bank_type) = pe.partner_bank_type {
+                        detail.partner_bank_type = Some(bank_type);
+                    }
+                    if let Some(block) = pe.payment_block {
+                        detail.payment_block = Some(block);
+                    }
+                    if let Some(baseline) = pe.payment_baseline_date {
+                        detail.payment_baseline_date = Some(baseline);
+                    }
+                    if let Some(reference) = pe.payment_reference {
+                        detail.payment_reference = Some(reference);
+                    }
+                    if let Some(priority) = pe.payment_priority {
+                        detail.payment_priority = Some(priority);
+                    }
+                    detail
+                });
+
+                let payment_terms_detail = l.payment_terms_detail.map(|ptd| PaymentTermsDetail {
+                    baseline_date: ptd.baseline_date,
+                    discount_days_1: ptd.discount_days_1,
+                    discount_days_2: ptd.discount_days_2,
+                    net_payment_days: ptd.net_payment_days,
+                    discount_percent_1: ptd.discount_percent_1,
+                    discount_percent_2: ptd.discount_percent_2,
+                    discount_amount: ptd.discount_amount,
+                });
+
+                let invoice_reference = l.invoice_reference.map(|ir| InvoiceReference {
+                    reference_document_number: ir.reference_document_number,
+                    reference_fiscal_year: ir.reference_fiscal_year,
+                    reference_line_item: ir.reference_line_item,
+                    reference_document_type: ir.reference_document_type,
+                    reference_company_code: ir.reference_company_code,
+                });
+
+                let dunning_detail = l.dunning_detail.map(|dd| DunningDetail {
+                    dunning_key: dd.dunning_key,
+                    dunning_block: dd.dunning_block,
+                    last_dunning_date: dd.last_dunning_date,
+                    dunning_date: dd.dunning_date,
+                    dunning_level: dd.dunning_level,
+                    dunning_area: dd.dunning_area,
+                    grace_period_days: dd.grace_period_days,
+                    dunning_charges: dd.dunning_charges,
+                    dunning_clerk: dd.dunning_clerk,
+                });
+
                 Ok(LineItem {
                     id: Uuid::new_v4(),
                     line_number: (i + 1) as i32,
@@ -354,6 +486,26 @@ impl<R: JournalRepository> UpdateJournalEntryHandler<R> {
                     ledger,
                     ledger_type,
                     ledger_amount: l.ledger_amount,
+                    financial_area: l.financial_area,
+                    business_area: l.business_area,
+                    controlling_area: l.controlling_area,
+                    account_assignment: l.account_assignment,
+                    business_partner: l.business_partner,
+                    business_partner_type: l.business_partner_type,
+                    payment_execution,
+                    payment_terms_detail,
+                    invoice_reference,
+                    dunning_detail,
+                    transaction_type: l.transaction_type,
+                    reference_transaction_type: l.reference_transaction_type,
+                    trading_partner_company: l.trading_partner_company,
+                    amount_in_object_currency: l.amount_in_object_currency,
+                    object_currency: l.object_currency,
+                    amount_in_profit_center_currency: l.amount_in_profit_center_currency,
+                    profit_center_currency: l.profit_center_currency,
+                    amount_in_group_currency: l.amount_in_group_currency,
+                    group_currency: l.group_currency,
+                    maturity_date: l.maturity_date,
                 })
             }).collect::<Result<Vec<_>, _>>()?;
             Some(converted_lines)

@@ -94,6 +94,10 @@ impl GlClient {
             ledger_group: "".to_string(),
             default_ledger: default_ledger.clone(),
             audit: None,
+            local_currency: currency.to_string(),
+            group_currency: "".to_string(),
+            target_currency: "".to_string(),
+            chart_of_accounts: "".to_string(),
         };
 
         let proto_line_items: Vec<gl_v1::JournalEntryLineItem> = line_items
@@ -144,10 +148,21 @@ impl GlClient {
                     financial_area: item.financial_area.unwrap_or_default(),
                     business_area: item.business_area.unwrap_or_default(),
                     controlling_area: item.controlling_area.unwrap_or_default(),
+                    // 新增字段
+                    account_assignment: "".to_string(),
+                    amount_in_object_currency: None,
+                    amount_in_profit_center_currency: None,
+                    transaction_type: "".to_string(),
+                    reference_transaction_type: "".to_string(),
+                    trading_partner_company: "".to_string(),
                     // 其他字段
                     payment_terms_detail: None,
+                    payment_execution: None,
                     invoice_reference: None,
                     dunning_detail: None,
+                    internal_trading_detail: None,
+                    field_split_detail: None,
+                    local_gaap_detail: None,
                 }
             })
             .collect();

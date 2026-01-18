@@ -1,6 +1,8 @@
 // 集成测试：特殊总账标识功能
-use gl_service::domain::aggregates::journal_entry::{JournalEntry, LineItem, DebitCredit, SpecialGlType};
 use chrono::NaiveDate;
+use gl_service::domain::aggregates::journal_entry::{
+    DebitCredit, JournalEntry, LineItem, SpecialGlType,
+};
 use rust_decimal_macros::dec;
 
 #[test]
@@ -9,20 +11,22 @@ fn test_down_payment_scenario() {
     let lines = vec![
         LineItem::with_special_gl(
             1,
-            "1100".to_string(),  // 银行存款
+            "1100".to_string(), // 银行存款
             DebitCredit::Debit,
             dec!(50000.00),
             dec!(50000.00),
             SpecialGlType::DownPayment,
-        ).with_text("预付款给供应商ABC".to_string()),
+        )
+        .with_text("预付款给供应商ABC".to_string()),
         LineItem::with_special_gl(
             2,
-            "2100".to_string(),  // 应付账款
+            "2100".to_string(), // 应付账款
             DebitCredit::Credit,
             dec!(50000.00),
             dec!(50000.00),
             SpecialGlType::DownPayment,
-        ).with_text("预付款给供应商ABC".to_string()),
+        )
+        .with_text("预付款给供应商ABC".to_string()),
     ];
 
     let entry = JournalEntry::new(
@@ -34,7 +38,8 @@ fn test_down_payment_scenario() {
         Some("预付款凭证".to_string()),
         lines,
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     // 验证
     assert!(entry.has_special_gl_items());
@@ -54,20 +59,22 @@ fn test_advance_payment_scenario() {
     let lines = vec![
         LineItem::with_special_gl(
             1,
-            "1100".to_string(),  // 银行存款
+            "1100".to_string(), // 银行存款
             DebitCredit::Debit,
             dec!(30000.00),
             dec!(30000.00),
             SpecialGlType::AdvancePayment,
-        ).with_text("预收款从客户XYZ".to_string()),
+        )
+        .with_text("预收款从客户XYZ".to_string()),
         LineItem::with_special_gl(
             2,
-            "2200".to_string(),  // 应收账款
+            "2200".to_string(), // 应收账款
             DebitCredit::Credit,
             dec!(30000.00),
             dec!(30000.00),
             SpecialGlType::AdvancePayment,
-        ).with_text("预收款从客户XYZ".to_string()),
+        )
+        .with_text("预收款从客户XYZ".to_string()),
     ];
 
     let entry = JournalEntry::new(
@@ -79,7 +86,8 @@ fn test_advance_payment_scenario() {
         Some("预收款凭证".to_string()),
         lines,
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     // 验证
     assert!(entry.has_special_gl_items());
@@ -99,19 +107,21 @@ fn test_bill_of_exchange_scenario() {
     let lines = vec![
         LineItem::with_special_gl(
             1,
-            "1120".to_string(),  // 应收票据
+            "1120".to_string(), // 应收票据
             DebitCredit::Debit,
             dec!(100000.00),
             dec!(100000.00),
             SpecialGlType::BillOfExchange,
-        ).with_text("应收票据 - 客户XYZ".to_string()),
+        )
+        .with_text("应收票据 - 客户XYZ".to_string()),
         LineItem::new(
             2,
-            "4000".to_string(),  // 销售收入
+            "4000".to_string(), // 销售收入
             DebitCredit::Credit,
             dec!(100000.00),
             dec!(100000.00),
-        ).with_text("销售收入".to_string()),
+        )
+        .with_text("销售收入".to_string()),
     ];
 
     let entry = JournalEntry::new(
@@ -123,7 +133,8 @@ fn test_bill_of_exchange_scenario() {
         Some("应收票据凭证".to_string()),
         lines,
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     // 验证
     assert!(entry.has_special_gl_items());
@@ -131,7 +142,10 @@ fn test_bill_of_exchange_scenario() {
     assert_eq!(entry.calculate_bill_amount(), dec!(100000.00));
 
     // 验证特殊总账类型
-    assert_eq!(entry.lines[0].special_gl_indicator, SpecialGlType::BillOfExchange);
+    assert_eq!(
+        entry.lines[0].special_gl_indicator,
+        SpecialGlType::BillOfExchange
+    );
     assert_eq!(entry.lines[0].special_gl_indicator.to_sap_code(), "A");
     assert_eq!(entry.lines[1].special_gl_indicator, SpecialGlType::Normal);
 }
@@ -174,7 +188,8 @@ fn test_mixed_special_gl_scenario() {
         Some("混合凭证".to_string()),
         lines,
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     // 验证
     assert!(entry.has_special_gl_items());
@@ -224,20 +239,21 @@ fn test_clearing_scenario() {
         Some("预付款".to_string()),
         down_payment_lines,
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     // 2. 创建发票凭证（清账预付款）
     let invoice_lines = vec![
         LineItem::new(
             1,
-            "5000".to_string(),  // 费用
+            "5000".to_string(), // 费用
             DebitCredit::Debit,
             dec!(15000.00),
             dec!(15000.00),
         ),
         LineItem::with_special_gl(
             2,
-            "2100".to_string(),  // 应付账款（清账预付款）
+            "2100".to_string(), // 应付账款（清账预付款）
             DebitCredit::Debit,
             dec!(10000.00),
             dec!(10000.00),
@@ -245,7 +261,7 @@ fn test_clearing_scenario() {
         ),
         LineItem::new(
             3,
-            "2100".to_string(),  // 应付账款（剩余部分）
+            "2100".to_string(), // 应付账款（剩余部分）
             DebitCredit::Credit,
             dec!(25000.00),
             dec!(25000.00),
@@ -261,11 +277,15 @@ fn test_clearing_scenario() {
         Some("发票清账预付款".to_string()),
         invoice_lines,
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     // 验证预付款凭证
     assert!(down_payment_entry.has_special_gl_items());
-    assert_eq!(down_payment_entry.calculate_down_payment_amount(), dec!(20000.00));
+    assert_eq!(
+        down_payment_entry.calculate_down_payment_amount(),
+        dec!(20000.00)
+    );
 
     // 验证发票凭证包含预付款清账
     assert!(invoice_entry.has_special_gl_items());
@@ -309,7 +329,8 @@ fn test_special_gl_with_parallel_accounting() {
         Some("预付款 + 并行会计".to_string()),
         lines,
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     // 验证
     assert!(entry.has_special_gl_items());
@@ -318,7 +339,10 @@ fn test_special_gl_with_parallel_accounting() {
     // 验证并行会计
     for line in &entry.lines {
         assert_eq!(line.ledger, "0L");
-        assert_eq!(line.ledger_type, gl_service::domain::aggregates::journal_entry::LedgerType::Leading);
+        assert_eq!(
+            line.ledger_type,
+            gl_service::domain::aggregates::journal_entry::LedgerType::Leading
+        );
     }
 }
 
@@ -352,7 +376,8 @@ fn test_special_gl_validation() {
         Some("预付款凭证".to_string()),
         lines,
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     // 验证特殊总账规则
     let validation_result = entry.validate_special_gl_rules();

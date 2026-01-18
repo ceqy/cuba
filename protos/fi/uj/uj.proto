@@ -1,0 +1,424 @@
+// ============================================================================
+// /finance/universal-journal-service (版本 1.0 - ACDOCA 统一视图)
+// 描述: 提供 SAP S/4HANA Universal Journal (ACDOCA) 的统一查询视图
+//       支持跨模块（GL/AP/AR/AA/MM）的财务数据查询和分析
+// ----------------------------------------------------------------------------
+// 设计基线：
+// - 完整映射 SAP ACDOCA 表结构
+// - 统一 GL、AP、AR、AA、MM 等模块的财务数据
+// - 支持实时查询和流式查询
+// - 支持多维度分析和报表
+// ============================================================================
+
+syntax = "proto3";
+
+package fi.uj.v1;
+
+option go_package = "github.com/enterprise/erp/protos/fi/uj;uj";
+
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+import "common/common.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+// ============================================================================
+// 服务定义: UniversalJournalService
+// ============================================================================
+
+service UniversalJournalService {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    description: "Universal Journal 统一查询服务 - 提供 ACDOCA 完整视图"
+  };
+
+  // 统一查询接口（分页）
+  rpc QueryUniversalJournal(QueryUniversalJournalRequest) returns (QueryUniversalJournalResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/universal-journal:query"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Universal Journal"
+      summary: "查询 Universal Journal 数据"
+    };
+  }
+
+  // 流式查询接口（大数据量）
+  rpc StreamUniversalJournal(QueryUniversalJournalRequest) returns (stream UniversalJournalEntry) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/universal-journal:stream"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Universal Journal"
+      summary: "流式查询 Universal Journal 数据"
+    };
+  }
+
+  // 获取单条记录详情
+  rpc GetUniversalJournalEntry(GetUniversalJournalEntryRequest) returns (UniversalJournalEntry) {
+    option (google.api.http) = {
+      get: "/api/v1/finance/universal-journal/entries/{ledger}/{company_code}/{fiscal_year}/{document_number}/{document_line}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Universal Journal"
+      summary: "获取单条 Universal Journal 记录"
+    };
+  }
+
+  // 聚合查询（用于报表和分析）
+  rpc AggregateUniversalJournal(AggregateUniversalJournalRequest) returns (AggregateUniversalJournalResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/finance/universal-journal:aggregate"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Universal Journal"
+      summary: "聚合查询 Universal Journal 数据"
+    };
+  }
+}
+
+// ============================================================================
+// 枚举定义
+// ============================================================================
+
+// 来源模块标识
+enum SourceModule {
+  SOURCE_MODULE_UNSPECIFIED = 0;
+  SOURCE_MODULE_GL = 1;        // 总账 (General Ledger)
+  SOURCE_MODULE_AP = 2;        // 应付账款 (Accounts Payable)
+  SOURCE_MODULE_AR = 3;        // 应收账款 (Accounts Receivable)
+  SOURCE_MODULE_AA = 4;        // 固定资产 (Asset Accounting)
+  SOURCE_MODULE_MM = 5;        // 物料管理 (Materials Management)
+  SOURCE_MODULE_SD = 6;        // 销售与分销 (Sales and Distribution)
+  SOURCE_MODULE_CO = 7;        // 成本控制 (Controlling)
+  SOURCE_MODULE_FI_TR = 8;     // 资金管理 (Treasury)
+}
+
+// 账户类型 (KOART)
+enum AccountType {
+  ACCOUNT_TYPE_UNSPECIFIED = 0;
+  ACCOUNT_TYPE_GL = 1;         // D - 总账科目
+  ACCOUNT_TYPE_CUSTOMER = 2;   // D - 客户
+  ACCOUNT_TYPE_VENDOR = 3;     // K - 供应商
+  ACCOUNT_TYPE_ASSET = 4;      // A - 固定资产
+  ACCOUNT_TYPE_MATERIAL = 5;   // M - 物料
+}
+
+// ============================================================================
+// Universal Journal Entry (ACDOCA 完整映射)
+// ============================================================================
+
+message UniversalJournalEntry {
+  // ============================================================================
+  // 主键字段 (Primary Key Fields)
+  // ============================================================================
+  string ledger = 1;                    // RLDNR 分类账（0L-主账，1L/2L-非主账）
+  string company_code = 2;              // RBUKRS 公司代码
+  int32 fiscal_year = 3;                // GJAHR 会计年度
+  string document_number = 4;           // BELNR 凭证号
+  int32 document_line = 5;              // DOCLN 凭证行号
+
+  // ============================================================================
+  // 凭证抬头字段 (Document Header Fields)
+  // ============================================================================
+  string document_type = 10;            // BLART 凭证类型
+  google.protobuf.Timestamp document_date = 11;  // BLDAT 凭证日期
+  google.protobuf.Timestamp posting_date = 12;   // BUDAT 过账日期
+  int32 fiscal_period = 13;             // MONAT 会计期间
+  string reference_document = 14;       // XBLNR 参考凭证号
+  string header_text = 15;              // BKTXT 凭证抬头文本
+  string document_currency = 16;        // WAERS 凭证货币
+  string exchange_rate = 17;            // KURSF 汇率
+  string logical_system = 18;           // AWSYS 逻辑系统
+  string transaction_code = 19;         // TCODE 事务代码
+
+  // ============================================================================
+  // 行项目字段 (Line Item Fields)
+  // ============================================================================
+  string posting_key = 20;              // BSCHL 过账码
+  string debit_credit_indicator = 21;   // SHKZG 借贷标识（S-借方，H-贷方）
+  AccountType account_type = 22;        // KOART 账户类型
+  string gl_account = 23;               // RACCT 总账科目（统一科目表）
+  string business_partner = 24;         // KUNNR/LIFNR 业务伙伴（客户/供应商）
+  string material = 25;                 // MATNR 物料号
+  string plant = 26;                    // WERKS 工厂
+  string item_text = 27;                // SGTXT 行项目文本
+  string assignment_number = 28;        // ZUONR 指派编号
+
+  // ============================================================================
+  // 金额字段 (Amount Fields)
+  // ============================================================================
+  // 所有金额字段使用字符串类型，防止精度丢失
+  common.v1.MonetaryValue amount_in_document_currency = 30;  // WRBTR 凭证货币金额
+  common.v1.MonetaryValue amount_in_local_currency = 31;     // DMBTR 本位币金额
+  common.v1.MonetaryValue amount_in_group_currency = 32;     // DMBE2 集团货币金额
+  common.v1.MonetaryValue amount_in_global_currency = 33;    // DMBE3 全球货币金额
+  common.v1.MonetaryValue amount_in_ledger_currency = 34;    // HSL 分类账货币金额
+
+  // ============================================================================
+  // 数量字段 (Quantity Fields)
+  // ============================================================================
+  common.v1.QuantityValue quantity = 40;  // MENGE 数量
+
+  // ============================================================================
+  // 成本对象字段 (Cost Object Fields)
+  // ============================================================================
+  string cost_center = 50;              // KOSTL 成本中心
+  string profit_center = 51;            // PRCTR 利润中心
+  string segment = 52;                  // SEGMENT 段
+  string functional_area = 53;          // FKBER 功能范围
+  string business_area = 54;            // GSBER 业务范围
+  string controlling_area = 55;         // KOKRS 控制范围
+  string internal_order = 56;           // AUFNR 内部订单
+  string wbs_element = 57;              // PS_PSP_PNR WBS 元素
+  string sales_order = 58;              // VBELN 销售订单
+  int32 sales_order_item = 59;          // POSNR 销售订单行项目
+
+  // ============================================================================
+  // 税务字段 (Tax Fields)
+  // ============================================================================
+  string tax_code = 60;                 // MWSKZ 税码
+  string tax_jurisdiction = 61;         // TXJCD 税收辖区
+  common.v1.MonetaryValue tax_amount = 62;  // MWSTS 税额
+
+  // ============================================================================
+  // 清账字段 (Clearing Fields)
+  // ============================================================================
+  string clearing_document = 70;        // AUGBL 清账凭证号
+  google.protobuf.Timestamp clearing_date = 71;  // AUGDT 清账日期
+
+  // ============================================================================
+  // 付款字段 (Payment Fields)
+  // ============================================================================
+  google.protobuf.Timestamp baseline_date = 80;  // ZFBDT 基准日期
+  google.protobuf.Timestamp due_date = 81;       // NETDT 到期日
+  string payment_terms = 82;            // ZTERM 付款条件
+  string payment_method = 83;           // ZLSCH 付款方式
+  string payment_block = 84;            // ZLSPR 付款冻结
+  string house_bank = 85;               // HBKID 内部银行账户
+
+  // ============================================================================
+  // 特殊总账字段 (Special G/L Fields)
+  // ============================================================================
+  string special_gl_indicator = 90;     // UMSKZ 特殊总账标识
+
+  // ============================================================================
+  // 发票参考字段 (Invoice Reference Fields)
+  // ============================================================================
+  string reference_document_number = 100;  // REBZG 参考凭证号
+  int32 reference_fiscal_year = 101;       // REBZJ 参考会计年度
+  int32 reference_line_item = 102;         // REBZZ 参考行项目号
+  string reference_document_type = 103;    // REBZT 参考凭证类型
+
+  // ============================================================================
+  // 业务交易类型字段 (Transaction Type Fields)
+  // ============================================================================
+  string transaction_type = 110;        // VRGNG 业务交易类型
+  string reference_transaction_type = 111;  // AWTYP 参考交易类型
+  string reference_key_1 = 112;         // AWREF 参考键 1
+  string reference_key_2 = 113;         // AWORG 参考键 2
+  string reference_key_3 = 114;         // AWSYS 参考键 3
+
+  // ============================================================================
+  // 组织维度字段 (Organizational Dimensions)
+  // ============================================================================
+  string financial_area = 120;          // RFAREA 财务范围
+  string consolidation_unit = 121;      // RUNIT 合并单位
+  string partner_company = 122;         // VBUND 伙伴公司代码
+  string trading_partner = 123;         // VKORG 交易伙伴
+
+  // ============================================================================
+  // 多币种字段 (Multi-Currency Fields)
+  // ============================================================================
+  string local_currency = 130;          // RHCUR 本位币
+  string group_currency = 131;          // RKCUR 集团货币
+  string global_currency = 132;         // RTCUR 全球货币
+  common.v1.MonetaryValue amount_in_object_currency = 133;  // OSL 对象货币金额
+  common.v1.MonetaryValue amount_in_profit_center_currency = 134;  // VSL 利润中心货币金额
+
+  // ============================================================================
+  // 催款字段 (Dunning Fields)
+  // ============================================================================
+  string dunning_key = 140;             // MSCHL 催款码
+  string dunning_block = 141;           // MANST 催款冻结
+  google.protobuf.Timestamp last_dunning_date = 142;  // MADAT 上次催款日期
+  int32 dunning_level = 143;            // 催款级别
+
+  // ============================================================================
+  // 付款条件详细字段 (Payment Terms Detail)
+  // ============================================================================
+  int32 discount_days_1 = 150;          // ZBD1T 第一个折扣天数
+  int32 discount_days_2 = 151;          // ZBD2T 第二个折扣天数
+  int32 net_payment_days = 152;         // ZBD3T 净付款天数
+  string discount_percent_1 = 153;      // ZBD1P 第一个折扣百分比
+  string discount_percent_2 = 154;      // ZBD2P 第二个折扣百分比
+  common.v1.MonetaryValue discount_amount = 155;  // SKFBT 现金折扣金额
+
+  // ============================================================================
+  // 内部交易字段 (Internal Trading Fields)
+  // ============================================================================
+  string sending_cost_center = 160;     // SCNTR 发送成本中心
+  string partner_profit_center = 161;   // PPRCTR 伙伴利润中心
+  string sending_financial_area = 162;  // SFAREA 发送财务范围
+
+  // ============================================================================
+  // 科目分配字段 (Account Assignment Fields)
+  // ============================================================================
+  string account_assignment = 170;      // KTOSL 科目分配
+
+  // ============================================================================
+  // 本地 GAAP 字段 (Local GAAP Fields)
+  // ============================================================================
+  string local_account = 180;           // LOKKT 本地科目
+  string data_source = 181;             // HRKFT 数据来源
+
+  // ============================================================================
+  // 字段拆分字段 (Field Split Fields)
+  // ============================================================================
+  string split_method = 190;            // XSPLITMOD 拆分方法
+  bool manual_split = 191;              // MANSP 手工拆分标识
+
+  // ============================================================================
+  // 审计字段 (Audit Fields)
+  // ============================================================================
+  string created_by = 200;              // USNAM 创建人
+  google.protobuf.Timestamp created_at = 201;  // CPUDT 创建日期
+  google.protobuf.Timestamp created_time = 202;  // CPUTM 创建时间
+  string changed_by = 203;              // AENAM 修改人
+  google.protobuf.Timestamp changed_at = 204;  // AEDAT 修改日期
+
+  // ============================================================================
+  // 来源模块标识 (Source Module Identifier)
+  // ============================================================================
+  SourceModule source_module = 300;     // 来源模块（GL/AP/AR/AA/MM/SD/CO）
+
+  // ============================================================================
+  // 扩展字段 (Extension Fields)
+  // ============================================================================
+  // 预留字段用于未来扩展
+  map<string, string> extension_fields = 999;  // 扩展字段（键值对）
+}
+
+// ============================================================================
+// 查询过滤器 (Query Filters)
+// ============================================================================
+
+message UniversalJournalFilter {
+  // 主键过滤
+  repeated string ledgers = 1;                  // 分类账列表
+  repeated string company_codes = 2;            // 公司代码列表
+  int32 fiscal_year_from = 3;                   // 会计年度起
+  int32 fiscal_year_to = 4;                     // 会计年度止
+  repeated string document_types = 5;           // 凭证类型列表
+
+  // 日期过滤
+  google.protobuf.Timestamp posting_date_from = 10;  // 过账日期起
+  google.protobuf.Timestamp posting_date_to = 11;    // 过账日期止
+  google.protobuf.Timestamp document_date_from = 12; // 凭证日期起
+  google.protobuf.Timestamp document_date_to = 13;   // 凭证日期止
+
+  // 科目过滤
+  repeated string gl_accounts = 20;             // 总账科目列表
+  repeated AccountType account_types = 21;      // 账户类型列表
+  repeated string business_partners = 22;       // 业务伙伴列表
+
+  // 成本对象过滤
+  repeated string cost_centers = 30;            // 成本中心列表
+  repeated string profit_centers = 31;          // 利润中心列表
+  repeated string segments = 32;                // 段列表
+  repeated string business_areas = 33;          // 业务范围列表
+
+  // 来源模块过滤
+  repeated SourceModule source_modules = 40;    // 来源模块列表
+
+  // 清账状态过滤
+  bool only_open_items = 50;                    // 仅未清项
+  bool only_cleared_items = 51;                 // 仅已清项
+
+  // 金额过滤
+  common.v1.MonetaryValue amount_from = 60;     // 金额起
+  common.v1.MonetaryValue amount_to = 61;       // 金额止
+
+  // 特殊总账过滤
+  repeated string special_gl_indicators = 70;   // 特殊总账标识列表
+
+  // 全文搜索
+  string search_text = 80;                      // 全文搜索（凭证文本、行项目文本等）
+}
+
+// ============================================================================
+// 聚合维度 (Aggregation Dimensions)
+// ============================================================================
+
+enum AggregationDimension {
+  AGGREGATION_DIMENSION_UNSPECIFIED = 0;
+  AGGREGATION_DIMENSION_GL_ACCOUNT = 1;         // 按总账科目聚合
+  AGGREGATION_DIMENSION_COST_CENTER = 2;        // 按成本中心聚合
+  AGGREGATION_DIMENSION_PROFIT_CENTER = 3;      // 按利润中心聚合
+  AGGREGATION_DIMENSION_SEGMENT = 4;            // 按段聚合
+  AGGREGATION_DIMENSION_BUSINESS_AREA = 5;      // 按业务范围聚合
+  AGGREGATION_DIMENSION_COMPANY_CODE = 6;       // 按公司代码聚合
+  AGGREGATION_DIMENSION_FISCAL_PERIOD = 7;      // 按会计期间聚合
+  AGGREGATION_DIMENSION_DOCUMENT_TYPE = 8;      // 按凭证类型聚合
+  AGGREGATION_DIMENSION_SOURCE_MODULE = 9;      // 按来源模块聚合
+}
+
+// 聚合度量 (Aggregation Measures)
+enum AggregationMeasure {
+  AGGREGATION_MEASURE_UNSPECIFIED = 0;
+  AGGREGATION_MEASURE_SUM = 1;                  // 求和
+  AGGREGATION_MEASURE_COUNT = 2;                // 计数
+  AGGREGATION_MEASURE_AVG = 3;                  // 平均值
+  AGGREGATION_MEASURE_MIN = 4;                  // 最小值
+  AGGREGATION_MEASURE_MAX = 5;                  // 最大值
+}
+
+// ============================================================================
+// RPC 消息定义
+// ============================================================================
+
+// 查询请求
+message QueryUniversalJournalRequest {
+  UniversalJournalFilter filter = 1;            // 查询过滤器
+  repeated string fields = 2;                   // 返回字段列表（为空则返回全部）
+  common.v1.PaginationRequest pagination = 3;   // 分页参数
+  repeated string order_by = 4;                 // 排序字段（如：posting_date DESC）
+  common.v1.RequestContext context = 99;        // 请求上下文
+}
+
+// 查询响应
+message QueryUniversalJournalResponse {
+  repeated UniversalJournalEntry entries = 1;   // 查询结果
+  common.v1.PaginationResponse pagination = 2;  // 分页信息
+}
+
+// 获取单条记录请求
+message GetUniversalJournalEntryRequest {
+  string ledger = 1;                            // 分类账
+  string company_code = 2;                      // 公司代码
+  int32 fiscal_year = 3;                        // 会计年度
+  string document_number = 4;                   // 凭证号
+  int32 document_line = 5;                      // 凭证行号
+  common.v1.RequestContext context = 99;        // 请求上下文
+}
+
+// 聚合查询请求
+message AggregateUniversalJournalRequest {
+  UniversalJournalFilter filter = 1;            // 查询过滤器
+  repeated AggregationDimension dimensions = 2; // 聚合维度
+  AggregationMeasure measure = 3;               // 聚合度量
+  string measure_field = 4;                     // 度量字段（如：amount_in_local_currency）
+  common.v1.RequestContext context = 99;        // 请求上下文
+}
+
+// 聚合查询响应
+message AggregateUniversalJournalResponse {
+  repeated AggregationResult results = 1;       // 聚合结果
+
+  message AggregationResult {
+    map<string, string> dimension_values = 1;   // 维度值（维度名 -> 维度值）
+    string measure_value = 2;                   // 度量值（使用字符串防精度丢失）
+    int64 record_count = 3;                     // 记录数
+  }
+}

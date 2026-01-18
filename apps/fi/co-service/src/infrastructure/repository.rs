@@ -22,23 +22,33 @@ impl AllocationRepository {
 
         for s in &run.senders {
             sqlx::query(
-                "INSERT INTO allocation_senders (sender_id, run_id, sender_object, sent_amount, currency) VALUES ($1, $2, $3, $4, $5)")
+                "INSERT INTO allocation_senders (sender_id, run_id, sender_object, sent_amount, currency, cost_center, profit_center, segment, internal_order, wbs_element) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)")
                 .bind(s.sender_id)
                 .bind(s.run_id)
                 .bind(&s.sender_object)
                 .bind(s.sent_amount)
                 .bind(&s.currency)
+                .bind(&s.cost_center)
+                .bind(&s.profit_center)
+                .bind(&s.segment)
+                .bind(&s.internal_order)
+                .bind(&s.wbs_element)
             .execute(&mut *tx).await?;
         }
 
         for r in &run.receivers {
             sqlx::query(
-                "INSERT INTO allocation_receivers (receiver_id, run_id, receiver_object, received_amount, currency) VALUES ($1, $2, $3, $4, $5)")
+                "INSERT INTO allocation_receivers (receiver_id, run_id, receiver_object, received_amount, currency, cost_center, profit_center, segment, internal_order, wbs_element) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)")
                 .bind(r.receiver_id)
                 .bind(r.run_id)
                 .bind(&r.receiver_object)
                 .bind(r.received_amount)
                 .bind(&r.currency)
+                .bind(&r.cost_center)
+                .bind(&r.profit_center)
+                .bind(&r.segment)
+                .bind(&r.internal_order)
+                .bind(&r.wbs_element)
             .execute(&mut *tx).await?;
         }
         tx.commit().await?;

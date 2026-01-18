@@ -1,0 +1,60 @@
+[package]
+name = "uj-service"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+# 共享基础设施
+cuba-core.workspace = true
+cuba-errors.workspace = true
+anyhow.workspace = true
+cuba-cqrs.workspace = true
+cuba-database.workspace = true
+cuba-messaging.workspace = true
+cuba-telemetry.workspace = true
+cuba-service = { path = "../../../libs/cuba-service" }
+
+# Async
+tokio.workspace = true
+async-trait.workspace = true
+tokio-stream = "0.1"
+async-stream = "0.3"
+futures = "0.3"
+
+# gRPC
+tonic.workspace = true
+tonic-prost.workspace = true
+tonic-reflection.workspace = true
+prost.workspace = true
+prost-types.workspace = true
+
+# Database
+sqlx.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Utilities
+uuid.workspace = true
+chrono.workspace = true
+tracing.workspace = true
+tracing-subscriber = "0.3"
+
+# Decimal for financial calculations
+rust_decimal = { version = "1.33", features = ["serde"] }
+
+# Error Handling
+thiserror.workspace = true
+
+[dev-dependencies]
+rust_decimal_macros = "1.33"
+
+[build-dependencies]
+tonic-build.workspace = true
+tonic-prost-build.workspace = true

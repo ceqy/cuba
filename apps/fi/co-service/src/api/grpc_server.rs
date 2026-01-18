@@ -87,6 +87,11 @@ impl ControllingAllocationService for CoServiceImpl {
                     value: s.sent_amount.to_string(),
                     currency_code: s.currency,
                 }),
+                cost_center: s.cost_center.unwrap_or_default(),
+                profit_center: s.profit_center.unwrap_or_default(),
+                segment: s.segment.unwrap_or_default(),
+                internal_order: s.internal_order.unwrap_or_default(),
+                wbs_element: s.wbs_element.unwrap_or_default(),
             }).collect(),
             receivers: run.receivers.into_iter().map(|r| AllocationReceiver {
                 receiver_object: r.receiver_object,
@@ -94,6 +99,11 @@ impl ControllingAllocationService for CoServiceImpl {
                     value: r.received_amount.to_string(),
                     currency_code: r.currency,
                 }),
+                cost_center: r.cost_center.unwrap_or_default(),
+                profit_center: r.profit_center.unwrap_or_default(),
+                segment: r.segment.unwrap_or_default(),
+                internal_order: r.internal_order.unwrap_or_default(),
+                wbs_element: r.wbs_element.unwrap_or_default(),
             }).collect(),
         }))
     }

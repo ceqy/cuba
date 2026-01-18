@@ -124,6 +124,12 @@ message AllocationSender {
   string sender_object = 1;
   // 发送的金额
   common.v1.MonetaryValue sent_amount = 2;
+  // 成本对象字段（最小对齐）
+  string cost_center = 10;
+  string profit_center = 11;
+  string segment = 12;
+  string internal_order = 13;
+  string wbs_element = 14;
 }
 
 // 分配接收方信息
@@ -132,4 +138,10 @@ message AllocationReceiver {
   string receiver_object = 1;
   // 接收的金额
   common.v1.MonetaryValue received_amount = 2;
+  // 成本对象字段（最小对齐）
+  string cost_center = 10;
+  string profit_center = 11;
+  string segment = 12;
+  string internal_order = 13;
+  string wbs_element = 14;
 }

@@ -79,8 +79,10 @@ impl OpenItemRepository {
             r#"
             SELECT 
                 open_item_id, document_number, fiscal_year, company_code, line_item_number,
-                customer_id, doc_type, posting_date, due_date, currency,
-                original_amount, open_amount, is_cleared, payment_block, reference_document, item_text
+                customer_id, doc_type, posting_date, due_date, baseline_date, currency,
+                original_amount, open_amount, is_cleared, payment_block, reference_document, item_text,
+                ledger, special_gl_indicator, payment_method, payment_terms,
+                dunning_block, dunning_level, transaction_type, reference_transaction_type
             FROM open_items
             WHERE customer_id = $1
             AND ($2 = TRUE OR is_cleared = FALSE)
@@ -169,10 +171,12 @@ impl InvoiceRepository {
             r#"
             INSERT INTO invoices (
                 invoice_id, document_number, company_code, fiscal_year,
-                document_date, posting_date, customer_id, currency,
-                total_amount, reference, status, created_at, updated_at
+                document_date, posting_date, baseline_date, customer_id, currency,
+                total_amount, reference, ledger, special_gl_indicator, payment_terms,
+                payment_method, payment_block, transaction_type, reference_transaction_type,
+                status, created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
             ON CONFLICT (invoice_id) DO UPDATE SET
                 status = EXCLUDED.status,
                 updated_at = EXCLUDED.updated_at
@@ -183,10 +187,18 @@ impl InvoiceRepository {
             .bind(invoice.fiscal_year)
             .bind(invoice.document_date)
             .bind(invoice.posting_date)
+            .bind(invoice.baseline_date)
             .bind(&invoice.customer_id)
             .bind(&invoice.currency)
             .bind(invoice.total_amount)
             .bind(&invoice.reference)
+            .bind(&invoice.ledger)
+            .bind(&invoice.special_gl_indicator)
+            .bind(&invoice.payment_terms)
+            .bind(&invoice.payment_method)
+            .bind(&invoice.payment_block)
+            .bind(&invoice.transaction_type)
+            .bind(&invoice.reference_transaction_type)
             .bind(status_str)
             .bind(invoice.created_at)
             .bind(invoice.updated_at)

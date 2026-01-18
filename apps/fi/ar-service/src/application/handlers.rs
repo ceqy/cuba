@@ -77,7 +77,7 @@ impl PostSalesInvoiceHandler {
 
     pub async fn handle(&self, cmd: PostSalesInvoiceCommand) -> anyhow::Result<Invoice> {
         // 1. Validate Customer exists
-        let _customer = self.customer_repo.find_by_customer_id(&cmd.customer_id).await?
+        let customer = self.customer_repo.find_by_customer_id(&cmd.customer_id).await?
             .ok_or_else(|| anyhow::anyhow!("Customer not found: {}", cmd.customer_id))?;
 
         // 2. Build Invoice Items
@@ -107,10 +107,18 @@ impl PostSalesInvoiceHandler {
             fiscal_year: cmd.document_date.year(),
             document_date: cmd.document_date,
             posting_date: cmd.posting_date,
+            baseline_date: Some(cmd.posting_date),
             customer_id: cmd.customer_id.clone(),
             currency: cmd.currency.clone(),
             total_amount,
             reference: cmd.reference_document.clone(),
+            ledger: cmd.ledger.clone(),
+            special_gl_indicator: None,
+            payment_terms: customer.payment_terms.clone(),
+            payment_method: None,
+            payment_block: None,
+            transaction_type: None,
+            reference_transaction_type: None,
             status: InvoiceStatus::Posted,
             items: items.clone(),
             created_at: now,
@@ -134,6 +142,9 @@ impl PostSalesInvoiceHandler {
                 special_gl_indicator: None, // 普通业务，特殊业务需要单独处理
                 ledger: cmd.ledger.clone(),
                 ledger_type: cmd.ledger_type,
+                financial_area: None,
+                business_area: None,
+                controlling_area: None,
             }
         }).collect();
 

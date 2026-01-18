@@ -65,8 +65,11 @@ impl TreasuryService for TrServiceImpl {
                 amount: Some(common_v1::MonetaryValue { value: t.amount.to_string(), currency_code: t.currency }),
                 memo: t.memo.unwrap_or_default(),
                 partner_name: t.partner_name.unwrap_or_default(),
+                transaction_type: t.transaction_type.unwrap_or_default(),
             }).collect(),
             audit_data: None,
+            house_bank: stmt.house_bank.unwrap_or_default(),
+            bank_account: stmt.bank_account.unwrap_or_default(),
         }))
     }
 
@@ -118,6 +121,10 @@ impl TreasuryService for TrServiceImpl {
                 }),
                 amount: Some(common_v1::MonetaryValue { value: d.amount.to_string(), currency_code: d.currency }),
                 payee_name: d.payee_name.unwrap_or_default(),
+                payment_method: d.payment_method.unwrap_or_default(),
+                house_bank: d.house_bank.unwrap_or_default(),
+                bank_account: d.bank_account.unwrap_or_default(),
+                transaction_type: d.transaction_type.unwrap_or_default(),
             }).collect(),
             exceptions: vec![],
             audit_data: None,

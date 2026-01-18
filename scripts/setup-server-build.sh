@@ -119,6 +119,7 @@ cat > ~/cuba/scripts/build-all-server.sh << 'BUILDSCRIPT'
 #!/bin/bash
 # 服务器端并行构建所有服务
 
+source ~/.cargo/env
 cd ~/cuba
 
 echo "🔨 开始编译所有服务..."
@@ -141,6 +142,7 @@ cat > ~/cuba/scripts/quick-build.sh << 'QUICKSCRIPT'
 #!/bin/bash
 # 快速构建单个服务
 
+source ~/.cargo/env
 if [ -z "$1" ]; then
     echo "用法: ./quick-build.sh <service-name>"
     echo "例如: ./quick-build.sh ap-service"

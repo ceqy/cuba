@@ -478,6 +478,16 @@ message OpenItem {
   }
   repeated InstallmentDetail installments = 11;
 
+  // ACDOCA minimal alignment
+  google.protobuf.Timestamp baseline_date = 12;
+  string payment_terms = 13;
+  string payment_method = 14;
+  string special_gl_indicator = 15;
+  string dunning_block = 16;
+  int32 dunning_level = 17;
+  string transaction_type = 18;
+  string reference_transaction_type = 19;
+
   // S/4HANA 调试信息 (仅内部透传)
   optional string ledger = 100;
 }
