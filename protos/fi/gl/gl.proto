@@ -490,6 +490,22 @@ message JournalEntryLineItem {
   PaymentTermsDetail payment_terms_detail = 53;
 
   // ============================================================================
+  // 组织维度字段 (Organizational Dimensions)
+  // ============================================================================
+  // 用于合并报表、段报告和管理会计
+  // SAP 字段映射:
+  //   - financial_area: RFAREA (财务范围)
+  //   - business_area: RBUSA (业务范围)
+  //   - controlling_area: KOKRS (控制范围)
+  // 影响:
+  //   - 合并报表编制（财务范围用于集团合并）
+  //   - 段报告和业务分析（业务范围用于业务线报告）
+  //   - 管理会计和成本控制（控制范围用于成本中心核算）
+  string financial_area = 54;              // 财务范围 (RFAREA) - 用于合并报表
+  string business_area = 55;               // 业务范围 (RBUSA) - 用于段报告
+  string controlling_area = 56;            // 控制范围 (KOKRS) - 用于管理会计
+
+  // ============================================================================
   // 发票参考字段 (Invoice Reference / REBZG)
   // ============================================================================
   // 用于贷项凭证（Credit Memo）追溯原始发票
