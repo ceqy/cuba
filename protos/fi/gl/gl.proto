@@ -378,6 +378,17 @@ enum DocumentOrigin {
   DOCUMENT_ORIGIN_FX = 6;               // 汇兑差异
 }
 
+// 特殊总账类型 (Special G/L Type / UMSKZ)
+// 用于区分特殊业务类型，影响应收/应付账款分类、报表列示和清账逻辑
+enum SpecialGlType {
+  SPECIAL_GL_TYPE_UNSPECIFIED = 0;
+  SPECIAL_GL_TYPE_NORMAL = 1;           // 普通业务（无特殊标识）
+  SPECIAL_GL_TYPE_BILL_OF_EXCHANGE = 2; // A - 票据 (Bills of Exchange)
+  SPECIAL_GL_TYPE_DOWN_PAYMENT = 3;     // F - 预付款 (Down Payment)
+  SPECIAL_GL_TYPE_ADVANCE_PAYMENT = 4;  // V - 预收款 (Advance Payment)
+  SPECIAL_GL_TYPE_BILL_DISCOUNT = 5;    // W - 票据贴现 (Bill of Exchange Discount)
+}
+
 // ============================================================================
 // 数据结构: 核心凭证模型
 // ============================================================================
@@ -396,8 +407,9 @@ message JournalEntryHeader {
   string header_text = 10;             // 凭证抬头文本 (BKTXT)
   DocumentOrigin origin = 11;          // 来源系统
   string logical_system = 12;          // 逻辑系统 (AWSYS)
-  string ledger_group = 13;             // 分类账组 (LDGRP)
-  common.v1.AuditData audit = 14; 
+  string ledger_group = 13;            // 分类账组 (LDGRP)
+  string default_ledger = 14;          // 默认分类账 (RLDNR: 0L, 1L, 2L...) - 用于并行会计
+  common.v1.AuditData audit = 15; 
 }
 
 // 凭证行项目 (类似 SAP ACDOCA / BSEG 表)
@@ -435,6 +447,29 @@ message JournalEntryLineItem {
 
   // 数量
   common.v1.QuantityValue quantity = 21;
+
+  // ============================================================================
+  // 特殊总账标识 (Special G/L Indicator / UMSKZ)
+  // ============================================================================
+  // 用于区分特殊业务类型（票据、预付款、预收款等）
+  // 常见值:
+  //   - 空值 = 普通业务
+  //   - A = 票据 (Bills of Exchange)
+  //   - F = 预付款 (Down Payment)
+  //   - V = 预收款 (Advance Payment)
+  //   - W = 票据贴现 (Bill of Exchange Discount)
+  // 影响:
+  //   - 应收/应付账款的分类管理
+  //   - 财务报表的准确性（预付款需要单独列示）
+  //   - 清账逻辑（特殊总账项目的清账规则不同）
+  string special_gl_indicator = 22;    // 特殊总账标识 (UMSKZ)
+
+  // ============================================================================
+  // 并行会计字段 (Parallel Accounting / RLDNR)
+  // ============================================================================
+  string ledger = 50;                      // 分类账编号 (RLDNR: 0L, 1L, 2L...)
+  LedgerType ledger_type = 51;             // 分类账类型（主账/非主账/扩展账）
+  common.v1.MonetaryValue amount_in_ledger_currency = 52; // 分类账货币金额（用于不同会计准则下的金额差异）
 }
 
 // 凭证税行
@@ -499,6 +534,7 @@ message ListJournalEntriesRequest {
   string created_by = 5;
   repeated JournalEntryStatus status_filter = 6;
   string gl_account = 7;
+  repeated string ledgers = 8;             // 按分类账过滤（支持并行会计查询）
   common.v1.PaginationRequest pagination = 98;
   common.v1.RequestContext context = 99;
 }

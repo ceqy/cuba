@@ -51,6 +51,21 @@ impl<R: JournalRepository> CreateJournalEntryHandler<R> {
         }
 
         let lines: Vec<LineItem> = cmd.lines.into_iter().enumerate().map(|(i, l)| -> Result<LineItem, Box<dyn std::error::Error + Send + Sync>> {
+            // 解析特殊总账标识
+            let special_gl_indicator = if let Some(ref code) = l.special_gl_indicator {
+                crate::domain::aggregates::journal_entry::SpecialGlType::from_sap_code(code)
+            } else {
+                crate::domain::aggregates::journal_entry::SpecialGlType::Normal
+            };
+
+            // 解析并行会计字段
+            let ledger = l.ledger.unwrap_or_else(|| "0L".to_string());
+            let ledger_type = if let Some(lt) = l.ledger_type {
+                crate::domain::aggregates::journal_entry::LedgerType::from(lt)
+            } else {
+                crate::domain::aggregates::journal_entry::LedgerType::Leading
+            };
+
             Ok(LineItem {
                 id: Uuid::new_v4(),
                 line_number: (i + 1) as i32,
@@ -65,6 +80,10 @@ impl<R: JournalRepository> CreateJournalEntryHandler<R> {
                 cost_center: l.cost_center,
                 profit_center: l.profit_center,
                 text: l.text,
+                special_gl_indicator,
+                ledger,
+                ledger_type,
+                ledger_amount: l.ledger_amount,
             })
         }).collect::<Result<Vec<_>, _>>()?;
 
@@ -255,6 +274,21 @@ impl<R: JournalRepository> UpdateJournalEntryHandler<R> {
         // Convert LineItemDTO to LineItem if provided
         let lines = if let Some(line_dtos) = cmd.lines {
             let converted_lines: Vec<LineItem> = line_dtos.into_iter().enumerate().map(|(i, l)| -> Result<LineItem, Box<dyn std::error::Error + Send + Sync>> {
+                // 解析特殊总账标识
+                let special_gl_indicator = if let Some(ref code) = l.special_gl_indicator {
+                    crate::domain::aggregates::journal_entry::SpecialGlType::from_sap_code(code)
+                } else {
+                    crate::domain::aggregates::journal_entry::SpecialGlType::Normal
+                };
+
+                // 解析并行会计字段
+                let ledger = l.ledger.unwrap_or_else(|| "0L".to_string());
+                let ledger_type = if let Some(lt) = l.ledger_type {
+                    crate::domain::aggregates::journal_entry::LedgerType::from(lt)
+                } else {
+                    crate::domain::aggregates::journal_entry::LedgerType::Leading
+                };
+
                 Ok(LineItem {
                     id: Uuid::new_v4(),
                     line_number: (i + 1) as i32,
@@ -269,6 +303,10 @@ impl<R: JournalRepository> UpdateJournalEntryHandler<R> {
                     cost_center: l.cost_center,
                     profit_center: l.profit_center,
                     text: l.text,
+                    special_gl_indicator,
+                    ledger,
+                    ledger_type,
+                    ledger_amount: l.ledger_amount,
                 })
             }).collect::<Result<Vec<_>, _>>()?;
             Some(converted_lines)

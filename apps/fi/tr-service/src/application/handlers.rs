@@ -80,6 +80,9 @@ impl TreasuryHandler {
                 profit_center: None,
                 item_text: Some(format!("Payment Run {} - Clear AP", run_number)),
                 business_partner: Some("Vendor ABC".to_string()),
+                special_gl_indicator: None,
+                ledger: None,
+                ledger_type: None,
             },
             GlLineItem {
                 gl_account: "113000".to_string(), // Bank Account
@@ -89,6 +92,9 @@ impl TreasuryHandler {
                 profit_center: None,
                 item_text: Some(format!("Payment Run {} - Bank Outflow", run_number)),
                 business_partner: None,
+                special_gl_indicator: None,
+                ledger: None,
+                ledger_type: None,
             },
         ];
 
@@ -104,6 +110,7 @@ impl TreasuryHandler {
             Some(format!("TR-{}", run_id)),
             Some(format!("Payment Run {}", run_number)),
             gl_line_items,
+            None, // 使用默认主分类账 "0L"
         ).await {
             Ok(response) => {
                 tracing::info!(

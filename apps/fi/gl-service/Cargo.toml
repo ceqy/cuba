@@ -44,7 +44,10 @@ tracing.workspace = true
 rust_decimal = { version = "1.33", features = ["serde"] }
 
 # Error Handling
-thiserror = "1.0"
+thiserror.workspace = true
+
+[dev-dependencies]
+rust_decimal_macros = "1.33"
 
 [build-dependencies]
 tonic-build.workspace = true

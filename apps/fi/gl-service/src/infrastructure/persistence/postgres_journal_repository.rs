@@ -70,11 +70,12 @@ impl JournalRepository for PostgresJournalRepository {
             sqlx::query(
                 r#"
                 INSERT INTO journal_entry_lines (
-                    id, journal_entry_id, line_number, account_id, 
-                    debit_credit, amount, local_amount, 
-                    cost_center, profit_center, line_text
+                    id, journal_entry_id, line_number, account_id,
+                    debit_credit, amount, local_amount,
+                    cost_center, profit_center, line_text,
+                    special_gl_indicator, ledger, ledger_type, ledger_amount
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
                 "#
             )
             .bind(line.id)
@@ -87,6 +88,10 @@ impl JournalRepository for PostgresJournalRepository {
             .bind(&line.cost_center)
             .bind(&line.profit_center)
             .bind(&line.text)
+            .bind(line.special_gl_indicator.to_sap_code())
+            .bind(&line.ledger)
+            .bind(i32::from(line.ledger_type))
+            .bind(line.ledger_amount)
             .execute(&mut *tx)
             .await?;
         }
@@ -116,11 +121,12 @@ impl JournalRepository for PostgresJournalRepository {
 
             let lines_rows = sqlx::query(
                 r#"
-                SELECT 
-                    id, line_number, account_id, debit_credit, amount, local_amount, 
-                    cost_center, profit_center, line_text
-                FROM journal_entry_lines 
-                WHERE journal_entry_id = $1 
+                SELECT
+                    id, line_number, account_id, debit_credit, amount, local_amount,
+                    cost_center, profit_center, line_text,
+                    special_gl_indicator, ledger, ledger_type, ledger_amount
+                FROM journal_entry_lines
+                WHERE journal_entry_id = $1
                 ORDER BY line_number ASC
                 "#
             )
@@ -131,6 +137,16 @@ impl JournalRepository for PostgresJournalRepository {
             let lines = lines_rows.into_iter().map(|l| {
                 let dc_str: String = l.get("debit_credit");
                 let dc = DebitCredit::from_char(dc_str.chars().next().unwrap()).unwrap();
+
+                // 读取特殊总账标识
+                let special_gl_code: String = l.get::<Option<String>, _>("special_gl_indicator").unwrap_or_default();
+                let special_gl_indicator = crate::domain::aggregates::journal_entry::SpecialGlType::from_sap_code(&special_gl_code);
+
+                // 读取并行会计字段
+                let ledger: String = l.get::<Option<String>, _>("ledger").unwrap_or_else(|| "0L".to_string());
+                let ledger_type_int: i32 = l.get::<Option<i32>, _>("ledger_type").unwrap_or(1);
+                let ledger_type = crate::domain::aggregates::journal_entry::LedgerType::from(ledger_type_int);
+
                 LineItem {
                     id: l.get("id"),
                     line_number: l.get("line_number"),
@@ -141,6 +157,10 @@ impl JournalRepository for PostgresJournalRepository {
                     cost_center: l.get("cost_center"),
                     profit_center: l.get("profit_center"),
                     text: l.get("line_text"),
+                    special_gl_indicator,
+                    ledger,
+                    ledger_type,
+                    ledger_amount: l.get("ledger_amount"),
                 }
             }).collect();
 
@@ -158,6 +178,9 @@ impl JournalRepository for PostgresJournalRepository {
                 created_at: row.get("created_at"),
                 posted_at: row.get("posted_at"),
                 tenant_id: row.get("tenant_id"),
+                // 并行会计默认值（从数据库读取时暂时使用默认值）
+                ledger_group: None,
+                default_ledger: "0L".to_string(),
             }))
         } else {
             Ok(None)

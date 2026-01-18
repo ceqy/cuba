@@ -349,10 +349,12 @@ impl AccountsReceivablePayableService for ApServiceImpl {
                     amount: rust_decimal::Decimal::from_str(&item.amount.unwrap_or_default().value).unwrap_or_default(),
                     cost_center: if item.cost_center.is_empty() { None } else { Some(item.cost_center) },
                     item_text: if item.item_text.is_empty() { None } else { Some(item.item_text) },
-                    purchase_order: None, 
+                    purchase_order: None,
                     po_item_number: None,
                 }
             }).collect(),
+            ledger: None,           // 使用默认主分类账 "0L"
+            ledger_type: None,      // 使用默认类型
         };
 
         let invoice = self.post_invoice_handler.handle(cmd).await?;

@@ -330,6 +330,8 @@ impl AccountsReceivablePayableService for ArServiceImpl {
                     item_text: if item.item_text.is_empty() { None } else { Some(item.item_text) },
                 }
             }).collect(),
+            ledger: None,           // 使用默认主分类账 "0L"
+            ledger_type: None,      // 使用默认类型
         };
 
         let invoice = self.post_sales_invoice_handler.handle(cmd).await

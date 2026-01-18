@@ -71,6 +71,9 @@ impl AllocationHandler {
                 profit_center: None,
                 item_text: Some(format!("Cost allocation from {} cycle {}", run.allocation_type, run.allocation_cycle)),
                 business_partner: None,
+                special_gl_indicator: None,
+                ledger: None,
+                ledger_type: None,
             },
             GlLineItem {
                 gl_account: "6100".to_string(), // Sending CC expense
@@ -80,6 +83,9 @@ impl AllocationHandler {
                 profit_center: None,
                 item_text: Some(format!("Cost allocation to {} cycle {}", run.allocation_type, run.allocation_cycle)),
                 business_partner: None,
+                special_gl_indicator: None,
+                ledger: None,
+                ledger_type: None,
             },
         ];
 
@@ -94,6 +100,7 @@ impl AllocationHandler {
             Some(format!("CO-{}", run_id)),
             Some(format!("{} Allocation Run", cmd.allocation_type)),
             gl_line_items,
+            None, // 使用默认主分类账 "0L"
         ).await {
             Ok(response) => {
                 tracing::info!(

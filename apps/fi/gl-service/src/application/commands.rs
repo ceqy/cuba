@@ -11,6 +11,10 @@ pub struct LineItemDTO {
     pub cost_center: Option<String>,
     pub profit_center: Option<String>,
     pub text: Option<String>,
+    pub special_gl_indicator: Option<String>, // UMSKZ: A, F, V, W, or empty
+    pub ledger: Option<String>,               // RLDNR: 0L, 1L, 2L...
+    pub ledger_type: Option<i32>,             // 1=Leading, 2=NonLeading, 3=Extension
+    pub ledger_amount: Option<Decimal>,       // Amount in ledger currency
 }
 
 #[derive(Debug, Deserialize)]

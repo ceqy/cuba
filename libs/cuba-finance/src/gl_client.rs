@@ -48,20 +48,21 @@ impl GlClient {
         Ok(Self { client })
     }
 
-    /// Create a journal entry in GL for financial transactions.
+    /// 在总账中创建会计分录
     ///
-    /// # Arguments
-    /// * `company_code` - Company code
-    /// * `document_date` - Document date
-    /// * `posting_date` - Posting date
-    /// * `fiscal_year` - Fiscal year
-    /// * `currency` - Currency code (e.g., "USD")
-    /// * `reference_document` - Optional reference document number
-    /// * `header_text` - Optional header text description
-    /// * `line_items` - Journal entry line items (debits and credits)
+    /// # 参数
+    /// * `company_code` - 公司代码
+    /// * `document_date` - 凭证日期
+    /// * `posting_date` - 过账日期
+    /// * `fiscal_year` - 会计年度
+    /// * `currency` - 货币代码 (例如 "USD")
+    /// * `reference_document` - 可选的参考凭证号
+    /// * `header_text` - 可选的抬头文本描述
+    /// * `line_items` - 会计分录行项目（借方和贷方）
+    /// * `ledger_id` - 可选的分类账 ID（默认为 "0L" 主分类账）
     ///
-    /// # Returns
-    /// GL journal entry response with document number
+    /// # 返回
+    /// 包含凭证编号的总账分录响应
     pub async fn create_invoice_journal_entry(
         &mut self,
         company_code: &str,
@@ -72,7 +73,11 @@ impl GlClient {
         reference_document: Option<String>,
         header_text: Option<String>,
         line_items: Vec<GlLineItem>,
+        ledger_id: Option<&str>,
     ) -> Result<gl_v1::JournalEntryResponse, tonic::Status> {
+        // 使用提供的 ledger_id 或默认使用 "0L"（主分类账）
+        let default_ledger = ledger_id.unwrap_or("0L").to_string();
+
         let header = gl_v1::JournalEntryHeader {
             company_code: company_code.to_string(),
             document_type: "KR".to_string(), // Vendor Invoice (can be parameterized if needed)
@@ -87,6 +92,7 @@ impl GlClient {
             origin: gl_v1::DocumentOrigin::Api as i32,
             logical_system: "".to_string(),
             ledger_group: "".to_string(),
+            default_ledger: default_ledger.clone(),
             audit: None,
         };
 
@@ -126,6 +132,14 @@ impl GlClient {
                     clearing_document: "".to_string(),
                     clearing_date: None,
                     quantity: None,
+                    special_gl_indicator: item.special_gl_indicator.unwrap_or_default(),
+                    // 使用行项目指定的分类账，如果没有则使用默认分类账
+                    ledger: item.ledger.unwrap_or_else(|| default_ledger.clone()),
+                    ledger_type: item.ledger_type.unwrap_or(1), // 默认为 Leading (1)
+                    amount_in_ledger_currency: Some(proto::common::v1::MonetaryValue {
+                        value: item.amount.to_string(),
+                        currency_code: currency.to_string(),
+                    }),
                 }
             })
             .collect();
@@ -153,6 +167,9 @@ pub struct GlLineItem {
     pub profit_center: Option<String>,
     pub item_text: Option<String>,
     pub business_partner: Option<String>,
+    pub special_gl_indicator: Option<String>, // UMSKZ: A, F, V, W
+    pub ledger: Option<String>,               // 分类账
+    pub ledger_type: Option<i32>,             // 分类账类型
 }
 
 /// Convert NaiveDate to protobuf Timestamp

@@ -81,7 +81,12 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
             let amount_doc = l.amount_in_document_currency.ok_or_else(|| Status::invalid_argument("Missing amount"))?;
             let amount = Decimal::from_str(&amount_doc.value)
                 .map_err(|e| Status::invalid_argument(format!("Invalid amount: {}", e)))?;
-            
+
+            // 解析并行会计字段
+            let ledger_amount = l.amount_in_ledger_currency.and_then(|amt| {
+                Decimal::from_str(&amt.value).ok()
+            });
+
             Ok(LineItemDTO {
                 account_id: l.gl_account,
                 debit_credit: l.debit_credit_indicator,
@@ -89,6 +94,10 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 cost_center: if l.cost_center.is_empty() { None } else { Some(l.cost_center) },
                 profit_center: if l.profit_center.is_empty() { None } else { Some(l.profit_center) },
                 text: if l.text.is_empty() { None } else { Some(l.text) },
+                special_gl_indicator: if l.special_gl_indicator.is_empty() { None } else { Some(l.special_gl_indicator) },
+                ledger: if l.ledger.is_empty() { None } else { Some(l.ledger) },
+                ledger_type: if l.ledger_type == 0 { None } else { Some(l.ledger_type) },
+                ledger_amount,
             })
         }).collect();
 
@@ -265,6 +274,10 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 cost_center: if item.cost_center.is_empty() { None } else { Some(item.cost_center) },
                 profit_center: if item.profit_center.is_empty() { None } else { Some(item.profit_center) },
                 text: if item.text.is_empty() { None } else { Some(item.text) },
+                special_gl_indicator: if item.special_gl_indicator.is_empty() { None } else { Some(item.special_gl_indicator) },
+                ledger: if item.ledger.is_empty() { None } else { Some(item.ledger) },
+                ledger_type: if item.ledger_type == 0 { None } else { Some(item.ledger_type) },
+                ledger_amount: item.amount_in_ledger_currency.and_then(|amt| Decimal::from_str(&amt.value).ok()),
             }
         }).collect();
 
@@ -506,6 +519,10 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 cost_center: if item.cost_center.is_empty() { None } else { Some(item.cost_center) },
                 profit_center: if item.profit_center.is_empty() { None } else { Some(item.profit_center) },
                 text: if item.text.is_empty() { None } else { Some(item.text) },
+                special_gl_indicator: if item.special_gl_indicator.is_empty() { None } else { Some(item.special_gl_indicator) },
+                ledger: if item.ledger.is_empty() { None } else { Some(item.ledger) },
+                ledger_type: if item.ledger_type == 0 { None } else { Some(item.ledger_type) },
+                ledger_amount: item.amount_in_ledger_currency.and_then(|amt| Decimal::from_str(&amt.value).ok()),
             }
         }).collect();
 
@@ -621,6 +638,10 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                     cost_center: if l.cost_center.is_empty() { None } else { Some(l.cost_center) },
                     profit_center: if l.profit_center.is_empty() { None } else { Some(l.profit_center) },
                     text: if l.text.is_empty() { None } else { Some(l.text) },
+                    special_gl_indicator: if l.special_gl_indicator.is_empty() { None } else { Some(l.special_gl_indicator) },
+                    ledger: if l.ledger.is_empty() { None } else { Some(l.ledger) },
+                    ledger_type: if l.ledger_type == 0 { None } else { Some(l.ledger_type) },
+                    ledger_amount: l.amount_in_ledger_currency.and_then(|amt| Decimal::from_str(&amt.value).ok()),
                 })
             }).collect();
 
@@ -946,6 +967,13 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                         clearing_document: "".to_string(),
                         clearing_date: None,
                         quantity: None,
+                        special_gl_indicator: line.special_gl_indicator.to_sap_code().to_string(),
+                        ledger: line.ledger,
+                        ledger_type: line.ledger_type as i32,
+                        amount_in_ledger_currency: line.ledger_amount.map(|amt| common_v1::MonetaryValue {
+                            value: amt.to_string(),
+                            currency_code: entry.currency.clone(),
+                        }),
                     });
                 }
             }
@@ -1007,19 +1035,20 @@ fn map_to_detail(entry: crate::domain::aggregates::journal_entry::JournalEntry) 
              ..Default::default()
         }),
         header: Some(JournalEntryHeader {
-            company_code: entry.company_code,
+            company_code: entry.company_code.clone(),
             fiscal_year: entry.fiscal_year,
             posting_date: Some(prost_types::Timestamp { seconds: entry.posting_date.and_hms_opt(0,0,0).unwrap().and_utc().timestamp(), nanos: 0 }),
             document_date: Some(prost_types::Timestamp { seconds: entry.document_date.and_hms_opt(0,0,0).unwrap().and_utc().timestamp(), nanos: 0 }),
-            currency: entry.currency,
-            reference_document: entry.reference.unwrap_or_default(),
+            currency: entry.currency.clone(),
+            reference_document: entry.reference.clone().unwrap_or_default(),
             header_text: "".to_string(),
             document_type: "SA".to_string(),
             fiscal_period: 1,
             exchange_rate: "1.0".to_string(),
             origin: DocumentOrigin::Api as i32,
             logical_system: "".to_string(),
-            ledger_group: "".to_string(),
+            ledger_group: entry.ledger_group.unwrap_or_default(),
+            default_ledger: entry.default_ledger.clone(),
             audit: None,
         }),
         line_items: entry.lines.into_iter().map(|l| JournalEntryLineItem {
@@ -1028,7 +1057,7 @@ fn map_to_detail(entry: crate::domain::aggregates::journal_entry::JournalEntry) 
             debit_credit_indicator: l.debit_credit.as_char().to_string(),
             amount_in_document_currency: Some(crate::infrastructure::grpc::common::v1::MonetaryValue {
                 value: l.amount.to_string(),
-                currency_code: "CNY".to_string(), 
+                currency_code: "CNY".to_string(),
             }),
             amount_in_local_currency: Some(crate::infrastructure::grpc::common::v1::MonetaryValue {
                  value: l.local_amount.to_string(),
@@ -1037,6 +1066,7 @@ fn map_to_detail(entry: crate::domain::aggregates::journal_entry::JournalEntry) 
             cost_center: l.cost_center.unwrap_or_default(),
             profit_center: l.profit_center.unwrap_or_default(),
             text: l.text.unwrap_or_default(),
+            special_gl_indicator: l.special_gl_indicator.to_sap_code().to_string(),
             // Defaults
             posting_key: "".to_string(),
             account_type: crate::infrastructure::grpc::common::v1::AccountType::Gl as i32,
@@ -1051,6 +1081,12 @@ fn map_to_detail(entry: crate::domain::aggregates::journal_entry::JournalEntry) 
             clearing_document: "".to_string(),
             clearing_date: None,
             quantity: None,
+            ledger: l.ledger,
+            ledger_type: l.ledger_type as i32,
+            amount_in_ledger_currency: l.ledger_amount.map(|amt| crate::infrastructure::grpc::common::v1::MonetaryValue {
+                value: amt.to_string(),
+                currency_code: "CNY".to_string(),
+            }),
         }).collect(),
         tax_items: vec![],
         status: match entry.status {

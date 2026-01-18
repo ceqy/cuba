@@ -42,6 +42,8 @@ pub struct PostSalesInvoiceCommand {
     pub reference_document: Option<String>,
     pub header_text: Option<String>,
     pub items: Vec<SalesInvoiceItemCommand>,
+    pub ledger: Option<String>,           // 分类账
+    pub ledger_type: Option<i32>,         // 分类账类型
 }
 
 #[derive(Debug, Clone, Deserialize)]

@@ -131,6 +131,9 @@ impl PostSalesInvoiceHandler {
                 profit_center: None,
                 item_text: item.item_text.clone(),
                 business_partner: Some(cmd.customer_id.clone()),
+                special_gl_indicator: None, // 普通业务，特殊业务需要单独处理
+                ledger: cmd.ledger.clone(),
+                ledger_type: cmd.ledger_type,
             }
         }).collect();
 
@@ -145,6 +148,7 @@ impl PostSalesInvoiceHandler {
             invoice.reference.clone(),
             None,
             gl_line_items,
+            None, // 使用默认主分类账 "0L"
         ).await {
             Ok(response) => {
                 tracing::info!(
