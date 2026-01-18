@@ -10,7 +10,7 @@ use tokio::sync::Mutex;
 use crate::application::commands::{PostSupplierCommand, PostInvoiceCommand, ListOpenItemsQuery};
 use crate::domain::{Supplier, Invoice, InvoiceItem, OpenItem};
 use crate::infrastructure::repository::{InvoiceRepository, SupplierRepository, OpenItemRepository};
-use crate::infrastructure::gl_client::{GlClient, GlLineItem};
+use cuba_finance::{GlClient, GlLineItem};
 
 
 /// Handler for posting invoices

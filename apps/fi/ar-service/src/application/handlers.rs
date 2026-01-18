@@ -63,14 +63,14 @@ impl ListOpenItemsHandler {
 pub struct PostSalesInvoiceHandler {
     customer_repo: Arc<CustomerRepository>,
     invoice_repo: Arc<InvoiceRepository>,
-    gl_client: Arc<tokio::sync::Mutex<crate::infrastructure::gl_client::GlClient>>,
+    gl_client: Arc<tokio::sync::Mutex<cuba_finance::GlClient>>,
 }
 
 impl PostSalesInvoiceHandler {
     pub fn new(
         customer_repo: Arc<CustomerRepository>,
         invoice_repo: Arc<InvoiceRepository>,
-        gl_client: Arc<tokio::sync::Mutex<crate::infrastructure::gl_client::GlClient>>,
+        gl_client: Arc<tokio::sync::Mutex<cuba_finance::GlClient>>,
     ) -> Self {
         Self { customer_repo, invoice_repo, gl_client }
     }
@@ -122,8 +122,8 @@ impl PostSalesInvoiceHandler {
 
         // 5. Integrate with GL - Create Journal Entry
         // AR Invoice: Debit Receivables, Credit Revenue
-        let gl_line_items: Vec<crate::infrastructure::gl_client::GlLineItem> = cmd.items.iter().map(|item| {
-            crate::infrastructure::gl_client::GlLineItem {
+        let gl_line_items: Vec<cuba_finance::GlLineItem> = cmd.items.iter().map(|item| {
+            cuba_finance::GlLineItem {
                 gl_account: item.gl_account.clone(),
                 debit_credit: item.debit_credit.clone(),
                 amount: item.amount,

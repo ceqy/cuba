@@ -1,12 +1,10 @@
 use tonic::transport::Server;
 use tracing::info;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 
 use co_service::api::grpc_server::CoServiceImpl;
 use co_service::api::proto::fi::co::v1::controlling_allocation_service_server::ControllingAllocationServiceServer;
 use co_service::infrastructure::repository::AllocationRepository;
-use co_service::infrastructure::gl_client::GlClient;
 use co_service::application::handlers::AllocationHandler;
 
 #[tokio::main]
@@ -16,19 +14,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let pool = context.db_pool;
     let addr = context.addr;
 
-    // GL Service Endpoint
-    let gl_endpoint = std::env::var("GL_SERVICE_URL")
-        .unwrap_or_else(|_| "http://localhost:50051".to_string());
-    info!("GL Service endpoint: {}", gl_endpoint);
-
     let migrator = sqlx::migrate!("./migrations");
     cuba_database::run_migrations(&pool, &migrator).await?;
 
-    // GL Client
-    let gl_client = Arc::new(Mutex::new(
-        GlClient::new(&gl_endpoint).await
-            .map_err(|e| format!("Failed to connect to GL service: {}", e))?
-    ));
+    // Initialize GL Client using unified function
+    let gl_client = cuba_finance::create_gl_client(
+        "http://gl-service.cuba-fi.svc.cluster.local:50060"
+    ).await?;
     
     let repo = Arc::new(AllocationRepository::new(pool.clone()));
     let handler = Arc::new(AllocationHandler::new(repo.clone(), gl_client));

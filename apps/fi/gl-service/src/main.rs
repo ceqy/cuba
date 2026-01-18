@@ -1,20 +1,5 @@
 use tonic::transport::Server;
 use gl_service::infrastructure::grpc::fi::gl::v1::gl_journal_entry_service_server::GlJournalEntryServiceServer;
-use gl_service::api::grpc_server::GlServiceImpl;
-use gl_service::infrastructure::persistence::postgres_journal_repository::PostgresJournalRepository;
-use gl_service::infrastructure::clients::CoaClient;
-use gl_service::domain::services::AccountValidationService;
-use gl_service::application::handlers::{
-    CreateJournalEntryHandler,
-    GetJournalEntryHandler,
-    ListJournalEntriesHandler,
-    PostJournalEntryHandler,
-    ReverseJournalEntryHandler,
-    DeleteJournalEntryHandler,
-    ParkJournalEntryHandler,
-    UpdateJournalEntryHandler,
-};
-use std::sync::Arc;
 use tracing::info;
 
 #[tokio::main]
@@ -28,51 +13,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let migrator = sqlx::migrate!("./migrations");
     cuba_database::run_migrations(&pool, &migrator).await?;
 
-    // Infrastructure
-    let journal_repo = Arc::new(PostgresJournalRepository::new(pool.clone()));
-
-    // Initialize COA client (optional - gracefully degrade if unavailable)
+    // Get COA service endpoint (optional)
     let coa_endpoint = std::env::var("COA_SERVICE_URL")
-        .unwrap_or_else(|_| "http://coa-service.cuba-fi.svc.cluster.local:50065".to_string());
+        .ok()
+        .or_else(|| Some("http://coa-service.cuba-fi.svc.cluster.local:50065".to_string()));
 
-    let account_validation = match CoaClient::connect(&coa_endpoint).await {
-        Ok(coa_client) => {
-            info!("Connected to COA service at {}", coa_endpoint);
-            let chart_code = std::env::var("CHART_OF_ACCOUNTS").unwrap_or_else(|_| "CN01".to_string());
-            Some(Arc::new(AccountValidationService::new(coa_client, chart_code)))
-        }
-        Err(e) => {
-            tracing::warn!("Failed to connect to COA service: {}. Account validation will be skipped.", e);
-            None
-        }
-    };
-
-    // Application Handlers
-    let mut create_handler = CreateJournalEntryHandler::new(journal_repo.clone());
-    if let Some(validator) = account_validation {
-        create_handler = create_handler.with_account_validation(validator);
-    }
-    let create_handler = Arc::new(create_handler);
-
-    let get_handler = Arc::new(GetJournalEntryHandler::new(journal_repo.clone()));
-    let list_handler = Arc::new(ListJournalEntriesHandler::new(journal_repo.clone()));
-    let post_handler = Arc::new(PostJournalEntryHandler::new(journal_repo.clone()));
-    let reverse_handler = Arc::new(ReverseJournalEntryHandler::new(journal_repo.clone()));
-    let delete_handler = Arc::new(DeleteJournalEntryHandler::new(journal_repo.clone()));
-    let park_handler = Arc::new(ParkJournalEntryHandler::new(journal_repo.clone()));
-    let update_handler = Arc::new(UpdateJournalEntryHandler::new(journal_repo.clone()));
-
-    // API
-    let gl_service = GlServiceImpl::new(
-        create_handler,
-        get_handler,
-        list_handler,
-        post_handler,
-        reverse_handler,
-        delete_handler,
-        park_handler,
-        update_handler,
-    );
+    // Create GL Service with all dependencies wired up
+    let gl_service = gl_service::create_gl_service(pool, coa_endpoint).await?;
 
     // Reflection Service
     let reflection_service = tonic_reflection::server::Builder::configure()

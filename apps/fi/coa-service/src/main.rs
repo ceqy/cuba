@@ -26,8 +26,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("COA Service listening on {}", addr);
 
+    // Reflection Service
+    let reflection_service = tonic_reflection::server::Builder::configure()
+        .register_encoded_file_descriptor_set(coa_service::infrastructure::grpc::fi::coa::v1::FILE_DESCRIPTOR_SET)
+        .build_v1()?;
+
     // Start gRPC server
     Server::builder()
+        .add_service(reflection_service)
         .add_service(ChartOfAccountsServiceServer::new(grpc_service))
         .serve(addr)
         .await?;

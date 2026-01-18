@@ -8,6 +8,7 @@ license.workspace = true
 [dependencies]
 cuba-core.workspace = true
 cuba-errors.workspace = true
+cuba-finance.workspace = true
 anyhow.workspace = true
 cuba-cqrs.workspace = true
 cuba-database.workspace = true

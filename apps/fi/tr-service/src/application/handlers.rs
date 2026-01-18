@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use crate::domain::{BankStatement, StatementTransaction, PaymentRun, PaymentDocument};
 use crate::infrastructure::repository::TreasuryRepository;
-use crate::infrastructure::gl_client::{GlClient, GlLineItem};
+use cuba_finance::{GlClient, GlLineItem};
 use crate::application::commands::{ProcessStatementCommand, ExecutePaymentRunCommand};
 use anyhow::Result;
 use uuid::Uuid;

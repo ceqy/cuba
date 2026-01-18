@@ -20,6 +20,7 @@ cuba-errors = { path = "libs/cuba-errors" }
 cuba-messaging = { path = "libs/cuba-messaging" }
 cuba-telemetry = { path = "libs/cuba-telemetry" }
 cuba-cqrs = { path = "libs/cuba-cqrs" }
+cuba-finance = { path = "libs/cuba-finance" }
 
 # Async
 tokio = { version = "1.49", features = ["full"] }

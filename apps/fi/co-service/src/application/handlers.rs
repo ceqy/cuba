@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use crate::domain::{AllocationRun, AllocationSender, AllocationReceiver};
 use crate::infrastructure::repository::AllocationRepository;
-use crate::infrastructure::gl_client::{GlClient, GlLineItem};
+use cuba_finance::{GlClient, GlLineItem};
 use crate::application::commands::ExecuteAllocationCommand;
 use anyhow::Result;
 use uuid::Uuid;
