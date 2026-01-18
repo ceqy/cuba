@@ -18,6 +18,7 @@ use crate::application::queries::{
     GetJournalEntryQuery, ListJournalEntriesQuery
 };
 use crate::domain::repositories::JournalRepository;
+use crate::domain::aggregates::journal_entry::SpecialGlType;
 
 pub struct GlServiceImpl<R> {
     create_handler: Arc<CreateJournalEntryHandler<R>>,
@@ -87,6 +88,21 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 Decimal::from_str(&amt.value).ok()
             });
 
+            // 验证特殊总账标识
+            let special_gl_indicator = if l.special_gl_indicator.is_empty() {
+                None
+            } else {
+                // 验证特殊总账标识是否有效
+                let gl_type = SpecialGlType::from_sap_code(&l.special_gl_indicator);
+                if !gl_type.is_special() && !l.special_gl_indicator.is_empty() {
+                    return Err(Status::invalid_argument(
+                        format!("Invalid special_gl_indicator '{}' on line {}. Valid values: A (Bill of Exchange), F (Down Payment), V (Advance Payment), W (Bill Discount)",
+                            l.special_gl_indicator, l.line_item_number)
+                    ));
+                }
+                Some(l.special_gl_indicator)
+            };
+
             Ok(LineItemDTO {
                 account_id: l.gl_account,
                 debit_credit: l.debit_credit_indicator,
@@ -94,7 +110,7 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 cost_center: if l.cost_center.is_empty() { None } else { Some(l.cost_center) },
                 profit_center: if l.profit_center.is_empty() { None } else { Some(l.profit_center) },
                 text: if l.text.is_empty() { None } else { Some(l.text) },
-                special_gl_indicator: if l.special_gl_indicator.is_empty() { None } else { Some(l.special_gl_indicator) },
+                special_gl_indicator,
                 ledger: if l.ledger.is_empty() { None } else { Some(l.ledger) },
                 ledger_type: if l.ledger_type == 0 { None } else { Some(l.ledger_type) },
                 ledger_amount,
@@ -265,8 +281,20 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
 
         let header = req.header.ok_or_else(|| Status::invalid_argument("Missing header"))?;
 
-        // Convert line items
+        // Convert line items with validation
         let lines: Vec<LineItemDTO> = req.line_items.into_iter().map(|item| {
+            // 验证特殊总账标识
+            let special_gl_indicator = if item.special_gl_indicator.is_empty() {
+                None
+            } else {
+                let gl_type = SpecialGlType::from_sap_code(&item.special_gl_indicator);
+                if gl_type.is_special() || item.special_gl_indicator.is_empty() {
+                    Some(item.special_gl_indicator)
+                } else {
+                    None // 无效的标识，忽略
+                }
+            };
+
             LineItemDTO {
                 account_id: item.gl_account,
                 debit_credit: item.debit_credit_indicator,
@@ -274,7 +302,7 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 cost_center: if item.cost_center.is_empty() { None } else { Some(item.cost_center) },
                 profit_center: if item.profit_center.is_empty() { None } else { Some(item.profit_center) },
                 text: if item.text.is_empty() { None } else { Some(item.text) },
-                special_gl_indicator: if item.special_gl_indicator.is_empty() { None } else { Some(item.special_gl_indicator) },
+                special_gl_indicator,
                 ledger: if item.ledger.is_empty() { None } else { Some(item.ledger) },
                 ledger_type: if item.ledger_type == 0 { None } else { Some(item.ledger_type) },
                 ledger_amount: item.amount_in_ledger_currency.and_then(|amt| Decimal::from_str(&amt.value).ok()),
@@ -448,6 +476,22 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
         let mut credit_sum = Decimal::ZERO;
 
         for line in &req.line_items {
+            // 验证特殊总账标识
+            if !line.special_gl_indicator.is_empty() {
+                let gl_type = SpecialGlType::from_sap_code(&line.special_gl_indicator);
+                if !gl_type.is_special() {
+                    messages.push(crate::infrastructure::grpc::common::v1::ApiMessage {
+                        r#type: "error".to_string(),
+                        code: "INVALID_SPECIAL_GL".to_string(),
+                        message: format!(
+                            "无效的特殊总账标识: {}. 有效值: A (票据), F (预付款), V (预收款), W (票据贴现)",
+                            line.special_gl_indicator
+                        ),
+                        target: format!("line_{}", line.line_item_number),
+                    });
+                }
+            }
+
             if let Some(amount_doc) = &line.amount_in_document_currency {
                 match Decimal::from_str(&amount_doc.value) {
                     Ok(amount) => {
@@ -510,8 +554,20 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
 
         let header = req.header.ok_or_else(|| Status::invalid_argument("Missing header"))?;
 
-        // Convert line items
+        // Convert line items with validation
         let lines: Vec<LineItemDTO> = req.line_items.into_iter().map(|item| {
+            // 验证特殊总账标识
+            let special_gl_indicator = if item.special_gl_indicator.is_empty() {
+                None
+            } else {
+                let gl_type = SpecialGlType::from_sap_code(&item.special_gl_indicator);
+                if gl_type.is_special() || item.special_gl_indicator.is_empty() {
+                    Some(item.special_gl_indicator)
+                } else {
+                    None // 无效的标识，忽略
+                }
+            };
+
             LineItemDTO {
                 account_id: item.gl_account,
                 debit_credit: item.debit_credit_indicator,
@@ -519,7 +575,7 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 cost_center: if item.cost_center.is_empty() { None } else { Some(item.cost_center) },
                 profit_center: if item.profit_center.is_empty() { None } else { Some(item.profit_center) },
                 text: if item.text.is_empty() { None } else { Some(item.text) },
-                special_gl_indicator: if item.special_gl_indicator.is_empty() { None } else { Some(item.special_gl_indicator) },
+                special_gl_indicator,
                 ledger: if item.ledger.is_empty() { None } else { Some(item.ledger) },
                 ledger_type: if item.ledger_type == 0 { None } else { Some(item.ledger_type) },
                 ledger_amount: item.amount_in_ledger_currency.and_then(|amt| Decimal::from_str(&amt.value).ok()),
@@ -625,11 +681,25 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 .naive_utc()
                 .date();
 
-            // Parse line items
+            // Parse line items with validation
             let lines_result: Result<Vec<LineItemDTO>, String> = entry_req.line_items.into_iter().map(|l| {
                 let amount_doc = l.amount_in_document_currency.ok_or("Missing amount")?;
                 let amount = Decimal::from_str(&amount_doc.value)
                     .map_err(|e| format!("Invalid amount: {}", e))?;
+
+                // 验证特殊总账标识
+                let special_gl_indicator = if l.special_gl_indicator.is_empty() {
+                    None
+                } else {
+                    let gl_type = SpecialGlType::from_sap_code(&l.special_gl_indicator);
+                    if !gl_type.is_special() && !l.special_gl_indicator.is_empty() {
+                        return Err(format!(
+                            "Invalid special_gl_indicator '{}' on line {}. Valid values: A, F, V, W",
+                            l.special_gl_indicator, l.line_item_number
+                        ));
+                    }
+                    Some(l.special_gl_indicator)
+                };
 
                 Ok(LineItemDTO {
                     account_id: l.gl_account,
@@ -638,7 +708,7 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                     cost_center: if l.cost_center.is_empty() { None } else { Some(l.cost_center) },
                     profit_center: if l.profit_center.is_empty() { None } else { Some(l.profit_center) },
                     text: if l.text.is_empty() { None } else { Some(l.text) },
-                    special_gl_indicator: if l.special_gl_indicator.is_empty() { None } else { Some(l.special_gl_indicator) },
+                    special_gl_indicator,
                     ledger: if l.ledger.is_empty() { None } else { Some(l.ledger) },
                     ledger_type: if l.ledger_type == 0 { None } else { Some(l.ledger_type) },
                     ledger_amount: l.amount_in_ledger_currency.and_then(|amt| Decimal::from_str(&amt.value).ok()),
