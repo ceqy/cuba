@@ -71,7 +71,7 @@ def refactor_main_rs(file_path: Path, port: int):
     return True
 
 def main():
-    project_root = Path('/Users/x/x')
+    project_root = Path(__file__).parent.parent
     refactored_count = 0
     
     for service_name, port in SERVICE_PORTS.items():

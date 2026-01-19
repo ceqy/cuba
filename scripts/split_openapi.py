@@ -8,53 +8,53 @@ OUTPUT_DIR = "docs/openapi/splits"
 # Mapping from path prefix to Domain metadata
 DOMAINS = {
     "finance": {
-        "name": "财务 (Finance)",
-        "description": "财务管理服务 - 总账、应收应付、成本控制、资金管理"
+        "name": "Finance (FI)",
+        "description": "Financial Management - General Ledger, Accounts Receivable/Payable, Cost Control, Treasury"
     },
     "procurement": {
-        "name": "采购 (Procurement)",
-        "description": "采购管理服务 - 采购订单、合同、发票、供应商门户"
+        "name": "Procurement (PM)",
+        "description": "Procurement Management - Purchase Orders, Contracts, Invoices, Supplier Portal"
     },
     "sales": {
-        "name": "销售 (Sales)",
-        "description": "销售管理服务 - 销售订单、定价、收入确认、销售分析"
+        "name": "Sales (SD)",
+        "description": "Sales Management - Sales Orders, Pricing, Revenue Recognition, Sales Analytics"
     },
     "supplychain": {
-        "name": "供应链 (Supply Chain)",
-        "description": "供应链管理服务 - 库存、仓库、运输、需求预测、批次追溯"
+        "name": "Supply Chain (SC)",
+        "description": "Supply Chain Management - Inventory, Warehouse, Transportation, Demand Forecasting, Batch Traceability"
     },
     "asset": {
-        "name": "资产管理 (Asset)",
-        "description": "资产管理服务 - 设备维护、健康监控、EHS事件、地理位置"
+        "name": "Asset Management (AM)",
+        "description": "Asset Management - Equipment Maintenance, Health Monitoring, EHS Incidents, Geolocation"
     },
     "manufacturing": {
-        "name": "制造 (Manufacturing)",
-        "description": "制造管理服务 - 生产计划、车间执行、质量检验、看板、外协"
+        "name": "Manufacturing (MF)",
+        "description": "Manufacturing Management - Production Planning, Shop Floor Execution, Quality Inspection, Kanban, Outsourcing"
     },
     "service": {
-        "name": "客户服务 (Service)",
-        "description": "客户服务管理 - 现场调度、保修索赔、合同计费"
+        "name": "Customer Service (CS)",
+        "description": "Customer Service Management - Field Dispatch, Warranty Claims, Contract Billing"
     },
     "rd": {
-        "name": "研发 (R&D)",
-        "description": "研发管理服务 - PLM集成、项目成本控制"
+        "name": "R&D (RD)",
+        "description": "R&D Management - PLM Integration, Project Cost Control"
     },
     "hr": {
-        "name": "人力资源 (HR)",
-        "description": "人力资源管理 - 人才招聘、员工体验"
+        "name": "Human Resources (HR)",
+        "description": "Human Resources Management - Talent Acquisition, Employee Experience"
     },
     "auth": {
-        "name": "身份认证 (IAM)",
-        "description": "身份与访问管理 - 用户认证、角色权限、双因素认证"
+        "name": "Identity & Access (IAM)",
+        "description": "Identity & Access Management - User Authentication, Role Permissions, Two-Factor Authentication"
     },
 }
 
 # Additional tags to inject
 EXTRA_TAGS = {
     "auth": [
-        {"name": "Security & 2FA", "description": "安全与双因素认证 - 启用/禁用2FA、验证OTP"},
-        {"name": "Identity Management", "description": "身份管理 - 用户登录、注册、密码重置等"},
-        {"name": "Role & Permission Management", "description": "角色与权限管理 - 创建、查询和管理用户角色及权限"},
+        {"name": "Security & 2FA", "description": "Security & Two-Factor Authentication - Enable/Disable 2FA, Verify OTP"},
+        {"name": "Identity Management", "description": "Identity Management - User Login, Registration, Password Reset"},
+        {"name": "Role & Permission Management", "description": "Role & Permission Management - Create, Query, and Manage User Roles and Permissions"},
     ]
 }
 
@@ -75,7 +75,7 @@ def main():
         spec = json.load(f)
 
     all_tags = {t["name"]: t for t in spec.get("tags", [])}
-    
+
     domain_specs = {}
 
     for key, meta in DOMAINS.items():
@@ -106,13 +106,13 @@ def main():
     # Filter tags and inject extras
     for key, s in domain_specs.items():
         used_tags = get_used_tags(s["paths"])
-        
+
         for tag_name in used_tags:
             if tag_name in all_tags:
                 s["tags"].append(all_tags[tag_name])
             else:
                 s["tags"].append({"name": tag_name})
-        
+
         if key in EXTRA_TAGS:
             for extra in EXTRA_TAGS[key]:
                 if extra["name"] in used_tags:

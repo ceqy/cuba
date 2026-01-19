@@ -119,7 +119,7 @@ def update_values_file(file_path: Path, service_name: str):
     return True
 
 def main():
-    values_dir = Path('/Users/x/x/deploy/k8s/values')
+    values_dir = Path(__file__).parent.parent / 'deploy/k8s/values'
     updated_count = 0
     
     for values_file in values_dir.glob('*-service.yaml'):

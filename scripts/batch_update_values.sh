@@ -1,7 +1,8 @@
 #!/bin/bash
 # Batch update remaining service values files
 
-cd /Users/x/x/deploy/k8s/values
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/../deploy/k8s/values"
 
 # Function to get database name for a service
 get_db_name() {

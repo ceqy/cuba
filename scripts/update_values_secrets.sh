@@ -4,7 +4,8 @@
 
 set -e
 
-VALUES_DIR="/Users/x/x/deploy/k8s/values"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+VALUES_DIR="$SCRIPT_DIR/../deploy/k8s/values"
 UPDATED_COUNT=0
 
 echo "🔐 Updating service values files to use K8s Secrets..."
@@ -61,7 +62,7 @@ declare -A DB_MAP=(
     # SD
     ["an-service"]="cuba_sd_an"
     ["pe-service"]="cuba_sd_pe"
-    ["rr-service"]="cuba_rd_rr"
+    ["rr-service"]="cuba_sd_rr"
     ["so-service"]="cuba_sd_so"
 )
 

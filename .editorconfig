@@ -3,7 +3,7 @@
 
 root = true
 
-# 默认配置
+# Default settings
 [*]
 charset = utf-8
 end_of_line = lf
@@ -12,16 +12,16 @@ indent_size = 4
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-# Rust 文件
+# Rust files
 [*.rs]
 indent_size = 4
 max_line_length = 100
 
-# Proto 文件
+# Proto files
 [*.proto]
 indent_size = 2
 
-# YAML/TOML 配置
+# YAML/TOML configuration
 [*.{yaml,yml,toml}]
 indent_size = 2
 
@@ -30,7 +30,7 @@ indent_size = 2
 trim_trailing_whitespace = false
 max_line_length = off
 
-# Makefile (必须使用 tab)
+# Makefile (must use tabs)
 [Makefile]
 indent_style = tab
 

@@ -1,8 +1,17 @@
+#!/usr/bin/env python3
+"""
+Fix database connections in Helm values files.
+Updates DATABASE_URL host and generates init SQL for PostgreSQL.
+"""
 import os
 import re
+from pathlib import Path
 
-values_dir = '/Users/x/x/deploy/k8s/values'
-postgres_yaml_path = '/Users/x/x/deploy/k8s/infra/postgres.yaml'
+# Use relative paths from script location
+script_dir = Path(__file__).parent
+project_root = script_dir.parent
+values_dir = project_root / 'deploy/k8s/values'
+postgres_yaml_path = project_root / 'deploy/k8s/infra/postgres.yaml'
 
 db_names = set()
 files_processed = 0
@@ -14,28 +23,25 @@ url_pattern = re.compile(r'postgres://postgres:postgres@([^:]+):5432/([a-z0-9_]+
 for filename in os.listdir(values_dir):
     if not filename.endswith('.yaml'):
         continue
-    
-    filepath = os.path.join(values_dir, filename)
+
+    filepath = values_dir / filename
     with open(filepath, 'r') as f:
         content = f.read()
-    
+
     # Extract DB name
     match = url_pattern.search(content)
     if match:
         old_host = match.group(1)
         db_name = match.group(2)
         db_names.add(db_name)
-        
+
         # Replace host
         new_host = "cuba-postgres.default.svc.cluster.local"
-        # We replace the specific host in the connection string
-        # pattern matches "postgres-service.cuba-fi"
-        
-        # Be careful to only replace the hostname part in the URL
-        # We construct the new URL and replace the old one
+
+        # Construct the new URL and replace the old one
         old_url = f"postgres://postgres:postgres@{old_host}:5432/{db_name}"
         new_url = f"postgres://postgres:postgres@{new_host}:5432/{db_name}"
-        
+
         if old_host != new_host:
             new_content = content.replace(old_url, new_url)
             with open(filepath, 'w') as f:
@@ -44,7 +50,6 @@ for filename in os.listdir(values_dir):
             print(f"Updated {filename}: {old_host} -> {new_host}, DB: {db_name}")
 
 # Generate init-dbs.sql content
-# Check for existing DBs if any to avoid duplicates logic is simple set
 sql_content = ""
 for db in sorted(list(db_names)):
     sql_content += f"    CREATE DATABASE {db};\n"
