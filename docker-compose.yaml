@@ -1,9 +1,7 @@
-version: "3.8"
-
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:15
+    image: postgres:16-alpine
     container_name: cuba-postgres
     environment:
       POSTGRES_USER: postgres
@@ -14,22 +12,23 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # IAM Service (gRPC)
-  iam-service:
+  # Auth Service (gRPC)
+  auth-service:
     build:
       context: .
-      dockerfile: apps/iam/iam-service/Dockerfile
-    container_name: cuba-iam-service
+      dockerfile: apps/iam/auth-service/Dockerfile
+    container_name: cuba-auth-service
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_iam
       RUST_LOG: info
     ports:
       - "50051:50051"
+      - "9090:9090"
     depends_on:
       postgres:
         condition: service_healthy
@@ -41,10 +40,27 @@ services:
       dockerfile: apps/fi/gl-service/Dockerfile
     container_name: cuba-gl-service
     environment:
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_gl
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_fi_gl
       RUST_LOG: info
     ports:
-      - "50052:50052"
+      - "50052:50051"
+      - "9091:9090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # COA Service (gRPC)
+  coa-service:
+    build:
+      context: .
+      dockerfile: apps/fi/coa-service/Dockerfile
+    container_name: cuba-coa-service
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_fi_coa
+      RUST_LOG: info
+    ports:
+      - "50053:50051"
+      - "9092:9090"
     depends_on:
       postgres:
         condition: service_healthy
@@ -59,7 +75,8 @@ services:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_fi_ap
       RUST_LOG: info
     ports:
-      - "50053:50053"
+      - "50054:50051"
+      - "9093:9090"
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,24 +91,25 @@ services:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_fi_ar
       RUST_LOG: info
     ports:
-      - "50054:50054"
+      - "50055:50051"
+      - "9094:9090"
     depends_on:
       postgres:
         condition: service_healthy
 
   # Envoy API Gateway
   envoy:
-    image: envoyproxy/envoy:v1.31-latest
+    image: envoyproxy/envoy:v1.32-latest
     container_name: cuba-envoy
     ports:
-      - "8080:8080" # HTTP API
-      - "9901:9901" # Admin interface
+      - "8080:8080"
+      - "9901:9901"
     volumes:
       - ./deploy/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
       - ./deploy/envoy/proto.pb:/etc/envoy/proto.pb:ro
     depends_on:
-      - iam-service
-    command: [ "envoy", "-c", "/etc/envoy/envoy.yaml", "--log-level", "info" ]
+      - auth-service
+    command: ["envoy", "-c", "/etc/envoy/envoy.yaml", "--log-level", "info"]
 
   # Swagger UI - API Documentation
   swagger-ui:

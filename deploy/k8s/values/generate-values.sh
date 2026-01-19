@@ -7,11 +7,12 @@ cd "$(dirname "$0")"
 # Service definitions: name:port:database:namespace
 SERVICES=(
   # FI Module (Finance)
-  "gl-service:50052:cuba_fi_gl:cuba-fi"
-  "ap-service:50053:cuba_fi_ap:cuba-fi"
-  "ar-service:50054:cuba_fi_ar:cuba-fi"
-  "co-service:50055:cuba_fi_co:cuba-fi"
-  "tr-service:50056:cuba_fi_tr:cuba-fi"
+  "gl-service:50060:cuba_fi_gl:cuba-fi"
+  "coa-service:50065:cuba_fi_coa:cuba-fi"
+  "ap-service:50061:cuba_fi_ap:cuba-fi"
+  "ar-service:50062:cuba_fi_ar:cuba-fi"
+  "co-service:50063:cuba_fi_co:cuba-fi"
+  "tr-service:50064:cuba_fi_tr:cuba-fi"
   # SD Module (Sales)
   "so-service:50060:cuba_sd_so:cuba-sd"
   "pe-service:50061:cuba_sd_pe:cuba-sd"
@@ -23,6 +24,7 @@ SERVICES=(
   "ct-service:50072:cuba_pm_ct:cuba-pm"
   "sa-service:50073:cuba_pm_sa:cuba-pm"
   "se-service:50082:cuba_pm_se:cuba-pm"
+  "sp-service:50083:cuba_pm_sp:cuba-pm"
   # MF Module (Manufacturing)
   "pp-service:50074:cuba_mf_pp:cuba-mf"
   "sf-service:50075:cuba_mf_sf:cuba-mf"
@@ -52,7 +54,9 @@ SERVICES=(
   "ps-service:50047:cuba_rd_ps:cuba-rd"
   "pl-service:50048:cuba_rd_pl:cuba-rd"
   # IAM
-  "iam-service:50051:cuba_iam:cuba-system"
+  "auth-service:50051:cuba_iam_auth:cuba-iam"
+  "rbac-service:50052:cuba_iam_rbac:cuba-iam"
+  "oauth-service:50053:cuba_iam_oauth:cuba-iam"
 )
 
 for service in "${SERVICES[@]}"; do
@@ -67,12 +71,21 @@ fullnameOverride: "${name}"
 service:
   grpcPort: ${port}
   metricsPort: 9090
+
+database:
+  name: ${db}
+  secretName: cuba-postgres-credentials
+
 env:
   RUST_LOG: "info"
-  DATABASE_URL: "postgres://postgres:postgres@postgres-service.${ns}:5432/${db}"
+
 resources:
-  limits: {cpu: 500m, memory: 512Mi}
-  requests: {cpu: 100m, memory: 128Mi}
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
 EOF
   echo "Generated ${name}.yaml"
 done

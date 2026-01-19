@@ -4,19 +4,19 @@
 # Run: cargo fmt --all
 # Check: cargo fmt --all -- --check
 
-# 基础配置 (stable channel)
+# Basic configuration (stable channel)
 edition = "2024"
 max_width = 100
 tab_spaces = 4
 newline_style = "Unix"
 
-# 导入排序 (stable)
+# Import sorting (stable)
 reorder_imports = true
 reorder_modules = true
 
-# 格式化风格 (stable)
+# Formatting style (stable)
 use_field_init_shorthand = true
 use_try_shorthand = true
 
-# 匹配和控制流 (stable)
+# Match and control flow (stable)
 match_block_trailing_comma = true

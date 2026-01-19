@@ -10,7 +10,10 @@ Cargo.lock
 *.swp
 *.swo
 *~
+
+# OS
 .DS_Store
+Thumbs.db
 
 # Environment
 .env
@@ -33,10 +36,6 @@ logs/
 # Build artifacts
 /dist/
 /build/
-
-# OS
-Thumbs.db
-.DS_Store
 
 # Testing
 /coverage/
@@ -71,10 +70,9 @@ config/*.dev.yaml
 .continue/
 .windsurf/
 archive/
-*.log
 
-# OpenAPI 中间文件
+# OpenAPI intermediate files
 *.swagger.json
 
-# Swagger UI 前端资源
+# Swagger UI frontend resources
 swagger-ui-bundle.js*

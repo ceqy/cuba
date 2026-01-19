@@ -18,7 +18,7 @@ DOMAIN=$(echo "$PROTO_DIR" | cut -d'/' -f1)
 
 # Target: apps/fi/ap-service
 BASE_DIR="apps/$DOMAIN/$SERVICE_NAME"
-mkdir -p "$BASE_DIR/src/api" "$BASE_DIR/src/application" "$BASE_DIR/src/domain" "$BASE_DIR/src/infrastructure"
+mkdir -p "$BASE_DIR/src/api" "$BASE_DIR/src/application" "$BASE_DIR/src/domain" "$BASE_DIR/src/infrastructure" "$BASE_DIR/migrations"
 
 # Create mod.rs files
 touch "$BASE_DIR/src/api/mod.rs" \
@@ -28,48 +28,61 @@ touch "$BASE_DIR/src/api/mod.rs" \
 
 echo "Scaffolding $SERVICE_NAME in $BASE_DIR..."
 
-# 1. Cargo.toml (Leveraging Workspace Dependencies)
+# 1. Cargo.toml (Leveraging Workspace Dependencies with dot notation)
 cat > "$BASE_DIR/Cargo.toml" <<EOF
 [package]
 name = "$SERVICE_NAME"
-version = "0.1.0"
+version.workspace = true
 edition.workspace = true
+authors.workspace = true
+license.workspace = true
 
 [dependencies]
-# Internal
-cuba-core = { workspace = true }
-cuba-database = { workspace = true }
-cuba-telemetry = { workspace = true }
-cuba-cqrs = { workspace = true }
+# Shared Infrastructure
+cuba-core.workspace = true
+cuba-errors.workspace = true
+cuba-cqrs.workspace = true
+cuba-database.workspace = true
+cuba-messaging.workspace = true
+cuba-telemetry.workspace = true
+cuba-service = { path = "../../../libs/cuba-service" }
+anyhow.workspace = true
 
-# External
-tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
-tonic = { workspace = true }
-prost = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-tracing = { workspace = true }
-sqlx = { workspace = true }
-dotenvy = { workspace = true }
-uuid = { workspace = true }
-chrono = { workspace = true }
-rust_decimal = { workspace = true }
-tonic-reflection = { workspace = true }
-thiserror = { workspace = true }
+# Async
+tokio.workspace = true
+async-trait.workspace = true
+
+# gRPC
+tonic.workspace = true
+tonic-prost.workspace = true
+tonic-reflection.workspace = true
+prost.workspace = true
+prost-types.workspace = true
+
+# Database
+sqlx.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Utilities
+uuid.workspace = true
+chrono.workspace = true
+rust_decimal.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+dotenvy.workspace = true
 
 [build-dependencies]
-tonic-build = { workspace = true }
-tonic-prost-build = { workspace = true }
+tonic-build.workspace = true
+tonic-prost-build.workspace = true
 EOF
 
 # 2. build.rs
 # Find the first .proto file in the dir to guess the name (simplified)
 PROTO_FILE=$(find protos/$PROTO_DIR -name "*.proto" | head -n 1)
 # Calculate relative path from build.rs to proto
-# apps/fi/ap-service -> ../../../../../protos/fi/ap/ap.proto
-# We used DOMAIN, so apps/$DOMAIN/$SERVICE_NAME.
-# apps/fi/ap-service -> 3 levels deep.
-# So relative path should start with ../../../
 REL_PROTO_PATH="../../../$PROTO_FILE"
 REL_COMMON_PATH="../../../protos/common/common.proto"
 REL_INCLUDE_PATH="../../../protos"
@@ -78,7 +91,7 @@ REL_THIRD_PARTY="../../../third_party"
 cat > "$BASE_DIR/build.rs" <<EOF
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_dir = std::path::PathBuf::from(std::env::var("OUT_DIR")?);
-    
+
     // Generate File Descriptor Set for Reflection & Envoy
     tonic_prost_build::configure()
         .build_server(true)
@@ -100,7 +113,6 @@ pub mod infrastructure;
 EOF
 
 # 4. src/main.rs
-# We use a compact main utilizing the libraries
 cat > "$BASE_DIR/src/main.rs" <<EOF
 use tonic::transport::Server;
 use cuba_database::{DatabaseConfig, init_pool};
@@ -110,15 +122,14 @@ use tracing::info;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 1. Init Telemetry
     cuba_telemetry::init_telemetry();
-    
+
     // 2. Load Config
-    // In a real app we might load strictly typed config, here we assume env vars.
     let addr = "0.0.0.0:$SERVICE_PORT".parse()?;
     info!("Starting $SERVICE_NAME on {}", addr);
 
     // 3. Init Database
     let db_config = DatabaseConfig::default();
-    let _pool = init_pool(&db_config).await?; // Pool is ready, typically passed to repositories
+    let _pool = init_pool(&db_config).await?;
 
     // 4. Init Reflection
     let descriptor = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));
@@ -127,7 +138,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_v1()?;
 
     info!("Service listening on {}", addr);
-    
+
     // 5. Start Server
     Server::builder()
         .add_service(reflection_service)
@@ -139,24 +150,52 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 EOF
 
-# 5. Dockerfile
+# 5. Dockerfile (Alpine-based with health check)
 cat > "$BASE_DIR/Dockerfile" <<EOF
-FROM rust:1.88 AS builder
-RUN apt-get update && apt-get install -y protobuf-compiler && rm -rf /var/lib/apt/lists/*
+FROM rust:1.92-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache musl-dev protobuf-dev pkgconfig
+
 WORKDIR /app
+
+# Copy workspace files
 COPY Cargo.toml Cargo.lock ./
-COPY libs ./libs
-COPY apps ./apps
-COPY protos ./protos
-COPY third_party ./third_party
+COPY libs/ libs/
+COPY apps/ apps/
+COPY protos/ protos/
+COPY third_party/ third_party/
+
+# Build service
+ENV SQLX_OFFLINE=true
 RUN cargo build --release -p $SERVICE_NAME
 
-FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y ca-certificates libssl3 && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /app/target/release/$SERVICE_NAME /usr/local/bin/$SERVICE_NAME
+# Runtime stage
+FROM alpine:3.21
+
+# Install runtime dependencies
+RUN apk add --no-cache ca-certificates libgcc
+
 WORKDIR /app
-EXPOSE $SERVICE_PORT
-CMD ["$SERVICE_NAME"]
+
+# Copy binary
+COPY --from=builder /app/target/release/$SERVICE_NAME /app/service
+
+# Copy migrations
+COPY apps/$DOMAIN/$SERVICE_NAME/migrations /app/migrations
+
+# Environment
+ENV RUST_LOG=info
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \\
+    CMD /app/service --health-check || exit 1
+
+# Expose ports
+EXPOSE 50051
+EXPOSE 9090
+
+CMD ["/app/service"]
 EOF
 
 echo "Scaffold Complete for $SERVICE_NAME"
