@@ -1,20 +1,20 @@
 #!/bin/bash
-# Cuba项目服务器端环境配置脚本
-# 在K3s服务器上执行此脚本
+# Cuba Project Server Environment Setup Script
+# Run this script on the K3s server
 
 set -e
 
-echo "🚀 开始配置Cuba项目服务器端构建环境..."
+echo "Starting Cuba project server build environment setup..."
 echo ""
 
-# 检查是否为root
-if [ "$EUID" -eq 0 ]; then 
-   echo "❌ 请不要使用root用户运行此脚本"
+# Check if running as root
+if [ "$EUID" -eq 0 ]; then
+   echo "Error: Please do not run this script as root"
    exit 1
 fi
 
-# 步骤1: 安装系统依赖
-echo "📦 步骤1: 安装系统依赖..."
+# Step 1: Install system dependencies
+echo "Step 1: Installing system dependencies..."
 sudo apt update
 sudo apt install -y \
     build-essential \
@@ -25,22 +25,22 @@ sudo apt install -y \
     curl \
     htop
 
-echo "✓ 系统依赖安装完成"
+echo "System dependencies installed"
 echo ""
 
-# 步骤2: 安装Rust
-echo "🦀 步骤2: 安装Rust工具链..."
+# Step 2: Install Rust
+echo "Step 2: Installing Rust toolchain..."
 if command -v rustc &> /dev/null; then
-    echo "Rust已安装: $(rustc --version)"
+    echo "Rust already installed: $(rustc --version)"
 else
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     source $HOME/.cargo/env
-    echo "✓ Rust安装完成: $(rustc --version)"
+    echo "Rust installed: $(rustc --version)"
 fi
 echo ""
 
-# 步骤3: 配置Cargo加速
-echo "⚡ 步骤3: 配置Cargo镜像加速..."
+# Step 3: Configure Cargo acceleration
+echo "Step 3: Configuring Cargo mirror..."
 mkdir -p ~/.cargo
 cat > ~/.cargo/config.toml << 'EOF'
 [source.crates-io]
@@ -61,14 +61,14 @@ lto = "thin"
 codegen-units = 1
 strip = true
 EOF
-echo "✓ Cargo配置完成"
+echo "Cargo configuration completed"
 echo ""
 
-# 步骤4: 设置环境变量
-echo "🔧 步骤4: 配置环境变量..."
+# Step 4: Set environment variables
+echo "Step 4: Configuring environment variables..."
 cat >> ~/.bashrc << 'EOF'
 
-# Cuba项目构建配置
+# Cuba project build configuration
 export CARGO_BUILD_JOBS=8
 export RUSTFLAGS="-C target-cpu=native"
 export CARGO_INCREMENTAL=1
@@ -76,115 +76,115 @@ export PATH="$HOME/.cargo/bin:$PATH"
 EOF
 
 source ~/.bashrc
-echo "✓ 环境变量配置完成"
+echo "Environment variables configured"
 echo ""
 
-# 步骤5: 克隆代码（如果不存在）
-echo "📥 步骤5: 准备代码目录..."
+# Step 5: Prepare code directory
+echo "Step 5: Preparing code directory..."
 if [ -d "$HOME/cuba" ]; then
-    echo "⚠️  目录 ~/cuba 已存在，跳过克隆"
+    echo "Warning: Directory ~/cuba already exists, skipping clone"
 else
-    echo "请选择代码获取方式:"
-    echo "1) 从本地Mac同步（推荐）"
-    echo "2) 从Git仓库克隆"
-    read -p "选择 (1/2): " choice
-    
+    echo "Choose code sync method:"
+    echo "1) Sync from local Mac (recommended)"
+    echo "2) Clone from Git repository"
+    read -p "Select (1/2): " choice
+
     if [ "$choice" = "1" ]; then
-        echo "请在本地Mac执行以下命令同步代码:"
+        echo "Run the following command on your local Mac to sync code:"
         echo "rsync -avz --exclude 'target' --exclude '.git' /Users/x/x/ x@10.0.0.101:~/cuba/"
         echo ""
-        read -p "同步完成后按回车继续..."
+        read -p "Press Enter after sync is complete..."
     else
-        read -p "请输入Git仓库地址: " repo_url
+        read -p "Enter Git repository URL: " repo_url
         git clone "$repo_url" ~/cuba
     fi
 fi
 echo ""
 
-# 步骤6: 验证环境
-echo "✅ 步骤6: 验证环境..."
-echo "Rust版本: $(rustc --version)"
-echo "Cargo版本: $(cargo --version)"
-echo "Protoc版本: $(protoc --version)"
-echo "CPU核心数: $(nproc)"
-echo "可用内存: $(free -h | grep Mem | awk '{print $7}')"
+# Step 6: Verify environment
+echo "Step 6: Verifying environment..."
+echo "Rust version: $(rustc --version)"
+echo "Cargo version: $(cargo --version)"
+echo "Protoc version: $(protoc --version)"
+echo "CPU cores: $(nproc)"
+echo "Available memory: $(free -h | grep Mem | awk '{print $7}')"
 echo ""
 
-# 步骤7: 创建构建脚本
-echo "📝 步骤7: 创建构建脚本..."
+# Step 7: Create build scripts
+echo "Step 7: Creating build scripts..."
 mkdir -p ~/cuba/scripts
 
-# 创建并行构建脚本
+# Create parallel build script
 cat > ~/cuba/scripts/build-all-server.sh << 'BUILDSCRIPT'
 #!/bin/bash
-# 服务器端并行构建所有服务
+# Server-side parallel build for all services
 
 source ~/.cargo/env
 cd ~/cuba
 
-echo "🔨 开始编译所有服务..."
-echo "使用 $(nproc) 个CPU核心并行构建"
+echo "Starting compilation of all services..."
+echo "Using $(nproc) CPU cores for parallel build"
 echo ""
 
 time cargo build --release --workspace
 
 echo ""
-echo "✅ 构建完成！"
-echo "构建产物:"
+echo "Build completed!"
+echo "Build artifacts:"
 ls -lh target/release/*-service | wc -l
 du -sh target/release/
 BUILDSCRIPT
 
 chmod +x ~/cuba/scripts/build-all-server.sh
 
-# 创建快速更新脚本
+# Create quick build script
 cat > ~/cuba/scripts/quick-build.sh << 'QUICKSCRIPT'
 #!/bin/bash
-# 快速构建单个服务
+# Quick build for a single service
 
 source ~/.cargo/env
 if [ -z "$1" ]; then
-    echo "用法: ./quick-build.sh <service-name>"
-    echo "例如: ./quick-build.sh ap-service"
+    echo "Usage: ./quick-build.sh <service-name>"
+    echo "Example: ./quick-build.sh ap-service"
     exit 1
 fi
 
 cd ~/cuba
-echo "🔨 构建 $1..."
+echo "Building $1..."
 time cargo build --release -p $1
 
 if [ $? -eq 0 ]; then
-    echo "✅ $1 构建成功！"
+    echo "$1 built successfully!"
     ls -lh target/release/$1
 else
-    echo "❌ 构建失败"
+    echo "Build failed"
     exit 1
 fi
 QUICKSCRIPT
 
 chmod +x ~/cuba/scripts/quick-build.sh
 
-echo "✓ 构建脚本创建完成"
+echo "Build scripts created"
 echo ""
 
-# 完成
+# Done
 echo "========================================="
-echo "🎉 服务器环境配置完成！"
+echo "Server environment setup completed!"
 echo "========================================="
 echo ""
-echo "📋 下一步操作:"
+echo "Next steps:"
 echo ""
-echo "1. 如果选择了rsync同步，在本地Mac执行:"
+echo "1. If you chose rsync sync, run on local Mac:"
 echo "   rsync -avz --exclude 'target' --exclude '.git' /Users/x/x/ x@10.0.0.101:~/cuba/"
 echo ""
-echo "2. 首次完整构建（需要15-30分钟）:"
+echo "2. Initial full build (takes 15-30 minutes):"
 echo "   cd ~/cuba"
 echo "   ./scripts/build-all-server.sh"
 echo ""
-echo "3. 快速构建单个服务:"
+echo "3. Quick build for a single service:"
 echo "   ./scripts/quick-build.sh ap-service"
 echo ""
-echo "4. 查看构建产物:"
+echo "4. View build artifacts:"
 echo "   ls -lh ~/cuba/target/release/*-service"
 echo ""
 echo "========================================="

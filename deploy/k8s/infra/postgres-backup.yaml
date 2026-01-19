@@ -134,7 +134,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: backup
-            image: postgres:15
+            image: postgres:16-alpine
             command:
             - /bin/bash
             - /scripts/backup.sh
@@ -196,7 +196,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: backup
-            image: postgres:15
+            image: postgres:16-alpine
             command:
             - /bin/bash
             - -c
