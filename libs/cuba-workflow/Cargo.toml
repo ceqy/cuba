@@ -1,8 +1,10 @@
 [package]
 name = "cuba-workflow"
-version = "0.1.0"
-edition = "2021"
-description = "通用工作流和状态历史追踪库"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "General-purpose workflow and state history tracking library"
 
 [dependencies]
 async-trait.workspace = true

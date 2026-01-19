@@ -18,5 +18,9 @@ env:
   GL_SERVICE_URL: "http://gl-service.cuba-fi.svc.cluster.local:50060"
 
 resources:
-  limits: {cpu: 500m, memory: 512Mi}
-  requests: {cpu: 100m, memory: 128Mi}
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi

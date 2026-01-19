@@ -8,62 +8,17 @@ service:
   grpcPort: 50065
   metricsPort: 9090
 
-# Database configuration (credentials from Secret)
 database:
   name: cuba_fi_coa
   secretName: cuba-postgres-credentials
 
 env:
   RUST_LOG: "info"
-  SERVICE_NAME: "coa-service"
-  SERVICE_VERSION: "1.0.0"
+
+resources:
   limits:
     cpu: 500m
     memory: 512Mi
   requests:
     cpu: 100m
     memory: 128Mi
-  enabled: false
-  minReplicas: 2
-  maxReplicas: 10
-  targetCPUUtilizationPercentage: 80
-  targetMemoryUtilizationPercentage: 80
-  grpc:
-    port: 50065
-  initialDelaySeconds: 30
-  periodSeconds: 10
-  timeoutSeconds: 5
-  successThreshold: 1
-  failureThreshold: 3
-  grpc:
-    port: 50065
-  initialDelaySeconds: 10
-  periodSeconds: 5
-  timeoutSeconds: 3
-  successThreshold: 1
-  failureThreshold: 3
-  enabled: true
-  image:
-    repository: cuba-erp/coa-service
-    tag: "latest"
-  env:
-  backoffLimit: 3
-  restartPolicy: Never
-  create: true
-  name: "coa-service"
-  annotations: {}
-  runAsNonRoot: true
-  runAsUser: 1000
-  fsGroup: 1000
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-      - ALL
-  readOnlyRootFilesystem: true
-  prometheus.io/scrape: "true"
-  prometheus.io/port: "9090"
-  prometheus.io/path: "/metrics"
-
-resources:
-  limits: {cpu: 500m, memory: 512Mi}
-  requests: {cpu: 100m, memory: 128Mi}

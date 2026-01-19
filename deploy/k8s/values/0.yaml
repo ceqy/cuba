@@ -1,15 +1,21 @@
-# 0 Helm Values
+# Template Helm Values
 replicaCount: 2
 image:
-  repository: cuba-erp/0
+  repository: cuba-erp/template
   tag: "latest"
-fullnameOverride: "0"
+fullnameOverride: "template"
 service:
   grpcPort: 50051
   metricsPort: 9090
+
 env:
   RUST_LOG: "info"
   DATABASE_URL: "postgres://postgres:postgres@cuba-postgres.default.svc.cluster.local:5432/cuba_iam"
+
 resources:
-  limits: {cpu: 500m, memory: 512Mi}
-  requests: {cpu: 100m, memory: 128Mi}
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi

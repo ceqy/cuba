@@ -9,7 +9,7 @@ license.workspace = true
 path = "src/lib.rs"
 
 [dependencies]
-# 共享基础设施
+# Shared Infrastructure
 cuba-core.workspace = true
 cuba-errors.workspace = true
 anyhow.workspace = true
@@ -47,13 +47,13 @@ tracing.workspace = true
 tracing-subscriber = "0.3"
 
 # Decimal for financial calculations
-rust_decimal = { version = "1.33", features = ["serde"] }
+rust_decimal.workspace = true
 
 # Error Handling
 thiserror.workspace = true
 
 [dev-dependencies]
-rust_decimal_macros = "1.33"
+rust_decimal_macros.workspace = true
 
 [build-dependencies]
 tonic-build.workspace = true

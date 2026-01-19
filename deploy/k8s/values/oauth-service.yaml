@@ -5,7 +5,7 @@ image:
   tag: "latest"
 fullnameOverride: "oauth-service"
 service:
-  grpcPort: 
+  grpcPort: 50053
   metricsPort: 9090
 
 # Database configuration (credentials from Secret)
@@ -23,5 +23,9 @@ env:
   RUST_LOG: "info"
 
 resources:
-  limits: {cpu: 500m, memory: 512Mi}
-  requests: {cpu: 100m, memory: 128Mi}
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi

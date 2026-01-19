@@ -6,7 +6,7 @@ authors.workspace = true
 license.workspace = true
 
 [dependencies]
-# 共享基础设施
+# Shared Infrastructure
 cuba-core.workspace = true
 cuba-errors.workspace = true
 anyhow.workspace = true
@@ -41,10 +41,10 @@ chrono.workspace = true
 tracing.workspace = true
 
 # Decimal for financial calculations
-rust_decimal = { version = "1.33", features = ["serde"] }
+rust_decimal.workspace = true
 
 # Error Handling
-thiserror = "1.0"
+thiserror.workspace = true
 
 [build-dependencies]
 tonic-build.workspace = true

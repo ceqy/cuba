@@ -1,32 +1,44 @@
-FROM rust:1.88 AS builder
+FROM rust:1.92-alpine AS builder
 
-# Install protoc for build.rs
-RUN apt-get update && apt-get install -y protobuf-compiler && rm -rf /var/lib/apt/lists/*
+# Install build dependencies
+RUN apk add --no-cache musl-dev protobuf-dev pkgconfig
 
 WORKDIR /app
 
 # Copy workspace files
 COPY Cargo.toml Cargo.lock ./
-COPY libs ./libs
-COPY apps ./apps
-COPY protos ./protos
-COPY third_party ./third_party
+COPY libs/ libs/
+COPY apps/ apps/
+COPY protos/ protos/
+COPY third_party/ third_party/
 
-# Build the GL service
+# Build service
+ENV SQLX_OFFLINE=true
 RUN cargo build --release -p gl-service
 
 # Runtime stage
-FROM debian:bookworm-slim
+FROM alpine:3.21
 
-RUN apt-get update && apt-get install -y ca-certificates libssl3 && rm -rf /var/lib/apt/lists/*
+# Install runtime dependencies
+RUN apk add --no-cache ca-certificates libgcc
 
-COPY --from=builder /app/target/release/gl-service /usr/local/bin/gl-service
+WORKDIR /app
+
+# Copy binary
+COPY --from=builder /app/target/release/gl-service /app/service
 
 # Copy migrations
 COPY apps/fi/gl-service/migrations /app/migrations
 
-WORKDIR /app
+# Environment
+ENV RUST_LOG=info
 
-EXPOSE 50052
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD /app/service --health-check || exit 1
 
-CMD ["gl-service"]
+# Expose ports
+EXPOSE 50051
+EXPOSE 9090
+
+CMD ["/app/service"]
