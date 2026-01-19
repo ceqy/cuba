@@ -9,6 +9,14 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
+  name: cuba-iam
+  labels:
+    istio-injection: enabled
+    module: iam
+---
+apiVersion: v1
+kind: Namespace
+metadata:
   name: cuba-fi
   labels:
     istio-injection: enabled

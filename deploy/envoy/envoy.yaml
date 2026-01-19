@@ -115,6 +115,32 @@ static_resources:
                           route:
                             cluster: tr_service
                             timeout: 30s
+                        # ============================================
+                        # Finance: COA Service Routes
+                        # ============================================
+                        - match:
+                            prefix: "/fi.coa.v1.ChartOfAccountsService"
+                          route:
+                            cluster: coa_service
+                            timeout: 30s
+                        - match:
+                            prefix: "/api/v1/finance/coa"
+                          route:
+                            cluster: coa_service
+                            timeout: 30s
+                        # ============================================
+                        # Finance: AR Service Routes
+                        # ============================================
+                        - match:
+                            prefix: "/fi.ar.v1.AccountsReceivableService"
+                          route:
+                            cluster: ar_service
+                            timeout: 30s
+                        - match:
+                            prefix: "/api/v1/finance/ar"
+                          route:
+                            cluster: ar_service
+                            timeout: 30s
                       cors:
                         allow_origin_string_match:
                           - prefix: "*"
@@ -134,8 +160,10 @@ static_resources:
                         - "iam.oauth.v1.OAuthService"
                         - "fi.gl.v1.GlJournalEntryService"
                         - "fi.ap.v1.AccountsReceivablePayableService"
+                        - "fi.ar.v1.AccountsReceivableService"
                         - "fi.co.v1.ControllingAllocationService"
                         - "fi.tr.v1.TreasuryService"
+                        - "fi.coa.v1.ChartOfAccountsService"
                       print_options:
                         add_whitespace: true
                         always_print_primitive_fields: true
@@ -270,6 +298,38 @@ static_resources:
                     socket_address:
                       address: tr-service.cuba-fi.svc.cluster.local
                       port_value: 50064
+
+    # COA Service (port 50065)
+    - name: coa_service
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      http2_protocol_options: {}
+      load_assignment:
+        cluster_name: coa_service
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: coa-service.cuba-fi.svc.cluster.local
+                      port_value: 50065
+
+    # AR Service (port 50062)
+    - name: ar_service
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      http2_protocol_options: {}
+      load_assignment:
+        cluster_name: ar_service
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: ar-service.cuba-fi.svc.cluster.local
+                      port_value: 50062
 
 admin:
   address:

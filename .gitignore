@@ -2,7 +2,8 @@
 /target/
 **/*.rs.bk
 *.pdb
-Cargo.lock
+# Note: Cargo.lock should be committed for applications (not libraries)
+# Cargo.lock
 
 # IDE
 .idea/
@@ -48,6 +49,9 @@ temp/
 
 # Docker
 docker-compose.override.yml
+
+# Kubernetes secrets (use external secret management in production)
+# deploy/k8s/infra/secrets*.yaml
 
 # Configuration (keep templates only)
 config/*.local.yaml

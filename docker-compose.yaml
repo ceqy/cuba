@@ -43,7 +43,7 @@ services:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_fi_gl
       RUST_LOG: info
     ports:
-      - "50052:50051"
+      - "50060:50051"
       - "9091:9090"
     depends_on:
       postgres:
@@ -59,7 +59,7 @@ services:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_fi_coa
       RUST_LOG: info
     ports:
-      - "50053:50051"
+      - "50065:50051"
       - "9092:9090"
     depends_on:
       postgres:
@@ -75,7 +75,7 @@ services:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_fi_ap
       RUST_LOG: info
     ports:
-      - "50054:50051"
+      - "50061:50051"
       - "9093:9090"
     depends_on:
       postgres:
@@ -91,7 +91,7 @@ services:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_fi_ar
       RUST_LOG: info
     ports:
-      - "50055:50051"
+      - "50062:50051"
       - "9094:9090"
     depends_on:
       postgres:

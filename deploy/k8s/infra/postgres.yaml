@@ -2,6 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgres-init-scripts
+  namespace: cuba-system
 data:
   init-dbs.sql: |
     CREATE DATABASE cuba_am_ah;
@@ -14,8 +15,10 @@ data:
     CREATE DATABASE cuba_fi_ap;
     CREATE DATABASE cuba_fi_ar;
     CREATE DATABASE cuba_fi_co;
+    CREATE DATABASE cuba_fi_coa;
     CREATE DATABASE cuba_fi_gl;
     CREATE DATABASE cuba_fi_tr;
+    CREATE DATABASE cuba_fi_uj;
     CREATE DATABASE cuba_hr_ex;
     CREATE DATABASE cuba_hr_ta;
     CREATE DATABASE cuba_iam;
@@ -29,6 +32,7 @@ data:
     CREATE DATABASE cuba_pm_po;
     CREATE DATABASE cuba_pm_sa;
     CREATE DATABASE cuba_pm_se;
+    CREATE DATABASE cuba_pm_sp;
     CREATE DATABASE cuba_rd_pl;
     CREATE DATABASE cuba_rd_ps;
     CREATE DATABASE cuba_sc_bt;
@@ -68,12 +72,12 @@ spec:
         - name: POSTGRES_USER
           valueFrom:
             secretKeyRef:
-              name: postgres-credentials
+              name: cuba-postgres-credentials
               key: username
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: postgres-credentials
+              name: cuba-postgres-credentials
               key: password
         - name: POSTGRES_DB
           value: postgres
@@ -130,6 +134,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: cuba-postgres
+  namespace: cuba-system
 spec:
   ports:
   - port: 5432

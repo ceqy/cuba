@@ -25,9 +25,58 @@ spec:
           "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_json_transcoder.v3.GrpcJsonTranscoder
           proto_descriptor: "/etc/istio/proto/proto.pb"
           services:
+          # IAM Services
           - "iam.auth.v1.AuthService"
           - "iam.rbac.v1.RBACService"
           - "iam.oauth.v1.OAuthService"
+          # Finance Services
+          - "fi.gl.v1.GlJournalEntryService"
+          - "fi.ap.v1.AccountsPayableService"
+          - "fi.ar.v1.AccountsReceivableService"
+          - "fi.co.v1.ControllingAllocationService"
+          - "fi.tr.v1.TreasuryService"
+          - "fi.coa.v1.ChartOfAccountsService"
+          - "fi.uj.v1.UniversalJournalService"
+          # Sales Services
+          - "sd.so.v1.SalesOrderService"
+          - "sd.pe.v1.PricingEngineService"
+          - "sd.rr.v1.RevenueRecognitionService"
+          - "sd.an.v1.SalesAnalyticsService"
+          # Procurement Services
+          - "pm.po.v1.PurchaseOrderService"
+          - "pm.iv.v1.InvoiceVerificationService"
+          - "pm.ct.v1.ContractService"
+          - "pm.sa.v1.SpendAnalyticsService"
+          - "pm.se.v1.SourcingService"
+          - "pm.sp.v1.SupplierPortalService"
+          # Manufacturing Services
+          - "mf.pp.v1.ProductionPlanningService"
+          - "mf.sf.v1.ShopFloorService"
+          - "mf.qi.v1.QualityInspectionService"
+          - "mf.kb.v1.KanbanService"
+          - "mf.om.v1.OutsourceManagementService"
+          # Supply Chain Services
+          - "sc.im.v1.InventoryManagementService"
+          - "sc.wm.v1.WarehouseManagementService"
+          - "sc.bt.v1.BatchTraceService"
+          - "sc.df.v1.DemandForecastService"
+          - "sc.tp.v1.TransportPlanningService"
+          - "sc.vs.v1.VisibilityService"
+          # HR Services
+          - "hr.ta.v1.TimeAttendanceService"
+          - "hr.ex.v1.ExpenseService"
+          # Asset Management Services
+          - "am.pm.v1.PlantMaintenanceService"
+          - "am.ah.v1.AssetHealthService"
+          - "am.eh.v1.EventHandlingService"
+          - "am.gs.v1.GeoSpatialService"
+          # Customer Service
+          - "cs.fd.v1.HelpdeskService"
+          - "cs.cb.v1.ChatbotService"
+          - "cs.wc.v1.WebChatService"
+          # R&D Services
+          - "rd.ps.v1.ProjectService"
+          - "rd.pl.v1.PortfolioService"
 
           print_options:
             add_whitespace: true

@@ -14,7 +14,22 @@ spec:
     - source:
         principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
     - source:
-        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+        namespaces: ["cuba-system", "cuba-iam", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+---
+# Cuba IAM
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-all-cuba-iam
+  namespace: cuba-iam
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    - source:
+        namespaces: ["cuba-system", "cuba-iam", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
 ---
 # Cuba FI
 apiVersion: security.istio.io/v1beta1
@@ -29,7 +44,7 @@ spec:
     - source:
         principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
     - source:
-        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+        namespaces: ["cuba-system", "cuba-iam", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
 ---
 # Cuba SD
 apiVersion: security.istio.io/v1beta1
@@ -44,7 +59,7 @@ spec:
     - source:
         principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
     - source:
-        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+        namespaces: ["cuba-system", "cuba-iam", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
 ---
 # Cuba PM
 apiVersion: security.istio.io/v1beta1
@@ -59,7 +74,7 @@ spec:
     - source:
         principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
     - source:
-        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+        namespaces: ["cuba-system", "cuba-iam", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
 ---
 # Cuba MF
 apiVersion: security.istio.io/v1beta1
@@ -74,7 +89,7 @@ spec:
     - source:
         principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
     - source:
-        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+        namespaces: ["cuba-system", "cuba-iam", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
 ---
 # Cuba SC
 apiVersion: security.istio.io/v1beta1
@@ -89,7 +104,7 @@ spec:
     - source:
         principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
     - source:
-        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+        namespaces: ["cuba-system", "cuba-iam", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
 ---
 # Cuba HR
 apiVersion: security.istio.io/v1beta1
@@ -104,7 +119,7 @@ spec:
     - source:
         principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
     - source:
-        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+        namespaces: ["cuba-system", "cuba-iam", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
 ---
 # Cuba AM
 apiVersion: security.istio.io/v1beta1
@@ -119,7 +134,7 @@ spec:
     - source:
         principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
     - source:
-        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+        namespaces: ["cuba-system", "cuba-iam", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
 ---
 # Cuba CS
 apiVersion: security.istio.io/v1beta1
@@ -134,7 +149,7 @@ spec:
     - source:
         principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
     - source:
-        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+        namespaces: ["cuba-system", "cuba-iam", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
 ---
 # Cuba RD
 apiVersion: security.istio.io/v1beta1
@@ -149,4 +164,4 @@ spec:
     - source:
         principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
     - source:
-        namespaces: ["cuba-system", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]
+        namespaces: ["cuba-system", "cuba-iam", "cuba-fi", "cuba-sd", "cuba-pm", "cuba-mf", "cuba-sc", "cuba-hr", "cuba-am", "cuba-cs", "cuba-rd"]

@@ -75,7 +75,7 @@ spec:
           number: 50053
 
   # ============================================================================
-  # FI (Finance Module) - 5 services
+  # FI (Finance Module) - 6 services
   # ============================================================================
   - match:
     - uri:
@@ -86,7 +86,7 @@ spec:
     - destination:
         host: gl-service.cuba-fi.svc.cluster.local
         port:
-          number: 50052
+          number: 50060
   - match:
     - uri:
         prefix: /api/v1/ap
@@ -96,7 +96,7 @@ spec:
     - destination:
         host: ap-service.cuba-fi.svc.cluster.local
         port:
-          number: 50053
+          number: 50061
   - match:
     - uri:
         prefix: /api/v1/ar
@@ -106,7 +106,7 @@ spec:
     - destination:
         host: ar-service.cuba-fi.svc.cluster.local
         port:
-          number: 50054
+          number: 50062
   - match:
     - uri:
         prefix: /api/v1/co
@@ -116,7 +116,7 @@ spec:
     - destination:
         host: co-service.cuba-fi.svc.cluster.local
         port:
-          number: 50055
+          number: 50063
   - match:
     - uri:
         prefix: /api/v1/tr
@@ -126,7 +126,17 @@ spec:
     - destination:
         host: tr-service.cuba-fi.svc.cluster.local
         port:
-          number: 50056
+          number: 50064
+  - match:
+    - uri:
+        prefix: /api/v1/coa
+    - uri:
+        prefix: /finance.coa.v1
+    route:
+    - destination:
+        host: coa-service.cuba-fi.svc.cluster.local
+        port:
+          number: 50065
 
   # ============================================================================
   # SD (Sales Module) - 4 services
@@ -469,6 +479,34 @@ spec:
         host: pl-service.cuba-rd.svc.cluster.local
         port:
           number: 50048
+
+  # ============================================================================
+  # FI (Finance Module) - Additional services
+  # ============================================================================
+  - match:
+    - uri:
+        prefix: /api/v1/uj
+    - uri:
+        prefix: /finance.uj.v1
+    route:
+    - destination:
+        host: uj-service.cuba-fi.svc.cluster.local
+        port:
+          number: 50066
+
+  # ============================================================================
+  # PM (Procurement Module) - Additional services
+  # ============================================================================
+  - match:
+    - uri:
+        prefix: /api/v1/procurement/supplier
+    - uri:
+        prefix: /procurement.sp.v1
+    route:
+    - destination:
+        host: sp-service.cuba-pm.svc.cluster.local
+        port:
+          number: 50088
 ---
 # DestinationRule for load balancing
 apiVersion: networking.istio.io/v1alpha3
@@ -488,13 +526,4 @@ spec:
         maxRequestsPerConnection: 10
     loadBalancer:
       simple: ROUND_ROBIN
----
-# PeerAuthentication for mTLS
-apiVersion: security.istio.io/v1beta1
-kind: PeerAuthentication
-metadata:
-  name: cuba-mtls
-  namespace: cuba-system
-spec:
-  mtls:
-    mode: STRICT
+# Note: mTLS PeerAuthentication is defined in istio-mtls.yaml

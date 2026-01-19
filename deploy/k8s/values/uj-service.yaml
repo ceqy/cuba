@@ -1,0 +1,26 @@
+# uj-service (Universal Journal) Helm Values
+replicaCount: 2
+image:
+  repository: cuba-erp/uj-service
+  tag: "latest"
+fullnameOverride: "uj-service"
+service:
+  grpcPort: 50066
+  metricsPort: 9090
+
+# Database configuration (credentials from Secret)
+database:
+  name: cuba_fi_uj
+  secretName: cuba-postgres-credentials
+
+env:
+  RUST_LOG: "info"
+  GL_SERVICE_URL: "http://gl-service.cuba-fi.svc.cluster.local:50060"
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi

@@ -49,6 +49,7 @@ data:
       "cuba_fi_co"
       "cuba_fi_tr"
       "cuba_fi_coa"
+      "cuba_fi_uj"
       "cuba_am_ah"
       "cuba_am_eh"
       "cuba_am_gs"
@@ -68,6 +69,7 @@ data:
       "cuba_pm_po"
       "cuba_pm_sa"
       "cuba_pm_se"
+      "cuba_pm_sp"
       "cuba_rd_pl"
       "cuba_rd_ps"
       "cuba_sc_bt"
@@ -144,12 +146,12 @@ spec:
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: postgres-credentials
+                  name: cuba-postgres-credentials
                   key: username
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: postgres-credentials
+                  name: cuba-postgres-credentials
                   key: password
             volumeMounts:
             - name: backup-script
@@ -213,12 +215,12 @@ spec:
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: postgres-credentials
+                  name: cuba-postgres-credentials
                   key: username
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: postgres-credentials
+                  name: cuba-postgres-credentials
                   key: password
             volumeMounts:
             - name: backup-storage
@@ -252,7 +254,7 @@ spec:
       restartPolicy: Never
       containers:
       - name: backup
-        image: postgres:15
+        image: postgres:16-alpine
         command:
         - /bin/bash
         - /scripts/backup.sh
@@ -262,12 +264,12 @@ spec:
         - name: POSTGRES_USER
           valueFrom:
             secretKeyRef:
-              name: postgres-credentials
+              name: cuba-postgres-credentials
               key: username
         - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
-              name: postgres-credentials
+              name: cuba-postgres-credentials
               key: password
         volumeMounts:
         - name: backup-script

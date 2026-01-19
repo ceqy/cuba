@@ -1,6 +1,6 @@
 #!/bin/bash
-# Update all service values files to use K8s Secrets
-# Removes hardcoded DATABASE_URL and adds database.name configuration
+# 更新所有服务的 values 文件以使用 K8s Secrets
+# 移除硬编码的 DATABASE_URL 并添加 database.name 配置
 
 set -e
 
@@ -8,10 +8,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 VALUES_DIR="$SCRIPT_DIR/../deploy/k8s/values"
 UPDATED_COUNT=0
 
-echo "🔐 Updating service values files to use K8s Secrets..."
+echo "🔐 正在更新服务 values 文件以使用 K8s Secrets..."
 echo ""
 
-# Service to database name mapping
+# 服务到数据库名称的映射
 declare -A DB_MAP=(
     # FI
     ["ap-service"]="cuba_fi_ap"
@@ -20,10 +20,11 @@ declare -A DB_MAP=(
     ["co-service"]="cuba_fi_co"
     ["tr-service"]="cuba_fi_tr"
     ["coa-service"]="cuba_fi_coa"
+    ["uj-service"]="cuba_fi_uj"
     # IAM
     ["auth-service"]="cuba_iam"
-    ["oauth-service"]="cuba_iam_oauth"
-    ["rbac-service"]="cuba_iam_rbac"
+    ["oauth-service"]="cuba_iam"
+    ["rbac-service"]="cuba_iam"
     # SC
     ["bt-service"]="cuba_sc_bt"
     ["df-service"]="cuba_sc_df"
@@ -119,7 +120,7 @@ for values_file in "$VALUES_DIR"/*-service.yaml; do
         ' "${values_file}.bak" > "$values_file"
     fi
     
-    # Add JWT config for IAM services
+    # 为 IAM 服务添加 JWT 配置
     if [[ "$service_name" == "auth-service" || "$service_name" == "oauth-service" ]]; then
         if ! grep -q "^jwt:" "$values_file"; then
             cat >> "$values_file" << EOF
@@ -130,13 +131,13 @@ jwt:
 EOF
         fi
     fi
-    
-    echo "  ✓ Updated $service_name"
+
+    echo "  ✓ 已更新 $service_name"
     ((UPDATED_COUNT++))
 done
 
 echo ""
-echo "✅ Updated $UPDATED_COUNT service values files"
-echo "Database credentials now managed via K8s Secrets!"
+echo "✅ 已更新 $UPDATED_COUNT 个服务 values 文件"
+echo "数据库凭据现已通过 K8s Secrets 管理!"
 echo ""
-echo "To review changes: git diff deploy/k8s/values/"
+echo "查看更改: git diff deploy/k8s/values/"

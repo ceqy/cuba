@@ -71,3 +71,10 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-feature
 # Build Dependencies
 tonic-build = "0.14"
 tonic-prost-build = "0.14"
+
+# Release profile optimizations
+[profile.release]
+lto = "thin"
+opt-level = 3
+strip = true
+codegen-units = 1

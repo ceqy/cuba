@@ -17,7 +17,7 @@ spec:
       {{- end }}
       labels:
         {{- include "microservice.selectorLabels" . | nindent 8 }}
-        # Default sidecar injection for Istio
+        # Istio sidecar 注入
         sidecar.istio.io/inject: "true"
     spec:
       containers:
@@ -30,7 +30,7 @@ spec:
             - name: metrics
               containerPort: {{ .Values.service.metricsPort }}
           env:
-            # Database connection constructed from secret
+            # 从 Secret 构建数据库连接字符串
             - name: DATABASE_URL
               value: "postgres://$(POSTGRES_USERNAME):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/{{ .Values.database.name }}"
             - name: POSTGRES_USERNAME
@@ -55,7 +55,7 @@ spec:
                   key: port
             {{- if .Values.jwt }}
             {{- if .Values.jwt.enabled }}
-            # JWT Secret for IAM services
+            # IAM 服务使用的 JWT 密钥
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
@@ -63,13 +63,21 @@ spec:
                   key: {{ .Values.jwt.secretKey | default "secret-key" }}
             {{- end }}
             {{- end }}
-            # Additional environment variables
+            # 其他环境变量
             {{- range $key, $value := .Values.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

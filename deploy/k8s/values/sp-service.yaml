@@ -1,0 +1,26 @@
+# sp-service (Supplier Portal) Helm Values
+replicaCount: 2
+image:
+  repository: cuba-erp/sp-service
+  tag: "latest"
+fullnameOverride: "sp-service"
+service:
+  grpcPort: 50088
+  metricsPort: 9090
+
+# Database configuration (credentials from Secret)
+database:
+  name: cuba_pm_sp
+  secretName: cuba-postgres-credentials
+
+env:
+  RUST_LOG: "info"
+  PO_SERVICE_URL: "http://po-service.cuba-pm.svc.cluster.local:50070"
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi

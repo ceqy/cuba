@@ -1,4 +1,4 @@
-# Default values for microservice.
+# 微服务 Helm Chart 默认配置
 replicaCount: 2
 
 image:
@@ -17,7 +17,8 @@ service:
 
 env:
   RUST_LOG: "info"
-  DATABASE_URL: "postgres://postgres:postgres@postgres-service:5432/cuba"
+  # 注意: DATABASE_URL 在 deployment.yaml 中从 secrets 构建
+  # 不要在此处设置 DATABASE_URL 以避免凭据泄露
 
 resources:
   limits:
@@ -27,12 +28,14 @@ resources:
     cpu: 100m
     memory: 128Mi
 
+# 存活探针
 livenessProbe:
   grpc:
     port: 50051
   initialDelaySeconds: 10
   periodSeconds: 10
 
+# 就绪探针
 readinessProbe:
   grpc:
     port: 50051
@@ -43,11 +46,11 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 
-# Istio sidecar injection
+# Istio sidecar 注入
 podAnnotations:
   sidecar.istio.io/inject: "true"
 
-# Database migration job
-migration:
-  enabled: true
-  image: cuba-erp/migrator
+# 数据库配置 (凭据来自 Secret)
+database:
+  name: ""
+  secretName: cuba-postgres-credentials
