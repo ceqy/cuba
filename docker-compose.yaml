@@ -1,7 +1,7 @@
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18
     container_name: cuba-postgres
     environment:
       POSTGRES_USER: postgres
@@ -10,40 +10,54 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # RBAC Service (gRPC)
+  rbac-service:
+    image: cuba-erp/rbac-service:latest
+    container_name: cuba-rbac-service
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_iam
+      RUST_LOG: info
+    ports:
+      - "50052:50052"
+      - "9095:9090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   # Auth Service (gRPC)
   auth-service:
-    build:
-      context: .
-      dockerfile: apps/iam/auth-service/Dockerfile
+    image: cuba-erp/auth-service:latest
     container_name: cuba-auth-service
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_iam
       RUST_LOG: info
+      RBAC_SERVICE_ADDR: http://cuba-rbac-service:50052
+      JWT_SECRET: dev-secret-key-change-in-production
     ports:
       - "50051:50051"
       - "9090:9090"
     depends_on:
       postgres:
         condition: service_healthy
+      rbac-service:
+        condition: service_started
 
   # GL Service (gRPC)
   gl-service:
-    build:
-      context: .
-      dockerfile: apps/fi/gl-service/Dockerfile
+    image: cuba-erp/gl-service:latest
     container_name: cuba-gl-service
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_fi_gl
       RUST_LOG: info
     ports:
-      - "50060:50051"
+      - "50060:50052"
       - "9091:9090"
     depends_on:
       postgres:
@@ -51,55 +65,58 @@ services:
 
   # COA Service (gRPC)
   coa-service:
-    build:
-      context: .
-      dockerfile: apps/fi/coa-service/Dockerfile
+    image: cuba-erp/co-service:latest
     container_name: cuba-coa-service
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_fi_coa
       RUST_LOG: info
+      GL_SERVICE_URL: http://cuba-gl-service:50052
     ports:
       - "50065:50051"
       - "9092:9090"
     depends_on:
       postgres:
         condition: service_healthy
+      gl-service:
+        condition: service_started
 
   # AP Service (gRPC)
   ap-service:
-    build:
-      context: .
-      dockerfile: apps/fi/ap-service/Dockerfile
+    image: cuba-erp/ap-service:latest
     container_name: cuba-ap-service
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_fi_ap
       RUST_LOG: info
+      GL_SERVICE_URL: http://cuba-gl-service:50052
     ports:
       - "50061:50051"
       - "9093:9090"
     depends_on:
       postgres:
         condition: service_healthy
+      gl-service:
+        condition: service_started
 
   # AR Service (gRPC)
   ar-service:
-    build:
-      context: .
-      dockerfile: apps/fi/ar-service/Dockerfile
+    image: cuba-erp/ar-service:latest
     container_name: cuba-ar-service
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/cuba_fi_ar
       RUST_LOG: info
+      GL_SERVICE_URL: http://cuba-gl-service:50052
     ports:
       - "50062:50051"
       - "9094:9090"
     depends_on:
       postgres:
         condition: service_healthy
+      gl-service:
+        condition: service_started
 
   # Envoy API Gateway
   envoy:
-    image: envoyproxy/envoy:v1.32-latest
+    image: envoyproxy/envoy:v1.31-latest
     container_name: cuba-envoy
     ports:
       - "8080:8080"
@@ -117,9 +134,17 @@ services:
     container_name: cuba-swagger
     ports:
       - "8086:8080"
+    environment:
+      URLS: "[
+        { url: '/specs/auth-service.yaml', name: 'Auth Service' },
+        { url: '/specs/rbac-service.yaml', name: 'RBAC Service' },
+        { url: '/specs/gl-service.yaml', name: 'GL Service' },
+        { url: '/specs/ap-service.yaml', name: 'AP Service' },
+        { url: '/specs/ar-service.yaml', name: 'AR Service' },
+        { url: '/specs/coa-service.yaml', name: 'COA Service' }
+      ]"
     volumes:
       - ./docs/openapi/splits:/usr/share/nginx/html/specs:ro
-      - ./deploy/swagger/swagger-initializer.js:/usr/share/nginx/html/swagger-initializer.js:ro
 
 volumes:
   postgres_data:

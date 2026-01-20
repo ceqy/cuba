@@ -1,0 +1,14 @@
+openapi: 3.0.0
+info:
+  title: GL Service API
+  version: 1.0.0
+  description: CUBA ERP 总账服务 API
+servers:
+  - url: http://localhost:50060
+paths:
+  /journal-entries:
+    get:
+      summary: 查询会计分录
+      responses:
+        '200':
+          description: 成功
