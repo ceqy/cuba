@@ -1,7 +1,7 @@
-use sqlx::PgPool;
 use crate::domain::ServiceOrder;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
+use sqlx::PgPool;
 
 pub struct ServiceOrderRepository {
     pool: PgPool,
@@ -35,7 +35,12 @@ impl ServiceOrderRepository {
         Ok(r)
     }
 
-    pub async fn assign_technician(&self, order_number: &str, tech_id: &str, scheduled: DateTime<Utc>) -> Result<()> {
+    pub async fn assign_technician(
+        &self,
+        order_number: &str,
+        tech_id: &str,
+        scheduled: DateTime<Utc>,
+    ) -> Result<()> {
         sqlx::query("UPDATE service_orders SET assigned_technician_id = $1, planned_start = $2, status = 'ASSIGNED', updated_at = NOW() WHERE order_number = $3")
             .bind(tech_id)
             .bind(scheduled)
@@ -45,10 +50,13 @@ impl ServiceOrderRepository {
     }
 
     pub async fn update_status(&self, order_number: &str, status: &str) -> Result<()> {
-        sqlx::query("UPDATE service_orders SET status = $1, updated_at = NOW() WHERE order_number = $2")
-            .bind(status)
-            .bind(order_number)
-        .execute(&self.pool).await?;
+        sqlx::query(
+            "UPDATE service_orders SET status = $1, updated_at = NOW() WHERE order_number = $2",
+        )
+        .bind(status)
+        .bind(order_number)
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 }

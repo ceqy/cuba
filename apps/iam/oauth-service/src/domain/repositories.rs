@@ -1,5 +1,5 @@
+use crate::domain::entities::{AuthorizationCode, OAuthClient, RefreshToken};
 use async_trait::async_trait;
-use crate::domain::entities::{OAuthClient, AuthorizationCode, RefreshToken};
 
 #[async_trait]
 pub trait ClientRepository: Send + Sync {

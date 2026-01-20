@@ -1,11 +1,11 @@
+use oauth_service::api::grpc_server::OAuthServiceImpl;
+use oauth_service::application::handlers::{AuthorizeHandler, TokenHandler};
+use oauth_service::infrastructure::grpc::iam::oauth::v1::o_auth_service_server::OAuthServiceServer;
+use oauth_service::infrastructure::persistence::PostgresOAuthRepository;
+use oauth_service::infrastructure::services::{ClientSecretService, CryptoService, JwtService};
+use std::sync::Arc;
 use tonic::transport::Server;
 use tracing::info;
-use std::sync::Arc;
-use oauth_service::infrastructure::grpc::iam::oauth::v1::o_auth_service_server::OAuthServiceServer;
-use oauth_service::api::grpc_server::OAuthServiceImpl;
-use oauth_service::infrastructure::persistence::PostgresOAuthRepository;
-use oauth_service::infrastructure::services::{JwtService, CryptoService, ClientSecretService};
-use oauth_service::application::handlers::{AuthorizeHandler, TokenHandler};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -18,8 +18,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let oauth_repo = Arc::new(PostgresOAuthRepository::new(pool.clone()));
 
     // Read JWT secret from environment variable (no default fallback for security)
-    let jwt_secret = std::env::var("JWT_SECRET")
-        .expect("JWT_SECRET environment variable must be set");
+    let jwt_secret =
+        std::env::var("JWT_SECRET").expect("JWT_SECRET environment variable must be set");
     let jwt_service = Arc::new(JwtService::new(jwt_secret));
     let crypto_service = Arc::new(CryptoService::default());
     let secret_service = Arc::new(ClientSecretService::default());
@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         crypto_service.clone(),
         secret_service.clone(),
     ));
-    
+
     // Service
     let oauth_service = OAuthServiceImpl::new(
         authorize_handler,
@@ -49,7 +49,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         secret_service,
         jwt_service,
     );
-    
+
     // Reflection
     let descriptor = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));
     let reflection_service = tonic_reflection::server::Builder::configure()
@@ -57,7 +57,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_v1()?;
 
     info!("Server listening on {}", addr);
-    
+
     Server::builder()
         .add_service(reflection_service)
         .add_service(OAuthServiceServer::new(oauth_service))

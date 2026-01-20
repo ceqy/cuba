@@ -3,10 +3,10 @@ use std::sync::Arc;
 use tonic::transport::Server;
 use tracing::info;
 
-use coa_service::infrastructure::grpc::chart_of_accounts_service_server::ChartOfAccountsServiceServer;
 use coa_service::api::grpc_server::CoaGrpcService;
 use coa_service::application::CoaApplicationService;
 use coa_service::infrastructure::PgGlAccountRepository;
+use coa_service::infrastructure::grpc::chart_of_accounts_service_server::ChartOfAccountsServiceServer;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -28,7 +28,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Reflection Service
     let reflection_service = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(coa_service::infrastructure::grpc::fi::coa::v1::FILE_DESCRIPTOR_SET)
+        .register_encoded_file_descriptor_set(
+            coa_service::infrastructure::grpc::fi::coa::v1::FILE_DESCRIPTOR_SET,
+        )
         .build_v1()?;
 
     // Start gRPC server

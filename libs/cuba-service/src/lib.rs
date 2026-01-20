@@ -1,5 +1,5 @@
 use anyhow::Result;
-use cuba_database::{DatabaseConfig, init_pool, DbPool};
+use cuba_database::{DatabaseConfig, DbPool, init_pool};
 use dotenvy::dotenv;
 
 pub struct ServiceContext {

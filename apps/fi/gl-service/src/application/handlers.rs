@@ -1,12 +1,18 @@
-use std::sync::Arc;
-use crate::application::commands::{CreateJournalEntryCommand, PostJournalEntryCommand, ReverseJournalEntryCommand, ParkJournalEntryCommand, UpdateJournalEntryCommand};
-use crate::application::queries::{GetJournalEntryQuery, ListJournalEntriesQuery, ListSpecialGlEntriesQuery, ListBusinessPartnerSpecialGlQuery};
+use crate::application::commands::{
+    CreateJournalEntryCommand, ParkJournalEntryCommand, PostJournalEntryCommand,
+    ReverseJournalEntryCommand, UpdateJournalEntryCommand,
+};
+use crate::application::queries::{
+    GetJournalEntryQuery, ListBusinessPartnerSpecialGlQuery, ListJournalEntriesQuery,
+    ListSpecialGlEntriesQuery,
+};
 use crate::domain::aggregates::journal_entry::{
-    JournalEntry, LineItem, DebitCredit, PostingStatus, PaymentTermsDetail, InvoiceReference,
-    DunningDetail,
+    DebitCredit, DunningDetail, InvoiceReference, JournalEntry, LineItem, PaymentTermsDetail,
+    PostingStatus,
 };
 use crate::domain::repositories::JournalRepository;
 use crate::domain::services::AccountValidationService;
+use std::sync::Arc;
 use uuid::Uuid;
 
 pub struct CreateJournalEntryHandler<R> {
@@ -28,7 +34,9 @@ impl<R: JournalRepository> CreateJournalEntryHandler<R> {
     }
 
     /// 验证特殊总账业务规则
-    fn validate_special_gl_rules(lines: &[LineItem]) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    fn validate_special_gl_rules(
+        lines: &[LineItem],
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         use crate::domain::aggregates::journal_entry::SpecialGlType;
 
         for (idx, line) in lines.iter().enumerate() {
@@ -41,7 +49,7 @@ impl<R: JournalRepository> CreateJournalEntryHandler<R> {
                     // 当前 LineItem 结构中没有 business_partner 字段
                     // 这个验证需要在添加 business_partner 字段后实现
                     tracing::debug!("Line {}: Down payment detected", line_num);
-                }
+                },
 
                 // 预收款业务规则
                 SpecialGlType::AdvancePayment => {
@@ -49,7 +57,7 @@ impl<R: JournalRepository> CreateJournalEntryHandler<R> {
                     // 当前 LineItem 结构中没有 business_partner 字段
                     // 这个验证需要在添加 business_partner 字段后实现
                     tracing::debug!("Line {}: Advance payment detected", line_num);
-                }
+                },
 
                 // 票据业务规则
                 SpecialGlType::BillOfExchange | SpecialGlType::BillDiscount => {
@@ -57,155 +65,174 @@ impl<R: JournalRepository> CreateJournalEntryHandler<R> {
                     // 当前 LineItem 结构中没有 maturity_date 字段
                     // 这个验证需要在添加 maturity_date 字段后实现
                     tracing::debug!("Line {}: Bill of exchange detected", line_num);
-                }
+                },
 
                 SpecialGlType::Normal => {
                     // 普通业务，无需特殊验证
-                }
+                },
             }
         }
 
         Ok(())
     }
 
-    pub async fn handle(&self, cmd: CreateJournalEntryCommand) -> Result<JournalEntry, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn handle(
+        &self,
+        cmd: CreateJournalEntryCommand,
+    ) -> Result<JournalEntry, Box<dyn std::error::Error + Send + Sync>> {
         // Validate accounts if COA service is available
         if let Some(validator) = &self.account_validation {
-            let account_codes: Vec<String> = cmd.lines.iter()
-                .map(|l| l.account_id.clone())
-                .collect();
+            let account_codes: Vec<String> =
+                cmd.lines.iter().map(|l| l.account_id.clone()).collect();
 
-            tracing::info!("Validating {} accounts via COA service", account_codes.len());
+            tracing::info!(
+                "Validating {} accounts via COA service",
+                account_codes.len()
+            );
 
-            match validator.validate_journal_entry_accounts(
-                account_codes,
-                &cmd.company_code,
-                cmd.posting_date,
-            ).await {
+            match validator
+                .validate_journal_entry_accounts(account_codes, &cmd.company_code, cmd.posting_date)
+                .await
+            {
                 Ok(_) => {
                     tracing::info!("All accounts validated successfully");
-                }
+                },
                 Err(e) => {
                     tracing::error!("Account validation failed: {}", e);
                     return Err(format!("科目验证失败: {}", e).into());
-                }
+                },
             }
         } else {
             tracing::warn!("COA service not available, skipping account validation");
         }
 
-        let lines: Vec<LineItem> = cmd.lines.into_iter().enumerate().map(|(i, l)| -> Result<LineItem, Box<dyn std::error::Error + Send + Sync>> {
-            // 解析特殊总账标识
-            let special_gl_indicator = if let Some(ref code) = l.special_gl_indicator {
-                crate::domain::aggregates::journal_entry::SpecialGlType::from_sap_code(code)
-            } else {
-                crate::domain::aggregates::journal_entry::SpecialGlType::Normal
-            };
+        let lines: Vec<LineItem> = cmd
+            .lines
+            .into_iter()
+            .enumerate()
+            .map(
+                |(i, l)| -> Result<LineItem, Box<dyn std::error::Error + Send + Sync>> {
+                    // 解析特殊总账标识
+                    let special_gl_indicator = if let Some(ref code) = l.special_gl_indicator {
+                        crate::domain::aggregates::journal_entry::SpecialGlType::from_sap_code(code)
+                    } else {
+                        crate::domain::aggregates::journal_entry::SpecialGlType::Normal
+                    };
 
-            // 解析并行会计字段
-            let ledger = l.ledger.unwrap_or_else(|| "0L".to_string());
-            let ledger_type = if let Some(lt) = l.ledger_type {
-                crate::domain::aggregates::journal_entry::LedgerType::from(lt)
-            } else {
-                crate::domain::aggregates::journal_entry::LedgerType::Leading
-            };
+                    // 解析并行会计字段
+                    let ledger = l.ledger.unwrap_or_else(|| "0L".to_string());
+                    let ledger_type = if let Some(lt) = l.ledger_type {
+                        crate::domain::aggregates::journal_entry::LedgerType::from(lt)
+                    } else {
+                        crate::domain::aggregates::journal_entry::LedgerType::Leading
+                    };
 
-            // 转换付款执行信息
-            let payment_execution = l.payment_execution.map(|pe| {
-                let mut detail = crate::domain::aggregates::journal_entry::PaymentExecutionDetail::new(
-                    pe.payment_method,
-                );
-                if let Some(bank) = pe.house_bank {
-                    detail.house_bank = Some(bank);
-                }
-                if let Some(bank_type) = pe.partner_bank_type {
-                    detail.partner_bank_type = Some(bank_type);
-                }
-                if let Some(block) = pe.payment_block {
-                    detail.payment_block = Some(block);
-                }
-                if let Some(baseline) = pe.payment_baseline_date {
-                    detail.payment_baseline_date = Some(baseline);
-                }
-                if let Some(reference) = pe.payment_reference {
-                    detail.payment_reference = Some(reference);
-                }
-                if let Some(priority) = pe.payment_priority {
-                    detail.payment_priority = Some(priority);
-                }
-                detail
-            });
+                    // 转换付款执行信息
+                    let payment_execution = l.payment_execution.map(|pe| {
+                        let mut detail =
+                            crate::domain::aggregates::journal_entry::PaymentExecutionDetail::new(
+                                pe.payment_method,
+                            );
+                        if let Some(bank) = pe.house_bank {
+                            detail.house_bank = Some(bank);
+                        }
+                        if let Some(bank_type) = pe.partner_bank_type {
+                            detail.partner_bank_type = Some(bank_type);
+                        }
+                        if let Some(block) = pe.payment_block {
+                            detail.payment_block = Some(block);
+                        }
+                        if let Some(baseline) = pe.payment_baseline_date {
+                            detail.payment_baseline_date = Some(baseline);
+                        }
+                        if let Some(reference) = pe.payment_reference {
+                            detail.payment_reference = Some(reference);
+                        }
+                        if let Some(priority) = pe.payment_priority {
+                            detail.payment_priority = Some(priority);
+                        }
+                        detail
+                    });
 
-            let payment_terms_detail = l.payment_terms_detail.map(|ptd| PaymentTermsDetail {
-                baseline_date: ptd.baseline_date,
-                discount_days_1: ptd.discount_days_1,
-                discount_days_2: ptd.discount_days_2,
-                net_payment_days: ptd.net_payment_days,
-                discount_percent_1: ptd.discount_percent_1,
-                discount_percent_2: ptd.discount_percent_2,
-                discount_amount: ptd.discount_amount,
-            });
+                    let payment_terms_detail =
+                        l.payment_terms_detail.map(|ptd| PaymentTermsDetail {
+                            baseline_date: ptd.baseline_date,
+                            discount_days_1: ptd.discount_days_1,
+                            discount_days_2: ptd.discount_days_2,
+                            net_payment_days: ptd.net_payment_days,
+                            discount_percent_1: ptd.discount_percent_1,
+                            discount_percent_2: ptd.discount_percent_2,
+                            discount_amount: ptd.discount_amount,
+                        });
 
-            let invoice_reference = l.invoice_reference.map(|ir| InvoiceReference {
-                reference_document_number: ir.reference_document_number,
-                reference_fiscal_year: ir.reference_fiscal_year,
-                reference_line_item: ir.reference_line_item,
-                reference_document_type: ir.reference_document_type,
-                reference_company_code: ir.reference_company_code,
-            });
+                    let invoice_reference = l.invoice_reference.map(|ir| InvoiceReference {
+                        reference_document_number: ir.reference_document_number,
+                        reference_fiscal_year: ir.reference_fiscal_year,
+                        reference_line_item: ir.reference_line_item,
+                        reference_document_type: ir.reference_document_type,
+                        reference_company_code: ir.reference_company_code,
+                    });
 
-            let dunning_detail = l.dunning_detail.map(|dd| DunningDetail {
-                dunning_key: dd.dunning_key,
-                dunning_block: dd.dunning_block,
-                last_dunning_date: dd.last_dunning_date,
-                dunning_date: dd.dunning_date,
-                dunning_level: dd.dunning_level,
-                dunning_area: dd.dunning_area,
-                grace_period_days: dd.grace_period_days,
-                dunning_charges: dd.dunning_charges,
-                dunning_clerk: dd.dunning_clerk,
-            });
+                    let dunning_detail = l.dunning_detail.map(|dd| DunningDetail {
+                        dunning_key: dd.dunning_key,
+                        dunning_block: dd.dunning_block,
+                        last_dunning_date: dd.last_dunning_date,
+                        dunning_date: dd.dunning_date,
+                        dunning_level: dd.dunning_level,
+                        dunning_area: dd.dunning_area,
+                        grace_period_days: dd.grace_period_days,
+                        dunning_charges: dd.dunning_charges,
+                        dunning_clerk: dd.dunning_clerk,
+                    });
 
-            Ok(LineItem {
-                id: Uuid::new_v4(),
-                line_number: (i + 1) as i32,
-                account_id: l.account_id,
-                debit_credit: match l.debit_credit.as_str() {
-                    "S" | "D" => DebitCredit::Debit,
-                    "H" | "C" => DebitCredit::Credit,
-                    _ => return Err(format!("Invalid debit/credit indicator: {}", l.debit_credit).into()),
+                    Ok(LineItem {
+                        id: Uuid::new_v4(),
+                        line_number: (i + 1) as i32,
+                        account_id: l.account_id,
+                        debit_credit: match l.debit_credit.as_str() {
+                            "S" | "D" => DebitCredit::Debit,
+                            "H" | "C" => DebitCredit::Credit,
+                            _ => {
+                                return Err(format!(
+                                    "Invalid debit/credit indicator: {}",
+                                    l.debit_credit
+                                )
+                                .into());
+                            },
+                        },
+                        amount: l.amount,
+                        local_amount: l.amount,
+                        cost_center: l.cost_center,
+                        profit_center: l.profit_center,
+                        text: l.text,
+                        special_gl_indicator,
+                        ledger,
+                        ledger_type,
+                        ledger_amount: l.ledger_amount,
+                        financial_area: l.financial_area,
+                        business_area: l.business_area,
+                        controlling_area: l.controlling_area,
+                        account_assignment: l.account_assignment,
+                        business_partner: l.business_partner,
+                        business_partner_type: l.business_partner_type,
+                        payment_execution,
+                        payment_terms_detail,
+                        invoice_reference,
+                        dunning_detail,
+                        transaction_type: l.transaction_type,
+                        reference_transaction_type: l.reference_transaction_type,
+                        trading_partner_company: l.trading_partner_company,
+                        amount_in_object_currency: l.amount_in_object_currency,
+                        object_currency: l.object_currency,
+                        amount_in_profit_center_currency: l.amount_in_profit_center_currency,
+                        profit_center_currency: l.profit_center_currency,
+                        amount_in_group_currency: l.amount_in_group_currency,
+                        group_currency: l.group_currency,
+                        maturity_date: l.maturity_date,
+                    })
                 },
-                amount: l.amount,
-                local_amount: l.amount,
-                cost_center: l.cost_center,
-                profit_center: l.profit_center,
-                text: l.text,
-                special_gl_indicator,
-                ledger,
-                ledger_type,
-                ledger_amount: l.ledger_amount,
-                financial_area: l.financial_area,
-                business_area: l.business_area,
-                controlling_area: l.controlling_area,
-                account_assignment: l.account_assignment,
-                business_partner: l.business_partner,
-                business_partner_type: l.business_partner_type,
-                payment_execution,
-                payment_terms_detail,
-                invoice_reference,
-                dunning_detail,
-                transaction_type: l.transaction_type,
-                reference_transaction_type: l.reference_transaction_type,
-                trading_partner_company: l.trading_partner_company,
-                amount_in_object_currency: l.amount_in_object_currency,
-                object_currency: l.object_currency,
-                amount_in_profit_center_currency: l.amount_in_profit_center_currency,
-                profit_center_currency: l.profit_center_currency,
-                amount_in_group_currency: l.amount_in_group_currency,
-                group_currency: l.group_currency,
-                maturity_date: l.maturity_date,
-            })
-        }).collect::<Result<Vec<_>, _>>()?;
+            )
+            .collect::<Result<Vec<_>, _>>()?;
 
         // 验证特殊总账业务规则
         Self::validate_special_gl_rules(&lines)?;
@@ -223,7 +250,16 @@ impl<R: JournalRepository> CreateJournalEntryHandler<R> {
         )?;
 
         if cmd.post_immediately {
-            let doc_num = format!("DOC-{}-{}", entry.fiscal_year, Uuid::new_v4().simple().to_string().chars().take(8).collect::<String>());
+            let doc_num = format!(
+                "DOC-{}-{}",
+                entry.fiscal_year,
+                Uuid::new_v4()
+                    .simple()
+                    .to_string()
+                    .chars()
+                    .take(8)
+                    .collect::<String>()
+            );
             entry.post(doc_num)?;
         }
 
@@ -242,15 +278,30 @@ impl<R: JournalRepository> PostJournalEntryHandler<R> {
         Self { repository }
     }
 
-    pub async fn handle(&self, cmd: PostJournalEntryCommand) -> Result<JournalEntry, Box<dyn std::error::Error + Send + Sync>> {
-        let mut entry = self.repository.find_by_id(&cmd.id).await?
+    pub async fn handle(
+        &self,
+        cmd: PostJournalEntryCommand,
+    ) -> Result<JournalEntry, Box<dyn std::error::Error + Send + Sync>> {
+        let mut entry = self
+            .repository
+            .find_by_id(&cmd.id)
+            .await?
             .ok_or("Journal entry not found")?;
 
         if entry.status == PostingStatus::Posted {
             return Ok(entry);
         }
 
-        let doc_num = format!("DOC-{}-{}", entry.fiscal_year, Uuid::new_v4().simple().to_string().chars().take(8).collect::<String>());
+        let doc_num = format!(
+            "DOC-{}-{}",
+            entry.fiscal_year,
+            Uuid::new_v4()
+                .simple()
+                .to_string()
+                .chars()
+                .take(8)
+                .collect::<String>()
+        );
         entry.post(doc_num)?;
 
         self.repository.save(&entry).await?;
@@ -268,7 +319,10 @@ impl<R: JournalRepository> GetJournalEntryHandler<R> {
         Self { repository }
     }
 
-    pub async fn handle(&self, query: GetJournalEntryQuery) -> Result<Option<JournalEntry>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn handle(
+        &self,
+        query: GetJournalEntryQuery,
+    ) -> Result<Option<JournalEntry>, Box<dyn std::error::Error + Send + Sync>> {
         self.repository.find_by_id(&query.id).await
     }
 }
@@ -290,10 +344,38 @@ impl<R: JournalRepository> ListJournalEntriesHandler<R> {
         Self { repository }
     }
 
-    pub async fn handle(&self, query: ListJournalEntriesQuery) -> Result<PaginatedResult<JournalEntry>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn handle(
+        &self,
+        query: ListJournalEntriesQuery,
+    ) -> Result<PaginatedResult<JournalEntry>, Box<dyn std::error::Error + Send + Sync>> {
         let status = query.status.as_deref();
-        let items = self.repository.search(&query.company_code, status, query.page, query.page_size).await?;
-        let total_items = self.repository.count(&query.company_code, status).await?;
+
+        tracing::info!(
+            "ListJournalEntries: company_code='{}', status={:?}, page={}, page_size={}",
+            query.company_code, status, query.page, query.page_size
+        );
+
+        let items = self
+            .repository
+            .search(&query.company_code, status, query.page, query.page_size)
+            .await?;
+
+        tracing::info!("ListJournalEntries: search returned {} items", items.len());
+
+        // Use count from repository, fallback to items.len() if zero (for first page with partial results)
+        let mut total_items = self.repository.count(&query.company_code, status).await?;
+
+        tracing::info!("ListJournalEntries: count returned {}", total_items);
+
+        // If count returns 0 but we have items, use items length as minimum
+        // This handles edge cases where count query might fail silently
+        if total_items == 0 && !items.is_empty() {
+            tracing::warn!(
+                "ListJournalEntries: count returned 0 but found {} items, adjusting total_items",
+                items.len()
+            );
+            total_items = items.len() as i64;
+        }
 
         Ok(PaginatedResult {
             items,
@@ -313,8 +395,14 @@ impl<R: JournalRepository> ReverseJournalEntryHandler<R> {
         Self { repository }
     }
 
-    pub async fn handle(&self, cmd: ReverseJournalEntryCommand) -> Result<JournalEntry, Box<dyn std::error::Error + Send + Sync>> {
-        let mut original_entry = self.repository.find_by_id(&cmd.id).await?
+    pub async fn handle(
+        &self,
+        cmd: ReverseJournalEntryCommand,
+    ) -> Result<JournalEntry, Box<dyn std::error::Error + Send + Sync>> {
+        let mut original_entry = self
+            .repository
+            .find_by_id(&cmd.id)
+            .await?
             .ok_or("Journal entry not found")?;
 
         if original_entry.status != PostingStatus::Posted {
@@ -322,7 +410,9 @@ impl<R: JournalRepository> ReverseJournalEntryHandler<R> {
         }
 
         // 使用提供的日期或当前日期作为冲销日期
-        let reversal_date = cmd.posting_date.unwrap_or_else(|| chrono::Utc::now().naive_utc().date());
+        let reversal_date = cmd
+            .posting_date
+            .unwrap_or_else(|| chrono::Utc::now().naive_utc().date());
 
         // 创建冲销凭证
         let reversal_entry = original_entry.create_reversal_entry(reversal_date)?;
@@ -349,7 +439,10 @@ impl<R: JournalRepository> DeleteJournalEntryHandler<R> {
 
     pub async fn handle(&self, id: Uuid) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Check if entry exists and is in draft status
-        let entry = self.repository.find_by_id(&id).await?
+        let entry = self
+            .repository
+            .find_by_id(&id)
+            .await?
             .ok_or("Journal entry not found")?;
 
         if entry.status != PostingStatus::Draft {
@@ -370,8 +463,14 @@ impl<R: JournalRepository> ParkJournalEntryHandler<R> {
         Self { repository }
     }
 
-    pub async fn handle(&self, cmd: ParkJournalEntryCommand) -> Result<JournalEntry, Box<dyn std::error::Error + Send + Sync>> {
-        let mut entry = self.repository.find_by_id(&cmd.id).await?
+    pub async fn handle(
+        &self,
+        cmd: ParkJournalEntryCommand,
+    ) -> Result<JournalEntry, Box<dyn std::error::Error + Send + Sync>> {
+        let mut entry = self
+            .repository
+            .find_by_id(&cmd.id)
+            .await?
             .ok_or("Journal entry not found")?;
 
         entry.park()?;
@@ -390,8 +489,14 @@ impl<R: JournalRepository> UpdateJournalEntryHandler<R> {
         Self { repository }
     }
 
-    pub async fn handle(&self, cmd: UpdateJournalEntryCommand) -> Result<JournalEntry, Box<dyn std::error::Error + Send + Sync>> {
-        let mut entry = self.repository.find_by_id(&cmd.id).await?
+    pub async fn handle(
+        &self,
+        cmd: UpdateJournalEntryCommand,
+    ) -> Result<JournalEntry, Box<dyn std::error::Error + Send + Sync>> {
+        let mut entry = self
+            .repository
+            .find_by_id(&cmd.id)
+            .await?
             .ok_or("Journal entry not found")?;
 
         // Convert LineItemDTO to LineItem if provided
@@ -530,32 +635,45 @@ impl<R: JournalRepository> ListSpecialGlEntriesHandler<R> {
         Self { repository }
     }
 
-    pub async fn handle(&self, query: ListSpecialGlEntriesQuery) -> Result<PaginatedResult<JournalEntry>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn handle(
+        &self,
+        query: ListSpecialGlEntriesQuery,
+    ) -> Result<PaginatedResult<JournalEntry>, Box<dyn std::error::Error + Send + Sync>> {
         use crate::domain::aggregates::journal_entry::SpecialGlType;
 
         // 验证特殊总账类型
         let gl_type = SpecialGlType::from_sap_code(&query.special_gl_type);
         if !gl_type.is_special() {
-            return Err(format!("无效的特殊总账类型: {}. 有效值: A (票据), F (预付款), V (预收款), W (票据贴现)", query.special_gl_type).into());
+            return Err(format!(
+                "无效的特殊总账类型: {}. 有效值: A (票据), F (预付款), V (预收款), W (票据贴现)",
+                query.special_gl_type
+            )
+            .into());
         }
 
         // 获取所有凭证
         let status = query.status.as_deref();
-        let all_items = self.repository.search(&query.company_code, status, 1, 10000).await?;
+        let all_items = self
+            .repository
+            .search(&query.company_code, status, 1, 10000)
+            .await?;
 
         // 过滤包含指定特殊总账类型的凭证
-        let filtered_items: Vec<JournalEntry> = all_items.into_iter()
+        let filtered_items: Vec<JournalEntry> = all_items
+            .into_iter()
             .filter(|entry| {
-                entry.lines.iter().any(|line| {
-                    line.special_gl_indicator == gl_type
-                })
+                entry
+                    .lines
+                    .iter()
+                    .any(|line| line.special_gl_indicator == gl_type)
             })
             .collect();
 
         // 分页
         let total_items = filtered_items.len() as i64;
         let offset = ((query.page.max(1) - 1) * query.page_size) as usize;
-        let items: Vec<JournalEntry> = filtered_items.into_iter()
+        let items: Vec<JournalEntry> = filtered_items
+            .into_iter()
             .skip(offset)
             .take(query.page_size as usize)
             .collect();
@@ -579,7 +697,10 @@ impl<R: JournalRepository> ListBusinessPartnerSpecialGlHandler<R> {
         Self { repository }
     }
 
-    pub async fn handle(&self, query: ListBusinessPartnerSpecialGlQuery) -> Result<PaginatedResult<JournalEntry>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn handle(
+        &self,
+        query: ListBusinessPartnerSpecialGlQuery,
+    ) -> Result<PaginatedResult<JournalEntry>, Box<dyn std::error::Error + Send + Sync>> {
         use crate::domain::aggregates::journal_entry::SpecialGlType;
 
         // 验证特殊总账类型（如果提供）
@@ -595,10 +716,14 @@ impl<R: JournalRepository> ListBusinessPartnerSpecialGlHandler<R> {
 
         // 获取所有凭证
         let status = query.status.as_deref();
-        let all_items = self.repository.search(&query.company_code, status, 1, 10000).await?;
+        let all_items = self
+            .repository
+            .search(&query.company_code, status, 1, 10000)
+            .await?;
 
         // 过滤包含指定业务伙伴和特殊总账类型的凭证
-        let filtered_items: Vec<JournalEntry> = all_items.into_iter()
+        let filtered_items: Vec<JournalEntry> = all_items
+            .into_iter()
             .filter(|entry| {
                 entry.lines.iter().any(|line| {
                     // TODO: 当前 LineItem 没有 business_partner 字段
@@ -616,7 +741,8 @@ impl<R: JournalRepository> ListBusinessPartnerSpecialGlHandler<R> {
         // 分页
         let total_items = filtered_items.len() as i64;
         let offset = ((query.page.max(1) - 1) * query.page_size) as usize;
-        let items: Vec<JournalEntry> = filtered_items.into_iter()
+        let items: Vec<JournalEntry> = filtered_items
+            .into_iter()
             .skip(offset)
             .take(query.page_size as usize)
             .collect();

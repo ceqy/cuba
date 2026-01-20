@@ -1,29 +1,30 @@
-use tonic::{Request, Response, Status};
-use std::sync::Arc;
-use uuid::Uuid;
-use chrono::{NaiveDate, Datelike};
+use chrono::{Datelike, NaiveDate};
 use rust_decimal::Decimal;
 use std::str::FromStr;
+use std::sync::Arc;
+use tonic::{Request, Response, Status};
+use uuid::Uuid;
 
-use crate::infrastructure::grpc::fi::gl::v1::gl_journal_entry_service_server::GlJournalEntryService;
-use crate::infrastructure::grpc::fi::gl::v1::*;
-use crate::infrastructure::grpc::common::v1 as common_v1;
-use crate::application::handlers::{
-    CreateJournalEntryHandler, GetJournalEntryHandler, ListJournalEntriesHandler, PostJournalEntryHandler, ReverseJournalEntryHandler, DeleteJournalEntryHandler, ParkJournalEntryHandler, UpdateJournalEntryHandler
-};
-use crate::application::commands::{
-    CreateJournalEntryCommand, PostJournalEntryCommand, ReverseJournalEntryCommand, LineItemDTO,
-    ParkJournalEntryCommand, UpdateJournalEntryCommand, InvoiceReferenceDTO, DunningDetailDTO,
-};
-use crate::application::queries::{
-    GetJournalEntryQuery, ListJournalEntriesQuery
-};
-use crate::domain::repositories::JournalRepository;
-use crate::domain::aggregates::journal_entry::SpecialGlType;
 use crate::api::mappers::{
     payment_execution_from_proto, payment_execution_to_proto, payment_terms_from_proto,
     payment_terms_to_proto,
 };
+use crate::application::commands::{
+    CreateJournalEntryCommand, DunningDetailDTO, InvoiceReferenceDTO, LineItemDTO,
+    ParkJournalEntryCommand, PostJournalEntryCommand, ReverseJournalEntryCommand,
+    UpdateJournalEntryCommand,
+};
+use crate::application::handlers::{
+    CreateJournalEntryHandler, DeleteJournalEntryHandler, GetJournalEntryHandler,
+    ListJournalEntriesHandler, ParkJournalEntryHandler, PostJournalEntryHandler,
+    ReverseJournalEntryHandler, UpdateJournalEntryHandler,
+};
+use crate::application::queries::{GetJournalEntryQuery, ListJournalEntriesQuery};
+use crate::domain::aggregates::journal_entry::SpecialGlType;
+use crate::domain::repositories::JournalRepository;
+use crate::infrastructure::grpc::common::v1 as common_v1;
+use crate::infrastructure::grpc::fi::gl::v1::gl_journal_entry_service_server::GlJournalEntryService;
+use crate::infrastructure::grpc::fi::gl::v1::*;
 
 pub struct GlServiceImpl<R> {
     create_handler: Arc<CreateJournalEntryHandler<R>>,
@@ -63,25 +64,39 @@ impl<R: JournalRepository> GlServiceImpl<R> {
 #[tonic::async_trait]
 impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> {
     // Associated Type
-    type StreamJournalEntriesStream = std::pin::Pin<Box<dyn tokio_stream::Stream<Item = Result<JournalEntryDetail, Status>> + Send + Sync + 'static>>;
+    type StreamJournalEntriesStream = std::pin::Pin<
+        Box<
+            dyn tokio_stream::Stream<Item = Result<JournalEntryDetail, Status>>
+                + Send
+                + Sync
+                + 'static,
+        >,
+    >;
 
-    async fn create_journal_entry(&self, request: Request<CreateJournalEntryRequest>) -> Result<Response<JournalEntryResponse>, Status> {
+    async fn create_journal_entry(
+        &self,
+        request: Request<CreateJournalEntryRequest>,
+    ) -> Result<Response<JournalEntryResponse>, Status> {
         let req = request.into_inner();
-        
-        let header = req.header.ok_or_else(|| Status::invalid_argument("Missing header"))?;
-        
+
+        let header = req
+            .header
+            .ok_or_else(|| Status::invalid_argument("Missing header"))?;
+
         // Basic mapping for MVP
-        let posting_date_ts = header.posting_date.ok_or_else(|| Status::invalid_argument("Missing posting_date"))?;
+        let posting_date_ts = header
+            .posting_date
+            .ok_or_else(|| Status::invalid_argument("Missing posting_date"))?;
         let posting_date = chrono::DateTime::from_timestamp(posting_date_ts.seconds, 0)
-             .ok_or_else(|| Status::invalid_argument("Invalid posting_date"))?
-             .naive_utc()
-             .date();
-             
+            .ok_or_else(|| Status::invalid_argument("Invalid posting_date"))?
+            .naive_utc()
+            .date();
+
         let document_date_ts = header.document_date.unwrap_or(posting_date_ts);
         let document_date = chrono::DateTime::from_timestamp(document_date_ts.seconds, 0)
-             .unwrap_or(chrono::DateTime::from_timestamp(posting_date_ts.seconds, 0).unwrap())
-             .naive_utc()
-             .date();
+            .unwrap_or(chrono::DateTime::from_timestamp(posting_date_ts.seconds, 0).unwrap())
+            .naive_utc()
+            .date();
 
         let lines: Result<Vec<LineItemDTO>, Status> = req.line_items.into_iter().map(|l| {
             let amount_doc = l.amount_in_document_currency.ok_or_else(|| Status::invalid_argument("Missing amount"))?;
@@ -235,7 +250,11 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
             posting_date,
             document_date,
             currency: header.currency,
-            reference: if header.reference_document.is_empty() { None } else { Some(header.reference_document) },
+            reference: if header.reference_document.is_empty() {
+                None
+            } else {
+                Some(header.reference_document)
+            },
             lines: lines?,
             post_immediately: req.post_immediately,
         };
@@ -246,7 +265,10 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
         }
     }
 
-    async fn get_journal_entry(&self, request: Request<GetJournalEntryRequest>) -> Result<Response<JournalEntryDetail>, Status> {
+    async fn get_journal_entry(
+        &self,
+        request: Request<GetJournalEntryRequest>,
+    ) -> Result<Response<JournalEntryDetail>, Status> {
         let req = request.into_inner();
         let id = Uuid::parse_str(&req.journal_entry_id)
             .map_err(|e| Status::invalid_argument(format!("Invalid UUID: {}", e)))?;
@@ -258,24 +280,32 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
         }
     }
 
-    async fn list_journal_entries(&self, request: Request<ListJournalEntriesRequest>) -> Result<Response<ListJournalEntriesResponse>, Status> {
+    async fn list_journal_entries(
+        &self,
+        request: Request<ListJournalEntriesRequest>,
+    ) -> Result<Response<ListJournalEntriesResponse>, Status> {
         let req = request.into_inner();
-        
+
         let mut status_filter = None;
         if !req.status_filter.is_empty() {
-             status_filter = Some(req.status_filter[0].to_string());
+            status_filter = Some(req.status_filter[0].to_string());
         }
 
         let query = ListJournalEntriesQuery {
             company_code: req.company_code,
             status: status_filter,
             page: req.pagination.as_ref().map(|p| p.page as u64).unwrap_or(1),
-            page_size: req.pagination.as_ref().map(|p| p.page_size as u64).unwrap_or(20),
+            page_size: req
+                .pagination
+                .as_ref()
+                .map(|p| p.page_size as u64)
+                .unwrap_or(20),
         };
 
         match self.list_handler.handle(query.clone()).await {
             Ok(result) => {
-                let items: Vec<JournalEntrySummary> = result.items.into_iter().map(map_to_summary).collect();
+                let items: Vec<JournalEntrySummary> =
+                    result.items.into_iter().map(map_to_summary).collect();
                 let total_pages = if result.page_size > 0 {
                     ((result.total_items as u64 + result.page_size - 1) / result.page_size) as i32
                 } else {
@@ -283,27 +313,35 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 };
                 Ok(Response::new(ListJournalEntriesResponse {
                     entries: items,
-                    pagination: Some(crate::infrastructure::grpc::common::v1::PaginationResponse {
-                        total_items: result.total_items,
-                        total_pages,
-                        current_page: result.page as i32,
-                        page_size: result.page_size as i32,
-                    })
+                    pagination: Some(
+                        crate::infrastructure::grpc::common::v1::PaginationResponse {
+                            total_items: result.total_items,
+                            total_pages,
+                            current_page: result.page as i32,
+                            page_size: result.page_size as i32,
+                        },
+                    ),
                 }))
-            }
+            },
             Err(e) => Err(Status::internal(e.to_string())),
         }
     }
 
-    async fn reverse_journal_entry(&self, request: Request<ReverseJournalEntryRequest>) -> Result<Response<JournalEntryResponse>, Status> {
+    async fn reverse_journal_entry(
+        &self,
+        request: Request<ReverseJournalEntryRequest>,
+    ) -> Result<Response<JournalEntryResponse>, Status> {
         let req = request.into_inner();
         let id = Uuid::parse_str(&req.journal_entry_id)
             .map_err(|e| Status::invalid_argument(format!("Invalid UUID: {}", e)))?;
 
-        let reversal_date = req.posting_date
-            .map(|ts| chrono::DateTime::from_timestamp(ts.seconds, 0)
-                .ok_or_else(|| Status::invalid_argument("Invalid posting_date"))
-                .map(|dt| dt.naive_utc().date()))
+        let reversal_date = req
+            .posting_date
+            .map(|ts| {
+                chrono::DateTime::from_timestamp(ts.seconds, 0)
+                    .ok_or_else(|| Status::invalid_argument("Invalid posting_date"))
+                    .map(|dt| dt.naive_utc().date())
+            })
             .transpose()?;
 
         let cmd = ReverseJournalEntryCommand {
@@ -317,8 +355,11 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
             Err(e) => Err(Status::internal(e.to_string())),
         }
     }
-    
-    async fn batch_reverse_journal_entries(&self, request: Request<BatchReverseJournalEntriesRequest>) -> Result<Response<BatchReverseJournalEntriesResponse>, Status> {
+
+    async fn batch_reverse_journal_entries(
+        &self,
+        request: Request<BatchReverseJournalEntriesRequest>,
+    ) -> Result<Response<BatchReverseJournalEntriesResponse>, Status> {
         let req = request.into_inner();
         let mut responses = Vec::new();
         let mut success_count = 0;
@@ -340,10 +381,11 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                     });
                     failure_count += 1;
                     continue;
-                }
+                },
             };
 
-            let reversal_date = entry_req.posting_date
+            let reversal_date = entry_req
+                .posting_date
                 .and_then(|ts| chrono::DateTime::from_timestamp(ts.seconds, 0))
                 .map(|dt| dt.naive_utc().date());
 
@@ -357,7 +399,7 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 Ok(reversal_entry) => {
                     responses.push(map_to_response(reversal_entry));
                     success_count += 1;
-                }
+                },
                 Err(e) => {
                     responses.push(JournalEntryResponse {
                         success: false,
@@ -370,89 +412,152 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                         }],
                     });
                     failure_count += 1;
-                }
+                },
             }
         }
 
         Ok(Response::new(BatchReverseJournalEntriesResponse {
-            result: Some(crate::infrastructure::grpc::common::v1::BatchOperationResult {
-                success_count,
-                failure_count,
-                errors: vec![],
-            }),
+            result: Some(
+                crate::infrastructure::grpc::common::v1::BatchOperationResult {
+                    success_count,
+                    failure_count,
+                    errors: vec![],
+                },
+            ),
             responses,
         }))
     }
 
-    async fn stream_journal_entries(&self, _request: Request<ListJournalEntriesRequest>) -> Result<Response<Self::StreamJournalEntriesStream>, Status> {
+    async fn stream_journal_entries(
+        &self,
+        _request: Request<ListJournalEntriesRequest>,
+    ) -> Result<Response<Self::StreamJournalEntriesStream>, Status> {
         Err(Status::unimplemented("Not implemented"))
     }
-    
-    async fn simulate_journal_entry(&self, request: Request<SimulateJournalEntryRequest>) -> Result<Response<SimulationResponse>, Status> {
+
+    async fn simulate_journal_entry(
+        &self,
+        request: Request<SimulateJournalEntryRequest>,
+    ) -> Result<Response<SimulationResponse>, Status> {
         let req = request.into_inner();
 
-        let header = req.header.ok_or_else(|| Status::invalid_argument("Missing header"))?;
+        let header = req
+            .header
+            .ok_or_else(|| Status::invalid_argument("Missing header"))?;
 
         // Convert line items with validation
-        let lines: Vec<LineItemDTO> = req.line_items.into_iter().map(|item| {
-            // 验证特殊总账标识
-            let special_gl_indicator = if item.special_gl_indicator.is_empty() {
-                None
-            } else {
-                let gl_type = SpecialGlType::from_sap_code(&item.special_gl_indicator);
-                if gl_type.is_special() || item.special_gl_indicator.is_empty() {
-                    Some(item.special_gl_indicator)
+        let lines: Vec<LineItemDTO> = req
+            .line_items
+            .into_iter()
+            .map(|item| {
+                // 验证特殊总账标识
+                let special_gl_indicator = if item.special_gl_indicator.is_empty() {
+                    None
                 } else {
-                    None // 无效的标识，忽略
-                }
-            };
+                    let gl_type = SpecialGlType::from_sap_code(&item.special_gl_indicator);
+                    if gl_type.is_special() || item.special_gl_indicator.is_empty() {
+                        Some(item.special_gl_indicator)
+                    } else {
+                        None // 无效的标识，忽略
+                    }
+                };
 
-            LineItemDTO {
-                account_id: item.gl_account,
-                debit_credit: item.debit_credit_indicator,
-                amount: Decimal::from_str(&item.amount_in_document_currency.unwrap_or_default().value).unwrap_or_default(),
-                cost_center: if item.cost_center.is_empty() { None } else { Some(item.cost_center) },
-                profit_center: if item.profit_center.is_empty() { None } else { Some(item.profit_center) },
-                text: if item.text.is_empty() { None } else { Some(item.text) },
-                special_gl_indicator,
-                ledger: if item.ledger.is_empty() { None } else { Some(item.ledger) },
-                ledger_type: if item.ledger_type == 0 { None } else { Some(item.ledger_type) },
-                ledger_amount: item.amount_in_ledger_currency.and_then(|amt| Decimal::from_str(&amt.value).ok()),
-                financial_area: if item.financial_area.is_empty() { None } else { Some(item.financial_area) },
-                business_area: if item.business_area.is_empty() { None } else { Some(item.business_area) },
-                controlling_area: if item.controlling_area.is_empty() { None } else { Some(item.controlling_area) },
-                account_assignment: None,
-                payment_execution: None,
-                payment_terms_detail: None,
-                business_partner: None,
-                business_partner_type: None,
-                maturity_date: None,
-                invoice_reference: None,
-                dunning_detail: None,
-                transaction_type: None,
-                reference_transaction_type: None,
-                trading_partner_company: None,
-                amount_in_object_currency: None,
-                object_currency: None,
-                amount_in_profit_center_currency: None,
-                profit_center_currency: None,
-                amount_in_group_currency: None,
-                group_currency: None,
-            }
-        }).collect();
+                LineItemDTO {
+                    account_id: item.gl_account,
+                    debit_credit: item.debit_credit_indicator,
+                    amount: Decimal::from_str(
+                        &item.amount_in_document_currency.unwrap_or_default().value,
+                    )
+                    .unwrap_or_default(),
+                    cost_center: if item.cost_center.is_empty() {
+                        None
+                    } else {
+                        Some(item.cost_center)
+                    },
+                    profit_center: if item.profit_center.is_empty() {
+                        None
+                    } else {
+                        Some(item.profit_center)
+                    },
+                    text: if item.text.is_empty() {
+                        None
+                    } else {
+                        Some(item.text)
+                    },
+                    special_gl_indicator,
+                    ledger: if item.ledger.is_empty() {
+                        None
+                    } else {
+                        Some(item.ledger)
+                    },
+                    ledger_type: if item.ledger_type == 0 {
+                        None
+                    } else {
+                        Some(item.ledger_type)
+                    },
+                    ledger_amount: item
+                        .amount_in_ledger_currency
+                        .and_then(|amt| Decimal::from_str(&amt.value).ok()),
+                    financial_area: if item.financial_area.is_empty() {
+                        None
+                    } else {
+                        Some(item.financial_area)
+                    },
+                    business_area: if item.business_area.is_empty() {
+                        None
+                    } else {
+                        Some(item.business_area)
+                    },
+                    controlling_area: if item.controlling_area.is_empty() {
+                        None
+                    } else {
+                        Some(item.controlling_area)
+                    },
+                    account_assignment: None,
+                    payment_execution: None,
+                    payment_terms_detail: None,
+                    business_partner: None,
+                    business_partner_type: None,
+                    maturity_date: None,
+                    invoice_reference: None,
+                    dunning_detail: None,
+                    transaction_type: None,
+                    reference_transaction_type: None,
+                    trading_partner_company: None,
+                    amount_in_object_currency: None,
+                    object_currency: None,
+                    amount_in_profit_center_currency: None,
+                    profit_center_currency: None,
+                    amount_in_group_currency: None,
+                    group_currency: None,
+                }
+            })
+            .collect();
 
         // Create journal entry command
         let cmd = CreateJournalEntryCommand {
             company_code: header.company_code,
             fiscal_year: header.fiscal_year,
-            posting_date: header.posting_date.map(|ts| {
-                NaiveDate::from_ymd_opt(1970, 1, 1).unwrap() + chrono::Duration::days(ts.seconds / 86400)
-            }).unwrap_or_else(|| chrono::Utc::now().naive_utc().date()),
-            document_date: header.document_date.map(|ts| {
-                NaiveDate::from_ymd_opt(1970, 1, 1).unwrap() + chrono::Duration::days(ts.seconds / 86400)
-            }).unwrap_or_else(|| chrono::Utc::now().naive_utc().date()),
+            posting_date: header
+                .posting_date
+                .map(|ts| {
+                    NaiveDate::from_ymd_opt(1970, 1, 1).unwrap()
+                        + chrono::Duration::days(ts.seconds / 86400)
+                })
+                .unwrap_or_else(|| chrono::Utc::now().naive_utc().date()),
+            document_date: header
+                .document_date
+                .map(|ts| {
+                    NaiveDate::from_ymd_opt(1970, 1, 1).unwrap()
+                        + chrono::Duration::days(ts.seconds / 86400)
+                })
+                .unwrap_or_else(|| chrono::Utc::now().naive_utc().date()),
             currency: header.currency,
-            reference: if header.reference_document.is_empty() { None } else { Some(header.reference_document) },
+            reference: if header.reference_document.is_empty() {
+                None
+            } else {
+                Some(header.reference_document)
+            },
             lines,
             post_immediately: false, // Simulation only
         };
@@ -466,8 +571,12 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
 
                 for line in &entry.lines {
                     match line.debit_credit {
-                        crate::domain::aggregates::journal_entry::DebitCredit::Debit => debit_sum += line.amount,
-                        crate::domain::aggregates::journal_entry::DebitCredit::Credit => credit_sum += line.amount,
+                        crate::domain::aggregates::journal_entry::DebitCredit::Debit => {
+                            debit_sum += line.amount
+                        },
+                        crate::domain::aggregates::journal_entry::DebitCredit::Credit => {
+                            credit_sum += line.amount
+                        },
                     }
                 }
 
@@ -476,14 +585,20 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                     vec![common_v1::ApiMessage {
                         r#type: "info".to_string(),
                         code: "SIMULATION_SUCCESS".to_string(),
-                        message: format!("Simulation successful. Debit: {}, Credit: {}", debit_sum, credit_sum),
+                        message: format!(
+                            "Simulation successful. Debit: {}, Credit: {}",
+                            debit_sum, credit_sum
+                        ),
                         target: String::new(),
                     }]
                 } else {
                     vec![common_v1::ApiMessage {
                         r#type: "error".to_string(),
                         code: "BALANCE_ERROR".to_string(),
-                        message: format!("Imbalance detected. Debit: {}, Credit: {}", debit_sum, credit_sum),
+                        message: format!(
+                            "Imbalance detected. Debit: {}, Credit: {}",
+                            debit_sum, credit_sum
+                        ),
                         target: String::new(),
                     }]
                 };
@@ -493,11 +608,14 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                     messages,
                     simulated_entry: Some(map_to_detail(entry)),
                 }))
-            }
-            Err(e) => Err(Status::internal(e.to_string()))
+            },
+            Err(e) => Err(Status::internal(e.to_string())),
         }
     }
-    async fn update_journal_entry(&self, request: Request<UpdateJournalEntryRequest>) -> Result<Response<JournalEntryResponse>, Status> {
+    async fn update_journal_entry(
+        &self,
+        request: Request<UpdateJournalEntryRequest>,
+    ) -> Result<Response<JournalEntryResponse>, Status> {
         let req = request.into_inner();
         let id = Uuid::parse_str(&req.journal_entry_id)
             .map_err(|_| Status::invalid_argument("Invalid journal entry ID"))?;
@@ -506,12 +624,18 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
         let (posting_date, document_date, reference) = if let Some(header) = req.header {
             (
                 header.posting_date.map(|ts| {
-                    NaiveDate::from_ymd_opt(1970, 1, 1).unwrap() + chrono::Duration::days(ts.seconds / 86400)
+                    NaiveDate::from_ymd_opt(1970, 1, 1).unwrap()
+                        + chrono::Duration::days(ts.seconds / 86400)
                 }),
                 header.document_date.map(|ts| {
-                    NaiveDate::from_ymd_opt(1970, 1, 1).unwrap() + chrono::Duration::days(ts.seconds / 86400)
+                    NaiveDate::from_ymd_opt(1970, 1, 1).unwrap()
+                        + chrono::Duration::days(ts.seconds / 86400)
                 }),
-                if header.reference_document.is_empty() { None } else { Some(header.reference_document) }
+                if header.reference_document.is_empty() {
+                    None
+                } else {
+                    Some(header.reference_document)
+                },
             )
         } else {
             (None, None, None)
@@ -525,7 +649,10 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
             lines: None, // Update does not support changing line items
         };
 
-        let entry = self.update_handler.handle(cmd).await
+        let entry = self
+            .update_handler
+            .handle(cmd)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
         Ok(Response::new(JournalEntryResponse {
@@ -542,7 +669,10 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
             messages: vec![],
         }))
     }
-    async fn delete_journal_entry(&self, request: Request<DeleteJournalEntryRequest>) -> Result<Response<JournalEntryResponse>, Status> {
+    async fn delete_journal_entry(
+        &self,
+        request: Request<DeleteJournalEntryRequest>,
+    ) -> Result<Response<JournalEntryResponse>, Status> {
         let req = request.into_inner();
         let id = Uuid::parse_str(&req.journal_entry_id)
             .map_err(|e| Status::invalid_argument(format!("Invalid UUID: {}", e)))?;
@@ -561,7 +691,10 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
             Err(e) => Err(Status::internal(e.to_string())),
         }
     }
-    async fn post_journal_entry(&self, request: Request<PostJournalEntryRequest>) -> Result<Response<JournalEntryResponse>, Status> {
+    async fn post_journal_entry(
+        &self,
+        request: Request<PostJournalEntryRequest>,
+    ) -> Result<Response<JournalEntryResponse>, Status> {
         let req = request.into_inner();
         let id = Uuid::parse_str(&req.journal_entry_id)
             .map_err(|e| Status::invalid_argument(format!("Invalid UUID: {}", e)))?;
@@ -573,7 +706,10 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
             Err(e) => Err(Status::internal(e.to_string())),
         }
     }
-    async fn validate_journal_entry(&self, request: Request<ValidateJournalEntryRequest>) -> Result<Response<ValidationResponse>, Status> {
+    async fn validate_journal_entry(
+        &self,
+        request: Request<ValidateJournalEntryRequest>,
+    ) -> Result<Response<ValidationResponse>, Status> {
         let req = request.into_inner();
         let mut messages = vec![];
 
@@ -590,7 +726,7 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                         target: String::new(),
                     }],
                 }));
-            }
+            },
         };
 
         // Check if line items exist
@@ -626,20 +762,18 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
 
             if let Some(amount_doc) = &line.amount_in_document_currency {
                 match Decimal::from_str(&amount_doc.value) {
-                    Ok(amount) => {
-                        match line.debit_credit_indicator.as_str() {
-                            "D" | "S" => debit_sum += amount,
-                            "C" | "H" => credit_sum += amount,
-                            _ => {
-                                messages.push(crate::infrastructure::grpc::common::v1::ApiMessage {
-                                    r#type: "error".to_string(),
-                                    code: "INVALID_DEBIT_CREDIT".to_string(),
-                                    message: format!("无效的借贷标识: {}", line.debit_credit_indicator),
-                                    target: format!("line_{}", line.line_item_number),
-                                });
-                            }
-                        }
-                    }
+                    Ok(amount) => match line.debit_credit_indicator.as_str() {
+                        "D" | "S" => debit_sum += amount,
+                        "C" | "H" => credit_sum += amount,
+                        _ => {
+                            messages.push(crate::infrastructure::grpc::common::v1::ApiMessage {
+                                r#type: "error".to_string(),
+                                code: "INVALID_DEBIT_CREDIT".to_string(),
+                                message: format!("无效的借贷标识: {}", line.debit_credit_indicator),
+                                target: format!("line_{}", line.line_item_number),
+                            });
+                        },
+                    },
                     Err(_) => {
                         messages.push(crate::infrastructure::grpc::common::v1::ApiMessage {
                             r#type: "error".to_string(),
@@ -647,7 +781,7 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                             message: format!("无效的金额: {}", amount_doc.value),
                             target: format!("line_{}", line.line_item_number),
                         });
-                    }
+                    },
                 }
             } else {
                 messages.push(crate::infrastructure::grpc::common::v1::ApiMessage {
@@ -681,82 +815,145 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
             messages,
         }))
     }
-    async fn park_journal_entry(&self, request: Request<ParkJournalEntryRequest>) -> Result<Response<ParkJournalEntryResponse>, Status> {
+    async fn park_journal_entry(
+        &self,
+        request: Request<ParkJournalEntryRequest>,
+    ) -> Result<Response<ParkJournalEntryResponse>, Status> {
         let req = request.into_inner();
 
-        let header = req.header.ok_or_else(|| Status::invalid_argument("Missing header"))?;
+        let header = req
+            .header
+            .ok_or_else(|| Status::invalid_argument("Missing header"))?;
 
         // Convert line items with validation
-        let lines: Vec<LineItemDTO> = req.line_items.into_iter().map(|item| {
-            // 验证特殊总账标识
-            let special_gl_indicator = if item.special_gl_indicator.is_empty() {
-                None
-            } else {
-                let gl_type = SpecialGlType::from_sap_code(&item.special_gl_indicator);
-                if gl_type.is_special() || item.special_gl_indicator.is_empty() {
-                    Some(item.special_gl_indicator)
+        let lines: Vec<LineItemDTO> = req
+            .line_items
+            .into_iter()
+            .map(|item| {
+                // 验证特殊总账标识
+                let special_gl_indicator = if item.special_gl_indicator.is_empty() {
+                    None
                 } else {
-                    None // 无效的标识，忽略
-                }
-            };
+                    let gl_type = SpecialGlType::from_sap_code(&item.special_gl_indicator);
+                    if gl_type.is_special() || item.special_gl_indicator.is_empty() {
+                        Some(item.special_gl_indicator)
+                    } else {
+                        None // 无效的标识，忽略
+                    }
+                };
 
-            LineItemDTO {
-                account_id: item.gl_account,
-                debit_credit: item.debit_credit_indicator,
-                amount: Decimal::from_str(&item.amount_in_document_currency.unwrap_or_default().value).unwrap_or_default(),
-                cost_center: if item.cost_center.is_empty() { None } else { Some(item.cost_center) },
-                profit_center: if item.profit_center.is_empty() { None } else { Some(item.profit_center) },
-                text: if item.text.is_empty() { None } else { Some(item.text) },
-                special_gl_indicator,
-                ledger: if item.ledger.is_empty() { None } else { Some(item.ledger) },
-                ledger_type: if item.ledger_type == 0 { None } else { Some(item.ledger_type) },
-                ledger_amount: item.amount_in_ledger_currency.and_then(|amt| Decimal::from_str(&amt.value).ok()),
-                financial_area: if item.financial_area.is_empty() { None } else { Some(item.financial_area) },
-                business_area: if item.business_area.is_empty() { None } else { Some(item.business_area) },
-                controlling_area: if item.controlling_area.is_empty() { None } else { Some(item.controlling_area) },
-                account_assignment: None,
-                payment_execution: None,
-                payment_terms_detail: None,
-                business_partner: None,
-                business_partner_type: None,
-                maturity_date: None,
-                invoice_reference: None,
-                dunning_detail: None,
-                transaction_type: None,
-                reference_transaction_type: None,
-                trading_partner_company: None,
-                amount_in_object_currency: None,
-                object_currency: None,
-                amount_in_profit_center_currency: None,
-                profit_center_currency: None,
-                amount_in_group_currency: None,
-                group_currency: None,
-            }
-        }).collect();
+                LineItemDTO {
+                    account_id: item.gl_account,
+                    debit_credit: item.debit_credit_indicator,
+                    amount: Decimal::from_str(
+                        &item.amount_in_document_currency.unwrap_or_default().value,
+                    )
+                    .unwrap_or_default(),
+                    cost_center: if item.cost_center.is_empty() {
+                        None
+                    } else {
+                        Some(item.cost_center)
+                    },
+                    profit_center: if item.profit_center.is_empty() {
+                        None
+                    } else {
+                        Some(item.profit_center)
+                    },
+                    text: if item.text.is_empty() {
+                        None
+                    } else {
+                        Some(item.text)
+                    },
+                    special_gl_indicator,
+                    ledger: if item.ledger.is_empty() {
+                        None
+                    } else {
+                        Some(item.ledger)
+                    },
+                    ledger_type: if item.ledger_type == 0 {
+                        None
+                    } else {
+                        Some(item.ledger_type)
+                    },
+                    ledger_amount: item
+                        .amount_in_ledger_currency
+                        .and_then(|amt| Decimal::from_str(&amt.value).ok()),
+                    financial_area: if item.financial_area.is_empty() {
+                        None
+                    } else {
+                        Some(item.financial_area)
+                    },
+                    business_area: if item.business_area.is_empty() {
+                        None
+                    } else {
+                        Some(item.business_area)
+                    },
+                    controlling_area: if item.controlling_area.is_empty() {
+                        None
+                    } else {
+                        Some(item.controlling_area)
+                    },
+                    account_assignment: None,
+                    payment_execution: None,
+                    payment_terms_detail: None,
+                    business_partner: None,
+                    business_partner_type: None,
+                    maturity_date: None,
+                    invoice_reference: None,
+                    dunning_detail: None,
+                    transaction_type: None,
+                    reference_transaction_type: None,
+                    trading_partner_company: None,
+                    amount_in_object_currency: None,
+                    object_currency: None,
+                    amount_in_profit_center_currency: None,
+                    profit_center_currency: None,
+                    amount_in_group_currency: None,
+                    group_currency: None,
+                }
+            })
+            .collect();
 
         // Create journal entry command with post_immediately = false
         let cmd = CreateJournalEntryCommand {
             company_code: header.company_code,
             fiscal_year: header.fiscal_year,
-            posting_date: header.posting_date.map(|ts| {
-                NaiveDate::from_ymd_opt(1970, 1, 1).unwrap() + chrono::Duration::days(ts.seconds / 86400)
-            }).unwrap_or_else(|| chrono::Utc::now().date_naive()),
-            document_date: header.document_date.map(|ts| {
-                NaiveDate::from_ymd_opt(1970, 1, 1).unwrap() + chrono::Duration::days(ts.seconds / 86400)
-            }).unwrap_or_else(|| chrono::Utc::now().date_naive()),
+            posting_date: header
+                .posting_date
+                .map(|ts| {
+                    NaiveDate::from_ymd_opt(1970, 1, 1).unwrap()
+                        + chrono::Duration::days(ts.seconds / 86400)
+                })
+                .unwrap_or_else(|| chrono::Utc::now().date_naive()),
+            document_date: header
+                .document_date
+                .map(|ts| {
+                    NaiveDate::from_ymd_opt(1970, 1, 1).unwrap()
+                        + chrono::Duration::days(ts.seconds / 86400)
+                })
+                .unwrap_or_else(|| chrono::Utc::now().date_naive()),
             currency: header.currency,
-            reference: if header.reference_document.is_empty() { None } else { Some(header.reference_document) },
+            reference: if header.reference_document.is_empty() {
+                None
+            } else {
+                Some(header.reference_document)
+            },
             lines,
             post_immediately: false, // Create in draft state
         };
 
         // Create entry
-        let entry = self.create_handler.handle(cmd).await
+        let entry = self
+            .create_handler
+            .handle(cmd)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
         // Park it (validate and change status to Parked)
         let park_cmd = ParkJournalEntryCommand { id: entry.id };
-        self.park_handler.handle(park_cmd).await
+        self.park_handler
+            .handle(park_cmd)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
         Ok(Response::new(ParkJournalEntryResponse {
@@ -765,7 +962,10 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
             messages: vec![],
         }))
     }
-    async fn batch_create_journal_entries(&self, request: Request<BatchCreateJournalEntriesRequest>) -> Result<Response<BatchCreateJournalEntriesResponse>, Status> {
+    async fn batch_create_journal_entries(
+        &self,
+        request: Request<BatchCreateJournalEntriesRequest>,
+    ) -> Result<Response<BatchCreateJournalEntriesResponse>, Status> {
         let req = request.into_inner();
         let mut responses = Vec::new();
         let mut success_count = 0;
@@ -787,7 +987,7 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                     });
                     failure_count += 1;
                     continue;
-                }
+                },
             };
 
             // Parse dates
@@ -806,7 +1006,7 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                     });
                     failure_count += 1;
                     continue;
-                }
+                },
             };
 
             let posting_date = match chrono::DateTime::from_timestamp(posting_date_ts.seconds, 0) {
@@ -824,7 +1024,7 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                     });
                     failure_count += 1;
                     continue;
-                }
+                },
             };
 
             let document_date_ts = header.document_date.unwrap_or(posting_date_ts);
@@ -991,7 +1191,7 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                     });
                     failure_count += 1;
                     continue;
-                }
+                },
             };
 
             let cmd = CreateJournalEntryCommand {
@@ -1000,7 +1200,11 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 posting_date,
                 document_date,
                 currency: header.currency,
-                reference: if header.reference_document.is_empty() { None } else { Some(header.reference_document) },
+                reference: if header.reference_document.is_empty() {
+                    None
+                } else {
+                    Some(header.reference_document)
+                },
                 lines,
                 post_immediately: entry_req.post_immediately,
             };
@@ -1009,16 +1213,18 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 Ok(entry) => {
                     responses.push(map_to_response(entry));
                     success_count += 1;
-                }
+                },
                 Err(e) => {
                     responses.push(JournalEntryResponse {
                         success: false,
-                        document_reference: Some(crate::infrastructure::grpc::common::v1::SystemDocumentReference {
-                            document_number: String::new(),
-                            company_code: header.company_code,
-                            fiscal_year: header.fiscal_year,
-                            ..Default::default()
-                        }),
+                        document_reference: Some(
+                            crate::infrastructure::grpc::common::v1::SystemDocumentReference {
+                                document_number: String::new(),
+                                company_code: header.company_code,
+                                fiscal_year: header.fiscal_year,
+                                ..Default::default()
+                            },
+                        ),
                         messages: vec![crate::infrastructure::grpc::common::v1::ApiMessage {
                             r#type: "error".to_string(),
                             code: "CREATE_FAILED".to_string(),
@@ -1027,20 +1233,25 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                         }],
                     });
                     failure_count += 1;
-                }
+                },
             }
         }
 
         Ok(Response::new(BatchCreateJournalEntriesResponse {
-            result: Some(crate::infrastructure::grpc::common::v1::BatchOperationResult {
-                success_count,
-                failure_count,
-                errors: vec![],
-            }),
+            result: Some(
+                crate::infrastructure::grpc::common::v1::BatchOperationResult {
+                    success_count,
+                    failure_count,
+                    errors: vec![],
+                },
+            ),
             responses,
         }))
     }
-    async fn clear_open_items(&self, request: Request<ClearOpenItemsRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> {
+    async fn clear_open_items(
+        &self,
+        request: Request<ClearOpenItemsRequest>,
+    ) -> Result<Response<ClearOpenItemsResponse>, Status> {
         let req = request.into_inner();
 
         // For MVP: acknowledge the request with summary
@@ -1052,14 +1263,21 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
         // 5. Create GL entry for the clearing
 
         let clearing_date = if let Some(ts) = req.clearing_date {
-            NaiveDate::from_ymd_opt(1970, 1, 1).unwrap() + chrono::Duration::days(ts.seconds / 86400)
+            NaiveDate::from_ymd_opt(1970, 1, 1).unwrap()
+                + chrono::Duration::days(ts.seconds / 86400)
         } else {
             chrono::Utc::now().naive_utc().date()
         };
 
-        let clearing_doc_num = format!("CLR-{}-{}",
+        let clearing_doc_num = format!(
+            "CLR-{}-{}",
             clearing_date.year(),
-            uuid::Uuid::new_v4().simple().to_string().chars().take(8).collect::<String>()
+            uuid::Uuid::new_v4()
+                .simple()
+                .to_string()
+                .chars()
+                .take(8)
+                .collect::<String>()
         );
 
         Ok(Response::new(ClearOpenItemsResponse {
@@ -1074,12 +1292,18 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
             messages: vec![common_v1::ApiMessage {
                 r#type: "info".to_string(),
                 code: "CLEARING_SUCCESS".to_string(),
-                message: format!("Successfully cleared {} open items", req.items_to_clear.len()),
+                message: format!(
+                    "Successfully cleared {} open items",
+                    req.items_to_clear.len()
+                ),
                 target: String::new(),
             }],
         }))
     }
-    async fn revaluate_foreign_currency(&self, request: Request<RevaluateForeignCurrencyRequest>) -> Result<Response<RevaluationResponse>, Status> {
+    async fn revaluate_foreign_currency(
+        &self,
+        request: Request<RevaluateForeignCurrencyRequest>,
+    ) -> Result<Response<RevaluationResponse>, Status> {
         let req = request.into_inner();
 
         // For MVP: simplified implementation
@@ -1091,20 +1315,30 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
         // 5. Post to GL
 
         let revaluation_date = if let Some(ts) = req.revaluation_date {
-            NaiveDate::from_ymd_opt(1970, 1, 1).unwrap() + chrono::Duration::days(ts.seconds / 86400)
+            NaiveDate::from_ymd_opt(1970, 1, 1).unwrap()
+                + chrono::Duration::days(ts.seconds / 86400)
         } else {
             chrono::Utc::now().naive_utc().date()
         };
 
-        let revaluation_doc_num = format!("REV-{}-{}",
+        let revaluation_doc_num = format!(
+            "REV-{}-{}",
             revaluation_date.year(),
-            uuid::Uuid::new_v4().simple().to_string().chars().take(8).collect::<String>()
+            uuid::Uuid::new_v4()
+                .simple()
+                .to_string()
+                .chars()
+                .take(8)
+                .collect::<String>()
         );
 
         let message = if req.test_run {
             "Test run: Would create revaluation entries for foreign currency items".to_string()
         } else {
-            format!("Revaluation completed on {}. Created entry: {}", revaluation_date, revaluation_doc_num)
+            format!(
+                "Revaluation completed on {}. Created entry: {}",
+                revaluation_date, revaluation_doc_num
+            )
         };
 
         Ok(Response::new(RevaluationResponse {
@@ -1124,7 +1358,10 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
             }],
         }))
     }
-    async fn get_parallel_ledger_data(&self, request: Request<GetParallelLedgerDataRequest>) -> Result<Response<ParallelLedgerDataResponse>, Status> {
+    async fn get_parallel_ledger_data(
+        &self,
+        request: Request<GetParallelLedgerDataRequest>,
+    ) -> Result<Response<ParallelLedgerDataResponse>, Status> {
         let req = request.into_inner();
 
         // For MVP: return the document reference with basic ledger data
@@ -1133,25 +1370,32 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
         // 2. For each ledger type, prepare transformed line items
         // 3. Return entries in different ledger formats
 
-        let ledger_data = req.ledgers.iter().map(|ledger| {
-            LedgerData {
-                ledger: ledger.clone(),
-                ledger_type: match ledger.as_str() {
-                    "LEADING" => LedgerType::Leading as i32,
-                    "NON_LEADING" => LedgerType::NonLeading as i32,
-                    "EXTENSION" => LedgerType::Extension as i32,
-                    _ => LedgerType::Leading as i32,
-                },
-                line_items: vec![], // Would be populated with actual data
-            }
-        }).collect();
+        let ledger_data = req
+            .ledgers
+            .iter()
+            .map(|ledger| {
+                LedgerData {
+                    ledger: ledger.clone(),
+                    ledger_type: match ledger.as_str() {
+                        "LEADING" => LedgerType::Leading as i32,
+                        "NON_LEADING" => LedgerType::NonLeading as i32,
+                        "EXTENSION" => LedgerType::Extension as i32,
+                        _ => LedgerType::Leading as i32,
+                    },
+                    line_items: vec![], // Would be populated with actual data
+                }
+            })
+            .collect();
 
         Ok(Response::new(ParallelLedgerDataResponse {
             document_reference: req.document_reference,
             ledger_data,
         }))
     }
-    async fn carry_forward_balances(&self, request: Request<CarryForwardBalancesRequest>) -> Result<Response<CarryForwardBalancesResponse>, Status> {
+    async fn carry_forward_balances(
+        &self,
+        request: Request<CarryForwardBalancesRequest>,
+    ) -> Result<Response<CarryForwardBalancesResponse>, Status> {
         let req = request.into_inner();
 
         // Carry forward balances from source fiscal year to target fiscal year
@@ -1168,7 +1412,8 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 messages: vec![common_v1::ApiMessage {
                     r#type: "error".to_string(),
                     code: "INVALID_YEAR".to_string(),
-                    message: "Target fiscal year must be greater than source fiscal year".to_string(),
+                    message: "Target fiscal year must be greater than source fiscal year"
+                        .to_string(),
                     target: String::new(),
                 }],
             }));
@@ -1197,12 +1442,17 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
             }],
         }))
     }
-    async fn execute_period_end_close(&self, request: Request<ExecutePeriodEndCloseRequest>) -> Result<Response<PeriodEndCloseResponse>, Status> {
+    async fn execute_period_end_close(
+        &self,
+        request: Request<ExecutePeriodEndCloseRequest>,
+    ) -> Result<Response<PeriodEndCloseResponse>, Status> {
         let req = request.into_inner();
 
         // Validate period range
         if req.fiscal_period < 1 || req.fiscal_period > 12 {
-            return Err(Status::invalid_argument("Invalid fiscal period. Must be between 1 and 12"));
+            return Err(Status::invalid_argument(
+                "Invalid fiscal period. Must be between 1 and 12",
+            ));
         }
 
         // For MVP: simplified implementation
@@ -1213,17 +1463,15 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
         // 4. Lock the period from further posting
         // 5. Update period status to CLOSED
 
-        let messages = vec![
-            common_v1::ApiMessage {
-                r#type: "info".to_string(),
-                code: "PERIOD_CLOSED".to_string(),
-                message: format!(
-                    "Period {}/{} has been closed. No further postings allowed.",
-                    req.fiscal_period, req.fiscal_year
-                ),
-                target: String::new(),
-            },
-        ];
+        let messages = vec![common_v1::ApiMessage {
+            r#type: "info".to_string(),
+            code: "PERIOD_CLOSED".to_string(),
+            message: format!(
+                "Period {}/{} has been closed. No further postings allowed.",
+                req.fiscal_period, req.fiscal_year
+            ),
+            target: String::new(),
+        }];
 
         Ok(Response::new(PeriodEndCloseResponse {
             success: true,
@@ -1231,10 +1479,16 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
             messages,
         }))
     }
-    async fn create_batch_input_session(&self, _request: Request<CreateBatchInputSessionRequest>) -> Result<Response<BatchInputSessionResponse>, Status> {
+    async fn create_batch_input_session(
+        &self,
+        _request: Request<CreateBatchInputSessionRequest>,
+    ) -> Result<Response<BatchInputSessionResponse>, Status> {
         Err(Status::unimplemented("Not implemented"))
     }
-    async fn get_account_line_items(&self, request: Request<GetAccountLineItemsRequest>) -> Result<Response<AccountLineItemsResponse>, Status> {
+    async fn get_account_line_items(
+        &self,
+        request: Request<GetAccountLineItemsRequest>,
+    ) -> Result<Response<AccountLineItemsResponse>, Status> {
         let req = request.into_inner();
 
         // Query journal entries that contain the specified GL account
@@ -1245,7 +1499,10 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
             page_size: 1000,
         };
 
-        let result = self.list_handler.handle(query).await
+        let result = self
+            .list_handler
+            .handle(query)
+            .await
             .map_err(|e| Status::internal(format!("Failed to query entries: {}", e)))?;
 
         // Filter line items for the specified account
@@ -1255,13 +1512,22 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                 if line.account_id == req.gl_account {
                     // Check date range if provided
                     if let Some(date_range) = &req.date_range {
-                        let posting_date_ts = entry.posting_date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp();
+                        let posting_date_ts = entry
+                            .posting_date
+                            .and_hms_opt(0, 0, 0)
+                            .unwrap()
+                            .and_utc()
+                            .timestamp();
 
-                        let from_ok = date_range.start_date.as_ref()
+                        let from_ok = date_range
+                            .start_date
+                            .as_ref()
                             .map(|ts| posting_date_ts >= ts.seconds)
                             .unwrap_or(true);
 
-                        let to_ok = date_range.end_date.as_ref()
+                        let to_ok = date_range
+                            .end_date
+                            .as_ref()
                             .map(|ts| posting_date_ts <= ts.seconds)
                             .unwrap_or(true);
 
@@ -1294,9 +1560,14 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                         assignment_number: "".to_string(),
                         tax_code: "".to_string(),
                         tax_jurisdiction: "".to_string(),
-                        amount_in_group_currency: line.amount_in_group_currency.map(|amt| common_v1::MonetaryValue {
-                            value: amt.to_string(),
-                            currency_code: line.group_currency.clone().unwrap_or_else(|| entry.currency.clone()),
+                        amount_in_group_currency: line.amount_in_group_currency.map(|amt| {
+                            common_v1::MonetaryValue {
+                                value: amt.to_string(),
+                                currency_code: line
+                                    .group_currency
+                                    .clone()
+                                    .unwrap_or_else(|| entry.currency.clone()),
+                            }
                         }),
                         clearing_document: "".to_string(),
                         clearing_date: None,
@@ -1304,9 +1575,11 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                         special_gl_indicator: line.special_gl_indicator.to_sap_code().to_string(),
                         ledger: line.ledger,
                         ledger_type: line.ledger_type as i32,
-                        amount_in_ledger_currency: line.ledger_amount.map(|amt| common_v1::MonetaryValue {
-                            value: amt.to_string(),
-                            currency_code: entry.currency.clone(),
+                        amount_in_ledger_currency: line.ledger_amount.map(|amt| {
+                            common_v1::MonetaryValue {
+                                value: amt.to_string(),
+                                currency_code: entry.currency.clone(),
+                            }
                         }),
                         financial_area: line.financial_area.unwrap_or_default(),
                         business_area: line.business_area.unwrap_or_default(),
@@ -1315,19 +1588,36 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                             .payment_terms_detail
                             .as_ref()
                             .map(|ptd| payment_terms_to_proto(ptd, &entry.currency)),
-                        invoice_reference: line.invoice_reference.as_ref().map(|ir| InvoiceReference {
-                            reference_document_number: ir.reference_document_number.clone().unwrap_or_default(),
-                            reference_fiscal_year: ir.reference_fiscal_year.unwrap_or(0),
-                            reference_line_item: ir.reference_line_item.unwrap_or(0),
-                            reference_document_type: ir.reference_document_type.clone().unwrap_or_default(),
-                            reference_company_code: ir.reference_company_code.clone().unwrap_or_default(),
+                        invoice_reference: line.invoice_reference.as_ref().map(|ir| {
+                            InvoiceReference {
+                                reference_document_number: ir
+                                    .reference_document_number
+                                    .clone()
+                                    .unwrap_or_default(),
+                                reference_fiscal_year: ir.reference_fiscal_year.unwrap_or(0),
+                                reference_line_item: ir.reference_line_item.unwrap_or(0),
+                                reference_document_type: ir
+                                    .reference_document_type
+                                    .clone()
+                                    .unwrap_or_default(),
+                                reference_company_code: ir
+                                    .reference_company_code
+                                    .clone()
+                                    .unwrap_or_default(),
+                            }
                         }),
                         dunning_detail: line.dunning_detail.as_ref().map(|dd| DunningDetail {
                             dunning_key: dd.dunning_key.clone().unwrap_or_default(),
                             dunning_block: dd.dunning_block.clone().unwrap_or_default(),
-                            last_dunning_date: dd.last_dunning_date.map(|date| prost_types::Timestamp {
-                                seconds: date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
-                                nanos: 0,
+                            last_dunning_date: dd.last_dunning_date.map(|date| {
+                                prost_types::Timestamp {
+                                    seconds: date
+                                        .and_hms_opt(0, 0, 0)
+                                        .unwrap()
+                                        .and_utc()
+                                        .timestamp(),
+                                    nanos: 0,
+                                }
                             }),
                             dunning_date: dd.dunning_date.map(|date| prost_types::Timestamp {
                                 seconds: date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
@@ -1336,25 +1626,39 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
                             dunning_level: dd.dunning_level,
                             dunning_area: dd.dunning_area.clone().unwrap_or_default(),
                             grace_period_days: dd.grace_period_days,
-                            dunning_charges: dd.dunning_charges.map(|amt| common_v1::MonetaryValue {
-                                value: amt.to_string(),
-                                currency_code: entry.currency.clone(),
+                            dunning_charges: dd.dunning_charges.map(|amt| {
+                                common_v1::MonetaryValue {
+                                    value: amt.to_string(),
+                                    currency_code: entry.currency.clone(),
+                                }
                             }),
                             dunning_clerk: dd.dunning_clerk.clone().unwrap_or_default(),
                         }),
                         account_assignment: line.account_assignment.unwrap_or_default(),
-                        amount_in_object_currency: line.amount_in_object_currency.map(|amt| common_v1::MonetaryValue {
-                            value: amt.to_string(),
-                            currency_code: line.object_currency.clone().unwrap_or_default(),
+                        amount_in_object_currency: line.amount_in_object_currency.map(|amt| {
+                            common_v1::MonetaryValue {
+                                value: amt.to_string(),
+                                currency_code: line.object_currency.clone().unwrap_or_default(),
+                            }
                         }),
-                        amount_in_profit_center_currency: line.amount_in_profit_center_currency.map(|amt| common_v1::MonetaryValue {
-                            value: amt.to_string(),
-                            currency_code: line.profit_center_currency.clone().unwrap_or_default(),
-                        }),
+                        amount_in_profit_center_currency: line
+                            .amount_in_profit_center_currency
+                            .map(|amt| common_v1::MonetaryValue {
+                                value: amt.to_string(),
+                                currency_code: line
+                                    .profit_center_currency
+                                    .clone()
+                                    .unwrap_or_default(),
+                            }),
                         transaction_type: line.transaction_type.unwrap_or_default(),
-                        reference_transaction_type: line.reference_transaction_type.unwrap_or_default(),
+                        reference_transaction_type: line
+                            .reference_transaction_type
+                            .unwrap_or_default(),
                         trading_partner_company: line.trading_partner_company.unwrap_or_default(),
-                        payment_execution: line.payment_execution.as_ref().map(payment_execution_to_proto),
+                        payment_execution: line
+                            .payment_execution
+                            .as_ref()
+                            .map(payment_execution_to_proto),
                         internal_trading_detail: None,
                         field_split_detail: None,
                         local_gaap_detail: None,
@@ -1369,61 +1673,116 @@ impl<R: JournalRepository + 'static> GlJournalEntryService for GlServiceImpl<R> 
             pagination: None,
         }))
     }
-    async fn generate_print_preview(&self, _request: Request<GeneratePrintPreviewRequest>) -> Result<Response<GeneratePrintPreviewResponse>, Status> {
+    async fn generate_print_preview(
+        &self,
+        _request: Request<GeneratePrintPreviewRequest>,
+    ) -> Result<Response<GeneratePrintPreviewResponse>, Status> {
         Err(Status::unimplemented("Not implemented"))
     }
 }
 
 // Helpers
-fn map_to_response(entry: crate::domain::aggregates::journal_entry::JournalEntry) -> JournalEntryResponse {
+fn map_to_response(
+    entry: crate::domain::aggregates::journal_entry::JournalEntry,
+) -> JournalEntryResponse {
     let doc_num = entry.document_number.unwrap_or_default();
     JournalEntryResponse {
         success: true,
-        document_reference: Some(crate::infrastructure::grpc::common::v1::SystemDocumentReference {
-            document_number: doc_num,
-            company_code: entry.company_code,
-            fiscal_year: entry.fiscal_year,
-            ..Default::default()
-        }),
+        document_reference: Some(
+            crate::infrastructure::grpc::common::v1::SystemDocumentReference {
+                document_number: doc_num,
+                company_code: entry.company_code,
+                fiscal_year: entry.fiscal_year,
+                ..Default::default()
+            },
+        ),
         messages: vec![],
     }
 }
 
-fn map_to_summary(entry: crate::domain::aggregates::journal_entry::JournalEntry) -> JournalEntrySummary {
-     JournalEntrySummary {
-        document_reference: Some(crate::infrastructure::grpc::common::v1::SystemDocumentReference {
-            document_number: entry.document_number.unwrap_or_default(),
-            company_code: entry.company_code,
-            fiscal_year: entry.fiscal_year,
-            ..Default::default()
+fn map_to_summary(
+    entry: crate::domain::aggregates::journal_entry::JournalEntry,
+) -> JournalEntrySummary {
+    JournalEntrySummary {
+        document_reference: Some(
+            crate::infrastructure::grpc::common::v1::SystemDocumentReference {
+                document_number: entry.document_number.unwrap_or_default(),
+                company_code: entry.company_code,
+                fiscal_year: entry.fiscal_year,
+                ..Default::default()
+            },
+        ),
+        document_date: Some(prost_types::Timestamp {
+            seconds: entry
+                .document_date
+                .and_hms_opt(0, 0, 0)
+                .unwrap()
+                .and_utc()
+                .timestamp(),
+            nanos: 0,
         }),
-        document_date: Some(prost_types::Timestamp { seconds: entry.document_date.and_hms_opt(0,0,0).unwrap().and_utc().timestamp(), nanos: 0 }),
-        posting_date: Some(prost_types::Timestamp { seconds: entry.posting_date.and_hms_opt(0,0,0).unwrap().and_utc().timestamp(), nanos: 0 }),
+        posting_date: Some(prost_types::Timestamp {
+            seconds: entry
+                .posting_date
+                .and_hms_opt(0, 0, 0)
+                .unwrap()
+                .and_utc()
+                .timestamp(),
+            nanos: 0,
+        }),
         header_text: entry.reference.unwrap_or_default(),
         status: match entry.status {
-            crate::domain::aggregates::journal_entry::PostingStatus::Draft => JournalEntryStatus::Draft as i32,
-            crate::domain::aggregates::journal_entry::PostingStatus::Parked => JournalEntryStatus::Draft as i32,
-            crate::domain::aggregates::journal_entry::PostingStatus::Posted => JournalEntryStatus::Posted as i32,
-            crate::domain::aggregates::journal_entry::PostingStatus::Reversed => JournalEntryStatus::Reversed as i32,
+            crate::domain::aggregates::journal_entry::PostingStatus::Draft => {
+                JournalEntryStatus::Draft as i32
+            },
+            crate::domain::aggregates::journal_entry::PostingStatus::Parked => {
+                JournalEntryStatus::Draft as i32
+            },
+            crate::domain::aggregates::journal_entry::PostingStatus::Posted => {
+                JournalEntryStatus::Posted as i32
+            },
+            crate::domain::aggregates::journal_entry::PostingStatus::Reversed => {
+                JournalEntryStatus::Reversed as i32
+            },
         },
         total_amount: None,
-     }
+    }
 }
 
-fn map_to_detail(entry: crate::domain::aggregates::journal_entry::JournalEntry) -> JournalEntryDetail {
+fn map_to_detail(
+    entry: crate::domain::aggregates::journal_entry::JournalEntry,
+) -> JournalEntryDetail {
     let currency_code = entry.currency.clone();
     JournalEntryDetail {
-        document_reference: Some(crate::infrastructure::grpc::common::v1::SystemDocumentReference {
-            document_number: entry.document_number.clone().unwrap_or_default(),
-            company_code: entry.company_code.clone(),
-            fiscal_year: entry.fiscal_year,
-             ..Default::default()
-        }),
+        document_reference: Some(
+            crate::infrastructure::grpc::common::v1::SystemDocumentReference {
+                document_number: entry.document_number.clone().unwrap_or_default(),
+                company_code: entry.company_code.clone(),
+                fiscal_year: entry.fiscal_year,
+                ..Default::default()
+            },
+        ),
         header: Some(JournalEntryHeader {
             company_code: entry.company_code.clone(),
             fiscal_year: entry.fiscal_year,
-            posting_date: Some(prost_types::Timestamp { seconds: entry.posting_date.and_hms_opt(0,0,0).unwrap().and_utc().timestamp(), nanos: 0 }),
-            document_date: Some(prost_types::Timestamp { seconds: entry.document_date.and_hms_opt(0,0,0).unwrap().and_utc().timestamp(), nanos: 0 }),
+            posting_date: Some(prost_types::Timestamp {
+                seconds: entry
+                    .posting_date
+                    .and_hms_opt(0, 0, 0)
+                    .unwrap()
+                    .and_utc()
+                    .timestamp(),
+                nanos: 0,
+            }),
+            document_date: Some(prost_types::Timestamp {
+                seconds: entry
+                    .document_date
+                    .and_hms_opt(0, 0, 0)
+                    .unwrap()
+                    .and_utc()
+                    .timestamp(),
+                nanos: 0,
+            }),
             currency: entry.currency.clone(),
             reference_document: entry.reference.clone().unwrap_or_default(),
             header_text: "".to_string(),
@@ -1440,103 +1799,135 @@ fn map_to_detail(entry: crate::domain::aggregates::journal_entry::JournalEntry) 
             target_currency: "".to_string(),
             chart_of_accounts: entry.chart_of_accounts.unwrap_or_default(),
         }),
-        line_items: entry.lines.into_iter().map(|l| JournalEntryLineItem {
-            line_item_number: l.line_number,
-            gl_account: l.account_id,
-            debit_credit_indicator: l.debit_credit.as_char().to_string(),
-            amount_in_document_currency: Some(crate::infrastructure::grpc::common::v1::MonetaryValue {
-                value: l.amount.to_string(),
-                currency_code: currency_code.clone(),
-            }),
-            amount_in_local_currency: Some(crate::infrastructure::grpc::common::v1::MonetaryValue {
-                 value: l.local_amount.to_string(),
-                 currency_code: currency_code.clone(),
-            }),
-            cost_center: l.cost_center.unwrap_or_default(),
-            profit_center: l.profit_center.unwrap_or_default(),
-            text: l.text.unwrap_or_default(),
-            special_gl_indicator: l.special_gl_indicator.to_sap_code().to_string(),
-            // Organizational dimensions
-            financial_area: l.financial_area.unwrap_or_default(),
-            business_area: l.business_area.unwrap_or_default(),
-            controlling_area: l.controlling_area.unwrap_or_default(),
-            // Defaults
-            posting_key: "".to_string(),
-            account_type: crate::infrastructure::grpc::common::v1::AccountType::Gl as i32,
-            business_partner: l.business_partner.unwrap_or_default(),
-            amount_in_group_currency: l.amount_in_group_currency.map(|amt| crate::infrastructure::grpc::common::v1::MonetaryValue {
-                value: amt.to_string(),
-                currency_code: l.group_currency.clone().unwrap_or_else(|| currency_code.clone()),
-            }),
-            segment: "".to_string(),
-            internal_order: "".to_string(),
-            wbs_element: "".to_string(),
-            assignment_number: "".to_string(),
-            tax_code: "".to_string(),
-            tax_jurisdiction: "".to_string(),
-            clearing_document: "".to_string(),
-            clearing_date: None,
-            quantity: None,
-            ledger: l.ledger,
-            ledger_type: l.ledger_type as i32,
-            amount_in_ledger_currency: l.ledger_amount.map(|amt| crate::infrastructure::grpc::common::v1::MonetaryValue {
-                value: amt.to_string(),
-                currency_code: currency_code.clone(),
-            }),
-            payment_terms_detail: l
-                .payment_terms_detail
-                .as_ref()
-                .map(|ptd| payment_terms_to_proto(ptd, &currency_code)),
-            invoice_reference: l.invoice_reference.as_ref().map(|ir| InvoiceReference {
-                reference_document_number: ir.reference_document_number.clone().unwrap_or_default(),
-                reference_fiscal_year: ir.reference_fiscal_year.unwrap_or(0),
-                reference_line_item: ir.reference_line_item.unwrap_or(0),
-                reference_document_type: ir.reference_document_type.clone().unwrap_or_default(),
-                reference_company_code: ir.reference_company_code.clone().unwrap_or_default(),
-            }),
-            dunning_detail: l.dunning_detail.as_ref().map(|dd| DunningDetail {
-                dunning_key: dd.dunning_key.clone().unwrap_or_default(),
-                dunning_block: dd.dunning_block.clone().unwrap_or_default(),
-                last_dunning_date: dd.last_dunning_date.map(|date| prost_types::Timestamp {
-                    seconds: date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
-                    nanos: 0,
+        line_items: entry
+            .lines
+            .into_iter()
+            .map(|l| JournalEntryLineItem {
+                line_item_number: l.line_number,
+                gl_account: l.account_id,
+                debit_credit_indicator: l.debit_credit.as_char().to_string(),
+                amount_in_document_currency: Some(
+                    crate::infrastructure::grpc::common::v1::MonetaryValue {
+                        value: l.amount.to_string(),
+                        currency_code: currency_code.clone(),
+                    },
+                ),
+                amount_in_local_currency: Some(
+                    crate::infrastructure::grpc::common::v1::MonetaryValue {
+                        value: l.local_amount.to_string(),
+                        currency_code: currency_code.clone(),
+                    },
+                ),
+                cost_center: l.cost_center.unwrap_or_default(),
+                profit_center: l.profit_center.unwrap_or_default(),
+                text: l.text.unwrap_or_default(),
+                special_gl_indicator: l.special_gl_indicator.to_sap_code().to_string(),
+                // Organizational dimensions
+                financial_area: l.financial_area.unwrap_or_default(),
+                business_area: l.business_area.unwrap_or_default(),
+                controlling_area: l.controlling_area.unwrap_or_default(),
+                // Defaults
+                posting_key: "".to_string(),
+                account_type: crate::infrastructure::grpc::common::v1::AccountType::Gl as i32,
+                business_partner: l.business_partner.unwrap_or_default(),
+                amount_in_group_currency: l.amount_in_group_currency.map(|amt| {
+                    crate::infrastructure::grpc::common::v1::MonetaryValue {
+                        value: amt.to_string(),
+                        currency_code: l
+                            .group_currency
+                            .clone()
+                            .unwrap_or_else(|| currency_code.clone()),
+                    }
                 }),
-                dunning_date: dd.dunning_date.map(|date| prost_types::Timestamp {
-                    seconds: date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
-                    nanos: 0,
+                segment: "".to_string(),
+                internal_order: "".to_string(),
+                wbs_element: "".to_string(),
+                assignment_number: "".to_string(),
+                tax_code: "".to_string(),
+                tax_jurisdiction: "".to_string(),
+                clearing_document: "".to_string(),
+                clearing_date: None,
+                quantity: None,
+                ledger: l.ledger,
+                ledger_type: l.ledger_type as i32,
+                amount_in_ledger_currency: l.ledger_amount.map(|amt| {
+                    crate::infrastructure::grpc::common::v1::MonetaryValue {
+                        value: amt.to_string(),
+                        currency_code: currency_code.clone(),
+                    }
                 }),
-                dunning_level: dd.dunning_level,
-                dunning_area: dd.dunning_area.clone().unwrap_or_default(),
-                grace_period_days: dd.grace_period_days,
-                dunning_charges: dd.dunning_charges.map(|amt| crate::infrastructure::grpc::common::v1::MonetaryValue {
-                    value: amt.to_string(),
-                    currency_code: currency_code.clone(),
+                payment_terms_detail: l
+                    .payment_terms_detail
+                    .as_ref()
+                    .map(|ptd| payment_terms_to_proto(ptd, &currency_code)),
+                invoice_reference: l.invoice_reference.as_ref().map(|ir| InvoiceReference {
+                    reference_document_number: ir
+                        .reference_document_number
+                        .clone()
+                        .unwrap_or_default(),
+                    reference_fiscal_year: ir.reference_fiscal_year.unwrap_or(0),
+                    reference_line_item: ir.reference_line_item.unwrap_or(0),
+                    reference_document_type: ir.reference_document_type.clone().unwrap_or_default(),
+                    reference_company_code: ir.reference_company_code.clone().unwrap_or_default(),
                 }),
-                dunning_clerk: dd.dunning_clerk.clone().unwrap_or_default(),
-            }),
-            account_assignment: l.account_assignment.unwrap_or_default(),
-            amount_in_object_currency: l.amount_in_object_currency.map(|amt| crate::infrastructure::grpc::common::v1::MonetaryValue {
-                value: amt.to_string(),
-                currency_code: l.object_currency.clone().unwrap_or_default(),
-            }),
-            amount_in_profit_center_currency: l.amount_in_profit_center_currency.map(|amt| crate::infrastructure::grpc::common::v1::MonetaryValue {
-                value: amt.to_string(),
-                currency_code: l.profit_center_currency.clone().unwrap_or_default(),
-            }),
-            transaction_type: l.transaction_type.unwrap_or_default(),
-            reference_transaction_type: l.reference_transaction_type.unwrap_or_default(),
-            trading_partner_company: l.trading_partner_company.unwrap_or_default(),
-            payment_execution: l.payment_execution.as_ref().map(payment_execution_to_proto),
-            internal_trading_detail: None,
-            field_split_detail: None,
-            local_gaap_detail: None,
-        }).collect(),
+                dunning_detail: l.dunning_detail.as_ref().map(|dd| DunningDetail {
+                    dunning_key: dd.dunning_key.clone().unwrap_or_default(),
+                    dunning_block: dd.dunning_block.clone().unwrap_or_default(),
+                    last_dunning_date: dd.last_dunning_date.map(|date| prost_types::Timestamp {
+                        seconds: date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
+                        nanos: 0,
+                    }),
+                    dunning_date: dd.dunning_date.map(|date| prost_types::Timestamp {
+                        seconds: date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
+                        nanos: 0,
+                    }),
+                    dunning_level: dd.dunning_level,
+                    dunning_area: dd.dunning_area.clone().unwrap_or_default(),
+                    grace_period_days: dd.grace_period_days,
+                    dunning_charges: dd.dunning_charges.map(|amt| {
+                        crate::infrastructure::grpc::common::v1::MonetaryValue {
+                            value: amt.to_string(),
+                            currency_code: currency_code.clone(),
+                        }
+                    }),
+                    dunning_clerk: dd.dunning_clerk.clone().unwrap_or_default(),
+                }),
+                account_assignment: l.account_assignment.unwrap_or_default(),
+                amount_in_object_currency: l.amount_in_object_currency.map(|amt| {
+                    crate::infrastructure::grpc::common::v1::MonetaryValue {
+                        value: amt.to_string(),
+                        currency_code: l.object_currency.clone().unwrap_or_default(),
+                    }
+                }),
+                amount_in_profit_center_currency: l.amount_in_profit_center_currency.map(|amt| {
+                    crate::infrastructure::grpc::common::v1::MonetaryValue {
+                        value: amt.to_string(),
+                        currency_code: l.profit_center_currency.clone().unwrap_or_default(),
+                    }
+                }),
+                transaction_type: l.transaction_type.unwrap_or_default(),
+                reference_transaction_type: l.reference_transaction_type.unwrap_or_default(),
+                trading_partner_company: l.trading_partner_company.unwrap_or_default(),
+                payment_execution: l.payment_execution.as_ref().map(payment_execution_to_proto),
+                internal_trading_detail: None,
+                field_split_detail: None,
+                local_gaap_detail: None,
+            })
+            .collect(),
         tax_items: vec![],
         status: match entry.status {
-            crate::domain::aggregates::journal_entry::PostingStatus::Draft => JournalEntryStatus::Draft as i32,
-            crate::domain::aggregates::journal_entry::PostingStatus::Parked => JournalEntryStatus::Draft as i32,
-            crate::domain::aggregates::journal_entry::PostingStatus::Posted => JournalEntryStatus::Posted as i32,
-            crate::domain::aggregates::journal_entry::PostingStatus::Reversed => JournalEntryStatus::Reversed as i32,
+            crate::domain::aggregates::journal_entry::PostingStatus::Draft => {
+                JournalEntryStatus::Draft as i32
+            },
+            crate::domain::aggregates::journal_entry::PostingStatus::Parked => {
+                JournalEntryStatus::Draft as i32
+            },
+            crate::domain::aggregates::journal_entry::PostingStatus::Posted => {
+                JournalEntryStatus::Posted as i32
+            },
+            crate::domain::aggregates::journal_entry::PostingStatus::Reversed => {
+                JournalEntryStatus::Reversed as i32
+            },
         },
         clearing_info: None,
         payment_info: None,

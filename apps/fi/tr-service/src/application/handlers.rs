@@ -1,13 +1,13 @@
+use crate::application::commands::{ExecutePaymentRunCommand, ProcessStatementCommand};
+use crate::domain::{BankStatement, PaymentDocument, PaymentRun, StatementTransaction};
+use crate::infrastructure::repository::TreasuryRepository;
+use anyhow::Result;
+use chrono::Utc;
+use cuba_finance::{GlClient, GlLineItem};
+use rust_decimal::Decimal;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use crate::domain::{BankStatement, StatementTransaction, PaymentRun, PaymentDocument};
-use crate::infrastructure::repository::TreasuryRepository;
-use cuba_finance::{GlClient, GlLineItem};
-use crate::application::commands::{ProcessStatementCommand, ExecutePaymentRunCommand};
-use anyhow::Result;
 use uuid::Uuid;
-use chrono::Utc;
-use rust_decimal::Decimal;
 
 pub struct TreasuryHandler {
     repo: Arc<TreasuryRepository>,
@@ -49,7 +49,7 @@ impl TreasuryHandler {
         let now = Utc::now();
         let run_number = format!("PR{}", now.timestamp_subsec_micros());
         let payment_amount = Decimal::new(5000, 2);
-        
+
         let run = PaymentRun {
             run_id,
             run_number: run_number.clone(),
@@ -71,7 +71,7 @@ impl TreasuryHandler {
                 transaction_type: None,
             }],
         };
-        
+
         // Save the payment run
         self.repo.save_payment_run(&run).await?;
 
@@ -81,7 +81,7 @@ impl TreasuryHandler {
         let gl_line_items = vec![
             GlLineItem {
                 gl_account: "211000".to_string(), // Accounts Payable
-                debit_credit: "S".to_string(), // Debit (reduce payable)
+                debit_credit: "S".to_string(),    // Debit (reduce payable)
                 amount: payment_amount,
                 cost_center: None,
                 profit_center: None,
@@ -96,7 +96,7 @@ impl TreasuryHandler {
             },
             GlLineItem {
                 gl_account: "113000".to_string(), // Bank Account
-                debit_credit: "H".to_string(), // Credit (cash out)
+                debit_credit: "H".to_string(),    // Credit (cash out)
                 amount: payment_amount,
                 cost_center: None,
                 profit_center: None,
@@ -113,28 +113,39 @@ impl TreasuryHandler {
 
         let mut gl_client = self.gl_client.lock().await;
         let posting_date = now.date_naive();
-        let company_code = cmd.company_codes.first().cloned().unwrap_or_else(|| "1000".to_string());
-        match gl_client.create_invoice_journal_entry(
-            &company_code,
-            posting_date,
-            posting_date,
-            2026,
-            "CNY",
-            Some(format!("TR-{}", run_id)),
-            Some(format!("Payment Run {}", run_number)),
-            gl_line_items,
-            None, // 使用默认主分类账 "0L"
-        ).await {
+        let company_code = cmd
+            .company_codes
+            .first()
+            .cloned()
+            .unwrap_or_else(|| "1000".to_string());
+        match gl_client
+            .create_invoice_journal_entry(
+                &company_code,
+                posting_date,
+                posting_date,
+                2026,
+                "CNY",
+                Some(format!("TR-{}", run_id)),
+                Some(format!("Payment Run {}", run_number)),
+                gl_line_items,
+                None, // 使用默认主分类账 "0L"
+            )
+            .await
+        {
             Ok(response) => {
                 tracing::info!(
                     "GL Journal Entry created for payment run {}: {:?}",
                     run_id,
                     response.document_reference
                 );
-            }
+            },
             Err(e) => {
-                tracing::error!("Failed to create GL entry for payment run {}: {}", run_id, e);
-            }
+                tracing::error!(
+                    "Failed to create GL entry for payment run {}: {}",
+                    run_id,
+                    e
+                );
+            },
         }
 
         Ok(run_id.to_string())

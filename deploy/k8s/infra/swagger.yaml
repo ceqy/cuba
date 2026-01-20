@@ -24,54 +24,26 @@ spec:
         - name: PERSIST_AUTHORIZATION
           value: "true"
         - name: URLS
-          value: "[ { url: '/specs/auth.json', name: 'Identity & Access' }, { url: '/specs/finance.json', name: 'Finance' }, { url: '/specs/sales.json', name: 'Sales' }, { url: '/specs/procurement.json', name: 'Procurement' }, { url: '/specs/manufacturing.json', name: 'Manufacturing' }, { url: '/specs/supplychain.json', name: 'Supply Chain' }, { url: '/specs/asset.json', name: 'Asset Management' }, { url: '/specs/service.json', name: 'Customer Service' }, { url: '/specs/hr.json', name: 'Human Resources' }, { url: '/specs/rd.json', name: 'R&D' } ]"
+          value: "[ { url: '/specs/cuba-erp-api.yaml', name: 'CUBA ERP - 统一API' }, { url: '/specs/auth.yaml', name: 'Auth Service' }, { url: '/specs/rbac.yaml', name: 'RBAC Service' }, { url: '/specs/gl.yaml', name: 'GL Service' } ]"
+        - name: URLS_PRIMARY_NAME
+          value: "CUBA ERP - 统一API"
         volumeMounts:
-        - name: docs-1
-          mountPath: /usr/share/nginx/html/specs/auth.json
-          subPath: auth.json
-        - name: docs-1
-          mountPath: /usr/share/nginx/html/specs/finance.json
-          subPath: finance.json
-        - name: docs-2
-          mountPath: /usr/share/nginx/html/specs/asset.json
-          subPath: asset.json
-        - name: docs-2
-          mountPath: /usr/share/nginx/html/specs/procurement.json
-          subPath: procurement.json
-        - name: docs-3
-          mountPath: /usr/share/nginx/html/specs/sales.json
-          subPath: sales.json
-        - name: docs-3
-          mountPath: /usr/share/nginx/html/specs/service.json
-          subPath: service.json
-        - name: docs-4
-          mountPath: /usr/share/nginx/html/specs/manufacturing.json
-          subPath: manufacturing.json
-        - name: docs-4
-          mountPath: /usr/share/nginx/html/specs/supplychain.json
-          subPath: supplychain.json
-        - name: docs-5
-          mountPath: /usr/share/nginx/html/specs/hr.json
-          subPath: hr.json
-        - name: docs-5
-          mountPath: /usr/share/nginx/html/specs/rd.json
-          subPath: rd.json
+        - name: cuba-api-docs
+          mountPath: /usr/share/nginx/html/specs/cuba-erp-api.yaml
+          subPath: cuba-erp-api.yaml
+        - name: cuba-api-docs
+          mountPath: /usr/share/nginx/html/specs/auth.yaml
+          subPath: auth-service.yaml
+        - name: cuba-api-docs
+          mountPath: /usr/share/nginx/html/specs/rbac.yaml
+          subPath: rbac-service.yaml
+        - name: cuba-api-docs
+          mountPath: /usr/share/nginx/html/specs/gl.yaml
+          subPath: gl-service.yaml
       volumes:
-      - name: docs-1
+      - name: cuba-api-docs
         configMap:
-          name: cuba-docs-1
-      - name: docs-2
-        configMap:
-          name: cuba-docs-2
-      - name: docs-3
-        configMap:
-          name: cuba-docs-3
-      - name: docs-4
-        configMap:
-          name: cuba-docs-4
-      - name: docs-5
-        configMap:
-          name: cuba-docs-5
+          name: cuba-api-docs
 ---
 apiVersion: v1
 kind: Service

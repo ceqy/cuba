@@ -1,4 +1,3 @@
-
 /// Marker trait for Aggregate Roots
 pub trait AggregateRoot: Send + Sync {}
 

@@ -1,11 +1,11 @@
-use std::sync::Arc;
-use crate::domain::{ForecastPlan, ForecastPeriod};
-use crate::infrastructure::repository::ForecastRepository;
 use crate::application::commands::{GenerateForecastCommand, TransferCommand};
+use crate::domain::{ForecastPeriod, ForecastPlan};
+use crate::infrastructure::repository::ForecastRepository;
 use anyhow::Result;
-use uuid::Uuid;
 use chrono::Utc;
 use rust_decimal::Decimal;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct ForecastHandler {
     repo: Arc<ForecastRepository>,
@@ -19,7 +19,7 @@ impl ForecastHandler {
     pub async fn generate_forecast(&self, cmd: GenerateForecastCommand) -> Result<String> {
         let plan_id = Uuid::new_v4();
         let plan_code = format!("FC{}", Utc::now().timestamp_subsec_micros());
-        
+
         // Simplified: generate 3 monthly periods
         let mut periods = Vec::new();
         for i in 0..3 {

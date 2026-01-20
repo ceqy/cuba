@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  swagger-ui:
+    image: swaggerapi/swagger-ui:v5.9.1
+    container_name: cuba-swagger-ui
+    ports:
+      - "8081:8080"
+    environment:
+      # 持久化认证信息
+      PERSIST_AUTHORIZATION: "true"
+      # 配置多个 API 文档
+      URLS: |
+        [
+          { url: '/specs/cuba-erp-api.yaml', name: 'CUBA ERP - 统一API' },
+          { url: '/specs/auth.yaml', name: 'Auth Service' },
+          { url: '/specs/rbac.yaml', name: 'RBAC Service' },
+          { url: '/specs/gl.yaml', name: 'GL Service' }
+        ]
+      # 默认选择统一 API
+      URLS_PRIMARY_NAME: "CUBA ERP - 统一API"
+      # API Gateway 地址
+      API_URL: "http://localhost:8080"
+    volumes:
+      # 挂载统一 API 文档
+      - ./docs/openapi/cuba-erp-api.yaml:/usr/share/nginx/html/specs/cuba-erp-api.yaml:ro
+      # 挂载独立服务文档
+      - ./docs/openapi/splits/auth-service.yaml:/usr/share/nginx/html/specs/auth.yaml:ro
+      - ./docs/openapi/splits/rbac-service.yaml:/usr/share/nginx/html/specs/rbac.yaml:ro
+      - ./docs/openapi/splits/gl-service.yaml:/usr/share/nginx/html/specs/gl.yaml:ro
+    networks:
+      - cuba-network
+    restart: unless-stopped
+
+networks:
+  cuba-network:
+    name: cuba-network
+    external: true

@@ -1,6 +1,6 @@
 // COA Service Client - COA 服务客户端
-use tonic::transport::Channel;
 use chrono::NaiveDate;
+use tonic::transport::Channel;
 
 // Include generated COA proto code
 pub mod coa_proto {
@@ -8,9 +8,8 @@ pub mod coa_proto {
 }
 
 use coa_proto::{
+    BatchValidateGlAccountsRequest, ValidateGlAccountRequest,
     chart_of_accounts_service_client::ChartOfAccountsServiceClient,
-    ValidateGlAccountRequest,
-    BatchValidateGlAccountsRequest,
 };
 
 /// COA 服务客户端
@@ -40,7 +39,11 @@ impl CoaClient {
             company_code: company_code.unwrap_or("").to_string(),
             check_postable: true,
             posting_date: Some(prost_types::Timestamp {
-                seconds: posting_date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
+                seconds: posting_date
+                    .and_hms_opt(0, 0, 0)
+                    .unwrap()
+                    .and_utc()
+                    .timestamp(),
                 nanos: 0,
             }),
             context: None,

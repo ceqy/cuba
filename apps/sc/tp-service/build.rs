@@ -9,6 +9,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     tonic_prost_build::configure()
         .build_server(true)
         .file_descriptor_set_path(out_dir.join("descriptor.bin"))
-        .compile_protos(&[protos_dir.join("sc/tp/tp.proto"), protos_dir.join("common/common.proto")], &[protos_dir, third_party])?;
+        .compile_protos(
+            &[
+                protos_dir.join("sc/tp/tp.proto"),
+                protos_dir.join("common/common.proto"),
+            ],
+            &[protos_dir, third_party],
+        )?;
     Ok(())
 }

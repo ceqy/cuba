@@ -10,8 +10,8 @@ pub mod fi {
     pub mod gl {
         pub mod v1 {
             tonic::include_proto!("fi.gl.v1");
-            
-            pub const FILE_DESCRIPTOR_SET: &[u8] = 
+
+            pub const FILE_DESCRIPTOR_SET: &[u8] =
                 tonic::include_file_descriptor_set!("gl_descriptor");
         }
     }

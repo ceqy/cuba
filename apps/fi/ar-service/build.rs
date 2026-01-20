@@ -9,7 +9,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let third_party = root.join("third_party");
 
     // Protos to compile - include gl.proto for GL client
-    let ap_proto = protos_dir.join("fi/ap/ap.proto"); 
+    let ap_proto = protos_dir.join("fi/ap/ap.proto");
     let gl_proto = protos_dir.join("fi/gl/gl.proto");
     let common_proto = protos_dir.join("common/common.proto");
 

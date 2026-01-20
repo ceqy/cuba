@@ -1,10 +1,10 @@
-use std::sync::Arc;
-use crate::domain::{Claim, AdjudicationResult};
+use crate::application::commands::{AdjudicateClaimCommand, CreateClaimCommand};
+use crate::domain::{AdjudicationResult, Claim};
 use crate::infrastructure::repository::ClaimRepository;
-use crate::application::commands::{CreateClaimCommand, AdjudicateClaimCommand};
 use anyhow::Result;
-use uuid::Uuid;
 use chrono::Utc;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct ClaimHandler {
     repo: Arc<ClaimRepository>,
@@ -44,7 +44,9 @@ impl ClaimHandler {
             currency: "CNY".to_string(),
             notes: cmd.notes,
         };
-        self.repo.adjudicate(cmd.claim_id, &adj, &cmd.new_status).await?;
+        self.repo
+            .adjudicate(cmd.claim_id, &adj, &cmd.new_status)
+            .await?;
         Ok(adj.adjudication_id.to_string())
     }
 }

@@ -1,5 +1,5 @@
-use rust_decimal::Decimal;
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -13,14 +13,14 @@ pub struct InspectionLot {
     pub quantity_unit: String,
     pub origin: String,
     pub creation_date: DateTime<Utc>,
-    
+
     pub ud_code: Option<String>,
     pub ud_date: Option<DateTime<Utc>>,
     pub ud_note: Option<String>,
-    
+
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
-    
+
     // Aggregates
     #[sqlx(skip)]
     pub characteristics: Vec<InspectionCharacteristic>,

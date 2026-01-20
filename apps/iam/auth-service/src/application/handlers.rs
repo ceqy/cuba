@@ -19,7 +19,13 @@ impl RegisterUserHandler {
         }
     }
 
-    pub async fn handle(&self, username: String, email: String, password: String, tenant_id: String) -> Result<User, anyhow::Error> {
+    pub async fn handle(
+        &self,
+        username: String,
+        email: String,
+        password: String,
+        tenant_id: String,
+    ) -> Result<User, anyhow::Error> {
         // Check if user exists
         if (self.user_repository.find_by_username(&username).await?).is_some() {
             return Err(anyhow::anyhow!("Username already exists"));
@@ -67,36 +73,48 @@ impl LoginUserHandler {
     }
 
     pub async fn handle(
-        &self, 
-        username: String, 
-        password: String, 
+        &self,
+        username: String,
+        password: String,
         tenant_id: String,
         user_agent: Option<String>,
         ip_address: Option<String>,
     ) -> Result<(String, String, String, User), anyhow::Error> {
         // Find user
-        let user = self.user_repository.find_by_username(&username).await?
+        let user = self
+            .user_repository
+            .find_by_username(&username)
+            .await?
             .ok_or_else(|| anyhow::anyhow!("Invalid credentials"))?;
 
         // Verify password
-        if !self.password_service.verify_password(&password, &user.password_hash)? {
+        if !self
+            .password_service
+            .verify_password(&password, &user.password_hash)?
+        {
             return Err(anyhow::anyhow!("Invalid credentials"));
         }
-        
+
         // Verify tenant (optional, strictly speaking)
         if user.tenant_id != tenant_id {
-             return Err(anyhow::anyhow!("Invalid tenant"));
+            return Err(anyhow::anyhow!("Invalid tenant"));
         }
 
         // Fetch Roles from RBAC Service
-        let roles = self.rbac_client.get_user_roles(&user.id).await.unwrap_or_default();
+        let roles = self
+            .rbac_client
+            .get_user_roles(&user.id)
+            .await
+            .unwrap_or_default();
 
         // Generate Token
-        let token = self.token_service.generate_token(&user.id, &user.tenant_id, roles)?;
-        
+        let token = self
+            .token_service
+            .generate_token(&user.id, &user.tenant_id, roles)?;
+
         // Generate Refresh Token
         let refresh_token = self.token_service.generate_refresh_token();
-        
+
         // Create Session
         let expires_at = chrono::Utc::now() + chrono::Duration::days(30);
         let session = crate::domain::UserSession::new(
@@ -108,7 +126,7 @@ impl LoginUserHandler {
             expires_at,
         );
         let session_id = session.id.clone();
-        
+
         self.session_repository.save(&session).await?;
 
         Ok((token, refresh_token, session_id, user))
@@ -139,7 +157,10 @@ impl RefreshTokenHandler {
 
     pub async fn handle(&self, refresh_token: String) -> Result<(String, String), anyhow::Error> {
         // Find session
-        let mut session = self.session_repository.find_by_refresh_token(&refresh_token).await?
+        let mut session = self
+            .session_repository
+            .find_by_refresh_token(&refresh_token)
+            .await?
             .ok_or_else(|| anyhow::anyhow!("Invalid refresh token"))?;
 
         // Check expiration
@@ -148,21 +169,30 @@ impl RefreshTokenHandler {
         }
 
         // Find user
-        let user = self.user_repository.find_by_id(&session.user_id).await?
+        let user = self
+            .user_repository
+            .find_by_id(&session.user_id)
+            .await?
             .ok_or_else(|| anyhow::anyhow!("User not found"))?;
 
         // Rotate Refresh Token
         let new_refresh_token = self.token_service.generate_refresh_token();
         session.refresh_token = new_refresh_token.clone();
         session.last_seen_at = chrono::Utc::now();
-        
+
         self.session_repository.save(&session).await?;
 
         // Fetch Roles
-        let roles = self.rbac_client.get_user_roles(&user.id).await.unwrap_or_default();
+        let roles = self
+            .rbac_client
+            .get_user_roles(&user.id)
+            .await
+            .unwrap_or_default();
 
         // Generate New Access Token
-        let access_token = self.token_service.generate_token(&user.id, &user.tenant_id, roles)?;
+        let access_token = self
+            .token_service
+            .generate_token(&user.id, &user.tenant_id, roles)?;
 
         Ok((access_token, new_refresh_token))
     }

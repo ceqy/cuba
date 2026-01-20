@@ -1,10 +1,12 @@
-use std::sync::Arc;
-use crate::domain::{SubcontractingOrder, SubcontractingItem, SubcontractingComponent};
+use crate::application::commands::{
+    CreateOrderCommand, PostComponentsCommand, ReceiveGoodsCommand,
+};
+use crate::domain::{SubcontractingComponent, SubcontractingItem, SubcontractingOrder};
 use crate::infrastructure::repository::SubcontractingRepository;
-use crate::application::commands::{CreateOrderCommand, PostComponentsCommand, ReceiveGoodsCommand};
 use anyhow::Result;
-use uuid::Uuid;
 use chrono::Utc;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct SubcontractingHandler {
     repo: Arc<SubcontractingRepository>,
@@ -18,28 +20,37 @@ impl SubcontractingHandler {
     pub async fn create_order(&self, cmd: CreateOrderCommand) -> Result<String> {
         let order_id = Uuid::new_v4();
         let po_number = format!("SC{}", Utc::now().timestamp_subsec_micros());
-        
-        let items = cmd.items.into_iter().enumerate().map(|(idx, i)| {
-            let item_id = Uuid::new_v4();
-            SubcontractingItem {
-                item_id,
-                order_id,
-                item_number: (idx as i32 + 1) * 10,
-                finished_good_material: i.material,
-                order_quantity: Some(i.quantity),
-                received_quantity: rust_decimal::Decimal::ZERO,
-                unit: "EA".to_string(),
-                plant: i.plant,
-                components: i.components.into_iter().map(|c| SubcontractingComponent {
-                    component_id: Uuid::new_v4(),
+
+        let items = cmd
+            .items
+            .into_iter()
+            .enumerate()
+            .map(|(idx, i)| {
+                let item_id = Uuid::new_v4();
+                SubcontractingItem {
                     item_id,
-                    component_material: c.material,
-                    required_quantity: Some(c.quantity),
-                    issued_quantity: rust_decimal::Decimal::ZERO,
+                    order_id,
+                    item_number: (idx as i32 + 1) * 10,
+                    finished_good_material: i.material,
+                    order_quantity: Some(i.quantity),
+                    received_quantity: rust_decimal::Decimal::ZERO,
                     unit: "EA".to_string(),
-                }).collect(),
-            }
-        }).collect();
+                    plant: i.plant,
+                    components: i
+                        .components
+                        .into_iter()
+                        .map(|c| SubcontractingComponent {
+                            component_id: Uuid::new_v4(),
+                            item_id,
+                            component_material: c.material,
+                            required_quantity: Some(c.quantity),
+                            issued_quantity: rust_decimal::Decimal::ZERO,
+                            unit: "EA".to_string(),
+                        })
+                        .collect(),
+                }
+            })
+            .collect();
 
         let order = SubcontractingOrder {
             order_id,

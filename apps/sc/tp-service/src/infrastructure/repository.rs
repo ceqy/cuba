@@ -1,6 +1,6 @@
-use sqlx::PgPool;
 use crate::domain::{Shipment, ShipmentItem};
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct ShipmentRepository {
     pool: PgPool,
@@ -46,19 +46,25 @@ impl ShipmentRepository {
             .bind(num)
             .fetch_optional(&self.pool).await?;
         if let Some(mut h) = h {
-            let items = sqlx::query_as::<_, ShipmentItem>("SELECT * FROM shipment_items WHERE shipment_id = $1")
-                .bind(h.shipment_id)
-                .fetch_all(&self.pool).await?;
+            let items = sqlx::query_as::<_, ShipmentItem>(
+                "SELECT * FROM shipment_items WHERE shipment_id = $1",
+            )
+            .bind(h.shipment_id)
+            .fetch_all(&self.pool)
+            .await?;
             h.items = items;
             Ok(Some(h))
-        } else { Ok(None) }
+        } else {
+            Ok(None)
+        }
     }
 
     pub async fn update_status(&self, num: &str, status: &str) -> Result<()> {
         sqlx::query("UPDATE shipments SET overall_status = $1 WHERE shipment_number = $2")
             .bind(status)
             .bind(num)
-            .execute(&self.pool).await?;
+            .execute(&self.pool)
+            .await?;
         Ok(())
     }
 }

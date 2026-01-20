@@ -1,6 +1,6 @@
-use sqlx::PgPool;
-use crate::domain::{MaintenanceNotification, MaintenanceOrder, MaintenanceOperation};
+use crate::domain::{MaintenanceNotification, MaintenanceOperation, MaintenanceOrder};
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct MaintenanceRepository {
     pool: PgPool,
@@ -70,7 +70,10 @@ impl MaintenanceRepository {
         Ok(())
     }
 
-    pub async fn find_order_by_number(&self, order_number: &str) -> Result<Option<MaintenanceOrder>> {
+    pub async fn find_order_by_number(
+        &self,
+        order_number: &str,
+    ) -> Result<Option<MaintenanceOrder>> {
         let h = sqlx::query_as::<_, MaintenanceOrder>("SELECT order_id, order_number, order_type, description, notification_number, equipment_number, functional_location, maintenance_plant, planning_plant, main_work_center, system_status, priority, basic_start_date, basic_finish_date, created_at, updated_at FROM maintenance_orders WHERE order_number = $1")
             .bind(order_number)
             .fetch_optional(&self.pool).await?;
@@ -86,7 +89,12 @@ impl MaintenanceRepository {
         }
     }
 
-    pub async fn confirm_operation(&self, order_id: uuid::Uuid, op_num: &str, actual_duration: rust_decimal::Decimal) -> Result<()> {
+    pub async fn confirm_operation(
+        &self,
+        order_id: uuid::Uuid,
+        op_num: &str,
+        actual_duration: rust_decimal::Decimal,
+    ) -> Result<()> {
         sqlx::query("UPDATE maintenance_operations SET actual_work_duration = $1, status = 'CNF' WHERE order_id = $2 AND operation_number = $3")
             .bind(actual_duration)
             .bind(order_id)

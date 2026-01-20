@@ -1,4 +1,4 @@
-use crate::domain::{Role, Permission};
+use crate::domain::{Permission, Role};
 use async_trait::async_trait;
 
 #[async_trait]
@@ -8,7 +8,11 @@ pub trait RoleRepository: Send + Sync {
     async fn save(&self, role: &Role) -> Result<(), anyhow::Error>;
     async fn delete(&self, id: &str) -> anyhow::Result<()>;
     async fn find_by_user_id(&self, user_id: &str) -> anyhow::Result<Vec<Role>>;
-    async fn grant_permissions(&self, role_id: &str, permission_ids: &[String]) -> anyhow::Result<()>;
+    async fn grant_permissions(
+        &self,
+        role_id: &str,
+        permission_ids: &[String],
+    ) -> anyhow::Result<()>;
     async fn assign_to_user(&self, user_id: &str, role_id: &str) -> Result<(), anyhow::Error>;
     async fn remove_from_user(&self, user_id: &str, role_id: &str) -> Result<(), anyhow::Error>;
 }

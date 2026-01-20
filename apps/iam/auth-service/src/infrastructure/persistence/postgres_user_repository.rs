@@ -36,7 +36,7 @@ impl Repository<User> for PostgresUserRepository {
         .bind(entity.updated_at)
         .execute(&self.pool)
         .await?;
-        
+
         Ok(())
     }
 
@@ -45,10 +45,10 @@ impl Repository<User> for PostgresUserRepository {
             .bind(id)
             .fetch_optional(&self.pool)
             .await?;
-            
+
         if let Some(row) = row {
-             // Fetch roles from user_roles
-             let roles: Vec<String> = sqlx::query_scalar(
+            // Fetch roles from user_roles
+            let roles: Vec<String> = sqlx::query_scalar(
                  "SELECT r.name FROM roles r JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = $1"
              )
              .bind(id)
@@ -56,21 +56,20 @@ impl Repository<User> for PostgresUserRepository {
              .await
              .unwrap_or_default();
 
-             Ok(Some(User {
-                 id: row.try_get("id")?,
-                 username: row.try_get("username")?,
-                 email: row.try_get("email")?,
-                 password_hash: row.try_get("password_hash")?,
-                 tenant_id: row.try_get("tenant_id")?,
-                 roles, 
-                 created_at: row.try_get("created_at")?,
-                 updated_at: row.try_get("updated_at")?,
-             }))
+            Ok(Some(User {
+                id: row.try_get("id")?,
+                username: row.try_get("username")?,
+                email: row.try_get("email")?,
+                password_hash: row.try_get("password_hash")?,
+                tenant_id: row.try_get("tenant_id")?,
+                roles,
+                created_at: row.try_get("created_at")?,
+                updated_at: row.try_get("updated_at")?,
+            }))
         } else {
             Ok(None)
         }
     }
-    
 }
 
 #[async_trait]
@@ -80,10 +79,10 @@ impl UserRepository for PostgresUserRepository {
             .bind(username)
             .fetch_optional(&self.pool)
             .await?;
-            
+
         if let Some(row) = row {
-             let id: String = row.try_get("id")?;
-             let roles: Vec<String> = sqlx::query_scalar(
+            let id: String = row.try_get("id")?;
+            let roles: Vec<String> = sqlx::query_scalar(
                  "SELECT r.name FROM roles r JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = $1"
              )
              .bind(&id)
@@ -91,30 +90,30 @@ impl UserRepository for PostgresUserRepository {
              .await
              .unwrap_or_default();
 
-             Ok(Some(User {
-                 id,
-                 username: row.try_get("username")?,
-                 email: row.try_get("email")?,
-                 password_hash: row.try_get("password_hash")?,
-                 tenant_id: row.try_get("tenant_id")?,
-                 roles, 
-                 created_at: row.try_get("created_at")?,
-                 updated_at: row.try_get("updated_at")?,
-             }))
+            Ok(Some(User {
+                id,
+                username: row.try_get("username")?,
+                email: row.try_get("email")?,
+                password_hash: row.try_get("password_hash")?,
+                tenant_id: row.try_get("tenant_id")?,
+                roles,
+                created_at: row.try_get("created_at")?,
+                updated_at: row.try_get("updated_at")?,
+            }))
         } else {
             Ok(None)
         }
     }
 
     async fn find_by_email(&self, email: &str) -> Result<Option<User>, anyhow::Error> {
-         let row = sqlx::query("SELECT * FROM users WHERE email = $1")
+        let row = sqlx::query("SELECT * FROM users WHERE email = $1")
             .bind(email)
             .fetch_optional(&self.pool)
             .await?;
-            
+
         if let Some(row) = row {
-             let id: String = row.try_get("id")?;
-             let roles: Vec<String> = sqlx::query_scalar(
+            let id: String = row.try_get("id")?;
+            let roles: Vec<String> = sqlx::query_scalar(
                  "SELECT r.name FROM roles r JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = $1"
              )
              .bind(&id)
@@ -122,16 +121,16 @@ impl UserRepository for PostgresUserRepository {
              .await
              .unwrap_or_default();
 
-             Ok(Some(User {
-                 id,
-                 username: row.try_get("username")?,
-                 email: row.try_get("email")?,
-                 password_hash: row.try_get("password_hash")?,
-                 tenant_id: row.try_get("tenant_id")?,
-                 roles, 
-                 created_at: row.try_get("created_at")?,
-                 updated_at: row.try_get("updated_at")?,
-             }))
+            Ok(Some(User {
+                id,
+                username: row.try_get("username")?,
+                email: row.try_get("email")?,
+                password_hash: row.try_get("password_hash")?,
+                tenant_id: row.try_get("tenant_id")?,
+                roles,
+                created_at: row.try_get("created_at")?,
+                updated_at: row.try_get("updated_at")?,
+            }))
         } else {
             Ok(None)
         }
@@ -150,8 +149,8 @@ impl UserRepository for PostgresUserRepository {
 
         let mut users = Vec::new();
         for row in rows {
-             let id: String = row.try_get("id")?;
-             let roles: Vec<String> = sqlx::query_scalar(
+            let id: String = row.try_get("id")?;
+            let roles: Vec<String> = sqlx::query_scalar(
                  "SELECT r.name FROM roles r JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = $1"
              )
              .bind(&id)
@@ -159,36 +158,36 @@ impl UserRepository for PostgresUserRepository {
              .await
              .unwrap_or_default();
 
-             users.push(User {
-                 id,
-                 username: row.try_get("username")?,
-                 email: row.try_get("email")?,
-                 password_hash: row.try_get("password_hash")?,
-                 tenant_id: row.try_get("tenant_id")?,
-                 roles, 
-                 created_at: row.try_get("created_at")?,
-                 updated_at: row.try_get("updated_at")?,
-             });
+            users.push(User {
+                id,
+                username: row.try_get("username")?,
+                email: row.try_get("email")?,
+                password_hash: row.try_get("password_hash")?,
+                tenant_id: row.try_get("tenant_id")?,
+                roles,
+                created_at: row.try_get("created_at")?,
+                updated_at: row.try_get("updated_at")?,
+            });
         }
-        
+
         Ok((users, count))
     }
 
     async fn delete(&self, user_id: &str) -> Result<(), anyhow::Error> {
         let mut tx = self.pool.begin().await?;
-        
+
         // Delete user roles first (fkey constraint, though usually cascade)
         sqlx::query("DELETE FROM user_roles WHERE user_id = $1")
             .bind(user_id)
             .execute(&mut *tx)
             .await?;
-            
+
         // Delete user
         sqlx::query("DELETE FROM users WHERE id = $1")
             .bind(user_id)
             .execute(&mut *tx)
             .await?;
-            
+
         tx.commit().await?;
         Ok(())
     }
@@ -200,7 +199,7 @@ impl UserRepository for PostgresUserRepository {
              password_hash = $2, 
              updated_at = $3,
              username = $4
-             WHERE id = $5"
+             WHERE id = $5",
         )
         .bind(&user.email)
         .bind(&user.password_hash)

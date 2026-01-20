@@ -16,14 +16,14 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SourceModule {
     Unspecified,
-    GL,  // 总账
-    AP,  // 应付账款
-    AR,  // 应收账款
-    AA,  // 固定资产
-    MM,  // 物料管理
-    SD,  // 销售与分销
-    CO,  // 成本控制
-    TR,  // 资金管理
+    GL, // 总账
+    AP, // 应付账款
+    AR, // 应收账款
+    AA, // 固定资产
+    MM, // 物料管理
+    SD, // 销售与分销
+    CO, // 成本控制
+    TR, // 资金管理
 }
 
 /// 账户类型 (KOART)
@@ -46,25 +46,25 @@ pub struct UniversalJournalEntry {
     // ============================================================================
     // 主键字段 (Primary Key Fields)
     // ============================================================================
-    pub ledger: String,                    // RLDNR 分类账
-    pub company_code: String,              // RBUKRS 公司代码
-    pub fiscal_year: i32,                  // GJAHR 会计年度
-    pub document_number: String,           // BELNR 凭证号
-    pub document_line: i32,                // DOCLN 凭证行号
+    pub ledger: String,          // RLDNR 分类账
+    pub company_code: String,    // RBUKRS 公司代码
+    pub fiscal_year: i32,        // GJAHR 会计年度
+    pub document_number: String, // BELNR 凭证号
+    pub document_line: i32,      // DOCLN 凭证行号
 
     // ============================================================================
     // 凭证抬头字段 (Document Header Fields)
     // ============================================================================
-    pub document_type: String,             // BLART 凭证类型
-    pub document_date: NaiveDate,          // BLDAT 凭证日期
-    pub posting_date: NaiveDate,           // BUDAT 过账日期
-    pub fiscal_period: i32,                // MONAT 会计期间
+    pub document_type: String,              // BLART 凭证类型
+    pub document_date: NaiveDate,           // BLDAT 凭证日期
+    pub posting_date: NaiveDate,            // BUDAT 过账日期
+    pub fiscal_period: i32,                 // MONAT 会计期间
     pub reference_document: Option<String>, // XBLNR 参考凭证号
-    pub header_text: Option<String>,       // BKTXT 凭证抬头文本
-    pub document_currency: String,         // WAERS 凭证货币
-    pub exchange_rate: Option<Decimal>,    // KURSF 汇率
-    pub logical_system: Option<String>,    // AWSYS 逻辑系统
-    pub transaction_code: Option<String>,  // TCODE 事务代码
+    pub header_text: Option<String>,        // BKTXT 凭证抬头文本
+    pub document_currency: String,          // WAERS 凭证货币
+    pub exchange_rate: Option<Decimal>,     // KURSF 汇率
+    pub logical_system: Option<String>,     // AWSYS 逻辑系统
+    pub transaction_code: Option<String>,   // TCODE 事务代码
 
     // ============================================================================
     // 行项目字段 (Line Item Fields)
@@ -91,29 +91,29 @@ pub struct UniversalJournalEntry {
     // ============================================================================
     // 数量字段 (Quantity Fields)
     // ============================================================================
-    pub quantity: Option<Decimal>,         // MENGE 数量
-    pub quantity_unit: Option<String>,     // MEINS 单位
+    pub quantity: Option<Decimal>,     // MENGE 数量
+    pub quantity_unit: Option<String>, // MEINS 单位
 
     // ============================================================================
     // 成本对象字段 (Cost Object Fields)
     // ============================================================================
-    pub cost_center: Option<String>,       // KOSTL 成本中心
-    pub profit_center: Option<String>,     // PRCTR 利润中心
-    pub segment: Option<String>,           // SEGMENT 段
-    pub functional_area: Option<String>,   // FKBER 功能范围
-    pub business_area: Option<String>,     // GSBER 业务范围
-    pub controlling_area: Option<String>,  // KOKRS 控制范围
-    pub internal_order: Option<String>,    // AUFNR 内部订单
-    pub wbs_element: Option<String>,       // PS_PSP_PNR WBS 元素
-    pub sales_order: Option<String>,       // VBELN 销售订单
-    pub sales_order_item: Option<i32>,     // POSNR 销售订单行项目
+    pub cost_center: Option<String>,      // KOSTL 成本中心
+    pub profit_center: Option<String>,    // PRCTR 利润中心
+    pub segment: Option<String>,          // SEGMENT 段
+    pub functional_area: Option<String>,  // FKBER 功能范围
+    pub business_area: Option<String>,    // GSBER 业务范围
+    pub controlling_area: Option<String>, // KOKRS 控制范围
+    pub internal_order: Option<String>,   // AUFNR 内部订单
+    pub wbs_element: Option<String>,      // PS_PSP_PNR WBS 元素
+    pub sales_order: Option<String>,      // VBELN 销售订单
+    pub sales_order_item: Option<i32>,    // POSNR 销售订单行项目
 
     // ============================================================================
     // 税务字段 (Tax Fields)
     // ============================================================================
-    pub tax_code: Option<String>,          // MWSKZ 税码
-    pub tax_jurisdiction: Option<String>,  // TXJCD 税收辖区
-    pub tax_amount: Option<Decimal>,       // MWSTS 税额
+    pub tax_code: Option<String>,         // MWSKZ 税码
+    pub tax_jurisdiction: Option<String>, // TXJCD 税收辖区
+    pub tax_amount: Option<Decimal>,      // MWSTS 税额
 
     // ============================================================================
     // 清账字段 (Clearing Fields)
@@ -124,12 +124,12 @@ pub struct UniversalJournalEntry {
     // ============================================================================
     // 付款字段 (Payment Fields)
     // ============================================================================
-    pub baseline_date: Option<NaiveDate>,  // ZFBDT 基准日期
-    pub due_date: Option<NaiveDate>,       // NETDT 到期日
-    pub payment_terms: Option<String>,     // ZTERM 付款条件
-    pub payment_method: Option<String>,    // ZLSCH 付款方式
-    pub payment_block: Option<String>,     // ZLSPR 付款冻结
-    pub house_bank: Option<String>,        // HBKID 内部银行账户
+    pub baseline_date: Option<NaiveDate>, // ZFBDT 基准日期
+    pub due_date: Option<NaiveDate>,      // NETDT 到期日
+    pub payment_terms: Option<String>,    // ZTERM 付款条件
+    pub payment_method: Option<String>,   // ZLSCH 付款方式
+    pub payment_block: Option<String>,    // ZLSPR 付款冻结
+    pub house_bank: Option<String>,       // HBKID 内部银行账户
 
     // ============================================================================
     // 特殊总账字段 (Special G/L Fields)
@@ -147,46 +147,46 @@ pub struct UniversalJournalEntry {
     // ============================================================================
     // 业务交易类型字段 (Transaction Type Fields)
     // ============================================================================
-    pub transaction_type: Option<String>,          // VRGNG 业务交易类型
+    pub transaction_type: Option<String>, // VRGNG 业务交易类型
     pub reference_transaction_type: Option<String>, // AWTYP 参考交易类型
-    pub reference_key_1: Option<String>,           // AWREF 参考键 1
-    pub reference_key_2: Option<String>,           // AWORG 参考键 2
-    pub reference_key_3: Option<String>,           // AWSYS 参考键 3
+    pub reference_key_1: Option<String>,  // AWREF 参考键 1
+    pub reference_key_2: Option<String>,  // AWORG 参考键 2
+    pub reference_key_3: Option<String>,  // AWSYS 参考键 3
 
     // ============================================================================
     // 组织维度字段 (Organizational Dimensions)
     // ============================================================================
-    pub financial_area: Option<String>,    // RFAREA 财务范围
+    pub financial_area: Option<String>,     // RFAREA 财务范围
     pub consolidation_unit: Option<String>, // RUNIT 合并单位
-    pub partner_company: Option<String>,   // VBUND 伙伴公司代码
-    pub trading_partner: Option<String>,   // VKORG 交易伙伴
+    pub partner_company: Option<String>,    // VBUND 伙伴公司代码
+    pub trading_partner: Option<String>,    // VKORG 交易伙伴
 
     // ============================================================================
     // 多币种字段 (Multi-Currency Fields)
     // ============================================================================
-    pub local_currency: String,            // RHCUR 本位币
-    pub group_currency: Option<String>,    // RKCUR 集团货币
-    pub global_currency: Option<String>,   // RTCUR 全球货币
-    pub amount_in_object_currency: Option<Decimal>, // OSL 对象货币金额
+    pub local_currency: String,                            // RHCUR 本位币
+    pub group_currency: Option<String>,                    // RKCUR 集团货币
+    pub global_currency: Option<String>,                   // RTCUR 全球货币
+    pub amount_in_object_currency: Option<Decimal>,        // OSL 对象货币金额
     pub amount_in_profit_center_currency: Option<Decimal>, // VSL 利润中心货币金额
 
     // ============================================================================
     // 催款字段 (Dunning Fields)
     // ============================================================================
-    pub dunning_key: Option<String>,       // MSCHL 催款码
-    pub dunning_block: Option<String>,     // MANST 催款冻结
+    pub dunning_key: Option<String>,          // MSCHL 催款码
+    pub dunning_block: Option<String>,        // MANST 催款冻结
     pub last_dunning_date: Option<NaiveDate>, // MADAT 上次催款日期
-    pub dunning_level: Option<i32>,        // 催款级别
+    pub dunning_level: Option<i32>,           // 催款级别
 
     // ============================================================================
     // 付款条件详细字段 (Payment Terms Detail)
     // ============================================================================
-    pub discount_days_1: Option<i32>,      // ZBD1T 第一个折扣天数
-    pub discount_days_2: Option<i32>,      // ZBD2T 第二个折扣天数
-    pub net_payment_days: Option<i32>,     // ZBD3T 净付款天数
+    pub discount_days_1: Option<i32>,        // ZBD1T 第一个折扣天数
+    pub discount_days_2: Option<i32>,        // ZBD2T 第二个折扣天数
+    pub net_payment_days: Option<i32>,       // ZBD3T 净付款天数
     pub discount_percent_1: Option<Decimal>, // ZBD1P 第一个折扣百分比
     pub discount_percent_2: Option<Decimal>, // ZBD2P 第二个折扣百分比
-    pub discount_amount: Option<Decimal>,  // SKFBT 现金折扣金额
+    pub discount_amount: Option<Decimal>,    // SKFBT 现金折扣金额
 
     // ============================================================================
     // 内部交易字段 (Internal Trading Fields)
@@ -203,14 +203,14 @@ pub struct UniversalJournalEntry {
     // ============================================================================
     // 本地 GAAP 字段 (Local GAAP Fields)
     // ============================================================================
-    pub local_account: Option<String>,     // LOKKT 本地科目
-    pub data_source: Option<String>,       // HRKFT 数据来源
+    pub local_account: Option<String>, // LOKKT 本地科目
+    pub data_source: Option<String>,   // HRKFT 数据来源
 
     // ============================================================================
     // 字段拆分字段 (Field Split Fields)
     // ============================================================================
-    pub split_method: Option<String>,      // XSPLITMOD 拆分方法
-    pub manual_split: bool,                // MANSP 手工拆分标识
+    pub split_method: Option<String>, // XSPLITMOD 拆分方法
+    pub manual_split: bool,           // MANSP 手工拆分标识
 
     // ============================================================================
     // 审计字段 (Audit Fields)
@@ -223,7 +223,7 @@ pub struct UniversalJournalEntry {
     // ============================================================================
     // 来源模块标识 (Source Module Identifier)
     // ============================================================================
-    pub source_module: SourceModule,       // 来源模块
+    pub source_module: SourceModule, // 来源模块
 
     // ============================================================================
     // 扩展字段 (Extension Fields)

@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-use rust_decimal::Decimal;
 use chrono::NaiveDate;
+use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
 pub struct CreateSalesOrderCommand {
@@ -8,15 +8,15 @@ pub struct CreateSalesOrderCommand {
     pub sales_org: String,
     pub distribution_channel: String,
     pub division: String,
-    
+
     pub sold_to_party: String,
     pub ship_to_party: Option<String>,
     pub customer_po: Option<String>,
     pub customer_po_date: Option<NaiveDate>,
-    
+
     pub requested_delivery_date: Option<NaiveDate>,
     pub currency: String,
-    
+
     pub items: Vec<CreateSalesOrderItemCommand>,
 }
 

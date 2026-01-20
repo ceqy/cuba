@@ -1,6 +1,6 @@
-use sqlx::PgPool;
-use crate::domain::{Candidate, JobApplication, InterviewSchedule};
+use crate::domain::{Candidate, InterviewSchedule, JobApplication};
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct TalentRepository {
     pool: PgPool,
@@ -11,10 +11,18 @@ impl TalentRepository {
         Self { pool }
     }
 
-    pub async fn find_or_create_candidate(&self, email: &str, first_name: &str, last_name: &str, phone: Option<&str>, resume_url: Option<&str>) -> Result<uuid::Uuid> {
+    pub async fn find_or_create_candidate(
+        &self,
+        email: &str,
+        first_name: &str,
+        last_name: &str,
+        phone: Option<&str>,
+        resume_url: Option<&str>,
+    ) -> Result<uuid::Uuid> {
         let existing = sqlx::query("SELECT candidate_id FROM candidates WHERE email = $1")
             .bind(email)
-            .fetch_optional(&self.pool).await?;
+            .fetch_optional(&self.pool)
+            .await?;
         if let Some(r) = existing {
             use sqlx::Row;
             return Ok(r.get("candidate_id"));
@@ -48,14 +56,20 @@ impl TalentRepository {
         Ok(())
     }
 
-    pub async fn find_application_by_id(&self, app_id: uuid::Uuid) -> Result<Option<JobApplication>> {
+    pub async fn find_application_by_id(
+        &self,
+        app_id: uuid::Uuid,
+    ) -> Result<Option<JobApplication>> {
         let h = sqlx::query_as::<_, JobApplication>("SELECT application_id, requisition_id, requisition_title, candidate_id, status, application_date, notes, created_at, updated_at FROM job_applications WHERE application_id = $1")
             .bind(app_id)
             .fetch_optional(&self.pool).await?;
         if let Some(mut h) = h {
-            let interviews = sqlx::query_as::<_, InterviewSchedule>("SELECT * FROM interview_schedules WHERE application_id = $1")
-                .bind(app_id)
-                .fetch_all(&self.pool).await?;
+            let interviews = sqlx::query_as::<_, InterviewSchedule>(
+                "SELECT * FROM interview_schedules WHERE application_id = $1",
+            )
+            .bind(app_id)
+            .fetch_all(&self.pool)
+            .await?;
             h.interviews = interviews;
             Ok(Some(h))
         } else {
@@ -63,7 +77,12 @@ impl TalentRepository {
         }
     }
 
-    pub async fn update_status(&self, app_id: uuid::Uuid, status: &str, notes: Option<&str>) -> Result<()> {
+    pub async fn update_status(
+        &self,
+        app_id: uuid::Uuid,
+        status: &str,
+        notes: Option<&str>,
+    ) -> Result<()> {
         sqlx::query("UPDATE job_applications SET status = $1, notes = COALESCE($2, notes), updated_at = NOW() WHERE application_id = $3")
             .bind(status)
             .bind(notes)

@@ -1,11 +1,11 @@
-use std::sync::Arc;
+use crate::application::commands::CreatePurchaseOrderCommand;
 use crate::domain::{PurchaseOrder, PurchaseOrderItem, PurchaseOrderScheduleLine};
 use crate::infrastructure::repository::PurchaseOrderRepository;
-use crate::application::commands::CreatePurchaseOrderCommand;
 use anyhow::Result;
-use uuid::Uuid;
 use chrono::Utc;
 use rust_decimal::Decimal;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct CreatePurchaseOrderHandler {
     repo: Arc<PurchaseOrderRepository>,
@@ -21,40 +21,42 @@ impl CreatePurchaseOrderHandler {
         let order_number = format!("45{}", Utc::now().timestamp_subsec_nanos()); // 45xxxxxxxx range
         let created_at = Utc::now();
 
-        let items = cmd.items.into_iter().map(|i| {
-             PurchaseOrderItem {
-                item_id: Uuid::new_v4(),
-                order_id,
-                item_number: i.item_number,
-                item_category: 1, // Standard
-                material: i.material,
-                short_text: None,
-                plant: i.plant,
-                storage_location: None,
-                material_group: None,
-                quantity: i.quantity,
-                quantity_unit: i.quantity_unit,
-                net_price: i.net_price,
-                price_unit: 1,
-                currency: cmd.currency.clone(),
-                gr_based_iv: true,
-                tax_code: None,
-                account_assignment_category: None,
-                requisition_number: None,
-                requisition_item: None,
-                deletion_indicator: false,
-                schedule_lines: vec![
-                    PurchaseOrderScheduleLine {
+        let items = cmd
+            .items
+            .into_iter()
+            .map(|i| {
+                PurchaseOrderItem {
+                    item_id: Uuid::new_v4(),
+                    order_id,
+                    item_number: i.item_number,
+                    item_category: 1, // Standard
+                    material: i.material,
+                    short_text: None,
+                    plant: i.plant,
+                    storage_location: None,
+                    material_group: None,
+                    quantity: i.quantity,
+                    quantity_unit: i.quantity_unit,
+                    net_price: i.net_price,
+                    price_unit: 1,
+                    currency: cmd.currency.clone(),
+                    gr_based_iv: true,
+                    tax_code: None,
+                    account_assignment_category: None,
+                    requisition_number: None,
+                    requisition_item: None,
+                    deletion_indicator: false,
+                    schedule_lines: vec![PurchaseOrderScheduleLine {
                         schedule_line_id: Uuid::new_v4(),
                         item_id: Uuid::nil(),
                         schedule_line_number: 1,
                         delivery_date: Utc::now().date_naive(), // MVP: immediate
                         scheduled_quantity: i.quantity,
                         goods_receipt_quantity: Decimal::ZERO,
-                    }
-                ],
-             }
-        }).collect();
+                    }],
+                }
+            })
+            .collect();
 
         let po = PurchaseOrder {
             order_id,

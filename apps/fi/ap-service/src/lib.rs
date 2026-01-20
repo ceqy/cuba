@@ -5,12 +5,12 @@ pub mod infrastructure;
 
 // Re-export for convenience
 pub use api::grpc_server::ApServiceImpl;
-pub use infrastructure::repository::{SupplierRepository, OpenItemRepository, InvoiceRepository};
+pub use infrastructure::repository::{InvoiceRepository, OpenItemRepository, SupplierRepository};
 
-use std::sync::Arc;
-use tokio::sync::Mutex;
 use cuba_database::DbPool;
 use cuba_finance::GlClient;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 /// Factory function to create and wire up the AP Service with all its dependencies.
 ///
@@ -22,10 +22,7 @@ use cuba_finance::GlClient;
 ///
 /// # Returns
 /// Fully initialized ApServiceImpl ready to serve gRPC requests
-pub fn create_ap_service(
-    pool: DbPool,
-    gl_client: Arc<Mutex<GlClient>>,
-) -> ApServiceImpl {
+pub fn create_ap_service(pool: DbPool, gl_client: Arc<Mutex<GlClient>>) -> ApServiceImpl {
     use application::handlers::*;
 
     // Initialize Repositories
@@ -49,12 +46,10 @@ pub fn create_ap_service(
     let reject_invoice_handler = Arc::new(RejectInvoiceHandler::new(invoice_repo.clone()));
     let clear_open_items_handler = Arc::new(ClearOpenItemsHandler::new(open_item_repo.clone()));
     let partial_clear_handler = Arc::new(PartialClearHandler::new(open_item_repo.clone()));
-    let generate_payment_proposal_handler = Arc::new(GeneratePaymentProposalHandler::new(
-        open_item_repo.clone(),
-    ));
-    let execute_payment_proposal_handler = Arc::new(ExecutePaymentProposalHandler::new(
-        open_item_repo.clone(),
-    ));
+    let generate_payment_proposal_handler =
+        Arc::new(GeneratePaymentProposalHandler::new(open_item_repo.clone()));
+    let execute_payment_proposal_handler =
+        Arc::new(ExecutePaymentProposalHandler::new(open_item_repo.clone()));
 
     // Assemble Service
     ApServiceImpl::new(

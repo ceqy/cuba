@@ -1,6 +1,6 @@
-use sqlx::PgPool;
 use crate::domain::{Contract, ContractItem};
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct ContractRepository {
     pool: PgPool,
@@ -52,9 +52,12 @@ impl ContractRepository {
             .bind(num)
             .fetch_optional(&self.pool).await?;
         if let Some(mut h) = h {
-            let items = sqlx::query_as::<_, ContractItem>("SELECT * FROM contract_items WHERE contract_id = $1 ORDER BY item_number")
-                .bind(h.contract_id)
-                .fetch_all(&self.pool).await?;
+            let items = sqlx::query_as::<_, ContractItem>(
+                "SELECT * FROM contract_items WHERE contract_id = $1 ORDER BY item_number",
+            )
+            .bind(h.contract_id)
+            .fetch_all(&self.pool)
+            .await?;
             h.items = items;
             Ok(Some(h))
         } else {
@@ -67,7 +70,8 @@ impl ContractRepository {
         sqlx::query("UPDATE contracts SET release_status = $1 WHERE contract_id = $2")
             .bind(status)
             .bind(contract_id)
-            .execute(&self.pool).await?;
+            .execute(&self.pool)
+            .await?;
         Ok(())
     }
 }

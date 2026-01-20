@@ -1,6 +1,6 @@
-use sqlx::PgPool;
-use crate::domain::{ProductionOrder, ProductionOperation, ProductionConfirmation};
+use crate::domain::{ProductionConfirmation, ProductionOperation, ProductionOrder};
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct ProductionOrderRepository {
     pool: PgPool,
@@ -84,7 +84,7 @@ impl ProductionOrderRepository {
 
         // 2. Update Operation Status/Quantity
         // In a real system, this logic is complex. MVP: Just update confirmed yield.
-         sqlx::query(
+        sqlx::query(
             "UPDATE production_operations SET confirmed_yield = confirmed_yield + $1, status = CASE WHEN $2 THEN 'CNF' ELSE 'PCNF' END WHERE order_id = $3 AND operation_number = $4")
             .bind(conf.yield_quantity)
             .bind(conf.final_confirmation)
@@ -94,9 +94,10 @@ impl ProductionOrderRepository {
 
         // 3. If Last Operation & Final Conf, Update Order Status (Simplified)
         if conf.final_confirmation {
-             sqlx::query("UPDATE production_orders SET status = 'CNF' WHERE order_id = $1")
+            sqlx::query("UPDATE production_orders SET status = 'CNF' WHERE order_id = $1")
                 .bind(conf.order_id)
-            .execute(&mut *tx).await?;
+                .execute(&mut *tx)
+                .await?;
         }
 
         tx.commit().await?;

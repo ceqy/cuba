@@ -1,6 +1,6 @@
-use sqlx::PgPool;
 use crate::domain::{PurchaseOrder, PurchaseOrderItem, PurchaseOrderScheduleLine};
 use anyhow::Result;
+use sqlx::PgPool;
 use uuid::Uuid;
 
 pub struct PurchaseOrderRepository {
@@ -51,7 +51,7 @@ impl PurchaseOrderRepository {
             .bind(order.order_id)
             .execute(&mut *tx)
             .await?;
-            
+
         // 3. Insert items
         for item in &order.items {
             sqlx::query(
@@ -86,9 +86,9 @@ impl PurchaseOrderRepository {
                 .bind(item.deletion_indicator)
             .execute(&mut *tx)
             .await?;
-            
+
             for sl in &item.schedule_lines {
-                 sqlx::query(
+                sqlx::query(
                     r#"
                     INSERT INTO purchase_order_schedule_lines (
                         schedule_line_id, item_id, schedule_line_number, delivery_date, scheduled_quantity, goods_receipt_quantity
@@ -128,18 +128,18 @@ impl PurchaseOrderRepository {
                 r#"SELECT * FROM purchase_order_items WHERE order_id = $1 ORDER BY item_number ASC"#)
                 .bind(h.order_id)
             .fetch_all(&self.pool).await?;
-            
+
             let mut items = Vec::new();
             for mut i in items_recs {
-                 let sl_recs = sqlx::query_as::<_, PurchaseOrderScheduleLine>(
+                let sl_recs = sqlx::query_as::<_, PurchaseOrderScheduleLine>(
                     r#"SELECT 
                          schedule_line_id, item_id, schedule_line_number, delivery_date, scheduled_quantity, goods_receipt_quantity
                        FROM purchase_order_schedule_lines WHERE item_id = $1 ORDER BY schedule_line_number ASC"#)
                     .bind(i.item_id)
                  .fetch_all(&self.pool).await?;
-                 
-                 i.schedule_lines = sl_recs;
-                 items.push(i);
+
+                i.schedule_lines = sl_recs;
+                items.push(i);
             }
             h.items = items;
             Ok(Some(h))

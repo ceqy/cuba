@@ -1,6 +1,6 @@
-use sqlx::PgPool;
 use crate::domain::PlannedOrder;
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct PlannedOrderRepository {
     pool: PgPool,

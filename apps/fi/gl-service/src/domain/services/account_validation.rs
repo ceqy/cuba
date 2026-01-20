@@ -1,7 +1,7 @@
 // Account validation service using COA client
-use std::sync::Arc;
+use crate::infrastructure::clients::{AccountValidationResult, CoaClient};
 use chrono::NaiveDate;
-use crate::infrastructure::clients::{CoaClient, AccountValidationResult};
+use std::sync::Arc;
 
 /// 科目验证服务
 pub struct AccountValidationService {
@@ -55,10 +55,7 @@ impl AccountValidationService {
             .await?;
 
         // 检查是否有无效科目
-        let invalid_accounts: Vec<_> = results
-            .iter()
-            .filter(|r| !r.is_valid)
-            .collect();
+        let invalid_accounts: Vec<_> = results.iter().filter(|r| !r.is_valid).collect();
 
         if !invalid_accounts.is_empty() {
             let error_msg = invalid_accounts

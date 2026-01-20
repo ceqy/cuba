@@ -1,6 +1,6 @@
-use sqlx::PgPool;
-use crate::domain::{Claim, AdjudicationResult};
+use crate::domain::{AdjudicationResult, Claim};
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct ClaimRepository {
     pool: PgPool,
@@ -42,12 +42,18 @@ impl ClaimRepository {
         }
     }
 
-    pub async fn adjudicate(&self, claim_id: uuid::Uuid, adj: &AdjudicationResult, new_status: &str) -> Result<()> {
+    pub async fn adjudicate(
+        &self,
+        claim_id: uuid::Uuid,
+        adj: &AdjudicationResult,
+        new_status: &str,
+    ) -> Result<()> {
         let mut tx = self.pool.begin().await?;
         sqlx::query("UPDATE claims SET status = $1 WHERE claim_id = $2")
             .bind(new_status)
             .bind(claim_id)
-            .execute(&mut *tx).await?;
+            .execute(&mut *tx)
+            .await?;
         sqlx::query(
             "INSERT INTO adjudications (adjudication_id, claim_id, adjudicated_by, approved_amount, currency, notes) VALUES ($1, $2, $3, $4, $5, $6)")
             .bind(adj.adjudication_id)

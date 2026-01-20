@@ -1,6 +1,6 @@
-use sqlx::PgPool;
-use crate::domain::{SubcontractingOrder, SubcontractingItem, SubcontractingComponent};
+use crate::domain::{SubcontractingComponent, SubcontractingItem, SubcontractingOrder};
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct SubcontractingRepository {
     pool: PgPool,

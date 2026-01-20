@@ -1,9 +1,9 @@
 //! AP Service Commands
 //! Command objects for CQRS pattern
 
-use serde::{Deserialize, Serialize};
-use rust_decimal::Decimal;
 use chrono::NaiveDate;
+use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 
 /// Command to create or update a supplier
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,8 +37,8 @@ pub struct PostInvoiceCommand {
     pub reference_document: Option<String>,
     pub header_text: Option<String>,
     pub items: Vec<InvoiceItemCommand>,
-    pub ledger: Option<String>,           // 分类账
-    pub ledger_type: Option<i32>,         // 分类账类型
+    pub ledger: Option<String>,   // 分类账
+    pub ledger_type: Option<i32>, // 分类账类型
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

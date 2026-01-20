@@ -1,10 +1,10 @@
-use std::sync::Arc;
-use crate::domain::{ServiceContract, BillingPlanItem};
-use crate::infrastructure::repository::ContractRepository;
 use crate::application::commands::{CreateBillingPlanCommand, RunBillingCommand};
+use crate::domain::{BillingPlanItem, ServiceContract};
+use crate::infrastructure::repository::ContractRepository;
 use anyhow::Result;
-use uuid::Uuid;
 use chrono::Utc;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct BillingHandler {
     repo: Arc<ContractRepository>,
@@ -24,15 +24,19 @@ impl BillingHandler {
             validity_start: cmd.validity_start,
             validity_end: cmd.validity_end,
             created_at: Utc::now(),
-            billing_plan: cmd.items.into_iter().map(|i| BillingPlanItem {
-                item_id: Uuid::new_v4(),
-                contract_id,
-                planned_date: i.planned_date,
-                amount: i.amount,
-                currency: "CNY".to_string(),
-                status: "OPEN".to_string(),
-                invoice_number: None,
-            }).collect(),
+            billing_plan: cmd
+                .items
+                .into_iter()
+                .map(|i| BillingPlanItem {
+                    item_id: Uuid::new_v4(),
+                    contract_id,
+                    planned_date: i.planned_date,
+                    amount: i.amount,
+                    currency: "CNY".to_string(),
+                    status: "OPEN".to_string(),
+                    invoice_number: None,
+                })
+                .collect(),
         };
         self.repo.create_contract(&c).await?;
         Ok(cmd.contract_number)

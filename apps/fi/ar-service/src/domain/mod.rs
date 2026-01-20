@@ -1,5 +1,5 @@
+use chrono::{DateTime, NaiveDate, Utc};
 use rust_decimal::Decimal;
-use chrono::{NaiveDate, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -46,18 +46,18 @@ pub struct Customer {
     pub business_partner_id: Option<String>,
     pub name: String,
     pub account_group: String,
-    
+
     // Address
     pub street: Option<String>,
     pub city: Option<String>,
     pub postal_code: Option<String>,
     pub country: Option<String>,
-    
+
     // Control
     pub company_code: String,
     pub reconciliation_account: String,
     pub payment_terms: Option<String>,
-    
+
     // Sales
     pub sales_organization: Option<String>,
     pub distribution_channel: Option<String>,
@@ -78,11 +78,11 @@ pub struct Invoice {
     pub document_date: NaiveDate,
     pub posting_date: NaiveDate,
     pub baseline_date: Option<NaiveDate>,
-    
+
     pub customer_id: String,
     pub currency: String,
     pub total_amount: Decimal,
-    
+
     pub reference: Option<String>,
     // ACDOCA minimal alignment
     pub ledger: Option<String>,
@@ -93,10 +93,10 @@ pub struct Invoice {
     pub transaction_type: Option<String>,
     pub reference_transaction_type: Option<String>,
     pub status: InvoiceStatus,
-    
+
     #[sqlx(skip)]
     pub items: Vec<InvoiceItem>,
-    
+
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -118,23 +118,23 @@ pub struct InvoiceItem {
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct OpenItem {
     pub open_item_id: Uuid,
-    
+
     // Document Key
     pub document_number: String,
     pub fiscal_year: i32,
     pub company_code: String,
     pub line_item_number: i32,
-    
+
     pub customer_id: String,
     pub doc_type: String,
     pub posting_date: NaiveDate,
     pub due_date: NaiveDate,
     pub baseline_date: Option<NaiveDate>,
-    
+
     pub currency: String,
     pub original_amount: Decimal,
     pub open_amount: Decimal,
-    
+
     pub is_cleared: bool,
     pub payment_block: Option<String>,
     pub reference_document: Option<String>,

@@ -1,6 +1,6 @@
-use sqlx::PgPool;
 use crate::domain::{Invoice, InvoiceItem};
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct InvoiceRepository {
     pool: PgPool,
@@ -52,9 +52,12 @@ impl InvoiceRepository {
             .bind(invoice_id)
             .fetch_optional(&self.pool).await?;
         if let Some(mut h) = h {
-            let items = sqlx::query_as::<_, InvoiceItem>("SELECT * FROM invoice_items WHERE invoice_id = $1 ORDER BY item_number")
-                .bind(invoice_id)
-                .fetch_all(&self.pool).await?;
+            let items = sqlx::query_as::<_, InvoiceItem>(
+                "SELECT * FROM invoice_items WHERE invoice_id = $1 ORDER BY item_number",
+            )
+            .bind(invoice_id)
+            .fetch_all(&self.pool)
+            .await?;
             h.items = items;
             Ok(Some(h))
         } else {
@@ -62,7 +65,12 @@ impl InvoiceRepository {
         }
     }
 
-    pub async fn update_status(&self, invoice_id: uuid::Uuid, status: &str, doc_num: Option<&str>) -> Result<()> {
+    pub async fn update_status(
+        &self,
+        invoice_id: uuid::Uuid,
+        status: &str,
+        doc_num: Option<&str>,
+    ) -> Result<()> {
         sqlx::query("UPDATE invoices SET status = $1, document_number = $2, posting_date = CURRENT_DATE WHERE invoice_id = $3")
             .bind(status)
             .bind(doc_num)

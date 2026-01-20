@@ -8,7 +8,8 @@ pub mod rd {
     pub mod pl {
         pub mod v1 {
             tonic::include_proto!("rd.pl.v1");
-            pub const FILE_DESCRIPTOR_SET: &[u8] = tonic::include_file_descriptor_set!("descriptor");
+            pub const FILE_DESCRIPTOR_SET: &[u8] =
+                tonic::include_file_descriptor_set!("descriptor");
         }
     }
 }

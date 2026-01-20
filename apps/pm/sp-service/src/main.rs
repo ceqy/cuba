@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_v1()?;
 
     info!("Service listening on {}", addr);
-    
+
     // 5. Start Server
     Server::builder()
         .add_service(reflection_service)

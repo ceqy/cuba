@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use crate::application::commands::{ChangeStatusCommand, CreateCycleCommand};
 use crate::domain::{ControlCycle, KanbanContainer};
 use crate::infrastructure::repository::KanbanRepository;
-use crate::application::commands::{CreateCycleCommand, ChangeStatusCommand};
 use anyhow::{Result, anyhow};
-use uuid::Uuid;
 use chrono::Utc;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct KanbanHandler {
     repo: Arc<KanbanRepository>,
@@ -31,7 +31,7 @@ impl KanbanHandler {
             created_at: Utc::now(),
         };
         self.repo.save_cycle(&c).await?;
-        
+
         // Create kanban containers
         for i in 1..=cmd.number_of_kanbans {
             let k = KanbanContainer {
@@ -43,15 +43,20 @@ impl KanbanHandler {
             };
             self.repo.save_container(&k).await?;
         }
-        
+
         Ok(cycle_number)
     }
 
     pub async fn change_status(&self, cmd: ChangeStatusCommand) -> Result<Option<String>> {
-        let k = self.repo.find_container_by_code(&cmd.container_code).await?
+        let k = self
+            .repo
+            .find_container_by_code(&cmd.container_code)
+            .await?
             .ok_or_else(|| anyhow!("Container not found"))?;
-        self.repo.update_container_status(k.container_id, &cmd.new_status).await?;
-        
+        self.repo
+            .update_container_status(k.container_id, &cmd.new_status)
+            .await?;
+
         // If status changed to EMPTY, trigger replenishment
         let replenishment_doc = if cmd.new_status == "EMPTY" {
             Some(format!("REP{}", Utc::now().timestamp_subsec_micros()))

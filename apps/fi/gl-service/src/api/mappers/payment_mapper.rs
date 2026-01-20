@@ -4,14 +4,13 @@
 use crate::application::commands::{PaymentExecutionDTO, PaymentTermsDetailDTO};
 use crate::domain::aggregates::journal_entry::{PaymentExecutionDetail, PaymentTermsDetail};
 use crate::infrastructure::grpc::fi::gl::v1::{
-    PaymentExecutionDetail as ProtoPaymentExecution,
-    PaymentTermsDetail as ProtoPaymentTerms,
+    PaymentExecutionDetail as ProtoPaymentExecution, PaymentTermsDetail as ProtoPaymentTerms,
 };
 use rust_decimal::Decimal;
 use std::str::FromStr;
 use tonic::Status;
 
-use super::{proto_to_naive_date_opt, naive_date_to_proto_opt, str_to_option};
+use super::{naive_date_to_proto_opt, proto_to_naive_date_opt, str_to_option};
 
 /// PaymentExecution: Proto → DTO
 pub fn payment_execution_from_proto(
@@ -33,9 +32,7 @@ pub fn payment_execution_from_proto(
 }
 
 /// PaymentExecution: Domain → Proto
-pub fn payment_execution_to_proto(
-    domain: &PaymentExecutionDetail,
-) -> ProtoPaymentExecution {
+pub fn payment_execution_to_proto(domain: &PaymentExecutionDetail) -> ProtoPaymentExecution {
     ProtoPaymentExecution {
         payment_method: domain.payment_method.clone(),
         house_bank: domain.house_bank.clone().unwrap_or_default(),
@@ -48,9 +45,7 @@ pub fn payment_execution_to_proto(
 }
 
 /// PaymentTermsDetail: Proto → DTO
-pub fn payment_terms_from_proto(
-    proto: ProtoPaymentTerms,
-) -> Result<PaymentTermsDetailDTO, Status> {
+pub fn payment_terms_from_proto(proto: ProtoPaymentTerms) -> Result<PaymentTermsDetailDTO, Status> {
     // 解析折扣百分比
     let discount_percent_1 = if proto.discount_percent_1.is_empty() {
         None

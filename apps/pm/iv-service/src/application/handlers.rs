@@ -1,11 +1,13 @@
-use std::sync::Arc;
+use crate::application::commands::{
+    MatchInvoiceCommand, PostInvoiceCommand, ReceiveInvoiceCommand,
+};
 use crate::domain::{Invoice, InvoiceItem};
 use crate::infrastructure::repository::InvoiceRepository;
-use crate::application::commands::{ReceiveInvoiceCommand, MatchInvoiceCommand, PostInvoiceCommand};
 use anyhow::Result;
-use uuid::Uuid;
 use chrono::Utc;
 use rust_decimal::Decimal;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct InvoiceHandler {
     repo: Arc<InvoiceRepository>,
@@ -32,19 +34,23 @@ impl InvoiceHandler {
             status: "RECEIVED".to_string(),
             document_number: None,
             created_at: Utc::now(),
-            items: cmd.items.into_iter().map(|i| InvoiceItem {
-                item_id: Uuid::new_v4(),
-                invoice_id,
-                item_number: i.item_number,
-                po_number: i.po_number,
-                po_item: i.po_item,
-                material: i.material,
-                short_text: None,
-                quantity: i.quantity,
-                unit: "EA".to_string(),
-                amount: i.amount,
-                tax_code: None,
-            }).collect(),
+            items: cmd
+                .items
+                .into_iter()
+                .map(|i| InvoiceItem {
+                    item_id: Uuid::new_v4(),
+                    invoice_id,
+                    item_number: i.item_number,
+                    po_number: i.po_number,
+                    po_item: i.po_item,
+                    material: i.material,
+                    short_text: None,
+                    quantity: i.quantity,
+                    unit: "EA".to_string(),
+                    amount: i.amount,
+                    tax_code: None,
+                })
+                .collect(),
         };
         self.repo.save(&inv).await?;
         Ok(invoice_id.to_string())
@@ -52,13 +58,17 @@ impl InvoiceHandler {
 
     pub async fn match_invoice(&self, cmd: MatchInvoiceCommand) -> Result<(bool, Vec<String>)> {
         // Simplified matching logic - just update status
-        self.repo.update_status(cmd.invoice_id, "MATCH_SUCCESS", None).await?;
+        self.repo
+            .update_status(cmd.invoice_id, "MATCH_SUCCESS", None)
+            .await?;
         Ok((true, vec![]))
     }
 
     pub async fn post_invoice(&self, cmd: PostInvoiceCommand) -> Result<String> {
         let doc_num = format!("5100{}", Utc::now().timestamp_subsec_micros());
-        self.repo.update_status(cmd.invoice_id, "POSTED", Some(&doc_num)).await?;
+        self.repo
+            .update_status(cmd.invoice_id, "POSTED", Some(&doc_num))
+            .await?;
         Ok(doc_num)
     }
 }

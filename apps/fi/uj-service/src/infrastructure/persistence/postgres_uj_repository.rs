@@ -1,8 +1,8 @@
 use crate::domain::{
     aggregates::{AccountType, SourceModule, UniversalJournalEntry},
     repositories::{
-        AggregationResult, PaginationParams, PaginationResponse, RepositoryError, UniversalJournalFilter,
-        UniversalJournalRepository,
+        AggregationResult, PaginationParams, PaginationResponse, RepositoryError,
+        UniversalJournalFilter, UniversalJournalRepository,
     },
 };
 use async_trait::async_trait;
@@ -41,7 +41,10 @@ impl PostgresUniversalJournalRepository {
         }
     }
 
-    fn entry_matches_filter(entry: &UniversalJournalEntry, filter: &UniversalJournalFilter) -> bool {
+    fn entry_matches_filter(
+        entry: &UniversalJournalEntry,
+        filter: &UniversalJournalFilter,
+    ) -> bool {
         if let Some(ledgers) = &filter.ledgers {
             if !ledgers.iter().any(|l| l == &entry.ledger) {
                 return false;
@@ -297,7 +300,10 @@ impl PostgresUniversalJournalRepository {
     }
 
     /// 从数据库行映射到领域模型
-    fn map_row_to_entry(&self, row: &sqlx::postgres::PgRow) -> Result<UniversalJournalEntry, RepositoryError> {
+    fn map_row_to_entry(
+        &self,
+        row: &sqlx::postgres::PgRow,
+    ) -> Result<UniversalJournalEntry, RepositoryError> {
         let source_module_str: String = row.try_get("source_module")?;
         let source_module = match source_module_str.as_str() {
             "GL" => SourceModule::GL,
@@ -1460,7 +1466,9 @@ impl PostgresUniversalJournalRepository {
             entries.push(UniversalJournalEntry {
                 ledger: "0L".to_string(),
                 company_code,
-                fiscal_year: row.try_get::<Option<i32>, _>("fiscal_year")?.unwrap_or(posting_date.year()),
+                fiscal_year: row
+                    .try_get::<Option<i32>, _>("fiscal_year")?
+                    .unwrap_or(posting_date.year()),
                 document_number: row.try_get("document_number")?,
                 document_line: 1,
                 document_type: "TR".to_string(),
@@ -1687,7 +1695,7 @@ impl UniversalJournalRepository for PostgresUniversalJournalRepository {
                 });
 
                 Ok(entry)
-            }
+            },
         }
     }
 
@@ -1723,7 +1731,9 @@ impl UniversalJournalRepository for PostgresUniversalJournalRepository {
                 _ => entry.amount_in_document_currency,
             };
 
-            let entry_agg = aggregation_map.entry(dimension_key).or_insert((Decimal::ZERO, 0));
+            let entry_agg = aggregation_map
+                .entry(dimension_key)
+                .or_insert((Decimal::ZERO, 0));
             entry_agg.0 += amount;
             entry_agg.1 += 1;
         }
@@ -1879,12 +1889,16 @@ mod tests {
             source_modules: Some(vec!["AP".to_string()]),
             ..Default::default()
         };
-        assert!(PostgresUniversalJournalRepository::entry_matches_filter(&entry, &filter));
+        assert!(PostgresUniversalJournalRepository::entry_matches_filter(
+            &entry, &filter
+        ));
 
         let mismatch = UniversalJournalFilter {
             company_codes: Some(vec!["2000".to_string()]),
             ..Default::default()
         };
-        assert!(!PostgresUniversalJournalRepository::entry_matches_filter(&entry, &mismatch));
+        assert!(!PostgresUniversalJournalRepository::entry_matches_filter(
+            &entry, &mismatch
+        ));
     }
 }

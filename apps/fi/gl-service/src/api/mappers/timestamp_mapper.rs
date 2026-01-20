@@ -21,11 +21,7 @@ pub fn proto_to_naive_date_opt(ts: Option<&Timestamp>) -> Option<NaiveDate> {
 /// NaiveDate 转换为 Proto Timestamp
 pub fn naive_date_to_proto(date: NaiveDate) -> Timestamp {
     Timestamp {
-        seconds: date
-            .and_hms_opt(0, 0, 0)
-            .unwrap()
-            .and_utc()
-            .timestamp(),
+        seconds: date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
         nanos: 0,
     }
 }

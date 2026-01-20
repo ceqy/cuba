@@ -1,6 +1,6 @@
-use sqlx::PgPool;
-use crate::domain::{InspectionLot, InspectionCharacteristic};
+use crate::domain::{InspectionCharacteristic, InspectionLot};
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct InspectionLotRepository {
     pool: PgPool,
@@ -60,7 +60,12 @@ impl InspectionLotRepository {
         }
     }
 
-    pub async fn update_result(&self, lot_id: uuid::Uuid, char_num: &str, value: &str) -> Result<()> {
+    pub async fn update_result(
+        &self,
+        lot_id: uuid::Uuid,
+        char_num: &str,
+        value: &str,
+    ) -> Result<()> {
         sqlx::query("UPDATE inspection_characteristics SET result_value = $1, result_status = '5' WHERE lot_id = $2 AND characteristic_number = $3")
             .bind(value)
             .bind(lot_id)
@@ -69,7 +74,12 @@ impl InspectionLotRepository {
         Ok(())
     }
 
-    pub async fn make_usage_decision(&self, lot_id: uuid::Uuid, ud_code: &str, note: &str) -> Result<()> {
+    pub async fn make_usage_decision(
+        &self,
+        lot_id: uuid::Uuid,
+        ud_code: &str,
+        note: &str,
+    ) -> Result<()> {
         sqlx::query("UPDATE inspection_lots SET ud_code = $1, ud_note = $2, ud_date = NOW(), updated_at = NOW() WHERE lot_id = $3")
             .bind(ud_code)
             .bind(note)

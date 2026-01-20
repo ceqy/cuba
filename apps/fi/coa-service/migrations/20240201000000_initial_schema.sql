@@ -434,7 +434,7 @@ CREATE OR REPLACE FUNCTION fn_validate_account(
     p_posting_date DATE DEFAULT CURRENT_DATE
 ) RETURNS TABLE (
     is_valid BOOLEAN,
-    exists BOOLEAN,
+    account_exists BOOLEAN,
     is_active BOOLEAN,
     is_postable BOOLEAN,
     error_message TEXT
@@ -450,7 +450,7 @@ BEGIN
             WHEN ga.valid_to IS NOT NULL AND ga.valid_to < p_posting_date THEN FALSE
             ELSE TRUE
         END as is_valid,
-        ga.id IS NOT NULL as exists,
+        ga.id IS NOT NULL as account_exists,
         ga.status = 'ACTIVE' as is_active,
         COALESCE(ga.is_postable, FALSE) as is_postable,
         CASE

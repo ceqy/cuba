@@ -14,27 +14,27 @@ pub struct Supplier {
     pub business_partner_id: Option<String>,
     pub name: String,
     pub account_group: String,
-    
+
     // Address
     pub street: Option<String>,
     pub city: Option<String>,
     pub postal_code: Option<String>,
     pub country: Option<String>,
-    
+
     // Contact
     pub telephone: Option<String>,
     pub email: Option<String>,
-    
+
     // Company Code Data
     pub company_code: String,
     pub reconciliation_account: String,
     pub payment_terms: Option<String>,
     pub check_double_invoice: bool,
-    
+
     // Purchasing
     pub purchasing_organization: Option<String>,
     pub order_currency: String,
-    
+
     // Audit
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -48,19 +48,19 @@ pub struct Invoice {
     pub company_code: String,
     pub fiscal_year: i32,
     pub document_type: String,
-    
+
     // Header
     pub supplier_id: Uuid,
     pub document_date: NaiveDate,
     pub posting_date: NaiveDate,
     pub due_date: NaiveDate,
     pub baseline_date: Option<NaiveDate>,
-    
+
     // Amounts
     pub currency: String,
     pub total_amount: Decimal,
     pub tax_amount: Decimal,
-    
+
     // Reference
     pub reference_document: Option<String>,
     pub header_text: Option<String>,
@@ -73,16 +73,16 @@ pub struct Invoice {
     pub payment_block: Option<String>,
     pub transaction_type: Option<String>,
     pub reference_transaction_type: Option<String>,
-    
+
     // Status
     pub status: String, // InvoiceStatus
     pub clearing_document: Option<String>,
     pub clearing_date: Option<NaiveDate>,
-    
+
     // Line items
     #[sqlx(skip)]
     pub items: Vec<InvoiceItem>,
-    
+
     // Audit
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -100,7 +100,7 @@ pub struct InvoiceItem {
     pub cost_center: Option<String>,
     pub profit_center: Option<String>,
     pub item_text: Option<String>,
-    
+
     // Three-way matching
     pub purchase_order: Option<String>,
     pub po_item_number: Option<i32>,

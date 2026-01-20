@@ -1,6 +1,6 @@
+use crate::domain::entities::{AuthorizationCode, OAuthClient, RefreshToken};
+use crate::domain::repositories::{AuthCodeRepository, ClientRepository, RefreshTokenRepository};
 use async_trait::async_trait;
-use crate::domain::entities::{OAuthClient, AuthorizationCode, RefreshToken};
-use crate::domain::repositories::{ClientRepository, AuthCodeRepository, RefreshTokenRepository};
 use cuba_database::DbPool;
 use sqlx::Row;
 
@@ -21,7 +21,7 @@ impl ClientRepository for PostgresOAuthRepository {
             .bind(client_id)
             .fetch_optional(&self.pool)
             .await?;
-            
+
         Ok(row.map(|r| OAuthClient {
             client_id: r.try_get("client_id").unwrap(),
             client_secret: r.try_get("client_secret").unwrap(),
@@ -68,7 +68,7 @@ impl ClientRepository for PostgresOAuthRepository {
         let rows = sqlx::query("SELECT * FROM oauth_clients")
             .fetch_all(&self.pool)
             .await?;
-            
+
         let mut clients = Vec::new();
         for r in rows {
             clients.push(OAuthClient {
@@ -88,11 +88,13 @@ impl ClientRepository for PostgresOAuthRepository {
 #[async_trait]
 impl AuthCodeRepository for PostgresOAuthRepository {
     async fn find_by_code(&self, code: &str) -> Result<Option<AuthorizationCode>, anyhow::Error> {
-        let row = sqlx::query("SELECT * FROM oauth_authorization_codes WHERE code = $1 AND expires_at > NOW()")
-            .bind(code)
-            .fetch_optional(&self.pool)
-            .await?;
-            
+        let row = sqlx::query(
+            "SELECT * FROM oauth_authorization_codes WHERE code = $1 AND expires_at > NOW()",
+        )
+        .bind(code)
+        .fetch_optional(&self.pool)
+        .await?;
+
         Ok(row.map(|r| AuthorizationCode {
             code: r.try_get("code").unwrap(),
             client_id: r.try_get("client_id").unwrap(),
@@ -137,11 +139,13 @@ impl AuthCodeRepository for PostgresOAuthRepository {
 #[async_trait]
 impl RefreshTokenRepository for PostgresOAuthRepository {
     async fn find_by_token(&self, token: &str) -> Result<Option<RefreshToken>, anyhow::Error> {
-        let row = sqlx::query("SELECT * FROM oauth_refresh_tokens WHERE token = $1 AND expires_at > NOW()")
-            .bind(token)
-            .fetch_optional(&self.pool)
-            .await?;
-            
+        let row = sqlx::query(
+            "SELECT * FROM oauth_refresh_tokens WHERE token = $1 AND expires_at > NOW()",
+        )
+        .bind(token)
+        .fetch_optional(&self.pool)
+        .await?;
+
         Ok(row.map(|r| RefreshToken {
             token: r.try_get("token").unwrap(),
             client_id: r.try_get("client_id").unwrap(),

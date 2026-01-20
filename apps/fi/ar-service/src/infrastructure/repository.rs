@@ -1,4 +1,4 @@
-use crate::domain::{Customer, OpenItem, Invoice};
+use crate::domain::{Customer, Invoice, OpenItem};
 use anyhow::Result;
 use rust_decimal::Decimal;
 use uuid::Uuid;
@@ -7,7 +7,6 @@ use uuid::Uuid;
 cuba_database::define_repository!(CustomerRepository, OpenItemRepository, InvoiceRepository);
 
 impl CustomerRepository {
-
     pub async fn save(&self, customer: &Customer) -> Result<()> {
         sqlx::query(
             r#"
@@ -22,22 +21,23 @@ impl CustomerRepository {
             ON CONFLICT (customer_id) DO UPDATE SET
                 name = EXCLUDED.name,
                 updated_at = EXCLUDED.updated_at
-            "#)
-            .bind(&customer.customer_id)
-            .bind(&customer.business_partner_id)
-            .bind(&customer.name)
-            .bind(&customer.account_group)
-            .bind(&customer.street)
-            .bind(&customer.city)
-            .bind(&customer.postal_code)
-            .bind(&customer.country)
-            .bind(&customer.company_code)
-            .bind(&customer.reconciliation_account)
-            .bind(&customer.payment_terms)
-            .bind(&customer.sales_organization)
-            .bind(&customer.order_currency)
-            .bind(&customer.created_at)
-            .bind(&customer.updated_at)
+            "#,
+        )
+        .bind(&customer.customer_id)
+        .bind(&customer.business_partner_id)
+        .bind(&customer.name)
+        .bind(&customer.account_group)
+        .bind(&customer.street)
+        .bind(&customer.city)
+        .bind(&customer.postal_code)
+        .bind(&customer.country)
+        .bind(&customer.company_code)
+        .bind(&customer.reconciliation_account)
+        .bind(&customer.payment_terms)
+        .bind(&customer.sales_organization)
+        .bind(&customer.order_currency)
+        .bind(&customer.created_at)
+        .bind(&customer.updated_at)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -54,8 +54,9 @@ impl CustomerRepository {
                 created_at, updated_at
             FROM customers
             WHERE customer_id = $1
-            "#)
-            .bind(customer_id)
+            "#,
+        )
+        .bind(customer_id)
         .fetch_optional(&self.pool)
         .await?;
         Ok(rec)
@@ -67,13 +68,12 @@ impl CustomerRepository {
 }
 
 impl OpenItemRepository {
-
     pub async fn list_by_customer(
         &self,
         customer_id: &str,
         include_cleared: bool,
         limit: i64,
-        offset: i64
+        offset: i64,
     ) -> Result<Vec<OpenItem>> {
         let items = sqlx::query_as::<_, OpenItem>(
             r#"
@@ -107,7 +107,7 @@ impl OpenItemRepository {
         clearing_date: chrono::NaiveDate,
     ) -> Result<i64> {
         let mut query_builder = sqlx::QueryBuilder::new(
-            "UPDATE open_items SET is_cleared = true, open_amount = 0, clearing_document = "
+            "UPDATE open_items SET is_cleared = true, open_amount = 0, clearing_document = ",
         );
         query_builder.push_bind(clearing_document);
         query_builder.push(", clearing_date = ");
@@ -156,7 +156,6 @@ impl OpenItemRepository {
 
 // Invoice Repository (AR Sales Invoices)
 impl InvoiceRepository {
-
     pub async fn save(&self, invoice: &Invoice) -> Result<()> {
         let mut tx = self.pool.begin().await?;
 
@@ -216,19 +215,20 @@ impl InvoiceRepository {
                 )
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 ON CONFLICT (item_id) DO NOTHING
-                "#)
-                .bind(item.item_id)
-                .bind(invoice.invoice_id)
-                .bind(item.line_item_number)
-                .bind(&item.description)
-                .bind(item.quantity)
-                .bind(item.unit_price)
-                .bind(item.total_price)
-                .bind(&item.gl_account)
-                .bind(&item.tax_code)
-                .bind(&item.profit_center)
-                .execute(&mut *tx)
-                .await?;
+                "#,
+            )
+            .bind(item.item_id)
+            .bind(invoice.invoice_id)
+            .bind(item.line_item_number)
+            .bind(&item.description)
+            .bind(item.quantity)
+            .bind(item.unit_price)
+            .bind(item.total_price)
+            .bind(&item.gl_account)
+            .bind(&item.tax_code)
+            .bind(&item.profit_center)
+            .execute(&mut *tx)
+            .await?;
         }
 
         tx.commit().await?;

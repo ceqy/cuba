@@ -1,5 +1,5 @@
+use chrono::{DateTime, NaiveDate, Utc};
 use rust_decimal::Decimal;
-use chrono::{NaiveDate, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -18,7 +18,7 @@ pub struct ProductionOrder {
     pub status: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
-    
+
     // Aggregates
     #[sqlx(skip)]
     pub operations: Vec<ProductionOperation>,

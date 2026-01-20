@@ -1,7 +1,7 @@
-use sqlx::PgPool;
-use crate::domain::{ProjectBudget, CostPosting};
+use crate::domain::{CostPosting, ProjectBudget};
 use anyhow::Result;
 use rust_decimal::Decimal;
+use sqlx::PgPool;
 
 pub struct ProjectCostRepository {
     pool: PgPool,
@@ -50,9 +50,12 @@ impl ProjectCostRepository {
         let budget_total: Decimal = budget_row.get(0);
 
         // Get actual costs
-        let actual_row = sqlx::query("SELECT COALESCE(SUM(amount), 0) as total FROM cost_postings WHERE wbs_element = $1")
-            .bind(wbs)
-            .fetch_one(&self.pool).await?;
+        let actual_row = sqlx::query(
+            "SELECT COALESCE(SUM(amount), 0) as total FROM cost_postings WHERE wbs_element = $1",
+        )
+        .bind(wbs)
+        .fetch_one(&self.pool)
+        .await?;
         let actual_total: Decimal = actual_row.get(0);
 
         Ok((budget_total, actual_total))

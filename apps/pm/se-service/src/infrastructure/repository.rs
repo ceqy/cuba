@@ -1,6 +1,6 @@
-use sqlx::PgPool;
-use crate::domain::{RFQ, RFQItem, SupplierQuote, QuoteItem};
+use crate::domain::{QuoteItem, RFQ, RFQItem, SupplierQuote};
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct SourcingRepository {
     pool: PgPool,
@@ -45,9 +45,12 @@ impl SourcingRepository {
             .bind(rfq_num)
             .fetch_optional(&self.pool).await?;
         if let Some(mut h) = h {
-            let items = sqlx::query_as::<_, RFQItem>("SELECT * FROM rfq_items WHERE rfq_id = $1 ORDER BY item_number")
-                .bind(h.rfq_id)
-                .fetch_all(&self.pool).await?;
+            let items = sqlx::query_as::<_, RFQItem>(
+                "SELECT * FROM rfq_items WHERE rfq_id = $1 ORDER BY item_number",
+            )
+            .bind(h.rfq_id)
+            .fetch_all(&self.pool)
+            .await?;
             h.items = items;
             Ok(Some(h))
         } else {
@@ -89,9 +92,11 @@ impl SourcingRepository {
             .bind(quote_num)
             .fetch_optional(&self.pool).await?;
         if let Some(mut h) = h {
-            let items = sqlx::query_as::<_, QuoteItem>("SELECT * FROM quote_items WHERE quote_id = $1")
-                .bind(h.quote_id)
-                .fetch_all(&self.pool).await?;
+            let items =
+                sqlx::query_as::<_, QuoteItem>("SELECT * FROM quote_items WHERE quote_id = $1")
+                    .bind(h.quote_id)
+                    .fetch_all(&self.pool)
+                    .await?;
             h.items = items;
             Ok(Some(h))
         } else {

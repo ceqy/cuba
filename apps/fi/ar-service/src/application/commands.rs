@@ -1,6 +1,6 @@
-use serde::Deserialize;
-use rust_decimal::Decimal;
 use chrono::NaiveDate;
+use rust_decimal::Decimal;
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct PostCustomerCommand {
@@ -8,16 +8,16 @@ pub struct PostCustomerCommand {
     pub business_partner_id: Option<String>,
     pub name: String,
     pub account_group: String,
-    
+
     pub street: Option<String>,
     pub city: Option<String>,
     pub postal_code: Option<String>,
     pub country: Option<String>,
-    
+
     pub company_code: String,
     pub reconciliation_account: String,
     pub payment_terms: Option<String>,
-    
+
     pub sales_organization: Option<String>,
     pub order_currency: Option<String>,
 }
@@ -42,8 +42,8 @@ pub struct PostSalesInvoiceCommand {
     pub reference_document: Option<String>,
     pub header_text: Option<String>,
     pub items: Vec<SalesInvoiceItemCommand>,
-    pub ledger: Option<String>,           // 分类账
-    pub ledger_type: Option<i32>,         // 分类账类型
+    pub ledger: Option<String>,   // 分类账
+    pub ledger_type: Option<i32>, // 分类账类型
 }
 
 #[derive(Debug, Clone, Deserialize)]

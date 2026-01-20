@@ -1,11 +1,10 @@
-use sqlx::PgPool;
-use crate::domain::{BankStatement, StatementTransaction, PaymentRun, PaymentDocument};
+use crate::domain::{BankStatement, PaymentDocument, PaymentRun, StatementTransaction};
 use anyhow::Result;
+use sqlx::PgPool;
 
 cuba_database::define_repository!(TreasuryRepository);
 
 impl TreasuryRepository {
-
     pub async fn save_statement(&self, stmt: &BankStatement) -> Result<()> {
         let mut tx = self.pool.begin().await?;
         sqlx::query(
@@ -40,11 +39,14 @@ impl TreasuryRepository {
             "SELECT statement_id, company_code, statement_format, status, house_bank, bank_account, created_at FROM bank_statements WHERE statement_id = $1")
             .bind(id)
             .fetch_optional(&self.pool).await?;
-        
+
         if let Some(mut h) = h {
-            let txns = sqlx::query_as::<_, StatementTransaction>("SELECT * FROM statement_transactions WHERE statement_id = $1")
-                .bind(id)
-                .fetch_all(&self.pool).await?;
+            let txns = sqlx::query_as::<_, StatementTransaction>(
+                "SELECT * FROM statement_transactions WHERE statement_id = $1",
+            )
+            .bind(id)
+            .fetch_all(&self.pool)
+            .await?;
             h.transactions = txns;
             Ok(Some(h))
         } else {
@@ -118,11 +120,14 @@ impl TreasuryRepository {
         let h = sqlx::query_as::<_, PaymentRun>("SELECT run_id, run_number, company_codes, posting_date, status, created_at FROM payment_runs WHERE run_id = $1")
             .bind(id)
             .fetch_optional(&self.pool).await?;
-        
+
         if let Some(mut h) = h {
-            let docs = sqlx::query_as::<_, PaymentDocument>("SELECT * FROM payment_documents WHERE run_id = $1")
-                .bind(id)
-                .fetch_all(&self.pool).await?;
+            let docs = sqlx::query_as::<_, PaymentDocument>(
+                "SELECT * FROM payment_documents WHERE run_id = $1",
+            )
+            .bind(id)
+            .fetch_all(&self.pool)
+            .await?;
             h.documents = docs;
             Ok(Some(h))
         } else {
@@ -143,20 +148,24 @@ impl TreasuryRepository {
                  FROM payment_runs 
                  WHERE status = $1 
                  ORDER BY created_at DESC 
-                 LIMIT $2 OFFSET $3")
-                .bind(s)
-                .bind(limit)
-                .bind(offset)
-                .fetch_all(&self.pool).await?
+                 LIMIT $2 OFFSET $3",
+            )
+            .bind(s)
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(&self.pool)
+            .await?
         } else {
             sqlx::query_as::<_, PaymentRun>(
                 "SELECT run_id, run_number, company_codes, posting_date, status, created_at 
                  FROM payment_runs 
                  ORDER BY created_at DESC 
-                 LIMIT $1 OFFSET $2")
-                .bind(limit)
-                .bind(offset)
-                .fetch_all(&self.pool).await?
+                 LIMIT $1 OFFSET $2",
+            )
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(&self.pool)
+            .await?
         };
         Ok(runs)
     }
@@ -166,7 +175,8 @@ impl TreasuryRepository {
         sqlx::query("UPDATE payment_runs SET status = $1 WHERE run_id = $2")
             .bind(status)
             .bind(run_id)
-            .execute(&self.pool).await?;
+            .execute(&self.pool)
+            .await?;
         Ok(())
     }
 
@@ -175,10 +185,12 @@ impl TreasuryRepository {
         let count: (i64,) = if let Some(cc) = company_code {
             sqlx::query_as("SELECT COUNT(*) FROM bank_statements WHERE company_code = $1")
                 .bind(cc)
-                .fetch_one(&self.pool).await?
+                .fetch_one(&self.pool)
+                .await?
         } else {
             sqlx::query_as("SELECT COUNT(*) FROM bank_statements")
-                .fetch_one(&self.pool).await?
+                .fetch_one(&self.pool)
+                .await?
         };
         Ok(count.0)
     }

@@ -1,13 +1,13 @@
+use crate::application::commands::ExecuteAllocationCommand;
+use crate::domain::{AllocationReceiver, AllocationRun, AllocationSender};
+use crate::infrastructure::repository::AllocationRepository;
+use anyhow::Result;
+use chrono::{Datelike, Utc};
+use cuba_finance::{GlClient, GlLineItem};
+use rust_decimal::Decimal;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use crate::domain::{AllocationRun, AllocationSender, AllocationReceiver};
-use crate::infrastructure::repository::AllocationRepository;
-use cuba_finance::{GlClient, GlLineItem};
-use crate::application::commands::ExecuteAllocationCommand;
-use anyhow::Result;
 use uuid::Uuid;
-use chrono::{Utc, Datelike};
-use rust_decimal::Decimal;
 
 pub struct AllocationHandler {
     repo: Arc<AllocationRepository>,
@@ -22,7 +22,7 @@ impl AllocationHandler {
     pub async fn execute_allocation(&self, cmd: ExecuteAllocationCommand) -> Result<String> {
         let run_id = Uuid::new_v4();
         let now = Utc::now();
-        
+
         // Mock allocation: create sample senders and receivers
         let sender_amount = Decimal::new(10000, 2);
         let run = AllocationRun {
@@ -60,7 +60,7 @@ impl AllocationHandler {
                 wbs_element: None,
             }],
         };
-        
+
         // Save allocation run
         self.repo.save_run(&run).await?;
 
@@ -75,11 +75,14 @@ impl AllocationHandler {
         let gl_line_items = vec![
             GlLineItem {
                 gl_account: "6100".to_string(), // Receiving CC expense
-                debit_credit: "S".to_string(), // Debit
+                debit_credit: "S".to_string(),  // Debit
                 amount: sender_amount,
                 cost_center: Some("CCTR-2000".to_string()),
                 profit_center: None,
-                item_text: Some(format!("Cost allocation from {} cycle {}", run.allocation_type, run.allocation_cycle)),
+                item_text: Some(format!(
+                    "Cost allocation from {} cycle {}",
+                    run.allocation_type, run.allocation_cycle
+                )),
                 business_partner: None,
                 special_gl_indicator: None,
                 ledger: None,
@@ -90,11 +93,14 @@ impl AllocationHandler {
             },
             GlLineItem {
                 gl_account: "6100".to_string(), // Sending CC expense
-                debit_credit: "H".to_string(), // Credit
+                debit_credit: "H".to_string(),  // Credit
                 amount: sender_amount,
                 cost_center: Some("CCTR-1000".to_string()),
                 profit_center: None,
-                item_text: Some(format!("Cost allocation to {} cycle {}", run.allocation_type, run.allocation_cycle)),
+                item_text: Some(format!(
+                    "Cost allocation to {} cycle {}",
+                    run.allocation_type, run.allocation_cycle
+                )),
                 business_partner: None,
                 special_gl_indicator: None,
                 ledger: None,
@@ -107,27 +113,34 @@ impl AllocationHandler {
 
         let mut gl_client = self.gl_client.lock().await;
         let posting_date = now.date_naive();
-        match gl_client.create_invoice_journal_entry(
-            &cmd.controlling_area,
-            posting_date,
-            posting_date,
-            cmd.fiscal_year,
-            "CNY",
-            Some(format!("CO-{}", run_id)),
-            Some(format!("{} Allocation Run", cmd.allocation_type)),
-            gl_line_items,
-            None, // 使用默认主分类账 "0L"
-        ).await {
+        match gl_client
+            .create_invoice_journal_entry(
+                &cmd.controlling_area,
+                posting_date,
+                posting_date,
+                cmd.fiscal_year,
+                "CNY",
+                Some(format!("CO-{}", run_id)),
+                Some(format!("{} Allocation Run", cmd.allocation_type)),
+                gl_line_items,
+                None, // 使用默认主分类账 "0L"
+            )
+            .await
+        {
             Ok(response) => {
                 tracing::info!(
                     "GL Journal Entry created for allocation run {}: {:?}",
                     run_id,
                     response.document_reference
                 );
-            }
+            },
             Err(e) => {
-                tracing::error!("Failed to create GL entry for allocation run {}: {}", run_id, e);
-            }
+                tracing::error!(
+                    "Failed to create GL entry for allocation run {}: {}",
+                    run_id,
+                    e
+                );
+            },
         }
 
         Ok(run_id.to_string())

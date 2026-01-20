@@ -1,9 +1,9 @@
-use sqlx::PgPool;
 use crate::domain::{SalesOrder, SalesOrderItem, SalesOrderScheduleLine};
 use anyhow::Result;
-use uuid::Uuid;
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
+use sqlx::PgPool;
+use uuid::Uuid;
 
 pub struct SalesOrderRepository {
     pool: PgPool,
@@ -46,7 +46,8 @@ impl SalesOrderRepository {
         // 2. Clear existing items
         sqlx::query("DELETE FROM sales_order_items WHERE order_id = $1")
             .bind(order.order_id)
-        .execute(&mut *tx).await?;
+            .execute(&mut *tx)
+            .await?;
 
         // 3. Insert Items and Schedule Lines
         for item in &order.items {
@@ -109,7 +110,7 @@ impl SalesOrderRepository {
             Ok(None)
         }
     }
-    
+
     pub async fn list(&self, sold_to_party: Option<String>, limit: i64) -> Result<Vec<SalesOrder>> {
         let orders = sqlx::query_as::<_, SalesOrder>("SELECT order_id, order_number, order_type, sales_org, distribution_channel, division, sold_to_party, ship_to_party, customer_po, customer_po_date, document_date, requested_delivery_date, currency, net_value, pricing_procedure, shipping_conditions, overall_status, delivery_block, billing_block, created_at, updated_at FROM sales_orders WHERE ($1::text IS NULL OR sold_to_party = $1) ORDER BY created_at DESC LIMIT $2")
             .bind(sold_to_party)

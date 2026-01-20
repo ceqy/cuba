@@ -1,0 +1,3216 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cuba-api-docs
+  namespace: cuba-system
+data:
+  cuba-erp-api.yaml: |
+    openapi: 3.0.3
+    info:
+      title: CUBA ERP API
+      description: |
+        CUBA ERP 统一 API 文档
+    
+        包含所有微服务的 REST API 接口。
+    
+        ## 认证方式
+        大部分接口需要在请求头中携带 JWT Token：
+        ```
+        Authorization: Bearer <access_token>
+        ```
+    
+        ## 服务列表
+        - **IAM Auth Service**: 用户认证、注册、会话管理
+        - **IAM RBAC Service**: 角色权限管理
+        - **Finance GL Service**: 总账管理
+    
+      version: 1.0.0
+      contact:
+        name: CUBA Enterprise Team
+        email: dev@cuba.local
+    
+    servers:
+      - url: http://localhost:8080
+        description: 本地开发环境 (API Gateway)
+    
+    tags:
+      # Auth Service Tags
+      - name: Auth - 认证
+        description: 用户认证相关接口
+      - name: Auth - 用户管理
+        description: 用户信息管理接口
+      - name: Auth - 会话管理
+        description: 用户会话管理接口
+      - name: Auth - 双因素认证
+        description: 2FA 相关接口
+      - name: Auth - 管理员
+        description: 管理员专用接口
+    
+      # RBAC Service Tags
+      - name: RBAC - 角色管理
+        description: 角色创建、更新、删除
+      - name: RBAC - 权限管理
+        description: 权限分配和检查
+      - name: RBAC - 用户角色
+        description: 用户角色关联
+    
+      # GL Service Tags
+      - name: GL - 凭证管理
+        description: 会计分录创建、更新、删除
+      - name: GL - 凭证过账
+        description: 凭证过账和冲销
+      - name: GL - 凭证查询
+        description: 凭证列表和明细查询
+      - name: GL - 期末处理
+        description: 期末关账和结转
+      - name: GL - 外币处理
+        description: 外币重估
+      - name: GL - 批量操作
+        description: 批量创建和处理
+    
+    paths:
+      # ============================================
+      # Auth Service APIs
+      # ============================================
+      /api/v1/auth/register:
+        post:
+          tags: [Auth - 认证]
+          summary: 用户注册
+          description: 注册新用户账号
+          operationId: Register
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/RegisterRequest'
+          responses:
+            '200':
+              description: 注册成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/RegisterResponse'
+    
+      /api/v1/auth/login:
+        post:
+          tags: [Auth - 认证]
+          summary: 用户登录
+          description: 用户登录并获取访问令牌
+          operationId: Login
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/LoginRequest'
+          responses:
+            '200':
+              description: 登录成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/LoginResponse'
+    
+      /api/v1/auth/refresh-token:
+        post:
+          tags: [Auth - 认证]
+          summary: 刷新令牌
+          operationId: RefreshToken
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/RefreshTokenRequest'
+          responses:
+            '200':
+              description: 刷新成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/RefreshTokenResponse'
+    
+      /api/v1/auth/logout:
+        post:
+          tags: [Auth - 会话管理]
+          summary: 用户登出
+          operationId: Logout
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/LogoutRequest'
+          responses:
+            '200':
+              description: 登出成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/LogoutResponse'
+    
+      /api/v1/auth/current-user:
+        post:
+          tags: [Auth - 用户管理]
+          summary: 获取当前用户信息
+          operationId: GetCurrentUser
+          security:
+            - bearerAuth: []
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  type: object
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/GetCurrentUserResponse'
+    
+      /api/v1/auth/perm-codes:
+        post:
+          tags: [Auth - 用户管理]
+          summary: 获取权限码
+          operationId: GetPermCodes
+          security:
+            - bearerAuth: []
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  type: object
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/GetPermCodesResponse'
+    
+      # ============================================
+      # RBAC Service APIs
+      # ============================================
+      /api/v1/rbac/roles:
+        post:
+          tags: [RBAC - 角色管理]
+          summary: 创建角色
+          operationId: CreateRole
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CreateRoleRequest'
+          responses:
+            '200':
+              description: 创建成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/Role'
+    
+      /api/v1/rbac/roles/list:
+        post:
+          tags: [RBAC - 角色管理]
+          summary: 列出角色
+          operationId: ListRoles
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ListRolesRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ListRolesResponse'
+    
+      /api/v1/rbac/permissions/check:
+        post:
+          tags: [RBAC - 权限管理]
+          summary: 检查权限
+          operationId: CheckPermissions
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CheckPermissionsRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/CheckPermissionsResponse'
+    
+      # ============================================
+      # GL Service APIs
+      # ============================================
+      /api/v1/finance/gl/journal-entries:
+        post:
+          tags: [GL - 凭证管理]
+          summary: 创建会计分录
+          operationId: CreateJournalEntry
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CreateJournalEntryRequest'
+          responses:
+            '200':
+              description: 创建成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/JournalEntryResponse'
+    
+      /api/v1/finance/gl/journal-entries/post:
+        post:
+          tags: [GL - 凭证过账]
+          summary: 过账凭证
+          operationId: PostJournalEntry
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/PostJournalEntryRequest'
+          responses:
+            '200':
+              description: 过账成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/JournalEntryResponse'
+    
+      /api/v1/finance/gl/journal-entries/list:
+        post:
+          tags: [GL - 凭证查询]
+          summary: 查询凭证列表
+          operationId: ListJournalEntries
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ListJournalEntriesRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ListJournalEntriesResponse'
+    
+    components:
+      securitySchemes:
+        bearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+          description: JWT 访问令牌
+    
+      schemas:
+        # ============================================
+        # Auth Service Schemas
+        # ============================================
+        RegisterRequest:
+          type: object
+          required:
+            - username
+            - password
+            - email
+            - tenant_id
+          properties:
+            username:
+              type: string
+              description: 用户名
+            password:
+              type: string
+              format: password
+              description: 密码
+            email:
+              type: string
+              format: email
+              description: 邮箱地址
+            tenant_id:
+              type: string
+              description: 租户ID
+    
+        RegisterResponse:
+          type: object
+          properties:
+            user_id:
+              type: string
+            username:
+              type: string
+            status:
+              type: string
+    
+        LoginRequest:
+          type: object
+          required:
+            - username
+            - password
+            - tenant_id
+          properties:
+            username:
+              type: string
+            password:
+              type: string
+              format: password
+            tenant_id:
+              type: string
+    
+        LoginResponse:
+          type: object
+          properties:
+            access_token:
+              type: string
+              description: JWT 访问令牌
+            refresh_token:
+              type: string
+              description: 刷新令牌
+            expires_in:
+              type: integer
+              description: 过期时间（秒）
+            token_type:
+              type: string
+              example: "Bearer"
+    
+        RefreshTokenRequest:
+          type: object
+          required:
+            - refresh_token
+          properties:
+            refresh_token:
+              type: string
+    
+        RefreshTokenResponse:
+          type: object
+          properties:
+            access_token:
+              type: string
+            refresh_token:
+              type: string
+            expires_in:
+              type: integer
+    
+        LogoutRequest:
+          type: object
+          properties:
+            session_id:
+              type: string
+    
+        LogoutResponse:
+          type: object
+          properties:
+            success:
+              type: boolean
+            message:
+              type: string
+    
+        GetCurrentUserResponse:
+          type: object
+          properties:
+            user_id:
+              type: string
+            username:
+              type: string
+            email:
+              type: string
+            tenant_id:
+              type: string
+    
+        GetPermCodesResponse:
+          type: object
+          properties:
+            perm_codes:
+              type: array
+              items:
+                type: string
+    
+        # ============================================
+        # RBAC Service Schemas
+        # ============================================
+        CreateRoleRequest:
+          type: object
+          required:
+            - name
+          properties:
+            name:
+              type: string
+              description: 角色名称
+            description:
+              type: string
+            tenant_id:
+              type: string
+            permissions:
+              type: array
+              items:
+                type: string
+    
+        Role:
+          type: object
+          properties:
+            role_id:
+              type: string
+            name:
+              type: string
+            description:
+              type: string
+            permissions:
+              type: array
+              items:
+                type: string
+    
+        ListRolesRequest:
+          type: object
+          properties:
+            tenant_id:
+              type: string
+            page:
+              type: integer
+              default: 1
+            page_size:
+              type: integer
+              default: 20
+    
+        ListRolesResponse:
+          type: object
+          properties:
+            roles:
+              type: array
+              items:
+                $ref: '#/components/schemas/Role'
+            total_count:
+              type: integer
+    
+        CheckPermissionsRequest:
+          type: object
+          required:
+            - user_id
+            - permissions
+          properties:
+            user_id:
+              type: string
+            permissions:
+              type: array
+              items:
+                type: string
+    
+        CheckPermissionsResponse:
+          type: object
+          properties:
+            results:
+              type: object
+              additionalProperties:
+                type: boolean
+    
+        # ============================================
+        # GL Service Schemas
+        # ============================================
+        CreateJournalEntryRequest:
+          type: object
+          required:
+            - company_code
+            - document_date
+            - posting_date
+            - line_items
+          properties:
+            company_code:
+              type: string
+            document_date:
+              type: string
+              format: date
+            posting_date:
+              type: string
+              format: date
+            document_type:
+              type: string
+            reference:
+              type: string
+            header_text:
+              type: string
+            line_items:
+              type: array
+              items:
+                $ref: '#/components/schemas/LineItem'
+            post_immediately:
+              type: boolean
+              default: false
+    
+        LineItem:
+          type: object
+          required:
+            - account
+            - debit_credit
+            - amount
+          properties:
+            account:
+              type: string
+            debit_credit:
+              type: string
+              enum: [D, C]
+            amount:
+              type: number
+              format: double
+            currency:
+              type: string
+              default: CNY
+            text:
+              type: string
+    
+        JournalEntryResponse:
+          type: object
+          properties:
+            entry_id:
+              type: string
+            document_number:
+              type: string
+            status:
+              type: string
+              enum: [DRAFT, POSTED, REVERSED, PARKED]
+            message:
+              type: string
+    
+        PostJournalEntryRequest:
+          type: object
+          required:
+            - entry_id
+          properties:
+            entry_id:
+              type: string
+    
+        ListJournalEntriesRequest:
+          type: object
+          properties:
+            company_code:
+              type: string
+            from_date:
+              type: string
+              format: date
+            to_date:
+              type: string
+              format: date
+            status:
+              type: string
+            page:
+              type: integer
+              default: 1
+            page_size:
+              type: integer
+              default: 20
+    
+        ListJournalEntriesResponse:
+          type: object
+          properties:
+            entries:
+              type: array
+              items:
+                $ref: '#/components/schemas/JournalEntryDetail'
+            total_count:
+              type: integer
+    
+        JournalEntryDetail:
+          type: object
+          properties:
+            entry_id:
+              type: string
+            document_number:
+              type: string
+            company_code:
+              type: string
+            document_date:
+              type: string
+              format: date
+            posting_date:
+              type: string
+              format: date
+            status:
+              type: string
+            header_text:
+              type: string
+  auth-service.yaml: |
+    openapi: 3.0.3
+    info:
+      title: Auth Service API
+      description: |
+        CUBA ERP 认证服务 API
+    
+        提供用户注册、登录、令牌管理、双因素认证等功能。
+    
+        ## 认证方式
+        大部分接口需要在请求头中携带 JWT Token：
+        ```
+        Authorization: Bearer <access_token>
+        ```
+    
+        ## gRPC 服务
+        - 服务名: `iam.auth.v1.AuthService`
+        - 端口: 50051
+      version: 1.0.0
+      contact:
+        name: CUBA Enterprise Team
+        email: dev@cuba.local
+    
+    servers:
+      - url: http://localhost:8080
+        description: 本地开发环境 (API Gateway)
+    
+    tags:
+      - name: 认证
+        description: 用户认证相关接口
+      - name: 用户管理
+        description: 用户信息管理接口
+      - name: 会话管理
+        description: 用户会话管理接口
+      - name: 双因素认证
+        description: 2FA 相关接口
+      - name: 管理员
+        description: 管理员专用接口
+    
+    paths:
+      /api/v1/auth/register:
+        post:
+          tags: [认证]
+          summary: 用户注册
+          description: 注册新用户账号
+          operationId: Register
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/RegisterRequest'
+                example:
+                  username: "john_doe"
+                  email: "john@example.com"
+                  password: "SecurePass123!"
+                  tenant_id: "default"
+          responses:
+            '200':
+              description: 注册成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/RegisterResponse'
+            '400':
+              description: 参数错误
+            '409':
+              description: 用户名或邮箱已存在
+    
+      /api/v1/auth/login:
+        post:
+          tags: [认证]
+          summary: 用户登录
+          description: 用户登录并获取访问令牌
+          operationId: Login
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/LoginRequest'
+                example:
+                  username: "john_doe"
+                  password: "SecurePass123!"
+                  tenant_id: "default"
+          responses:
+            '200':
+              description: 登录成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/LoginResponse'
+            '401':
+              description: 用户名或密码错误
+    
+      /api/v1/auth/refresh-token:
+        post:
+          tags: [认证]
+          summary: 刷新令牌
+          description: 使用刷新令牌获取新的访问令牌
+          operationId: RefreshToken
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/RefreshTokenRequest'
+          responses:
+            '200':
+              description: 刷新成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/RefreshTokenResponse'
+            '401':
+              description: 刷新令牌无效或已过期
+    
+      /api/v1/auth/logout:
+        post:
+          tags: [会话管理]
+          summary: 用户登出
+          description: 注销当前会话
+          operationId: Logout
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/LogoutRequest'
+          responses:
+            '200':
+              description: 登出成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/LogoutResponse'
+    
+      /api/v1/auth/current-user:
+        post:
+          tags: [用户管理]
+          summary: 获取当前用户信息
+          description: 获取当前登录用户的详细信息
+          operationId: GetCurrentUser
+          security:
+            - bearerAuth: []
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  type: object
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/GetCurrentUserResponse'
+    
+      /api/v1/auth/change-password:
+        post:
+          tags: [用户管理]
+          summary: 修改密码
+          description: 修改当前用户密码
+          operationId: ChangePassword
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ChangePasswordRequest'
+          responses:
+            '200':
+              description: 修改成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ChangePasswordResponse'
+    
+      /api/v1/auth/update-profile:
+        post:
+          tags: [用户管理]
+          summary: 更新个人资料
+          description: 更新用户个人资料信息
+          operationId: UpdateProfile
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/UpdateProfileRequest'
+          responses:
+            '200':
+              description: 更新成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/UpdateProfileResponse'
+    
+      /api/v1/auth/2fa/enable:
+        post:
+          tags: [双因素认证]
+          summary: 启用双因素认证
+          description: 为当前用户启用 2FA，返回 TOTP 密钥和二维码
+          operationId: Enable2FA
+          security:
+            - bearerAuth: []
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  type: object
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/Enable2FAResponse'
+    
+      /api/v1/auth/2fa/verify:
+        post:
+          tags: [双因素认证]
+          summary: 验证双因素认证
+          description: 验证 2FA 代码（绑定阶段）
+          operationId: Verify2FA
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Verify2FARequest'
+          responses:
+            '200':
+              description: 验证成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/Verify2FAResponse'
+    
+      /api/v1/auth/2fa/verify-code:
+        post:
+          tags: [双因素认证]
+          summary: 登录时验证 2FA
+          description: 登录流程中验证 2FA 代码
+          operationId: Verify2FACode
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Verify2FACodeRequest'
+          responses:
+            '200':
+              description: 验证成功，返回登录令牌
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/LoginResponse'
+    
+      /api/v1/auth/perm-codes:
+        post:
+          tags: [用户管理]
+          summary: 获取权限码
+          description: 获取当前用户的所有权限码（用于前端权限控制）
+          operationId: GetPermCodes
+          security:
+            - bearerAuth: []
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  type: object
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/GetPermCodesResponse'
+    
+      /api/v1/auth/users:
+        post:
+          tags: [管理员]
+          summary: 列出用户
+          description: 列出所有用户（需要管理员权限）
+          operationId: ListUsers
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ListUsersRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ListUsersResponse'
+    
+      /api/v1/auth/admin/update-user:
+        post:
+          tags: [管理员]
+          summary: 管理员更新用户
+          description: 管理员更新用户信息
+          operationId: AdminUpdateUser
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/AdminUpdateUserRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/AdminUpdateUserResponse'
+    
+      /api/v1/auth/admin/delete-user:
+        post:
+          tags: [管理员]
+          summary: 删除用户
+          description: 删除指定用户
+          operationId: DeleteUser
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/DeleteUserRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/DeleteUserResponse'
+    
+      /api/v1/auth/sessions:
+        post:
+          tags: [会话管理]
+          summary: 列出用户会话
+          description: 获取用户的所有活跃会话
+          operationId: ListUserSessions
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ListUserSessionsRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ListUserSessionsResponse'
+    
+      /api/v1/auth/sessions/revoke:
+        post:
+          tags: [会话管理]
+          summary: 撤销会话
+          description: 撤销指定会话
+          operationId: RevokeSession
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/RevokeSessionRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/RevokeSessionResponse'
+    
+      /api/v1/auth/validate-token:
+        post:
+          tags: [认证]
+          summary: 验证令牌
+          description: 验证令牌是否有效（内部调用）
+          operationId: ValidateToken
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ValidateTokenRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ValidateTokenResponse'
+    
+      /api/v1/auth/audit-logs:
+        post:
+          tags: [管理员]
+          summary: 获取审计日志
+          description: 获取用户操作审计日志
+          operationId: GetAuditLogs
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GetAuditLogsRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/GetAuditLogsResponse'
+    
+    components:
+      securitySchemes:
+        bearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+          description: JWT 访问令牌
+    
+      schemas:
+        RegisterRequest:
+          type: object
+          required:
+            - username
+            - password
+            - email
+            - tenant_id
+          properties:
+            username:
+              type: string
+              description: 用户名（唯一）
+              minLength: 3
+              maxLength: 100
+            password:
+              type: string
+              format: password
+              description: 密码（最少8位）
+              minLength: 8
+            email:
+              type: string
+              format: email
+              description: 邮箱地址（唯一）
+            tenant_id:
+              type: string
+              description: 租户ID
+            idempotency_key:
+              type: string
+              description: 幂等性键（可选）
+    
+        RegisterResponse:
+          type: object
+          properties:
+            user_id:
+              type: string
+              description: 用户ID
+            username:
+              type: string
+              description: 用户名
+            status:
+              type: string
+              enum: [ACTIVE, PENDING, SUSPENDED]
+              description: 用户状态
+    
+        LoginRequest:
+          type: object
+          required:
+            - username
+            - password
+            - tenant_id
+          properties:
+            username:
+              type: string
+              description: 用户名
+            password:
+              type: string
+              format: password
+              description: 密码
+            tenant_id:
+              type: string
+              description: 租户ID
+            two_factor_code:
+              type: string
+              description: 2FA 验证码（启用2FA时必填）
+    
+        LoginResponse:
+          type: object
+          properties:
+            access_token:
+              type: string
+              description: JWT 访问令牌
+            refresh_token:
+              type: string
+              description: 刷新令牌
+            expires_in:
+              type: integer
+              description: 过期时间（秒）
+            token_type:
+              type: string
+              description: 令牌类型
+              example: "Bearer"
+            session_id:
+              type: string
+              description: 会话ID
+    
+        RefreshTokenRequest:
+          type: object
+          required:
+            - refresh_token
+          properties:
+            refresh_token:
+              type: string
+              description: 刷新令牌
+    
+        RefreshTokenResponse:
+          type: object
+          properties:
+            access_token:
+              type: string
+              description: 新的访问令牌
+            refresh_token:
+              type: string
+              description: 新的刷新令牌
+            expires_in:
+              type: integer
+              description: 过期时间（秒）
+    
+        LogoutRequest:
+          type: object
+          properties:
+            session_id:
+              type: string
+              description: 会话ID（可选，默认当前会话）
+    
+        LogoutResponse:
+          type: object
+          properties:
+            success:
+              type: boolean
+              description: 是否成功
+            message:
+              type: string
+              description: 消息
+    
+        GetCurrentUserResponse:
+          type: object
+          properties:
+            user_id:
+              type: string
+            username:
+              type: string
+            email:
+              type: string
+            tenant_id:
+              type: string
+            roles:
+              type: array
+              items:
+                type: string
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+    
+        ChangePasswordRequest:
+          type: object
+          required:
+            - old_password
+            - new_password
+          properties:
+            old_password:
+              type: string
+              format: password
+            new_password:
+              type: string
+              format: password
+    
+        ChangePasswordResponse:
+          type: object
+          properties:
+            success:
+              type: boolean
+            message:
+              type: string
+    
+        UpdateProfileRequest:
+          type: object
+          properties:
+            email:
+              type: string
+              format: email
+            display_name:
+              type: string
+            avatar_url:
+              type: string
+              format: uri
+    
+        UpdateProfileResponse:
+          type: object
+          properties:
+            success:
+              type: boolean
+            message:
+              type: string
+    
+        Enable2FAResponse:
+          type: object
+          properties:
+            secret:
+              type: string
+              description: TOTP 密钥
+            qr_code_url:
+              type: string
+              description: 二维码 URL
+            backup_codes:
+              type: array
+              items:
+                type: string
+              description: 备份码列表
+    
+        Verify2FARequest:
+          type: object
+          required:
+            - code
+          properties:
+            code:
+              type: string
+              description: 2FA 验证码
+    
+        Verify2FAResponse:
+          type: object
+          properties:
+            success:
+              type: boolean
+            message:
+              type: string
+    
+        Verify2FACodeRequest:
+          type: object
+          required:
+            - user_id
+            - code
+          properties:
+            user_id:
+              type: string
+            code:
+              type: string
+    
+        GetPermCodesResponse:
+          type: object
+          properties:
+            perm_codes:
+              type: array
+              items:
+                type: string
+              description: 权限码列表
+    
+        ListUsersRequest:
+          type: object
+          properties:
+            page:
+              type: integer
+              default: 1
+            page_size:
+              type: integer
+              default: 20
+            tenant_id:
+              type: string
+            status:
+              type: string
+    
+        ListUsersResponse:
+          type: object
+          properties:
+            users:
+              type: array
+              items:
+                $ref: '#/components/schemas/User'
+            total_count:
+              type: integer
+            page:
+              type: integer
+            page_size:
+              type: integer
+    
+        User:
+          type: object
+          properties:
+            user_id:
+              type: string
+            username:
+              type: string
+            email:
+              type: string
+            status:
+              type: string
+            tenant_id:
+              type: string
+            created_at:
+              type: string
+              format: date-time
+    
+        AdminUpdateUserRequest:
+          type: object
+          required:
+            - user_id
+          properties:
+            user_id:
+              type: string
+            email:
+              type: string
+            status:
+              type: string
+            roles:
+              type: array
+              items:
+                type: string
+    
+        AdminUpdateUserResponse:
+          type: object
+          properties:
+            success:
+              type: boolean
+            message:
+              type: string
+    
+        DeleteUserRequest:
+          type: object
+          required:
+            - user_id
+          properties:
+            user_id:
+              type: string
+    
+        DeleteUserResponse:
+          type: object
+          properties:
+            success:
+              type: boolean
+            message:
+              type: string
+    
+        ListUserSessionsRequest:
+          type: object
+          properties:
+            user_id:
+              type: string
+    
+        ListUserSessionsResponse:
+          type: object
+          properties:
+            sessions:
+              type: array
+              items:
+                $ref: '#/components/schemas/UserSession'
+    
+        UserSession:
+          type: object
+          properties:
+            session_id:
+              type: string
+            user_id:
+              type: string
+            created_at:
+              type: string
+              format: date-time
+            expires_at:
+              type: string
+              format: date-time
+            ip_address:
+              type: string
+            user_agent:
+              type: string
+    
+        RevokeSessionRequest:
+          type: object
+          required:
+            - session_id
+          properties:
+            session_id:
+              type: string
+    
+        RevokeSessionResponse:
+          type: object
+          properties:
+            success:
+              type: boolean
+            message:
+              type: string
+    
+        ValidateTokenRequest:
+          type: object
+          required:
+            - token
+          properties:
+            token:
+              type: string
+    
+        ValidateTokenResponse:
+          type: object
+          properties:
+            valid:
+              type: boolean
+            user_id:
+              type: string
+            tenant_id:
+              type: string
+            roles:
+              type: array
+              items:
+                type: string
+    
+        GetAuditLogsRequest:
+          type: object
+          properties:
+            user_id:
+              type: string
+            action:
+              type: string
+            from_date:
+              type: string
+              format: date
+            to_date:
+              type: string
+              format: date
+            page:
+              type: integer
+            page_size:
+              type: integer
+    
+        GetAuditLogsResponse:
+          type: object
+          properties:
+            logs:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuditLog'
+            total_count:
+              type: integer
+    
+        AuditLog:
+          type: object
+          properties:
+            id:
+              type: string
+            user_id:
+              type: string
+            action:
+              type: string
+            resource:
+              type: string
+            details:
+              type: string
+            ip_address:
+              type: string
+            created_at:
+              type: string
+              format: date-time
+  rbac-service.yaml: |
+    openapi: 3.0.3
+    info:
+      title: RBAC Service API
+      description: |
+        CUBA ERP 角色权限管理服务 API
+    
+        提供角色创建、权限分配、权限检查等功能。
+    
+        ## gRPC 服务
+        - 服务名: `iam.rbac.v1.RBACService`
+        - 端口: 50052
+      version: 1.0.0
+      contact:
+        name: CUBA Enterprise Team
+        email: dev@cuba.local
+    
+    servers:
+      - url: http://localhost:8080
+        description: 本地开发环境 (API Gateway)
+    
+    tags:
+      - name: 角色管理
+        description: 角色创建、更新、删除
+      - name: 权限管理
+        description: 权限分配和检查
+      - name: 用户角色
+        description: 用户角色关联
+    
+    paths:
+      /api/v1/rbac/roles:
+        post:
+          tags: [角色管理]
+          summary: 创建角色
+          description: 创建新的角色
+          operationId: CreateRole
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CreateRoleRequest'
+                example:
+                  name: "finance_manager"
+                  description: "财务经理角色"
+                  tenant_id: "default"
+                  permissions:
+                    - "gl.journal_entry.create"
+                    - "gl.journal_entry.post"
+          responses:
+            '200':
+              description: 创建成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/Role'
+    
+      /api/v1/rbac/roles/update:
+        post:
+          tags: [角色管理]
+          summary: 更新角色
+          description: 更新角色信息（部分字段）
+          operationId: UpdateRole
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/UpdateRoleRequest'
+          responses:
+            '200':
+              description: 更新成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/Role'
+    
+      /api/v1/rbac/roles/delete:
+        post:
+          tags: [角色管理]
+          summary: 删除角色
+          description: 删除指定角色
+          operationId: DeleteRole
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/DeleteRoleRequest'
+          responses:
+            '200':
+              description: 删除成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/BatchOperationResult'
+    
+      /api/v1/rbac/roles/list:
+        post:
+          tags: [角色管理]
+          summary: 列出角色
+          description: 获取角色列表
+          operationId: ListRoles
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ListRolesRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ListRolesResponse'
+    
+      /api/v1/rbac/user-roles/assign:
+        post:
+          tags: [用户角色]
+          summary: 分配角色给用户
+          description: 将角色分配给指定用户
+          operationId: AssignRoleToUser
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/AssignRoleToUserRequest'
+                example:
+                  user_id: "user-uuid"
+                  role_id: "role-uuid"
+                  tenant_id: "default"
+          responses:
+            '200':
+              description: 分配成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/AssignRoleToUserResponse'
+    
+      /api/v1/rbac/user-roles/remove:
+        post:
+          tags: [用户角色]
+          summary: 移除用户角色
+          description: 从用户移除指定角色
+          operationId: RemoveRoleFromUser
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/RemoveRoleFromUserRequest'
+          responses:
+            '200':
+              description: 移除成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/RemoveRoleFromUserResponse'
+    
+      /api/v1/rbac/user-roles:
+        post:
+          tags: [用户角色]
+          summary: 获取用户角色
+          description: 获取指定用户拥有的所有角色
+          operationId: GetUserRoles
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GetUserRolesRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/GetUserRolesResponse'
+    
+      /api/v1/rbac/permissions/check:
+        post:
+          tags: [权限管理]
+          summary: 检查权限
+          description: 检查用户是否拥有指定权限
+          operationId: CheckPermissions
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CheckPermissionsRequest'
+                example:
+                  user_id: "user-uuid"
+                  permissions:
+                    - "gl.journal_entry.create"
+                    - "gl.journal_entry.post"
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/CheckPermissionsResponse'
+                  example:
+                    results:
+                      gl.journal_entry.create: true
+                      gl.journal_entry.post: false
+    
+      /api/v1/rbac/permissions/grant:
+        post:
+          tags: [权限管理]
+          summary: 赋予角色权限
+          description: 给角色赋予指定权限
+          operationId: GrantPermissionsToRole
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GrantPermissionsRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/GrantPermissionsResponse'
+    
+      /api/v1/rbac/permissions:
+        post:
+          tags: [权限管理]
+          summary: 列出所有权限
+          description: 列出系统中定义的所有权限
+          operationId: ListPermissions
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/PaginationRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ListPermissionsResponse'
+    
+    components:
+      securitySchemes:
+        bearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+    
+      schemas:
+        CreateRoleRequest:
+          type: object
+          required:
+            - name
+          properties:
+            name:
+              type: string
+              description: 角色名称
+            description:
+              type: string
+              description: 角色描述
+            tenant_id:
+              type: string
+              description: 租户ID
+            permissions:
+              type: array
+              items:
+                type: string
+              description: 权限列表
+    
+        UpdateRoleRequest:
+          type: object
+          required:
+            - role_id
+          properties:
+            role_id:
+              type: string
+            name:
+              type: string
+            description:
+              type: string
+            permissions:
+              type: array
+              items:
+                type: string
+    
+        DeleteRoleRequest:
+          type: object
+          required:
+            - role_id
+          properties:
+            role_id:
+              type: string
+    
+        ListRolesRequest:
+          type: object
+          properties:
+            tenant_id:
+              type: string
+            page:
+              type: integer
+              default: 1
+            page_size:
+              type: integer
+              default: 20
+    
+        ListRolesResponse:
+          type: object
+          properties:
+            roles:
+              type: array
+              items:
+                $ref: '#/components/schemas/Role'
+            total_count:
+              type: integer
+            page:
+              type: integer
+            page_size:
+              type: integer
+    
+        Role:
+          type: object
+          properties:
+            role_id:
+              type: string
+            name:
+              type: string
+            description:
+              type: string
+            permissions:
+              type: array
+              items:
+                type: string
+            tenant_id:
+              type: string
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+    
+        AssignRoleToUserRequest:
+          type: object
+          required:
+            - user_id
+            - role_id
+          properties:
+            user_id:
+              type: string
+            role_id:
+              type: string
+            tenant_id:
+              type: string
+    
+        AssignRoleToUserResponse:
+          type: object
+          properties:
+            success:
+              type: boolean
+            message:
+              type: string
+    
+        RemoveRoleFromUserRequest:
+          type: object
+          required:
+            - user_id
+            - role_id
+          properties:
+            user_id:
+              type: string
+            role_id:
+              type: string
+    
+        RemoveRoleFromUserResponse:
+          type: object
+          properties:
+            success:
+              type: boolean
+            message:
+              type: string
+    
+        GetUserRolesRequest:
+          type: object
+          required:
+            - user_id
+          properties:
+            user_id:
+              type: string
+    
+        GetUserRolesResponse:
+          type: object
+          properties:
+            roles:
+              type: array
+              items:
+                $ref: '#/components/schemas/Role'
+    
+        CheckPermissionsRequest:
+          type: object
+          required:
+            - user_id
+            - permissions
+          properties:
+            user_id:
+              type: string
+            permissions:
+              type: array
+              items:
+                type: string
+    
+        CheckPermissionsResponse:
+          type: object
+          properties:
+            results:
+              type: object
+              additionalProperties:
+                type: boolean
+              description: 权限检查结果映射
+    
+        GrantPermissionsRequest:
+          type: object
+          required:
+            - role_id
+            - permissions
+          properties:
+            role_id:
+              type: string
+            permissions:
+              type: array
+              items:
+                type: string
+    
+        GrantPermissionsResponse:
+          type: object
+          properties:
+            success:
+              type: boolean
+            message:
+              type: string
+    
+        PaginationRequest:
+          type: object
+          properties:
+            page:
+              type: integer
+              default: 1
+            page_size:
+              type: integer
+              default: 20
+    
+        ListPermissionsResponse:
+          type: object
+          properties:
+            permissions:
+              type: array
+              items:
+                $ref: '#/components/schemas/Permission'
+            total_count:
+              type: integer
+    
+        Permission:
+          type: object
+          properties:
+            code:
+              type: string
+              description: 权限码
+            name:
+              type: string
+              description: 权限名称
+            description:
+              type: string
+              description: 权限描述
+            module:
+              type: string
+              description: 所属模块
+    
+        BatchOperationResult:
+          type: object
+          properties:
+            success:
+              type: boolean
+            affected_count:
+              type: integer
+            message:
+              type: string
+  gl-service.yaml: |
+    openapi: 3.0.3
+    info:
+      title: GL Service API
+      description: |
+        CUBA ERP 总账服务 API
+    
+        提供会计分录创建、过账、冲销、查询等核心财务功能。
+    
+        ## gRPC 服务
+        - 服务名: `fi.gl.v1.GlJournalEntryService`
+        - 端口: 50060
+      version: 1.0.0
+      contact:
+        name: CUBA Enterprise Team
+        email: dev@cuba.local
+    
+    servers:
+      - url: http://localhost:8080
+        description: 本地开发环境 (API Gateway)
+    
+    tags:
+      - name: 凭证管理
+        description: 会计分录创建、更新、删除
+      - name: 凭证过账
+        description: 凭证过账和冲销
+      - name: 凭证查询
+        description: 凭证列表和明细查询
+      - name: 期末处理
+        description: 期末关账和结转
+      - name: 外币处理
+        description: 外币重估
+      - name: 批量操作
+        description: 批量创建和处理
+    
+    paths:
+      /api/v1/finance/gl/journal-entries:
+        post:
+          tags: [凭证管理]
+          summary: 创建会计分录
+          description: 创建新的会计分录（草稿或立即过账）
+          operationId: CreateJournalEntry
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CreateJournalEntryRequest'
+                example:
+                  company_code: "1000"
+                  document_date: "2026-01-19"
+                  posting_date: "2026-01-19"
+                  document_type: "SA"
+                  reference: "INV-2026-001"
+                  header_text: "销售收入"
+                  line_items:
+                    - account: "110000"
+                      debit_credit: "D"
+                      amount: 11300
+                      currency: "CNY"
+                      text: "应收账款"
+                    - account: "600000"
+                      debit_credit: "C"
+                      amount: 10000
+                      currency: "CNY"
+                      text: "主营业务收入"
+                    - account: "220300"
+                      debit_credit: "C"
+                      amount: 1300
+                      currency: "CNY"
+                      text: "销项税"
+                  post_immediately: true
+          responses:
+            '200':
+              description: 创建成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/JournalEntryResponse'
+    
+      /api/v1/finance/gl/journal-entries/update:
+        post:
+          tags: [凭证管理]
+          summary: 更新会计分录
+          description: 更新会计分录（仅限未过账部分字段）
+          operationId: UpdateJournalEntry
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/UpdateJournalEntryRequest'
+          responses:
+            '200':
+              description: 更新成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/JournalEntryResponse'
+    
+      /api/v1/finance/gl/journal-entries/delete:
+        post:
+          tags: [凭证管理]
+          summary: 删除会计分录
+          description: 删除会计分录（仅限草稿状态）
+          operationId: DeleteJournalEntry
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/DeleteJournalEntryRequest'
+          responses:
+            '200':
+              description: 删除成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/JournalEntryResponse'
+    
+      /api/v1/finance/gl/journal-entries/post:
+        post:
+          tags: [凭证过账]
+          summary: 过账凭证
+          description: 将草稿凭证过账
+          operationId: PostJournalEntry
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/PostJournalEntryRequest'
+          responses:
+            '200':
+              description: 过账成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/JournalEntryResponse'
+    
+      /api/v1/finance/gl/journal-entries/reverse:
+        post:
+          tags: [凭证过账]
+          summary: 冲销凭证
+          description: 冲销已过账的凭证（Full Reversal）
+          operationId: ReverseJournalEntry
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ReverseJournalEntryRequest'
+          responses:
+            '200':
+              description: 冲销成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/JournalEntryResponse'
+    
+      /api/v1/finance/gl/journal-entries/simulate:
+        post:
+          tags: [凭证管理]
+          summary: 模拟过账
+          description: 模拟过账效果，不实际过账
+          operationId: SimulateJournalEntry
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/SimulateJournalEntryRequest'
+          responses:
+            '200':
+              description: 模拟成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/SimulationResponse'
+    
+      /api/v1/finance/gl/journal-entries/validate:
+        post:
+          tags: [凭证管理]
+          summary: 验证凭证
+          description: 验证凭证合法性
+          operationId: ValidateJournalEntry
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ValidateJournalEntryRequest'
+          responses:
+            '200':
+              description: 验证完成
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ValidationResponse'
+    
+      /api/v1/finance/gl/journal-entries/park:
+        post:
+          tags: [凭证管理]
+          summary: 挂账
+          description: 挂账执行（Document Parking）
+          operationId: ParkJournalEntry
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ParkJournalEntryRequest'
+          responses:
+            '200':
+              description: 挂账成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ParkJournalEntryResponse'
+    
+      /api/v1/finance/gl/journal-entries/get:
+        post:
+          tags: [凭证查询]
+          summary: 获取凭证详情
+          description: 获取会计分录详细信息
+          operationId: GetJournalEntry
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GetJournalEntryRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/JournalEntryDetail'
+    
+      /api/v1/finance/gl/journal-entries/list:
+        post:
+          tags: [凭证查询]
+          summary: 查询凭证列表
+          description: 查询会计分录列表
+          operationId: ListJournalEntries
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ListJournalEntriesRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ListJournalEntriesResponse'
+    
+      /api/v1/finance/gl/account-line-items:
+        post:
+          tags: [凭证查询]
+          summary: 获取科目明细
+          description: 获取科目余额明细（Analytical Request）
+          operationId: GetAccountLineItems
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GetAccountLineItemsRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/AccountLineItemsResponse'
+    
+      /api/v1/finance/gl/parallel-ledger:
+        post:
+          tags: [凭证查询]
+          summary: 并行会计分类账查询
+          description: 查询并行会计分类账数据
+          operationId: GetParallelLedgerData
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GetParallelLedgerDataRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ParallelLedgerDataResponse'
+    
+      /api/v1/finance/gl/period-end/close:
+        post:
+          tags: [期末处理]
+          summary: 执行期末关账
+          description: 执行会计期间的期末关账
+          operationId: ExecutePeriodEndClose
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ExecutePeriodEndCloseRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/PeriodEndCloseResponse'
+    
+      /api/v1/finance/gl/period-end/carry-forward:
+        post:
+          tags: [期末处理]
+          summary: 执行期间结转
+          description: 执行期间余额结转
+          operationId: CarryForwardBalances
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CarryForwardBalancesRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/CarryForwardBalancesResponse'
+    
+      /api/v1/finance/gl/period-end/clear-open-items:
+        post:
+          tags: [期末处理]
+          summary: 清账未清项目
+          description: 清账未清项目（Clearing Open Items）
+          operationId: ClearOpenItems
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ClearOpenItemsRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ClearOpenItemsResponse'
+    
+      /api/v1/finance/gl/foreign-currency/revaluate:
+        post:
+          tags: [外币处理]
+          summary: 外币重估
+          description: 获取外币重估建议并执行
+          operationId: RevaluateForeignCurrency
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/RevaluateForeignCurrencyRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/RevaluationResponse'
+    
+      /api/v1/finance/gl/batch/create:
+        post:
+          tags: [批量操作]
+          summary: 批量创建凭证
+          description: 批量创建多个会计分录
+          operationId: BatchCreateJournalEntries
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/BatchCreateJournalEntriesRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/BatchCreateJournalEntriesResponse'
+    
+      /api/v1/finance/gl/batch/reverse:
+        post:
+          tags: [批量操作]
+          summary: 批量冲销凭证
+          description: 批量冲销多个会计分录
+          operationId: BatchReverseJournalEntries
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/BatchReverseJournalEntriesRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/BatchReverseJournalEntriesResponse'
+    
+      /api/v1/finance/gl/batch/input-session:
+        post:
+          tags: [批量操作]
+          summary: 创建批量输入会话
+          description: 创建批量输入会话（Batch Input Session LSMW）
+          operationId: CreateBatchInputSession
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CreateBatchInputSessionRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/BatchInputSessionResponse'
+    
+      /api/v1/finance/gl/print-preview:
+        post:
+          tags: [凭证管理]
+          summary: 生成打印预览
+          description: 生成凭证打印预览
+          operationId: GeneratePrintPreview
+          security:
+            - bearerAuth: []
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GeneratePrintPreviewRequest'
+          responses:
+            '200':
+              description: 成功
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/GeneratePrintPreviewResponse'
+    
+    components:
+      securitySchemes:
+        bearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+    
+      schemas:
+        CreateJournalEntryRequest:
+          type: object
+          required:
+            - company_code
+            - document_date
+            - posting_date
+            - line_items
+          properties:
+            company_code:
+              type: string
+              description: 公司代码
+            document_date:
+              type: string
+              format: date
+              description: 凭证日期
+            posting_date:
+              type: string
+              format: date
+              description: 过账日期
+            document_type:
+              type: string
+              description: 凭证类型（SA-销售、KR-采购等）
+            reference:
+              type: string
+              description: 参考号
+            header_text:
+              type: string
+              description: 抬头文本
+            line_items:
+              type: array
+              items:
+                $ref: '#/components/schemas/LineItem'
+              description: 分录行
+            post_immediately:
+              type: boolean
+              description: 是否立即过账
+              default: false
+    
+        LineItem:
+          type: object
+          required:
+            - account
+            - debit_credit
+            - amount
+          properties:
+            account:
+              type: string
+              description: 科目代码
+            debit_credit:
+              type: string
+              enum: [D, C]
+              description: 借贷标识（D-借方, C-贷方）
+            amount:
+              type: number
+              format: double
+              description: 金额
+            currency:
+              type: string
+              description: 币种（ISO 4217）
+              default: CNY
+            cost_center:
+              type: string
+              description: 成本中心
+            profit_center:
+              type: string
+              description: 利润中心
+            text:
+              type: string
+              description: 行文本
+            tax_code:
+              type: string
+              description: 税码
+    
+        JournalEntryResponse:
+          type: object
+          properties:
+            entry_id:
+              type: string
+              description: 分录ID
+            document_number:
+              type: string
+              description: 凭证号
+            status:
+              type: string
+              enum: [DRAFT, POSTED, REVERSED, PARKED]
+              description: 状态
+            message:
+              type: string
+              description: 消息
+    
+        JournalEntryDetail:
+          type: object
+          properties:
+            entry_id:
+              type: string
+            document_number:
+              type: string
+            company_code:
+              type: string
+            document_date:
+              type: string
+              format: date
+            posting_date:
+              type: string
+              format: date
+            document_type:
+              type: string
+            reference:
+              type: string
+            header_text:
+              type: string
+            status:
+              type: string
+            line_items:
+              type: array
+              items:
+                $ref: '#/components/schemas/LineItemDetail'
+            created_at:
+              type: string
+              format: date-time
+            created_by:
+              type: string
+            posted_at:
+              type: string
+              format: date-time
+            posted_by:
+              type: string
+    
+        LineItemDetail:
+          type: object
+          properties:
+            line_number:
+              type: integer
+            account:
+              type: string
+            account_name:
+              type: string
+            debit_credit:
+              type: string
+            amount:
+              type: number
+            currency:
+              type: string
+            local_amount:
+              type: number
+            cost_center:
+              type: string
+            profit_center:
+              type: string
+            text:
+              type: string
+    
+        UpdateJournalEntryRequest:
+          type: object
+          required:
+            - entry_id
+          properties:
+            entry_id:
+              type: string
+            header_text:
+              type: string
+            reference:
+              type: string
+    
+        DeleteJournalEntryRequest:
+          type: object
+          required:
+            - entry_id
+          properties:
+            entry_id:
+              type: string
+    
+        PostJournalEntryRequest:
+          type: object
+          required:
+            - entry_id
+          properties:
+            entry_id:
+              type: string
+    
+        ReverseJournalEntryRequest:
+          type: object
+          required:
+            - entry_id
+            - reversal_date
+          properties:
+            entry_id:
+              type: string
+              description: 原分录ID
+            reversal_date:
+              type: string
+              format: date
+              description: 冲销日期
+            reversal_reason:
+              type: string
+              description: 冲销原因
+    
+        SimulateJournalEntryRequest:
+          type: object
+          properties:
+            company_code:
+              type: string
+            document_date:
+              type: string
+              format: date
+            posting_date:
+              type: string
+              format: date
+            document_type:
+              type: string
+            line_items:
+              type: array
+              items:
+                $ref: '#/components/schemas/LineItem'
+    
+        SimulationResponse:
+          type: object
+          properties:
+            is_valid:
+              type: boolean
+              description: 是否有效
+            errors:
+              type: array
+              items:
+                type: string
+              description: 错误列表
+            warnings:
+              type: array
+              items:
+                type: string
+              description: 警告列表
+            balance_impact:
+              $ref: '#/components/schemas/BalanceImpact'
+    
+        BalanceImpact:
+          type: object
+          properties:
+            total_debit:
+              type: number
+            total_credit:
+              type: number
+            is_balanced:
+              type: boolean
+    
+        ValidationResponse:
+          type: object
+          properties:
+            is_valid:
+              type: boolean
+            errors:
+              type: array
+              items:
+                $ref: '#/components/schemas/ValidationError'
+            warnings:
+              type: array
+              items:
+                type: string
+    
+        ValidationError:
+          type: object
+          properties:
+            field:
+              type: string
+            message:
+              type: string
+            code:
+              type: string
+    
+        ValidateJournalEntryRequest:
+          type: object
+          properties:
+            company_code:
+              type: string
+            document_date:
+              type: string
+              format: date
+            posting_date:
+              type: string
+              format: date
+            line_items:
+              type: array
+              items:
+                $ref: '#/components/schemas/LineItem'
+    
+        ParkJournalEntryRequest:
+          type: object
+          required:
+            - entry_id
+          properties:
+            entry_id:
+              type: string
+    
+        ParkJournalEntryResponse:
+          type: object
+          properties:
+            entry_id:
+              type: string
+            status:
+              type: string
+            message:
+              type: string
+    
+        GetJournalEntryRequest:
+          type: object
+          required:
+            - entry_id
+          properties:
+            entry_id:
+              type: string
+    
+        ListJournalEntriesRequest:
+          type: object
+          properties:
+            company_code:
+              type: string
+            from_date:
+              type: string
+              format: date
+            to_date:
+              type: string
+              format: date
+            status:
+              type: string
+            document_type:
+              type: string
+            page:
+              type: integer
+              default: 1
+            page_size:
+              type: integer
+              default: 20
+    
+        ListJournalEntriesResponse:
+          type: object
+          properties:
+            entries:
+              type: array
+              items:
+                $ref: '#/components/schemas/JournalEntryDetail'
+            total_count:
+              type: integer
+            page:
+              type: integer
+            page_size:
+              type: integer
+    
+        GetAccountLineItemsRequest:
+          type: object
+          required:
+            - company_code
+            - account
+          properties:
+            company_code:
+              type: string
+            account:
+              type: string
+              description: 科目代码
+            from_date:
+              type: string
+              format: date
+            to_date:
+              type: string
+              format: date
+            cost_center:
+              type: string
+    
+        AccountLineItemsResponse:
+          type: object
+          properties:
+            account:
+              type: string
+            account_name:
+              type: string
+            opening_balance:
+              type: number
+            closing_balance:
+              type: number
+            line_items:
+              type: array
+              items:
+                $ref: '#/components/schemas/AccountLineItem'
+    
+        AccountLineItem:
+          type: object
+          properties:
+            posting_date:
+              type: string
+              format: date
+            document_number:
+              type: string
+            text:
+              type: string
+            debit:
+              type: number
+            credit:
+              type: number
+            balance:
+              type: number
+    
+        GetParallelLedgerDataRequest:
+          type: object
+          properties:
+            company_code:
+              type: string
+            ledger:
+              type: string
+            from_date:
+              type: string
+              format: date
+            to_date:
+              type: string
+              format: date
+    
+        ParallelLedgerDataResponse:
+          type: object
+          properties:
+            ledger:
+              type: string
+            entries:
+              type: array
+              items:
+                $ref: '#/components/schemas/JournalEntryDetail'
+    
+        ExecutePeriodEndCloseRequest:
+          type: object
+          required:
+            - company_code
+            - fiscal_year
+            - period
+          properties:
+            company_code:
+              type: string
+            fiscal_year:
+              type: string
+            period:
+              type: string
+    
+        PeriodEndCloseResponse:
+          type: object
+          properties:
+            success:
+              type: boolean
+            message:
+              type: string
+            closed_period:
+              type: string
+    
+        CarryForwardBalancesRequest:
+          type: object
+          required:
+            - company_code
+            - from_period
+            - to_period
+          properties:
+            company_code:
+              type: string
+            from_period:
+              type: string
+            to_period:
+              type: string
+    
+        CarryForwardBalancesResponse:
+          type: object
+          properties:
+            success:
+              type: boolean
+            entries_created:
+              type: integer
+            message:
+              type: string
+    
+        ClearOpenItemsRequest:
+          type: object
+          required:
+            - company_code
+            - account
+          properties:
+            company_code:
+              type: string
+            account:
+              type: string
+            clearing_date:
+              type: string
+              format: date
+            item_ids:
+              type: array
+              items:
+                type: string
+    
+        ClearOpenItemsResponse:
+          type: object
+          properties:
+            success:
+              type: boolean
+            cleared_count:
+              type: integer
+            clearing_document:
+              type: string
+    
+        RevaluateForeignCurrencyRequest:
+          type: object
+          required:
+            - company_code
+            - valuation_date
+          properties:
+            company_code:
+              type: string
+            valuation_date:
+              type: string
+              format: date
+            accounts:
+              type: array
+              items:
+                type: string
+              description: 要重估的科目列表
+    
+        RevaluationResponse:
+          type: object
+          properties:
+            success:
+              type: boolean
+            revaluation_entries:
+              type: array
+              items:
+                $ref: '#/components/schemas/RevaluationEntry'
+            total_gain_loss:
+              type: number
+    
+        RevaluationEntry:
+          type: object
+          properties:
+            account:
+              type: string
+            currency:
+              type: string
+            original_amount:
+              type: number
+            revalued_amount:
+              type: number
+            gain_loss:
+              type: number
+    
+        BatchCreateJournalEntriesRequest:
+          type: object
+          required:
+            - entries
+          properties:
+            entries:
+              type: array
+              items:
+                $ref: '#/components/schemas/CreateJournalEntryRequest'
+    
+        BatchCreateJournalEntriesResponse:
+          type: object
+          properties:
+            success_count:
+              type: integer
+            failed_count:
+              type: integer
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/BatchOperationResult'
+    
+        BatchReverseJournalEntriesRequest:
+          type: object
+          required:
+            - entry_ids
+            - reversal_date
+          properties:
+            entry_ids:
+              type: array
+              items:
+                type: string
+            reversal_date:
+              type: string
+              format: date
+            reversal_reason:
+              type: string
+    
+        BatchReverseJournalEntriesResponse:
+          type: object
+          properties:
+            success_count:
+              type: integer
+            failed_count:
+              type: integer
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/BatchOperationResult'
+    
+        BatchOperationResult:
+          type: object
+          properties:
+            entry_id:
+              type: string
+            success:
+              type: boolean
+            message:
+              type: string
+            document_number:
+              type: string
+    
+        CreateBatchInputSessionRequest:
+          type: object
+          required:
+            - session_name
+          properties:
+            session_name:
+              type: string
+            entries:
+              type: array
+              items:
+                $ref: '#/components/schemas/CreateJournalEntryRequest'
+    
+        BatchInputSessionResponse:
+          type: object
+          properties:
+            session_id:
+              type: string
+            session_name:
+              type: string
+            status:
+              type: string
+            total_entries:
+              type: integer
+    
+        GeneratePrintPreviewRequest:
+          type: object
+          required:
+            - entry_id
+          properties:
+            entry_id:
+              type: string
+            format:
+              type: string
+              enum: [PDF, HTML]
+              default: PDF
+    
+        GeneratePrintPreviewResponse:
+          type: object
+          properties:
+            content:
+              type: string
+              format: byte
+              description: Base64 编码的文档内容
+            content_type:
+              type: string
+            file_name:
+              type: string

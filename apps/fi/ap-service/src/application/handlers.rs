@@ -1,17 +1,18 @@
 //! AP Service Handlers
 //! Business logic handlers for commands and queries
 
-use std::sync::Arc;
-use uuid::Uuid;
-use chrono::{Utc, Datelike};
+use chrono::{Datelike, Utc};
 use rust_decimal::Decimal;
+use std::sync::Arc;
 use tokio::sync::Mutex;
+use uuid::Uuid;
 
-use crate::application::commands::{PostSupplierCommand, PostInvoiceCommand, ListOpenItemsQuery};
-use crate::domain::{Supplier, Invoice, InvoiceItem, OpenItem};
-use crate::infrastructure::repository::{InvoiceRepository, SupplierRepository, OpenItemRepository};
+use crate::application::commands::{ListOpenItemsQuery, PostInvoiceCommand, PostSupplierCommand};
+use crate::domain::{Invoice, InvoiceItem, OpenItem, Supplier};
+use crate::infrastructure::repository::{
+    InvoiceRepository, OpenItemRepository, SupplierRepository,
+};
 use cuba_finance::{GlClient, GlLineItem};
-
 
 /// Handler for posting invoices
 pub struct PostInvoiceHandler {
@@ -26,52 +27,73 @@ impl PostInvoiceHandler {
         supplier_repo: Arc<SupplierRepository>,
         gl_client: Arc<Mutex<GlClient>>,
     ) -> Self {
-        Self { invoice_repo, supplier_repo, gl_client }
+        Self {
+            invoice_repo,
+            supplier_repo,
+            gl_client,
+        }
     }
 
     pub async fn handle(&self, cmd: PostInvoiceCommand) -> Result<Invoice, AppError> {
         let now = Utc::now();
-        
+
         // 1. Validate Supplier
         let supplier_uuid = Uuid::parse_str(&cmd.supplier_id)
             .map_err(|_| AppError::Validation("Invalid Supplier ID format".to_string()))?;
-            
-        let supplier = self.supplier_repo.find_by_id(supplier_uuid).await
+
+        let supplier = self
+            .supplier_repo
+            .find_by_id(supplier_uuid)
+            .await
             .map_err(|e: sqlx::Error| AppError::Database(e.to_string()))?
             .ok_or_else(|| AppError::NotFound("Supplier not found".to_string()))?;
 
         // 2. Map Items
         let invoice_id = Uuid::new_v4();
         let mut total_amount = Decimal::ZERO;
-        
-        let items: Vec<InvoiceItem> = cmd.items.iter().enumerate().map(|(i, item)| {
-            total_amount += item.amount;
-            InvoiceItem {
-                id: Uuid::new_v4(),
-                invoice_id,
-                line_item_number: (i + 1) as i32,
-                gl_account: item.gl_account.clone(),
-                debit_credit_indicator: match item.debit_credit.as_str() {
-                    "H" | "Credit" => "H".to_string(),
-                    _ => "S".to_string(),
-                },
-                amount: item.amount,
-                cost_center: item.cost_center.clone(),
-                profit_center: None,
-                item_text: item.item_text.clone(),
-                purchase_order: item.purchase_order.clone(),
-                po_item_number: item.po_item_number,
-                goods_receipt: None,
-                gr_item_number: None,
-                quantity: None,
-                unit_of_measure: None,
-            }
-        }).collect();
+
+        let items: Vec<InvoiceItem> = cmd
+            .items
+            .iter()
+            .enumerate()
+            .map(|(i, item)| {
+                total_amount += item.amount;
+                InvoiceItem {
+                    id: Uuid::new_v4(),
+                    invoice_id,
+                    line_item_number: (i + 1) as i32,
+                    gl_account: item.gl_account.clone(),
+                    debit_credit_indicator: match item.debit_credit.as_str() {
+                        "H" | "Credit" => "H".to_string(),
+                        _ => "S".to_string(),
+                    },
+                    amount: item.amount,
+                    cost_center: item.cost_center.clone(),
+                    profit_center: None,
+                    item_text: item.item_text.clone(),
+                    purchase_order: item.purchase_order.clone(),
+                    po_item_number: item.po_item_number,
+                    goods_receipt: None,
+                    gr_item_number: None,
+                    quantity: None,
+                    unit_of_measure: None,
+                }
+            })
+            .collect();
 
         // 3. Create Invoice Aggregate
         let invoice = Invoice {
             id: invoice_id,
-            document_number: format!("INV-{}-{}", cmd.document_date.year(), Uuid::new_v4().simple().to_string().chars().take(8).collect::<String>()),
+            document_number: format!(
+                "INV-{}-{}",
+                cmd.document_date.year(),
+                Uuid::new_v4()
+                    .simple()
+                    .to_string()
+                    .chars()
+                    .take(8)
+                    .collect::<String>()
+            ),
             company_code: cmd.company_code.clone(),
             fiscal_year: cmd.document_date.year(),
             document_type: "KR".to_string(),
@@ -101,59 +123,71 @@ impl PostInvoiceHandler {
         };
 
         // 4. Save Invoice
-        self.invoice_repo.save(&invoice).await
+        self.invoice_repo
+            .save(&invoice)
+            .await
             .map_err(|e: sqlx::Error| AppError::Database(e.to_string()))?;
 
         // 5. Integrate with GL - Create Journal Entry
         // AP Invoice: Debit expense accounts, Credit AP liability account
-        let gl_line_items: Vec<GlLineItem> = cmd.items.iter().map(|item| {
-            GlLineItem {
-                gl_account: item.gl_account.clone(),
-                debit_credit: item.debit_credit.clone(),
-                amount: item.amount,
-                cost_center: item.cost_center.clone(),
-                profit_center: None,
-                item_text: item.item_text.clone(),
-                business_partner: Some(cmd.supplier_id.clone()),
-                special_gl_indicator: None, // 普通业务，特殊业务需要单独处理
-                ledger: cmd.ledger.clone(),
-                ledger_type: cmd.ledger_type,
-                financial_area: None,
-                business_area: None,
-                controlling_area: None,
-            }
-        }).collect();
+        let gl_line_items: Vec<GlLineItem> = cmd
+            .items
+            .iter()
+            .map(|item| {
+                GlLineItem {
+                    gl_account: item.gl_account.clone(),
+                    debit_credit: item.debit_credit.clone(),
+                    amount: item.amount,
+                    cost_center: item.cost_center.clone(),
+                    profit_center: None,
+                    item_text: item.item_text.clone(),
+                    business_partner: Some(cmd.supplier_id.clone()),
+                    special_gl_indicator: None, // 普通业务，特殊业务需要单独处理
+                    ledger: cmd.ledger.clone(),
+                    ledger_type: cmd.ledger_type,
+                    financial_area: None,
+                    business_area: None,
+                    controlling_area: None,
+                }
+            })
+            .collect();
 
         // Call GL service to create journal entry
         let mut gl_client = self.gl_client.lock().await;
-        match gl_client.create_invoice_journal_entry(
-            &invoice.company_code,
-            invoice.document_date,
-            invoice.posting_date,
-            invoice.fiscal_year,
-            &invoice.currency,
-            invoice.reference_document.clone(),
-            invoice.header_text.clone(),
-            gl_line_items,
-            None, // 使用默认主分类账 "0L"
-        ).await {
+        match gl_client
+            .create_invoice_journal_entry(
+                &invoice.company_code,
+                invoice.document_date,
+                invoice.posting_date,
+                invoice.fiscal_year,
+                &invoice.currency,
+                invoice.reference_document.clone(),
+                invoice.header_text.clone(),
+                gl_line_items,
+                None, // 使用默认主分类账 "0L"
+            )
+            .await
+        {
             Ok(response) => {
                 tracing::info!(
                     "GL Journal Entry created for invoice {}: {:?}",
                     invoice.document_number,
                     response.document_reference
                 );
-            }
+            },
             Err(e) => {
                 // Log error but don't fail the whole operation (eventual consistency)
-                tracing::error!("Failed to create GL entry for invoice {}: {}", invoice.document_number, e);
-            }
+                tracing::error!(
+                    "Failed to create GL entry for invoice {}: {}",
+                    invoice.document_number,
+                    e
+                );
+            },
         }
 
         Ok(invoice)
     }
 }
-
 
 /// Handler for posting suppliers
 pub struct PostSupplierHandler {
@@ -167,7 +201,7 @@ impl PostSupplierHandler {
 
     pub async fn handle(&self, cmd: PostSupplierCommand) -> Result<Supplier, AppError> {
         let now = Utc::now();
-        
+
         let supplier = Supplier {
             id: Uuid::new_v4(),
             supplier_id: cmd.supplier_id,
@@ -190,7 +224,9 @@ impl PostSupplierHandler {
             updated_at: now,
         };
 
-        self.repo.save(&supplier).await
+        self.repo
+            .save(&supplier)
+            .await
             .map_err(|e| AppError::Database(e.to_string()))?;
 
         Ok(supplier)
@@ -208,19 +244,24 @@ impl ListOpenItemsHandler {
         supplier_repo: Arc<SupplierRepository>,
         open_item_repo: Arc<OpenItemRepository>,
     ) -> Self {
-        Self { supplier_repo, open_item_repo }
+        Self {
+            supplier_repo,
+            open_item_repo,
+        }
     }
 
     pub async fn handle(&self, query: ListOpenItemsQuery) -> Result<Vec<OpenItem>, AppError> {
         // Find supplier by business partner ID
-        let supplier = self.supplier_repo
+        let supplier = self
+            .supplier_repo
             .find_by_supplier_id(&query.business_partner_id)
             .await
             .map_err(|e| AppError::Database(e.to_string()))?
             .ok_or_else(|| AppError::NotFound("Supplier not found".to_string()))?;
 
         // List open items
-        let items = self.open_item_repo
+        let items = self
+            .open_item_repo
             .list_by_supplier(supplier.id, &query.company_code, query.include_cleared)
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
@@ -265,12 +306,14 @@ impl ListInvoicesHandler {
         page: u64,
         page_size: u64,
     ) -> Result<(Vec<Invoice>, i64), AppError> {
-        let invoices = self.invoice_repo
+        let invoices = self
+            .invoice_repo
             .list(company_code, status, page, page_size)
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
 
-        let total_count = self.invoice_repo
+        let total_count = self
+            .invoice_repo
             .count(company_code, status)
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
@@ -291,7 +334,8 @@ impl ApproveInvoiceHandler {
 
     pub async fn handle(&self, id: Uuid) -> Result<(), AppError> {
         // Check invoice exists
-        let _invoice = self.invoice_repo
+        let _invoice = self
+            .invoice_repo
             .find_by_id(id)
             .await
             .map_err(|e| AppError::Database(e.to_string()))?
@@ -319,7 +363,8 @@ impl RejectInvoiceHandler {
 
     pub async fn handle(&self, id: Uuid, _reason: Option<String>) -> Result<(), AppError> {
         // Check invoice exists
-        let _invoice = self.invoice_repo
+        let _invoice = self
+            .invoice_repo
             .find_by_id(id)
             .await
             .map_err(|e| AppError::Database(e.to_string()))?
@@ -354,7 +399,8 @@ impl ClearOpenItemsHandler {
     ) -> Result<i64, AppError> {
         let clearing_date = chrono::Utc::now().naive_utc().date();
 
-        let cleared_count = self.open_item_repo
+        let cleared_count = self
+            .open_item_repo
             .clear_items(&item_ids, &clearing_document, clearing_date)
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
@@ -406,7 +452,8 @@ impl GeneratePaymentProposalHandler {
         payment_date: chrono::NaiveDate,
     ) -> Result<Vec<OpenItem>, AppError> {
         // Query all open items for the company code that are due by payment_date
-        let items = self.open_item_repo
+        let items = self
+            .open_item_repo
             .list_due_items(&company_code, payment_date)
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
@@ -432,7 +479,8 @@ impl ExecutePaymentProposalHandler {
     ) -> Result<i64, AppError> {
         let payment_date = chrono::Utc::now().naive_utc().date();
 
-        let cleared_count = self.open_item_repo
+        let cleared_count = self
+            .open_item_repo
             .clear_items(&item_ids, &payment_document, payment_date)
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
@@ -446,13 +494,13 @@ impl ExecutePaymentProposalHandler {
 pub enum AppError {
     #[error("Database error: {0}")]
     Database(String),
-    
+
     #[error("Not found: {0}")]
     NotFound(String),
-    
+
     #[error("Validation error: {0}")]
     Validation(String),
-    
+
     #[error("Business rule violation: {0}")]
     BusinessRule(String),
 }

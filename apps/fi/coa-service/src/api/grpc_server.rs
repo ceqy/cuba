@@ -5,18 +5,17 @@ use tonic::{Request, Response, Status};
 use crate::application::CoaApplicationService;
 
 use crate::infrastructure::grpc::{
-    self as proto, chart_of_accounts_service_server::ChartOfAccountsService,
-    AccountGroupResponse, AccountHierarchyResponse, BatchCreateGlAccountsRequest,
-    BatchCreateGlAccountsResponse, CreateAccountGroupRequest, CreateGlAccountRequest, DeleteGlAccountRequest,
-    ExportAccountsRequest, ExportAccountsResponse, GetAccountHierarchyRequest,
-    GetAccountPathRequest, GetAccountPathResponse, GetGlAccountRequest, GlAccountDetail,
-    GlAccountResponse, ImportAccountsRequest, ImportAccountsResponse, ListAccountGroupsRequest,
-    ListAccountGroupsResponse, ListChildAccountsRequest, ListChildAccountsResponse,
-    ListGlAccountsRequest, ListGlAccountsResponse,
+    self as proto, AccountGroupResponse, AccountHierarchyResponse, BatchCreateGlAccountsRequest,
+    BatchCreateGlAccountsResponse, BatchUpdateGlAccountsRequest, BatchUpdateGlAccountsResponse,
+    BatchValidateGlAccountsRequest, BatchValidateGlAccountsResponse, CheckAccountPostableRequest,
+    CheckAccountPostableResponse, CreateAccountGroupRequest, CreateGlAccountRequest,
+    DeleteGlAccountRequest, ExportAccountsRequest, ExportAccountsResponse,
+    GetAccountHierarchyRequest, GetAccountPathRequest, GetAccountPathResponse, GetGlAccountRequest,
+    GlAccountDetail, GlAccountResponse, ImportAccountsRequest, ImportAccountsResponse,
+    ListAccountGroupsRequest, ListAccountGroupsResponse, ListChildAccountsRequest,
+    ListChildAccountsResponse, ListGlAccountsRequest, ListGlAccountsResponse,
     UpdateGlAccountRequest, ValidateGlAccountRequest, ValidateGlAccountResponse,
-    BatchValidateGlAccountsRequest, BatchValidateGlAccountsResponse,
-    BatchUpdateGlAccountsRequest, BatchUpdateGlAccountsResponse,
-    CheckAccountPostableRequest, CheckAccountPostableResponse,
+    chart_of_accounts_service_server::ChartOfAccountsService,
 };
 
 pub struct CoaGrpcService {
@@ -36,7 +35,9 @@ impl ChartOfAccountsService for CoaGrpcService {
         request: Request<CreateGlAccountRequest>,
     ) -> Result<Response<GlAccountResponse>, Status> {
         let req = request.into_inner();
-        let account_data = req.account.ok_or_else(|| Status::invalid_argument("account is required"))?;
+        let account_data = req
+            .account
+            .ok_or_else(|| Status::invalid_argument("account is required"))?;
 
         // Convert proto to domain model
         let account = crate::domain::GlAccount::new(
@@ -63,7 +64,11 @@ impl ChartOfAccountsService for CoaGrpcService {
     ) -> Result<Response<GlAccountDetail>, Status> {
         let req = request.into_inner();
 
-        match self.app_service.get_account(&req.chart_of_accounts, &req.account_code).await {
+        match self
+            .app_service
+            .get_account(&req.chart_of_accounts, &req.account_code)
+            .await
+        {
             Ok(Some(account)) => {
                 // Convert domain model to proto
                 let master_data = Some(proto::GlAccountMaster {
@@ -107,7 +112,7 @@ impl ChartOfAccountsService for CoaGrpcService {
                     hierarchy_info: None,
                     child_accounts: vec![],
                 }))
-            }
+            },
             Ok(None) => Err(Status::not_found("Account not found")),
             Err(e) => Err(Status::internal(e.to_string())),
         }
@@ -118,10 +123,13 @@ impl ChartOfAccountsService for CoaGrpcService {
         request: Request<UpdateGlAccountRequest>,
     ) -> Result<Response<GlAccountResponse>, Status> {
         let req = request.into_inner();
-        let account_data = req.account.ok_or_else(|| Status::invalid_argument("account is required"))?;
+        let account_data = req
+            .account
+            .ok_or_else(|| Status::invalid_argument("account is required"))?;
 
         // 获取现有科目
-        let existing = self.app_service
+        let existing = self
+            .app_service
             .get_account(&account_data.chart_of_accounts, &req.account_code)
             .await
             .map_err(|e| Status::internal(e.to_string()))?
@@ -175,7 +183,11 @@ impl ChartOfAccountsService for CoaGrpcService {
     ) -> Result<Response<GlAccountResponse>, Status> {
         let req = request.into_inner();
 
-        match self.app_service.delete_account(&req.chart_of_accounts, &req.account_code, req.soft_delete).await {
+        match self
+            .app_service
+            .delete_account(&req.chart_of_accounts, &req.account_code, req.soft_delete)
+            .await
+        {
             Ok(_) => Ok(Response::new(GlAccountResponse {
                 success: true,
                 account_code: req.account_code,
@@ -210,7 +222,7 @@ impl ChartOfAccountsService for CoaGrpcService {
                     accounts: summaries,
                     pagination: None,
                 }))
-            }
+            },
             Err(e) => Err(Status::internal(e.to_string())),
         }
     }
@@ -243,12 +255,14 @@ impl ChartOfAccountsService for CoaGrpcService {
                     },
                     messages: result
                         .error_message
-                        .map(|msg| vec![proto::common::v1::ApiMessage {
-                            r#type: "error".to_string(),
-                            code: "VALIDATION_ERROR".to_string(),
-                            message: msg,
-                            target: String::new(),
-                        }])
+                        .map(|msg| {
+                            vec![proto::common::v1::ApiMessage {
+                                r#type: "error".to_string(),
+                                code: "VALIDATION_ERROR".to_string(),
+                                message: msg,
+                                target: String::new(),
+                            }]
+                        })
                         .unwrap_or_default(),
                 }),
             })),
@@ -293,12 +307,14 @@ impl ChartOfAccountsService for CoaGrpcService {
                         },
                         messages: r
                             .error_message
-                            .map(|msg| vec![proto::common::v1::ApiMessage {
-                                r#type: "error".to_string(),
-                                code: "VALIDATION_ERROR".to_string(),
-                                message: msg,
-                                target: String::new(),
-                            }])
+                            .map(|msg| {
+                                vec![proto::common::v1::ApiMessage {
+                                    r#type: "error".to_string(),
+                                    code: "VALIDATION_ERROR".to_string(),
+                                    message: msg,
+                                    target: String::new(),
+                                }]
+                            })
                             .unwrap_or_default(),
                     })
                     .collect();
@@ -309,7 +325,7 @@ impl ChartOfAccountsService for CoaGrpcService {
                     valid_count,
                     invalid_count,
                 }))
-            }
+            },
             Err(e) => Err(Status::internal(e.to_string())),
         }
     }
@@ -321,10 +337,13 @@ impl ChartOfAccountsService for CoaGrpcService {
         let req = request.into_inner();
 
         // 解析过账日期，如果没有提供则使用当前日期
-        let posting_date = req.posting_date
-            .map(|ts| chrono::DateTime::from_timestamp(ts.seconds, 0)
-                .map(|dt| dt.naive_utc().date())
-                .unwrap_or_else(|| chrono::Utc::now().naive_utc().date()))
+        let posting_date = req
+            .posting_date
+            .map(|ts| {
+                chrono::DateTime::from_timestamp(ts.seconds, 0)
+                    .map(|dt| dt.naive_utc().date())
+                    .unwrap_or_else(|| chrono::Utc::now().naive_utc().date())
+            })
             .unwrap_or_else(|| chrono::Utc::now().naive_utc().date());
 
         match self
@@ -337,12 +356,19 @@ impl ChartOfAccountsService for CoaGrpcService {
                 reason: result.error_message.clone().unwrap_or_default(),
                 messages: result
                     .error_message
-                    .map(|msg| vec![proto::common::v1::ApiMessage {
-                        r#type: if result.is_postable { "info" } else { "error" }.to_string(),
-                        code: if result.is_postable { "OK" } else { "NOT_POSTABLE" }.to_string(),
-                        message: msg,
-                        target: String::new(),
-                    }])
+                    .map(|msg| {
+                        vec![proto::common::v1::ApiMessage {
+                            r#type: if result.is_postable { "info" } else { "error" }.to_string(),
+                            code: if result.is_postable {
+                                "OK"
+                            } else {
+                                "NOT_POSTABLE"
+                            }
+                            .to_string(),
+                            message: msg,
+                            target: String::new(),
+                        }]
+                    })
                     .unwrap_or_default(),
             })),
             Err(e) => Err(Status::internal(e.to_string())),
@@ -362,12 +388,18 @@ impl ChartOfAccountsService for CoaGrpcService {
                 let max_depth = if req.max_depth > 0 { req.max_depth } else { 10 };
                 let nodes: Vec<proto::AccountHierarchyNode> = accounts
                     .iter()
-                    .filter(|a| a.parent_account.is_none() || a.parent_account.as_ref().map(|p| p.is_empty()).unwrap_or(true))
+                    .filter(|a| {
+                        a.parent_account.is_none()
+                            || a.parent_account
+                                .as_ref()
+                                .map(|p| p.is_empty())
+                                .unwrap_or(true)
+                    })
                     .map(|a| build_hierarchy_node(a, &accounts, max_depth))
                     .collect();
 
                 Ok(Response::new(AccountHierarchyResponse { nodes }))
-            }
+            },
             Err(e) => Err(Status::internal(e.to_string())),
         }
     }
@@ -398,7 +430,7 @@ impl ChartOfAccountsService for CoaGrpcService {
                     .collect();
 
                 Ok(Response::new(ListChildAccountsResponse { accounts }))
-            }
+            },
             Err(e) => Err(Status::internal(e.to_string())),
         }
     }
@@ -438,7 +470,7 @@ impl ChartOfAccountsService for CoaGrpcService {
                     path,
                     full_path_string,
                 }))
-            }
+            },
             Err(e) => Err(Status::internal(e.to_string())),
         }
     }
@@ -448,7 +480,9 @@ impl ChartOfAccountsService for CoaGrpcService {
         _request: Request<CreateAccountGroupRequest>,
     ) -> Result<Response<AccountGroupResponse>, Status> {
         // 科目组功能需要额外的数据库表支持，暂时返回未实现
-        Err(Status::unimplemented("Account group management requires additional database setup"))
+        Err(Status::unimplemented(
+            "Account group management requires additional database setup",
+        ))
     }
 
     async fn list_account_groups(
@@ -456,7 +490,9 @@ impl ChartOfAccountsService for CoaGrpcService {
         _request: Request<ListAccountGroupsRequest>,
     ) -> Result<Response<ListAccountGroupsResponse>, Status> {
         // 科目组功能需要额外的数据库表支持，暂时返回未实现
-        Err(Status::unimplemented("Account group management requires additional database setup"))
+        Err(Status::unimplemented(
+            "Account group management requires additional database setup",
+        ))
     }
 
     async fn batch_create_gl_accounts(
@@ -469,13 +505,15 @@ impl ChartOfAccountsService for CoaGrpcService {
             .accounts
             .into_iter()
             .filter_map(|acc| acc.account)
-            .map(|a| crate::domain::GlAccount::new(
-                a.chart_of_accounts,
-                a.account_code,
-                a.account_name,
-                convert_account_nature(a.account_nature),
-                a.account_category.to_string(),
-            ))
+            .map(|a| {
+                crate::domain::GlAccount::new(
+                    a.chart_of_accounts,
+                    a.account_code,
+                    a.account_name,
+                    convert_account_nature(a.account_nature),
+                    a.account_category.to_string(),
+                )
+            })
             .collect();
 
         match self.app_service.batch_create_accounts(accounts).await {
@@ -498,7 +536,7 @@ impl ChartOfAccountsService for CoaGrpcService {
                     }),
                     responses,
                 }))
-            }
+            },
             Err(e) => Err(Status::internal(e.to_string())),
         }
     }
@@ -522,7 +560,7 @@ impl ChartOfAccountsService for CoaGrpcService {
                 Ok(resp) => {
                     success_count += 1;
                     responses.push(resp.into_inner());
-                }
+                },
                 Err(e) => {
                     failure_count += 1;
                     if !continue_on_error {
@@ -539,7 +577,7 @@ impl ChartOfAccountsService for CoaGrpcService {
                             target: String::new(),
                         }],
                     });
-                }
+                },
             }
         }
 
@@ -558,7 +596,9 @@ impl ChartOfAccountsService for CoaGrpcService {
         _request: Request<ImportAccountsRequest>,
     ) -> Result<Response<ImportAccountsResponse>, Status> {
         // 导入功能需要文件解析支持，暂时返回未实现
-        Err(Status::unimplemented("Import requires file parsing implementation"))
+        Err(Status::unimplemented(
+            "Import requires file parsing implementation",
+        ))
     }
 
     async fn export_accounts(
@@ -566,7 +606,9 @@ impl ChartOfAccountsService for CoaGrpcService {
         _request: Request<ExportAccountsRequest>,
     ) -> Result<Response<ExportAccountsResponse>, Status> {
         // 导出功能需要文件生成支持，暂时返回未实现
-        Err(Status::unimplemented("Export requires file generation implementation"))
+        Err(Status::unimplemented(
+            "Export requires file generation implementation",
+        ))
     }
 }
 

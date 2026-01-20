@@ -1,22 +1,22 @@
-use serde::{Deserialize, Serialize};
-use rust_decimal::Decimal;
-use chrono::{NaiveDate, DateTime, Utc};
-use uuid::Uuid;
+use chrono::{DateTime, NaiveDate, Utc};
 use cuba_core::domain::AggregateRoot;
+use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use uuid::Uuid;
 
 /// 付款执行详细信息 (Payment Execution Detail)
 /// 用于自动付款程序（Automatic Payment Program）和付款执行
 /// SAP 字段映射: ZLSCH, HBKID, BVTYP, ZLSPR
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PaymentExecutionDetail {
-    pub payment_method: String,           // ZLSCH 付款方式（T-转账、C-支票、W-电汇、Z-其他）
-    pub house_bank: Option<String>,       // HBKID 内部银行账户标识（公司银行账户）
+    pub payment_method: String, // ZLSCH 付款方式（T-转账、C-支票、W-电汇、Z-其他）
+    pub house_bank: Option<String>, // HBKID 内部银行账户标识（公司银行账户）
     pub partner_bank_type: Option<String>, // BVTYP 业务伙伴银行类型
-    pub payment_block: Option<String>,    // ZLSPR 付款冻结（冻结原因代码）
+    pub payment_block: Option<String>, // ZLSPR 付款冻结（冻结原因代码）
     pub payment_baseline_date: Option<NaiveDate>, // ZFBDT 付款基准日
     pub payment_reference: Option<String>, // 付款参考号
-    pub payment_priority: Option<i32>,    // 付款优先级（1-9，数字越小优先级越高）
+    pub payment_priority: Option<i32>, // 付款优先级（1-9，数字越小优先级越高）
 }
 
 /// 付款条件详细信息 (Payment Terms Detail)
@@ -156,7 +156,7 @@ impl Default for PostingStatus {
     }
 }
 
-impl  ToString for PostingStatus {
+impl ToString for PostingStatus {
     fn to_string(&self) -> String {
         match self {
             PostingStatus::Draft => "DRAFT".to_string(),
@@ -206,9 +206,9 @@ impl DebitCredit {
 /// 分类账类型（并行会计）
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LedgerType {
-    Leading = 1,      // 主分类账 (0L)
-    NonLeading = 2,   // 非主分类账 (1L, 2L)
-    Extension = 3,    // 扩展分类账
+    Leading = 1,    // 主分类账 (0L)
+    NonLeading = 2, // 非主分类账 (1L, 2L)
+    Extension = 3,  // 扩展分类账
 }
 
 impl Default for LedgerType {
@@ -238,11 +238,11 @@ impl From<LedgerType> for i32 {
 /// 用于区分特殊业务类型，影响应收/应付账款分类、报表列示和清账逻辑
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum SpecialGlType {
-    Normal,           // 普通业务（无特殊标识）
-    BillOfExchange,   // A - 票据 (Bills of Exchange)
-    DownPayment,      // F - 预付款 (Down Payment)
-    AdvancePayment,   // V - 预收款 (Advance Payment)
-    BillDiscount,     // W - 票据贴现 (Bill of Exchange Discount)
+    Normal,         // 普通业务（无特殊标识）
+    BillOfExchange, // A - 票据 (Bills of Exchange)
+    DownPayment,    // F - 预付款 (Down Payment)
+    AdvancePayment, // V - 预收款 (Advance Payment)
+    BillDiscount,   // W - 票据贴现 (Bill of Exchange Discount)
 }
 
 impl Default for SpecialGlType {
@@ -302,7 +302,10 @@ impl SpecialGlType {
 
     /// 判断是否为票据相关业务
     pub fn is_bill_related(&self) -> bool {
-        matches!(self, SpecialGlType::BillOfExchange | SpecialGlType::BillDiscount)
+        matches!(
+            self,
+            SpecialGlType::BillOfExchange | SpecialGlType::BillDiscount
+        )
     }
 
     /// 获取英文名称
@@ -353,21 +356,21 @@ pub struct LineItem {
     // ============================================================================
     // 特殊总账标识 (Special G/L Indicator / UMSKZ)
     // ============================================================================
-    pub special_gl_indicator: SpecialGlType,   // 特殊总账类型
+    pub special_gl_indicator: SpecialGlType, // 特殊总账类型
 
     // ============================================================================
     // 并行会计字段 (Parallel Accounting)
     // ============================================================================
-    pub ledger: String,                    // 分类账编号 (RLDNR: 0L, 1L, 2L...)
-    pub ledger_type: LedgerType,           // 分类账类型
-    pub ledger_amount: Option<Decimal>,    // 分类账货币金额（用于不同会计准则）
+    pub ledger: String,                 // 分类账编号 (RLDNR: 0L, 1L, 2L...)
+    pub ledger_type: LedgerType,        // 分类账类型
+    pub ledger_amount: Option<Decimal>, // 分类账货币金额（用于不同会计准则）
 
     // ============================================================================
     // 组织维度字段 (Organizational Dimensions)
     // ============================================================================
-    pub financial_area: Option<String>,    // 财务范围 (RFAREA) - 用于合并报表
-    pub business_area: Option<String>,     // 业务范围 (RBUSA) - 用于段报告
-    pub controlling_area: Option<String>,  // 控制范围 (KOKRS) - 用于管理会计
+    pub financial_area: Option<String>, // 财务范围 (RFAREA) - 用于合并报表
+    pub business_area: Option<String>,  // 业务范围 (RBUSA) - 用于段报告
+    pub controlling_area: Option<String>, // 控制范围 (KOKRS) - 用于管理会计
 
     // ============================================================================
     // 科目分配字段 (Account Assignment / KTOSL)
@@ -377,7 +380,7 @@ pub struct LineItem {
     // ============================================================================
     // 业务伙伴字段
     // ============================================================================
-    pub business_partner: Option<String>,     // 业务伙伴编号 (KUNNR/LIFNR)
+    pub business_partner: Option<String>, // 业务伙伴编号 (KUNNR/LIFNR)
     pub business_partner_type: Option<String>, // 业务伙伴类型
 
     // ============================================================================
@@ -418,8 +421,8 @@ impl LineItem {
             cost_center: None,
             profit_center: None,
             text: None,
-            special_gl_indicator: SpecialGlType::Normal,  // 默认普通业务
-            ledger: "0L".to_string(),           // 默认主分类账
+            special_gl_indicator: SpecialGlType::Normal, // 默认普通业务
+            ledger: "0L".to_string(),                    // 默认主分类账
             ledger_type: LedgerType::Leading,
             ledger_amount: None,
             financial_area: None,
@@ -465,7 +468,7 @@ impl LineItem {
             cost_center: None,
             profit_center: None,
             text: None,
-            special_gl_indicator: SpecialGlType::Normal,  // 默认普通业务
+            special_gl_indicator: SpecialGlType::Normal, // 默认普通业务
             ledger,
             ledger_type,
             ledger_amount: Some(amount), // 默认使用相同金额
@@ -793,15 +796,15 @@ pub struct JournalEntry {
     // ============================================================================
     // 并行会计字段
     // ============================================================================
-    pub ledger_group: Option<String>,      // 分类账组 (LDGRP)
-    pub default_ledger: String,            // 默认分类账 (RLDNR)
+    pub ledger_group: Option<String>, // 分类账组 (LDGRP)
+    pub default_ledger: String,       // 默认分类账 (RLDNR)
 
     // ============================================================================
     // 多币种字段 (Multi-Currency Support)
     // ============================================================================
-    pub local_currency: String,            // 本位币 (RHCUR)
-    pub group_currency: Option<String>,    // 集团货币 (RKCUR)
-    pub target_currency: Option<String>,   // 目标货币 (RTCUR)
+    pub local_currency: String,          // 本位币 (RHCUR)
+    pub group_currency: Option<String>,  // 集团货币 (RKCUR)
+    pub target_currency: Option<String>, // 目标货币 (RTCUR)
 
     // ============================================================================
     // 科目表字段
@@ -833,7 +836,7 @@ impl JournalEntry {
         tenant_id: Option<String>,
     ) -> Result<Self, JournalEntryError> {
         if lines.is_empty() {
-             return Err(JournalEntryError::EmptyLines);
+            return Err(JournalEntryError::EmptyLines);
         }
 
         let entry = Self {
@@ -873,7 +876,10 @@ impl JournalEntry {
         }
 
         if debit_sum != credit_sum {
-            return Err(JournalEntryError::BalanceError { debit: debit_sum, credit: credit_sum });
+            return Err(JournalEntryError::BalanceError {
+                debit: debit_sum,
+                credit: credit_sum,
+            });
         }
 
         Ok(())
@@ -894,50 +900,61 @@ impl JournalEntry {
     }
 
     /// 创建冲销凭证
-    pub fn create_reversal_entry(&self, reversal_date: NaiveDate) -> Result<JournalEntry, JournalEntryError> {
+    pub fn create_reversal_entry(
+        &self,
+        reversal_date: NaiveDate,
+    ) -> Result<JournalEntry, JournalEntryError> {
         if self.status != PostingStatus::Posted {
             return Err(JournalEntryError::NotPosted);
         }
 
         // 反转所有行项目的借贷方向
-        let reversed_lines: Vec<LineItem> = self.lines.iter().enumerate().map(|(i, line)| LineItem {
-            id: Uuid::new_v4(),
-            line_number: (i + 1) as i32,
-            account_id: line.account_id.clone(),
-            debit_credit: match line.debit_credit {
-                DebitCredit::Debit => DebitCredit::Credit,
-                DebitCredit::Credit => DebitCredit::Debit,
-            },
-            amount: line.amount,
-            local_amount: line.local_amount,
-            cost_center: line.cost_center.clone(),
-            profit_center: line.profit_center.clone(),
-            text: Some(format!("冲销 {}", self.document_number.as_ref().unwrap_or(&"".to_string()))),
-            special_gl_indicator: line.special_gl_indicator,  // 保留特殊总账标识
-            ledger: line.ledger.clone(),
-            ledger_type: line.ledger_type,
-            ledger_amount: line.ledger_amount,
-            financial_area: line.financial_area.clone(),
-            business_area: line.business_area.clone(),
-            controlling_area: line.controlling_area.clone(),
-            account_assignment: line.account_assignment.clone(),
-            business_partner: line.business_partner.clone(),
-            business_partner_type: line.business_partner_type.clone(),
-            payment_execution: line.payment_execution.clone(),
-            payment_terms_detail: line.payment_terms_detail.clone(),
-            invoice_reference: line.invoice_reference.clone(),
-            dunning_detail: line.dunning_detail.clone(),
-            transaction_type: line.transaction_type.clone(),
-            reference_transaction_type: line.reference_transaction_type.clone(),
-            trading_partner_company: line.trading_partner_company.clone(),
-            amount_in_object_currency: line.amount_in_object_currency,
-            object_currency: line.object_currency.clone(),
-            amount_in_profit_center_currency: line.amount_in_profit_center_currency,
-            profit_center_currency: line.profit_center_currency.clone(),
-            amount_in_group_currency: line.amount_in_group_currency,
-            group_currency: line.group_currency.clone(),
-            maturity_date: line.maturity_date,
-        }).collect();
+        let reversed_lines: Vec<LineItem> = self
+            .lines
+            .iter()
+            .enumerate()
+            .map(|(i, line)| LineItem {
+                id: Uuid::new_v4(),
+                line_number: (i + 1) as i32,
+                account_id: line.account_id.clone(),
+                debit_credit: match line.debit_credit {
+                    DebitCredit::Debit => DebitCredit::Credit,
+                    DebitCredit::Credit => DebitCredit::Debit,
+                },
+                amount: line.amount,
+                local_amount: line.local_amount,
+                cost_center: line.cost_center.clone(),
+                profit_center: line.profit_center.clone(),
+                text: Some(format!(
+                    "冲销 {}",
+                    self.document_number.as_ref().unwrap_or(&"".to_string())
+                )),
+                special_gl_indicator: line.special_gl_indicator, // 保留特殊总账标识
+                ledger: line.ledger.clone(),
+                ledger_type: line.ledger_type,
+                ledger_amount: line.ledger_amount,
+                financial_area: line.financial_area.clone(),
+                business_area: line.business_area.clone(),
+                controlling_area: line.controlling_area.clone(),
+                account_assignment: line.account_assignment.clone(),
+                business_partner: line.business_partner.clone(),
+                business_partner_type: line.business_partner_type.clone(),
+                payment_execution: line.payment_execution.clone(),
+                payment_terms_detail: line.payment_terms_detail.clone(),
+                invoice_reference: line.invoice_reference.clone(),
+                dunning_detail: line.dunning_detail.clone(),
+                transaction_type: line.transaction_type.clone(),
+                reference_transaction_type: line.reference_transaction_type.clone(),
+                trading_partner_company: line.trading_partner_company.clone(),
+                amount_in_object_currency: line.amount_in_object_currency,
+                object_currency: line.object_currency.clone(),
+                amount_in_profit_center_currency: line.amount_in_profit_center_currency,
+                profit_center_currency: line.profit_center_currency.clone(),
+                amount_in_group_currency: line.amount_in_group_currency,
+                group_currency: line.group_currency.clone(),
+                maturity_date: line.maturity_date,
+            })
+            .collect();
 
         let mut reversal_entry = JournalEntry::new(
             self.company_code.clone(),
@@ -945,13 +962,21 @@ impl JournalEntry {
             reversal_date,
             reversal_date,
             self.currency.clone(),
-            Some(format!("冲销 {}", self.document_number.as_ref().unwrap_or(&"".to_string()))),
+            Some(format!(
+                "冲销 {}",
+                self.document_number.as_ref().unwrap_or(&"".to_string())
+            )),
             reversed_lines,
             self.tenant_id.clone(),
         )?;
 
         // 自动过账冲销凭证
-        let reversal_doc_num = format!("REV-{}", self.document_number.as_ref().unwrap_or(&Uuid::new_v4().simple().to_string()));
+        let reversal_doc_num = format!(
+            "REV-{}",
+            self.document_number
+                .as_ref()
+                .unwrap_or(&Uuid::new_v4().simple().to_string())
+        );
         reversal_entry.post(reversal_doc_num)?;
 
         Ok(reversal_entry)
@@ -1017,22 +1042,34 @@ impl JournalEntry {
 
     /// 获取所有特殊总账行项目
     pub fn get_special_gl_items(&self) -> Vec<&LineItem> {
-        self.lines.iter().filter(|line| line.is_special_gl()).collect()
+        self.lines
+            .iter()
+            .filter(|line| line.is_special_gl())
+            .collect()
     }
 
     /// 获取所有预付款行项目
     pub fn get_down_payment_items(&self) -> Vec<&LineItem> {
-        self.lines.iter().filter(|line| line.is_down_payment()).collect()
+        self.lines
+            .iter()
+            .filter(|line| line.is_down_payment())
+            .collect()
     }
 
     /// 获取所有预收款行项目
     pub fn get_advance_payment_items(&self) -> Vec<&LineItem> {
-        self.lines.iter().filter(|line| line.is_advance_payment()).collect()
+        self.lines
+            .iter()
+            .filter(|line| line.is_advance_payment())
+            .collect()
     }
 
     /// 获取所有票据相关行项目
     pub fn get_bill_related_items(&self) -> Vec<&LineItem> {
-        self.lines.iter().filter(|line| line.is_bill_related()).collect()
+        self.lines
+            .iter()
+            .filter(|line| line.is_bill_related())
+            .collect()
     }
 
     /// 计算特殊总账行项目的总金额
@@ -1060,7 +1097,9 @@ impl JournalEntry {
     }
 
     /// 按特殊总账类型分组统计
-    pub fn group_by_special_gl_type(&self) -> std::collections::HashMap<SpecialGlType, Vec<&LineItem>> {
+    pub fn group_by_special_gl_type(
+        &self,
+    ) -> std::collections::HashMap<SpecialGlType, Vec<&LineItem>> {
         let mut map = std::collections::HashMap::new();
         for line in &self.lines {
             map.entry(line.special_gl_indicator)
@@ -1114,7 +1153,8 @@ impl JournalEntry {
 
     /// 获取凭证的特殊总账类型列表（去重）
     pub fn get_special_gl_types(&self) -> Vec<SpecialGlType> {
-        let mut types: Vec<SpecialGlType> = self.lines
+        let mut types: Vec<SpecialGlType> = self
+            .lines
             .iter()
             .filter(|line| line.is_special_gl())
             .map(|line| line.special_gl_indicator)
@@ -1124,7 +1164,6 @@ impl JournalEntry {
         types
     }
 }
-
 
 // Implement Entity trait
 impl cuba_core::domain::Entity for JournalEntry {
@@ -1213,8 +1252,20 @@ mod tests {
         // 测试每个分类账的借贷平衡
         let lines = vec![
             // 主分类账 0L
-            LineItem::new(1, "1000".to_string(), DebitCredit::Debit, dec!(1000.00), dec!(1000.00)),
-            LineItem::new(2, "2000".to_string(), DebitCredit::Credit, dec!(1000.00), dec!(1000.00)),
+            LineItem::new(
+                1,
+                "1000".to_string(),
+                DebitCredit::Debit,
+                dec!(1000.00),
+                dec!(1000.00),
+            ),
+            LineItem::new(
+                2,
+                "2000".to_string(),
+                DebitCredit::Credit,
+                dec!(1000.00),
+                dec!(1000.00),
+            ),
             // IFRS 分类账 1L
             LineItem::with_ledger(
                 3,
@@ -1245,35 +1296,42 @@ mod tests {
             None,
             lines,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         // 验证整体平衡
         assert!(entry.validate_balance().is_ok());
 
         // 验证每个分类账的平衡
-        let ledger_0l_lines: Vec<&LineItem> = entry.lines.iter().filter(|l| l.ledger == "0L").collect();
-        let ledger_1l_lines: Vec<&LineItem> = entry.lines.iter().filter(|l| l.ledger == "1L").collect();
+        let ledger_0l_lines: Vec<&LineItem> =
+            entry.lines.iter().filter(|l| l.ledger == "0L").collect();
+        let ledger_1l_lines: Vec<&LineItem> =
+            entry.lines.iter().filter(|l| l.ledger == "1L").collect();
 
         assert_eq!(ledger_0l_lines.len(), 2);
         assert_eq!(ledger_1l_lines.len(), 2);
 
         // 验证 0L 平衡
-        let debit_0l: Decimal = ledger_0l_lines.iter()
+        let debit_0l: Decimal = ledger_0l_lines
+            .iter()
             .filter(|l| l.debit_credit == DebitCredit::Debit)
             .map(|l| l.amount)
             .sum();
-        let credit_0l: Decimal = ledger_0l_lines.iter()
+        let credit_0l: Decimal = ledger_0l_lines
+            .iter()
             .filter(|l| l.debit_credit == DebitCredit::Credit)
             .map(|l| l.amount)
             .sum();
         assert_eq!(debit_0l, credit_0l);
 
         // 验证 1L 平衡
-        let debit_1l: Decimal = ledger_1l_lines.iter()
+        let debit_1l: Decimal = ledger_1l_lines
+            .iter()
             .filter(|l| l.debit_credit == DebitCredit::Debit)
             .map(|l| l.amount)
             .sum();
-        let credit_1l: Decimal = ledger_1l_lines.iter()
+        let credit_1l: Decimal = ledger_1l_lines
+            .iter()
             .filter(|l| l.debit_credit == DebitCredit::Credit)
             .map(|l| l.amount)
             .sum();
@@ -1285,14 +1343,26 @@ mod tests {
         // 测试不同分类账使用不同金额（例如不同会计准则下的估值差异）
         let lines = vec![
             // 主分类账 0L - 本地 GAAP
-            LineItem::new(1, "1000".to_string(), DebitCredit::Debit, dec!(1000.00), dec!(1000.00)),
-            LineItem::new(2, "2000".to_string(), DebitCredit::Credit, dec!(1000.00), dec!(1000.00)),
+            LineItem::new(
+                1,
+                "1000".to_string(),
+                DebitCredit::Debit,
+                dec!(1000.00),
+                dec!(1000.00),
+            ),
+            LineItem::new(
+                2,
+                "2000".to_string(),
+                DebitCredit::Credit,
+                dec!(1000.00),
+                dec!(1000.00),
+            ),
             // IFRS 分类账 1L - 使用不同的估值
             LineItem::with_ledger(
                 3,
                 "1000".to_string(),
                 DebitCredit::Debit,
-                dec!(1100.00),  // IFRS 估值更高
+                dec!(1100.00), // IFRS 估值更高
                 dec!(1100.00),
                 "1L".to_string(),
                 LedgerType::NonLeading,
@@ -1317,17 +1387,22 @@ mod tests {
             Some("Different valuation per ledger".to_string()),
             lines,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         // 验证整体平衡（所有行项目）
         assert!(entry.validate_balance().is_ok());
 
         // 验证不同分类账有不同的金额
-        let ledger_0l_total: Decimal = entry.lines.iter()
+        let ledger_0l_total: Decimal = entry
+            .lines
+            .iter()
             .filter(|l| l.ledger == "0L" && l.debit_credit == DebitCredit::Debit)
             .map(|l| l.amount)
             .sum();
-        let ledger_1l_total: Decimal = entry.lines.iter()
+        let ledger_1l_total: Decimal = entry
+            .lines
+            .iter()
             .filter(|l| l.ledger == "1L" && l.debit_credit == DebitCredit::Debit)
             .map(|l| l.amount)
             .sum();
@@ -1341,8 +1416,20 @@ mod tests {
         // 测试多个分类账 (0L, 1L, 2L)
         let lines = vec![
             // 主分类账 0L
-            LineItem::new(1, "1000".to_string(), DebitCredit::Debit, dec!(1000.00), dec!(1000.00)),
-            LineItem::new(2, "2000".to_string(), DebitCredit::Credit, dec!(1000.00), dec!(1000.00)),
+            LineItem::new(
+                1,
+                "1000".to_string(),
+                DebitCredit::Debit,
+                dec!(1000.00),
+                dec!(1000.00),
+            ),
+            LineItem::new(
+                2,
+                "2000".to_string(),
+                DebitCredit::Credit,
+                dec!(1000.00),
+                dec!(1000.00),
+            ),
             // IFRS 分类账 1L
             LineItem::with_ledger(
                 3,
@@ -1392,7 +1479,8 @@ mod tests {
             Some("Multiple ledgers test".to_string()),
             lines,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert_eq!(entry.lines.len(), 6);
 
@@ -1423,8 +1511,20 @@ mod tests {
     fn test_parallel_accounting_with_reversal() {
         // 测试并行会计的冲销功能
         let lines = vec![
-            LineItem::new(1, "1000".to_string(), DebitCredit::Debit, dec!(1000.00), dec!(1000.00)),
-            LineItem::new(2, "2000".to_string(), DebitCredit::Credit, dec!(1000.00), dec!(1000.00)),
+            LineItem::new(
+                1,
+                "1000".to_string(),
+                DebitCredit::Debit,
+                dec!(1000.00),
+                dec!(1000.00),
+            ),
+            LineItem::new(
+                2,
+                "2000".to_string(),
+                DebitCredit::Credit,
+                dec!(1000.00),
+                dec!(1000.00),
+            ),
             LineItem::with_ledger(
                 3,
                 "1000".to_string(),
@@ -1454,15 +1554,16 @@ mod tests {
             None,
             lines,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         // 过账原凭证
         entry.post("DOC-001".to_string()).unwrap();
 
         // 创建冲销凭证
-        let reversal = entry.create_reversal_entry(
-            NaiveDate::from_ymd_opt(2026, 1, 19).unwrap()
-        ).unwrap();
+        let reversal = entry
+            .create_reversal_entry(NaiveDate::from_ymd_opt(2026, 1, 19).unwrap())
+            .unwrap();
 
         // 验证冲销凭证的行数与原凭证相同
         assert_eq!(reversal.lines.len(), entry.lines.len());
@@ -1502,10 +1603,22 @@ mod tests {
 
         // 测试从 SAP 代码转换
         assert_eq!(SpecialGlType::from_sap_code(""), SpecialGlType::Normal);
-        assert_eq!(SpecialGlType::from_sap_code("A"), SpecialGlType::BillOfExchange);
-        assert_eq!(SpecialGlType::from_sap_code("F"), SpecialGlType::DownPayment);
-        assert_eq!(SpecialGlType::from_sap_code("V"), SpecialGlType::AdvancePayment);
-        assert_eq!(SpecialGlType::from_sap_code("W"), SpecialGlType::BillDiscount);
+        assert_eq!(
+            SpecialGlType::from_sap_code("A"),
+            SpecialGlType::BillOfExchange
+        );
+        assert_eq!(
+            SpecialGlType::from_sap_code("F"),
+            SpecialGlType::DownPayment
+        );
+        assert_eq!(
+            SpecialGlType::from_sap_code("V"),
+            SpecialGlType::AdvancePayment
+        );
+        assert_eq!(
+            SpecialGlType::from_sap_code("W"),
+            SpecialGlType::BillDiscount
+        );
         assert_eq!(SpecialGlType::from_sap_code("X"), SpecialGlType::Normal); // 无效值默认为 Normal
     }
 
@@ -1513,10 +1626,22 @@ mod tests {
     fn test_special_gl_type_description() {
         // 测试描述
         assert_eq!(SpecialGlType::Normal.description(), "普通业务");
-        assert_eq!(SpecialGlType::BillOfExchange.description(), "票据 (Bills of Exchange)");
-        assert_eq!(SpecialGlType::DownPayment.description(), "预付款 (Down Payment)");
-        assert_eq!(SpecialGlType::AdvancePayment.description(), "预收款 (Advance Payment)");
-        assert_eq!(SpecialGlType::BillDiscount.description(), "票据贴现 (Bill of Exchange Discount)");
+        assert_eq!(
+            SpecialGlType::BillOfExchange.description(),
+            "票据 (Bills of Exchange)"
+        );
+        assert_eq!(
+            SpecialGlType::DownPayment.description(),
+            "预付款 (Down Payment)"
+        );
+        assert_eq!(
+            SpecialGlType::AdvancePayment.description(),
+            "预收款 (Advance Payment)"
+        );
+        assert_eq!(
+            SpecialGlType::BillDiscount.description(),
+            "票据贴现 (Bill of Exchange Discount)"
+        );
     }
 
     #[test]
@@ -1577,10 +1702,14 @@ mod tests {
             Some("预付款给供应商".to_string()),
             lines,
             Some("tenant1".to_string()),
-        ).unwrap();
+        )
+        .unwrap();
 
         assert_eq!(entry.lines.len(), 2);
-        assert_eq!(entry.lines[0].special_gl_indicator, SpecialGlType::DownPayment);
+        assert_eq!(
+            entry.lines[0].special_gl_indicator,
+            SpecialGlType::DownPayment
+        );
         assert_eq!(entry.lines[1].special_gl_indicator, SpecialGlType::Normal);
 
         // 验证借贷平衡
@@ -1617,9 +1746,13 @@ mod tests {
             Some("应收票据".to_string()),
             lines,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
-        assert_eq!(entry.lines[0].special_gl_indicator, SpecialGlType::BillOfExchange);
+        assert_eq!(
+            entry.lines[0].special_gl_indicator,
+            SpecialGlType::BillOfExchange
+        );
         assert!(entry.validate_balance().is_ok());
     }
 
@@ -1653,9 +1786,13 @@ mod tests {
             Some("预收客户款项".to_string()),
             lines,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
-        assert_eq!(entry.lines[1].special_gl_indicator, SpecialGlType::AdvancePayment);
+        assert_eq!(
+            entry.lines[1].special_gl_indicator,
+            SpecialGlType::AdvancePayment
+        );
         assert!(entry.validate_balance().is_ok());
     }
 
@@ -1689,20 +1826,27 @@ mod tests {
             None,
             lines,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         // 过账原凭证
         entry.post("DOC-001".to_string()).unwrap();
 
         // 创建冲销凭证
-        let reversal = entry.create_reversal_entry(
-            NaiveDate::from_ymd_opt(2026, 1, 19).unwrap()
-        ).unwrap();
+        let reversal = entry
+            .create_reversal_entry(NaiveDate::from_ymd_opt(2026, 1, 19).unwrap())
+            .unwrap();
 
         // 验证冲销凭证保留了特殊总账标识
         assert_eq!(reversal.lines.len(), 2);
-        assert_eq!(reversal.lines[0].special_gl_indicator, SpecialGlType::DownPayment);
-        assert_eq!(reversal.lines[1].special_gl_indicator, SpecialGlType::Normal);
+        assert_eq!(
+            reversal.lines[0].special_gl_indicator,
+            SpecialGlType::DownPayment
+        );
+        assert_eq!(
+            reversal.lines[1].special_gl_indicator,
+            SpecialGlType::Normal
+        );
 
         // 验证借贷方向已反转
         assert_eq!(reversal.lines[0].debit_credit, DebitCredit::Credit);
@@ -1750,11 +1894,18 @@ mod tests {
             Some("混合特殊总账业务".to_string()),
             lines,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert_eq!(entry.lines.len(), 3);
-        assert_eq!(entry.lines[0].special_gl_indicator, SpecialGlType::DownPayment);
-        assert_eq!(entry.lines[1].special_gl_indicator, SpecialGlType::BillOfExchange);
+        assert_eq!(
+            entry.lines[0].special_gl_indicator,
+            SpecialGlType::DownPayment
+        );
+        assert_eq!(
+            entry.lines[1].special_gl_indicator,
+            SpecialGlType::BillOfExchange
+        );
         assert_eq!(entry.lines[2].special_gl_indicator, SpecialGlType::Normal);
         assert!(entry.validate_balance().is_ok());
     }
@@ -1813,23 +1964,28 @@ mod tests {
             Some("预付款 - 并行会计".to_string()),
             lines,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert_eq!(entry.lines.len(), 4);
 
         // 验证主分类账的特殊总账标识
-        let ledger_0l_lines: Vec<&LineItem> = entry.lines.iter()
-            .filter(|l| l.ledger == "0L")
-            .collect();
+        let ledger_0l_lines: Vec<&LineItem> =
+            entry.lines.iter().filter(|l| l.ledger == "0L").collect();
         assert_eq!(ledger_0l_lines.len(), 2);
-        assert_eq!(ledger_0l_lines[0].special_gl_indicator, SpecialGlType::DownPayment);
+        assert_eq!(
+            ledger_0l_lines[0].special_gl_indicator,
+            SpecialGlType::DownPayment
+        );
 
         // 验证 IFRS 分类账的特殊总账标识
-        let ledger_1l_lines: Vec<&LineItem> = entry.lines.iter()
-            .filter(|l| l.ledger == "1L")
-            .collect();
+        let ledger_1l_lines: Vec<&LineItem> =
+            entry.lines.iter().filter(|l| l.ledger == "1L").collect();
         assert_eq!(ledger_1l_lines.len(), 2);
-        assert_eq!(ledger_1l_lines[0].special_gl_indicator, SpecialGlType::DownPayment);
+        assert_eq!(
+            ledger_1l_lines[0].special_gl_indicator,
+            SpecialGlType::DownPayment
+        );
 
         // 验证借贷平衡
         assert!(entry.validate_balance().is_ok());
@@ -1853,7 +2009,10 @@ mod tests {
 
         // 反序列化
         let deserialized: LineItem = serde_json::from_str(&json).unwrap();
-        assert_eq!(deserialized.special_gl_indicator, SpecialGlType::DownPayment);
+        assert_eq!(
+            deserialized.special_gl_indicator,
+            SpecialGlType::DownPayment
+        );
         assert_eq!(deserialized.amount, dec!(10000.00));
     }
 
@@ -1890,8 +2049,8 @@ mod tests {
     #[test]
     fn test_payment_execution_with_block() {
         // 测试付款冻结
-        let payment_exec = PaymentExecutionDetail::new("T".to_string())
-            .with_payment_block("A".to_string());
+        let payment_exec =
+            PaymentExecutionDetail::new("T".to_string()).with_payment_block("A".to_string());
 
         assert!(payment_exec.is_blocked());
         assert_eq!(payment_exec.payment_block, Some("A".to_string()));
@@ -1900,8 +2059,7 @@ mod tests {
     #[test]
     fn test_payment_execution_with_priority() {
         // 测试付款优先级
-        let payment_exec = PaymentExecutionDetail::new("T".to_string())
-            .with_priority(1);
+        let payment_exec = PaymentExecutionDetail::new("T".to_string()).with_priority(1);
 
         assert_eq!(payment_exec.payment_priority, Some(1));
     }
@@ -1910,25 +2068,29 @@ mod tests {
     fn test_payment_execution_method_description() {
         // 测试付款方式描述
         let payment_exec_t = PaymentExecutionDetail::new("T".to_string());
-        assert_eq!(payment_exec_t.payment_method_description(), "银行转账 (Bank Transfer)");
+        assert_eq!(
+            payment_exec_t.payment_method_description(),
+            "银行转账 (Bank Transfer)"
+        );
 
         let payment_exec_c = PaymentExecutionDetail::new("C".to_string());
         assert_eq!(payment_exec_c.payment_method_description(), "支票 (Check)");
 
         let payment_exec_w = PaymentExecutionDetail::new("W".to_string());
-        assert_eq!(payment_exec_w.payment_method_description(), "电汇 (Wire Transfer)");
+        assert_eq!(
+            payment_exec_w.payment_method_description(),
+            "电汇 (Wire Transfer)"
+        );
     }
 
     #[test]
     fn test_payment_execution_validation() {
         // 测试验证付款执行信息
-        let valid_payment = PaymentExecutionDetail::new("T".to_string())
-            .with_priority(5);
+        let valid_payment = PaymentExecutionDetail::new("T".to_string()).with_priority(5);
         assert!(valid_payment.validate().is_ok());
 
         // 测试无效优先级
-        let invalid_payment = PaymentExecutionDetail::new("T".to_string())
-            .with_priority(10);
+        let invalid_payment = PaymentExecutionDetail::new("T".to_string()).with_priority(10);
         assert!(invalid_payment.validate().is_err());
     }
 
@@ -1947,7 +2109,8 @@ mod tests {
             DebitCredit::Credit,
             dec!(50000.00),
             dec!(50000.00),
-        ).with_payment_execution(payment_exec.clone());
+        )
+        .with_payment_execution(payment_exec.clone());
 
         assert!(line.payment_execution.is_some());
         let exec = line.payment_execution.unwrap();
@@ -1986,8 +2149,9 @@ mod tests {
             "T".to_string(),
             Some("BANK001".to_string()),
             None,
-        ).with_baseline_date(NaiveDate::from_ymd_opt(2026, 1, 18).unwrap())
-          .with_priority(2);
+        )
+        .with_baseline_date(NaiveDate::from_ymd_opt(2026, 1, 18).unwrap())
+        .with_priority(2);
 
         let lines = vec![
             LineItem::new(
@@ -2003,7 +2167,8 @@ mod tests {
                 DebitCredit::Credit,
                 dec!(100000.00),
                 dec!(100000.00),
-            ).with_payment_execution(payment_exec),
+            )
+            .with_payment_execution(payment_exec),
         ];
 
         let entry = JournalEntry::new(
@@ -2015,7 +2180,8 @@ mod tests {
             Some("采购发票 - 带付款执行信息".to_string()),
             lines,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert_eq!(entry.lines.len(), 2);
         assert!(entry.lines[1].payment_execution.is_some());
@@ -2032,8 +2198,8 @@ mod tests {
     #[test]
     fn test_payment_execution_with_block_scenario() {
         // 测试付款冻结场景
-        let payment_exec = PaymentExecutionDetail::new("T".to_string())
-            .with_payment_block("A".to_string()); // A = 争议
+        let payment_exec =
+            PaymentExecutionDetail::new("T".to_string()).with_payment_block("A".to_string()); // A = 争议
 
         let line = LineItem::new(
             1,
@@ -2041,7 +2207,8 @@ mod tests {
             DebitCredit::Credit,
             dec!(50000.00),
             dec!(50000.00),
-        ).with_payment_execution(payment_exec);
+        )
+        .with_payment_execution(payment_exec);
 
         assert!(line.payment_execution.is_some());
         let exec = line.payment_execution.unwrap();
@@ -2056,7 +2223,8 @@ mod tests {
             "W".to_string(),
             Some("BANK001".to_string()),
             Some("SWIFT".to_string()),
-        ).with_priority(1);
+        )
+        .with_priority(1);
 
         let line = LineItem::new(
             1,
@@ -2064,7 +2232,8 @@ mod tests {
             DebitCredit::Credit,
             dec!(50000.00),
             dec!(50000.00),
-        ).with_payment_execution(payment_exec);
+        )
+        .with_payment_execution(payment_exec);
 
         // 序列化
         let json = serde_json::to_string(&line).unwrap();
@@ -2079,4 +2248,3 @@ mod tests {
         assert_eq!(exec.house_bank, Some("BANK001".to_string()));
     }
 }
-

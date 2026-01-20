@@ -1,7 +1,13 @@
-use sqlx::PgPool; use crate::domain::Incident; use anyhow::Result;
-pub struct IncidentRepository { pool: PgPool }
+use crate::domain::Incident;
+use anyhow::Result;
+use sqlx::PgPool;
+pub struct IncidentRepository {
+    pool: PgPool,
+}
 impl IncidentRepository {
-    pub fn new(pool: PgPool) -> Self { Self { pool } }
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
     pub async fn save(&self, i: &Incident) -> Result<()> {
         sqlx::query(
             "INSERT INTO incidents (incident_id, incident_code, category, title, description, location, incident_datetime, reported_by, status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)")

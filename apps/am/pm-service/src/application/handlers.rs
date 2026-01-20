@@ -1,11 +1,13 @@
-use std::sync::Arc;
-use crate::domain::{MaintenanceNotification, MaintenanceOrder, MaintenanceOperation};
+use crate::application::commands::{
+    ConfirmOperationCommand, CreateNotificationCommand, CreateOrderCommand,
+};
+use crate::domain::{MaintenanceNotification, MaintenanceOperation, MaintenanceOrder};
 use crate::infrastructure::repository::MaintenanceRepository;
-use crate::application::commands::{CreateNotificationCommand, CreateOrderCommand, ConfirmOperationCommand};
 use anyhow::{Result, anyhow};
-use uuid::Uuid;
 use chrono::Utc;
 use rust_decimal::Decimal;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct MaintenanceHandler {
     repo: Arc<MaintenanceRepository>,
@@ -56,28 +58,31 @@ impl MaintenanceHandler {
             basic_finish_date: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
-            operations: vec![
-                MaintenanceOperation {
-                    operation_id: Uuid::new_v4(),
-                    order_id,
-                    operation_number: "0010".to_string(),
-                    description: Some("Repair Task".to_string()),
-                    work_center: Some("WC01".to_string()),
-                    planned_work_duration: Decimal::from(4),
-                    actual_work_duration: Decimal::ZERO,
-                    work_unit: "H".to_string(),
-                    status: "CRTD".to_string(),
-                }
-            ],
+            operations: vec![MaintenanceOperation {
+                operation_id: Uuid::new_v4(),
+                order_id,
+                operation_number: "0010".to_string(),
+                description: Some("Repair Task".to_string()),
+                work_center: Some("WC01".to_string()),
+                planned_work_duration: Decimal::from(4),
+                actual_work_duration: Decimal::ZERO,
+                work_unit: "H".to_string(),
+                status: "CRTD".to_string(),
+            }],
         };
         self.repo.create_order(&o).await?;
         Ok(order_num)
     }
 
     pub async fn confirm_operation(&self, cmd: ConfirmOperationCommand) -> Result<String> {
-        let order = self.repo.find_order_by_number(&cmd.order_number).await?
+        let order = self
+            .repo
+            .find_order_by_number(&cmd.order_number)
+            .await?
             .ok_or_else(|| anyhow!("Order not found"))?;
-        self.repo.confirm_operation(order.order_id, &cmd.operation_number, cmd.actual_duration).await?;
+        self.repo
+            .confirm_operation(order.order_id, &cmd.operation_number, cmd.actual_duration)
+            .await?;
         Ok(format!("CNF{}", Utc::now().timestamp_subsec_micros()))
     }
 }

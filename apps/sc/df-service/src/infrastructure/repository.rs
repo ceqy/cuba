@@ -1,6 +1,6 @@
-use sqlx::PgPool;
-use crate::domain::{ForecastPlan, ForecastPeriod};
+use crate::domain::{ForecastPeriod, ForecastPlan};
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct ForecastRepository {
     pool: PgPool,
@@ -45,9 +45,12 @@ impl ForecastRepository {
             .bind(code)
             .fetch_optional(&self.pool).await?;
         if let Some(mut h) = h {
-            let periods = sqlx::query_as::<_, ForecastPeriod>("SELECT * FROM forecast_periods WHERE plan_id = $1 ORDER BY start_date")
-                .bind(h.plan_id)
-                .fetch_all(&self.pool).await?;
+            let periods = sqlx::query_as::<_, ForecastPeriod>(
+                "SELECT * FROM forecast_periods WHERE plan_id = $1 ORDER BY start_date",
+            )
+            .bind(h.plan_id)
+            .fetch_all(&self.pool)
+            .await?;
             h.periods = periods;
             Ok(Some(h))
         } else {

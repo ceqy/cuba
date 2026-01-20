@@ -1,12 +1,14 @@
-use std::sync::Arc;
+use crate::application::commands::{
+    CreateSalesOrderCommand, GetSalesOrderQuery, ListSalesOrdersQuery,
+};
 use crate::domain::{SalesOrder, SalesOrderItem, SalesOrderScheduleLine};
 use crate::infrastructure::repository::SalesOrderRepository;
-use crate::application::commands::{CreateSalesOrderCommand, GetSalesOrderQuery, ListSalesOrdersQuery};
 use anyhow::Result;
-use uuid::Uuid;
-use chrono::{Utc, NaiveDate};
+use chrono::{NaiveDate, Utc};
 use rust_decimal::Decimal;
-use rust_decimal::prelude::FromPrimitive; // Needed for Decimal calculations
+use rust_decimal::prelude::FromPrimitive;
+use std::sync::Arc;
+use uuid::Uuid; // Needed for Decimal calculations
 
 pub struct CreateSalesOrderHandler {
     repo: Arc<SalesOrderRepository>,
@@ -20,45 +22,47 @@ impl CreateSalesOrderHandler {
     pub async fn handle(&self, cmd: CreateSalesOrderCommand) -> Result<SalesOrder> {
         let order_id = Uuid::new_v4();
         // Generate a random order number or use a sequence in real app
-        let order_number = format!("OR{}", Utc::now().timestamp_subsec_nanos()); 
+        let order_number = format!("OR{}", Utc::now().timestamp_subsec_nanos());
 
         let created_at = Utc::now();
         let document_date = Utc::now().date_naive();
-        
-        let mut total_net_value = Decimal::ZERO;
-        
-        let items: Vec<SalesOrderItem> = cmd.items.iter().map(|i| {
-            // Mock pricing logic: quantity * 10
-            let unit_price = Decimal::from_i32(10).unwrap();
-            let net_value = i.order_quantity * unit_price;
-            total_net_value += net_value;
 
-            SalesOrderItem {
-                item_id: Uuid::new_v4(),
-                order_id,
-                item_number: i.item_number,
-                material: i.material.clone(),
-                item_description: Some(format!("Item {}", i.material)),
-                order_quantity: i.order_quantity,
-                sales_unit: i.sales_unit.clone(),
-                plant: i.plant.clone(),
-                storage_location: i.storage_location.clone(),
-                net_value,
-                tax_amount: Some(net_value * Decimal::from_f32(0.19).unwrap()), // 19% Tax mock
-                item_category: Some("TAN".to_string()),
-                rejection_reason: None,
-                higher_level_item: None,
-                schedule_lines: vec![
-                    SalesOrderScheduleLine {
+        let mut total_net_value = Decimal::ZERO;
+
+        let items: Vec<SalesOrderItem> = cmd
+            .items
+            .iter()
+            .map(|i| {
+                // Mock pricing logic: quantity * 10
+                let unit_price = Decimal::from_i32(10).unwrap();
+                let net_value = i.order_quantity * unit_price;
+                total_net_value += net_value;
+
+                SalesOrderItem {
+                    item_id: Uuid::new_v4(),
+                    order_id,
+                    item_number: i.item_number,
+                    material: i.material.clone(),
+                    item_description: Some(format!("Item {}", i.material)),
+                    order_quantity: i.order_quantity,
+                    sales_unit: i.sales_unit.clone(),
+                    plant: i.plant.clone(),
+                    storage_location: i.storage_location.clone(),
+                    net_value,
+                    tax_amount: Some(net_value * Decimal::from_f32(0.19).unwrap()), // 19% Tax mock
+                    item_category: Some("TAN".to_string()),
+                    rejection_reason: None,
+                    higher_level_item: None,
+                    schedule_lines: vec![SalesOrderScheduleLine {
                         schedule_line_id: Uuid::new_v4(),
                         item_id: Uuid::nil(), // Will be updated
                         schedule_line_number: 1,
                         delivery_date: cmd.requested_delivery_date.unwrap_or(document_date),
                         confirmed_quantity: i.order_quantity,
-                    }
-                ],
-            }
-        }).collect();
+                    }],
+                }
+            })
+            .collect();
 
         let order = SalesOrder {
             order_id,
@@ -114,6 +118,8 @@ impl ListSalesOrdersHandler {
     }
 
     pub async fn handle(&self, query: ListSalesOrdersQuery) -> Result<Vec<SalesOrder>> {
-        self.repo.list(query.sold_to_party, query.limit as i64).await
+        self.repo
+            .list(query.sold_to_party, query.limit as i64)
+            .await
     }
 }

@@ -5,12 +5,12 @@ pub mod infrastructure;
 
 // Re-export for convenience
 pub use api::grpc_server::ArServiceImpl;
-pub use infrastructure::repository::{CustomerRepository, OpenItemRepository, InvoiceRepository};
+pub use infrastructure::repository::{CustomerRepository, InvoiceRepository, OpenItemRepository};
 
-use std::sync::Arc;
-use tokio::sync::Mutex;
 use cuba_database::DbPool;
 use cuba_finance::GlClient;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 /// Factory function to create and wire up the AR Service with all its dependencies.
 ///
@@ -20,10 +20,7 @@ use cuba_finance::GlClient;
 ///
 /// # Returns
 /// Fully initialized ArServiceImpl ready to serve gRPC requests
-pub fn create_ar_service(
-    pool: DbPool,
-    gl_client: Arc<Mutex<GlClient>>,
-) -> ArServiceImpl {
+pub fn create_ar_service(pool: DbPool, gl_client: Arc<Mutex<GlClient>>) -> ArServiceImpl {
     use application::handlers::*;
 
     // Initialize Repositories

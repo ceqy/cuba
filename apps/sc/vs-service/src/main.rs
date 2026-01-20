@@ -1,11 +1,11 @@
+use std::sync::Arc;
 use tonic::transport::Server;
 use tracing::info;
-use std::sync::Arc;
 
 use vs_service::api::grpc_server::VsServiceImpl;
 use vs_service::api::proto::sc::vs::v1::visibility_service_server::VisibilityServiceServer;
-use vs_service::infrastructure::repository::VendorRepository;
 use vs_service::application::handlers::VendorHandler;
+use vs_service::infrastructure::repository::VendorRepository;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -22,7 +22,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let service = VsServiceImpl::new(handler, repo);
 
     let reflection_service = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(vs_service::api::proto::sc::vs::v1::FILE_DESCRIPTOR_SET)
+        .register_encoded_file_descriptor_set(
+            vs_service::api::proto::sc::vs::v1::FILE_DESCRIPTOR_SET,
+        )
         .build_v1()?;
 
     info!("SC Visibility Service listening on {}", addr);

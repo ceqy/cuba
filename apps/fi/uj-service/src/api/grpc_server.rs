@@ -1,14 +1,12 @@
 use crate::{
     domain::{
-        repositories::{
-            PaginationParams, UniversalJournalFilter, UniversalJournalRepository,
-        },
         AccountType, SourceModule, UniversalJournalEntry,
+        repositories::{PaginationParams, UniversalJournalFilter, UniversalJournalRepository},
     },
     infrastructure::grpc::proto::uj::v1::{
-        universal_journal_service_server::UniversalJournalService, AggregateUniversalJournalRequest,
-        AggregateUniversalJournalResponse, GetUniversalJournalEntryRequest,
-        QueryUniversalJournalRequest, QueryUniversalJournalResponse,
+        AggregateUniversalJournalRequest, AggregateUniversalJournalResponse,
+        GetUniversalJournalEntryRequest, QueryUniversalJournalRequest,
+        QueryUniversalJournalResponse, universal_journal_service_server::UniversalJournalService,
     },
 };
 use std::sync::Arc;
@@ -149,15 +147,15 @@ impl UniversalJournalServiceImpl {
         use prost_types::Timestamp;
 
         let source_module = match entry.source_module {
-            SourceModule::GL => 1,  // SOURCE_MODULE_GL
-            SourceModule::AP => 2,  // SOURCE_MODULE_AP
-            SourceModule::AR => 3,  // SOURCE_MODULE_AR
-            SourceModule::AA => 4,  // SOURCE_MODULE_AA
-            SourceModule::MM => 5,  // SOURCE_MODULE_MM
-            SourceModule::SD => 6,  // SOURCE_MODULE_SD
-            SourceModule::CO => 7,  // SOURCE_MODULE_CO
-            SourceModule::TR => 8,  // SOURCE_MODULE_FI_TR
-            _ => 0,  // SOURCE_MODULE_UNSPECIFIED
+            SourceModule::GL => 1, // SOURCE_MODULE_GL
+            SourceModule::AP => 2, // SOURCE_MODULE_AP
+            SourceModule::AR => 3, // SOURCE_MODULE_AR
+            SourceModule::AA => 4, // SOURCE_MODULE_AA
+            SourceModule::MM => 5, // SOURCE_MODULE_MM
+            SourceModule::SD => 6, // SOURCE_MODULE_SD
+            SourceModule::CO => 7, // SOURCE_MODULE_CO
+            SourceModule::TR => 8, // SOURCE_MODULE_FI_TR
+            _ => 0,                // SOURCE_MODULE_UNSPECIFIED
         };
 
         let account_type = match entry.account_type {
@@ -166,7 +164,7 @@ impl UniversalJournalServiceImpl {
             AccountType::Vendor => 3,   // ACCOUNT_TYPE_VENDOR
             AccountType::Asset => 4,    // ACCOUNT_TYPE_ASSET
             AccountType::Material => 5, // ACCOUNT_TYPE_MATERIAL
-            _ => 0,  // ACCOUNT_TYPE_UNSPECIFIED
+            _ => 0,                     // ACCOUNT_TYPE_UNSPECIFIED
         };
 
         v1::UniversalJournalEntry {
@@ -177,7 +175,11 @@ impl UniversalJournalServiceImpl {
             document_line: entry.document_line,
             document_type: entry.document_type.clone(),
             document_date: Some(Timestamp {
-                seconds: entry.document_date.and_hms_opt(0, 0, 0).unwrap().timestamp(),
+                seconds: entry
+                    .document_date
+                    .and_hms_opt(0, 0, 0)
+                    .unwrap()
+                    .timestamp(),
                 nanos: 0,
             }),
             posting_date: Some(Timestamp {
@@ -203,14 +205,18 @@ impl UniversalJournalServiceImpl {
             plant: entry.plant.clone().unwrap_or_default(),
             item_text: entry.item_text.clone().unwrap_or_default(),
             assignment_number: entry.assignment_number.clone().unwrap_or_default(),
-            amount_in_document_currency: Some(crate::infrastructure::grpc::proto::common::v1::MonetaryValue {
-                value: entry.amount_in_document_currency.to_string(),
-                currency_code: entry.document_currency.clone(),
-            }),
-            amount_in_local_currency: Some(crate::infrastructure::grpc::proto::common::v1::MonetaryValue {
-                value: entry.amount_in_local_currency.to_string(),
-                currency_code: entry.local_currency.clone(),
-            }),
+            amount_in_document_currency: Some(
+                crate::infrastructure::grpc::proto::common::v1::MonetaryValue {
+                    value: entry.amount_in_document_currency.to_string(),
+                    currency_code: entry.document_currency.clone(),
+                },
+            ),
+            amount_in_local_currency: Some(
+                crate::infrastructure::grpc::proto::common::v1::MonetaryValue {
+                    value: entry.amount_in_local_currency.to_string(),
+                    currency_code: entry.local_currency.clone(),
+                },
+            ),
             amount_in_group_currency: entry.amount_in_group_currency.map(|amt| {
                 crate::infrastructure::grpc::proto::common::v1::MonetaryValue {
                     value: amt.to_string(),
@@ -276,7 +282,10 @@ impl UniversalJournalServiceImpl {
             reference_line_item: entry.reference_line_item.unwrap_or(0),
             reference_document_type: entry.reference_document_type.clone().unwrap_or_default(),
             transaction_type: entry.transaction_type.clone().unwrap_or_default(),
-            reference_transaction_type: entry.reference_transaction_type.clone().unwrap_or_default(),
+            reference_transaction_type: entry
+                .reference_transaction_type
+                .clone()
+                .unwrap_or_default(),
             reference_key_1: entry.reference_key_1.clone().unwrap_or_default(),
             reference_key_2: entry.reference_key_2.clone().unwrap_or_default(),
             reference_key_3: entry.reference_key_3.clone().unwrap_or_default(),
@@ -383,17 +392,20 @@ impl UniversalJournalService for UniversalJournalServiceImpl {
 
         Ok(Response::new(QueryUniversalJournalResponse {
             entries: proto_entries,
-            pagination: Some(crate::infrastructure::grpc::proto::common::v1::PaginationResponse {
-                total_items: pagination_response.total_count,
-                current_page: pagination_response.page as i32,
-                page_size: pagination_response.page_size as i32,
-                total_pages: pagination_response.total_pages as i32,
-            }),
+            pagination: Some(
+                crate::infrastructure::grpc::proto::common::v1::PaginationResponse {
+                    total_items: pagination_response.total_count,
+                    current_page: pagination_response.page as i32,
+                    page_size: pagination_response.page_size as i32,
+                    total_pages: pagination_response.total_pages as i32,
+                },
+            ),
         }))
     }
 
-    type StreamUniversalJournalStream =
-        tokio_stream::wrappers::ReceiverStream<Result<crate::infrastructure::grpc::proto::uj::v1::UniversalJournalEntry, Status>>;
+    type StreamUniversalJournalStream = tokio_stream::wrappers::ReceiverStream<
+        Result<crate::infrastructure::grpc::proto::uj::v1::UniversalJournalEntry, Status>,
+    >;
 
     async fn stream_universal_journal(
         &self,
@@ -425,13 +437,16 @@ impl UniversalJournalService for UniversalJournalServiceImpl {
             }
         });
 
-        Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(rx)))
+        Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(
+            rx,
+        )))
     }
 
     async fn get_universal_journal_entry(
         &self,
         request: Request<GetUniversalJournalEntryRequest>,
-    ) -> Result<Response<crate::infrastructure::grpc::proto::uj::v1::UniversalJournalEntry>, Status> {
+    ) -> Result<Response<crate::infrastructure::grpc::proto::uj::v1::UniversalJournalEntry>, Status>
+    {
         let req = request.into_inner();
 
         let entry = self
@@ -460,11 +475,7 @@ impl UniversalJournalService for UniversalJournalServiceImpl {
         let filter = self.convert_filter(req.filter);
 
         // 转换聚合维度
-        let dimensions: Vec<String> = req
-            .dimensions
-            .iter()
-            .map(|d| format!("{:?}", d))
-            .collect();
+        let dimensions: Vec<String> = req.dimensions.iter().map(|d| format!("{:?}", d)).collect();
 
         // 转换聚合度量
         let measure = format!("{:?}", req.measure);
@@ -498,8 +509,8 @@ impl UniversalJournalService for UniversalJournalServiceImpl {
 mod tests {
     use super::*;
     use crate::domain::repositories::{
-        AggregationResult, PaginationParams, PaginationResponse, RepositoryError, UniversalJournalFilter,
-        UniversalJournalRepository,
+        AggregationResult, PaginationParams, PaginationResponse, RepositoryError,
+        UniversalJournalFilter, UniversalJournalRepository,
     };
     use async_trait::async_trait;
     use std::sync::Arc;
@@ -550,7 +561,10 @@ mod tests {
             Ok(())
         }
 
-        async fn batch_save(&self, _entries: &[UniversalJournalEntry]) -> Result<(), RepositoryError> {
+        async fn batch_save(
+            &self,
+            _entries: &[UniversalJournalEntry],
+        ) -> Result<(), RepositoryError> {
             Ok(())
         }
     }

@@ -1,6 +1,6 @@
-use sha2::{Sha256, Digest};
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
-use rand::{thread_rng, Rng};
+use rand::{Rng, thread_rng};
+use sha2::{Digest, Sha256};
 
 #[derive(Clone, Default)]
 pub struct CryptoService;
@@ -23,7 +23,7 @@ impl CryptoService {
                 let result = hasher.finalize();
                 let hashed_verifier = URL_SAFE_NO_PAD.encode(result);
                 hashed_verifier == code_challenge
-            }
+            },
             _ => false,
         }
     }

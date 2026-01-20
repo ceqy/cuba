@@ -1,6 +1,6 @@
-use serde::Deserialize;
-use rust_decimal::Decimal;
 use chrono::NaiveDate;
+use rust_decimal::Decimal;
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct PostStockMovementCommand {
@@ -8,7 +8,7 @@ pub struct PostStockMovementCommand {
     pub document_date: NaiveDate,
     pub header_text: Option<String>,
     pub reference_document: Option<String>,
-    
+
     pub items: Vec<StockMovementItemCommand>,
 }
 

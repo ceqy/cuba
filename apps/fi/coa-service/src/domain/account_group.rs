@@ -36,11 +36,7 @@ pub struct AccountGroup {
 
 impl AccountGroup {
     /// 创建新科目组
-    pub fn new(
-        chart_code: String,
-        group_code: String,
-        group_name: String,
-    ) -> Self {
+    pub fn new(chart_code: String, group_code: String, group_name: String) -> Self {
         Self {
             id: Uuid::new_v4(),
             chart_code,

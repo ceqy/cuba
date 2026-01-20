@@ -1,11 +1,11 @@
-use std::sync::Arc;
-use crate::domain::{ProductionOrder, ProductionOperation, ProductionConfirmation};
+use crate::application::commands::{ConfirmOperationCommand, CreateProductionOrderCommand};
+use crate::domain::{ProductionConfirmation, ProductionOperation, ProductionOrder};
 use crate::infrastructure::repository::ProductionOrderRepository;
-use crate::application::commands::{CreateProductionOrderCommand, ConfirmOperationCommand};
 use anyhow::{Result, anyhow};
-use uuid::Uuid;
-use chrono::{Utc, Duration};
+use chrono::{Duration, Utc};
 use rust_decimal::Decimal;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct ProductionHandler {
     repo: Arc<ProductionOrderRepository>,
@@ -52,7 +52,7 @@ impl ProductionHandler {
                     description: Some("Testing".to_string()),
                     confirmed_yield: Decimal::ZERO,
                     status: "REL".to_string(),
-                }
+                },
             ],
         };
 
@@ -61,11 +61,14 @@ impl ProductionHandler {
     }
 
     pub async fn confirm_operation(&self, cmd: ConfirmOperationCommand) -> Result<String> {
-        let order = self.repo.find_by_number(&cmd.order_number).await?
+        let order = self
+            .repo
+            .find_by_number(&cmd.order_number)
+            .await?
             .ok_or_else(|| anyhow!("Order not found"))?;
 
         let conf_number = format!("C{}", Utc::now().timestamp_subsec_micros());
-        
+
         let conf = ProductionConfirmation {
             confirmation_id: Uuid::new_v4(),
             confirmation_number: conf_number.clone(),

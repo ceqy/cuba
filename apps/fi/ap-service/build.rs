@@ -1,6 +1,6 @@
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_dir = std::path::PathBuf::from(std::env::var("OUT_DIR")?);
-    
+
     // Generate File Descriptor Set for Reflection & Envoy
     // Include gl.proto for gRPC client to call GL service
     tonic_prost_build::configure()

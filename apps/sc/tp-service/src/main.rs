@@ -1,11 +1,11 @@
+use std::sync::Arc;
 use tonic::transport::Server;
 use tracing::info;
-use std::sync::Arc;
 
 use tp_service::api::grpc_server::TpServiceImpl;
 use tp_service::api::proto::sc::tp::v1::transportation_planning_service_server::TransportationPlanningServiceServer;
-use tp_service::infrastructure::repository::ShipmentRepository;
 use tp_service::application::handlers::ShipmentHandler;
+use tp_service::infrastructure::repository::ShipmentRepository;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -20,11 +20,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let handler = Arc::new(ShipmentHandler::new(repo.clone()));
     let service = TpServiceImpl::new(handler, repo);
     let reflection_service = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(tp_service::api::proto::sc::tp::v1::FILE_DESCRIPTOR_SET)
+        .register_encoded_file_descriptor_set(
+            tp_service::api::proto::sc::tp::v1::FILE_DESCRIPTOR_SET,
+        )
         .build_v1()?;
     Server::builder()
         .add_service(TransportationPlanningServiceServer::new(service))
         .add_service(reflection_service)
-        .serve(addr).await?;
+        .serve(addr)
+        .await?;
     Ok(())
 }

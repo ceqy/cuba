@@ -1,11 +1,13 @@
-use tonic::{Request, Response, Status};
-use std::sync::Arc;
-use crate::application::commands::{CreateInspectionLotCommand, RecordResultCommand, MakeUsageDecisionCommand};
+use crate::application::commands::{
+    CreateInspectionLotCommand, MakeUsageDecisionCommand, RecordResultCommand,
+};
 use crate::application::handlers::InspectionHandler;
 use crate::infrastructure::repository::InspectionLotRepository;
+use std::sync::Arc;
+use tonic::{Request, Response, Status};
 
-use crate::api::proto::mf::qi::v1 as qi_v1;
 use crate::api::proto::common::v1 as common_v1;
+use crate::api::proto::mf::qi::v1 as qi_v1;
 
 use qi_v1::quality_inspection_service_server::QualityInspectionService;
 use qi_v1::*;
@@ -23,7 +25,6 @@ impl QiServiceImpl {
 
 #[tonic::async_trait]
 impl QualityInspectionService for QiServiceImpl {
-
     async fn create_inspection_lot(
         &self,
         request: Request<CreateInspectionLotRequest>,
@@ -32,13 +33,21 @@ impl QualityInspectionService for QiServiceImpl {
         let cmd = CreateInspectionLotCommand {
             material: req.material,
             plant: req.plant,
-            quantity: req.quantity.unwrap_or_default().value.parse().unwrap_or_default(),
+            quantity: req
+                .quantity
+                .unwrap_or_default()
+                .value
+                .parse()
+                .unwrap_or_default(),
             origin: req.origin,
         };
-        
-        let lot_num = self.handler.create_lot(cmd).await
+
+        let lot_num = self
+            .handler
+            .create_lot(cmd)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
-            
+
         Ok(Response::new(InspectionLotResponse {
             success: true,
             inspection_lot_number: lot_num,
@@ -51,7 +60,10 @@ impl QualityInspectionService for QiServiceImpl {
         request: Request<GetInspectionLotRequest>,
     ) -> Result<Response<InspectionLotDetail>, Status> {
         let req = request.into_inner();
-        let lot = self.repo.find_by_number(&req.inspection_lot_number).await
+        let lot = self
+            .repo
+            .find_by_number(&req.inspection_lot_number)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("Lot not found"))?;
 
@@ -65,14 +77,18 @@ impl QualityInspectionService for QiServiceImpl {
                 unit_code: lot.quantity_unit,
             }),
             creation_date: None, // Simplified
-            characteristics: lot.characteristics.into_iter().map(|c| InspectionCharacteristic {
-                characteristic_number: c.characteristic_number,
-                description: c.description.unwrap_or_default(),
-                inspection_method: c.inspection_method.unwrap_or_default(),
-                result_value: c.result_value.unwrap_or_default(),
-                result_status: c.result_status,
-                unit: "".to_string(),
-            }).collect(),
+            characteristics: lot
+                .characteristics
+                .into_iter()
+                .map(|c| InspectionCharacteristic {
+                    characteristic_number: c.characteristic_number,
+                    description: c.description.unwrap_or_default(),
+                    inspection_method: c.inspection_method.unwrap_or_default(),
+                    result_value: c.result_value.unwrap_or_default(),
+                    result_status: c.result_status,
+                    unit: "".to_string(),
+                })
+                .collect(),
             usage_decision: common_v1::UsageDecision::Unspecified as i32, // Simplified
         }))
     }
@@ -82,14 +98,16 @@ impl QualityInspectionService for QiServiceImpl {
         request: Request<RecordResultsRequest>,
     ) -> Result<Response<RecordResultsResponse>, Status> {
         let req = request.into_inner();
-        
+
         for res in req.results {
             let cmd = RecordResultCommand {
                 lot_number: req.inspection_lot_number.clone(),
                 characteristic_number: res.characteristic_number,
                 value: res.value,
             };
-            self.handler.record_result(cmd).await
+            self.handler
+                .record_result(cmd)
+                .await
                 .map_err(|e| Status::internal(e.to_string()))?;
         }
 
@@ -104,7 +122,7 @@ impl QualityInspectionService for QiServiceImpl {
         request: Request<MakeUsageDecisionRequest>,
     ) -> Result<Response<MakeUsageDecisionResponse>, Status> {
         let req = request.into_inner();
-        
+
         // Map enum int to string? Or just use "A" "R"?
         // Protocol defines UsageDecision enum. We just need to persist it.
         // For MVP, we pass enum int as string or just "A"/"R" based on value.
@@ -121,7 +139,9 @@ impl QualityInspectionService for QiServiceImpl {
             note: req.note,
         };
 
-        self.handler.make_usage_decision(cmd).await
+        self.handler
+            .make_usage_decision(cmd)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
         Ok(Response::new(MakeUsageDecisionResponse {
@@ -131,6 +151,10 @@ impl QualityInspectionService for QiServiceImpl {
     }
 
     // Stubs
-    async fn list_inspection_lots(&self, _r: Request<ListInspectionLotsRequest>) -> Result<Response<ListInspectionLotsResponse>, Status> { Err(Status::unimplemented("")) }
-
+    async fn list_inspection_lots(
+        &self,
+        _r: Request<ListInspectionLotsRequest>,
+    ) -> Result<Response<ListInspectionLotsResponse>, Status> {
+        Err(Status::unimplemented(""))
+    }
 }

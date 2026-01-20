@@ -1,10 +1,10 @@
-use std::sync::Arc;
-use crate::domain::{RFQ, RFQItem, SupplierQuote, QuoteItem};
+use crate::application::commands::{AwardCommand, CreateRFQCommand, SubmitQuoteCommand};
+use crate::domain::{QuoteItem, RFQ, RFQItem, SupplierQuote};
 use crate::infrastructure::repository::SourcingRepository;
-use crate::application::commands::{CreateRFQCommand, SubmitQuoteCommand, AwardCommand};
 use anyhow::Result;
-use uuid::Uuid;
 use chrono::Utc;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct SourcingHandler {
     repo: Arc<SourcingRepository>,
@@ -18,7 +18,7 @@ impl SourcingHandler {
     pub async fn create_rfq(&self, cmd: CreateRFQCommand) -> Result<String> {
         let rfq_id = Uuid::new_v4();
         let rfq_number = format!("RFQ{}", Utc::now().timestamp_subsec_micros());
-        
+
         let rfq = RFQ {
             rfq_id,
             rfq_number: rfq_number.clone(),
@@ -44,7 +44,10 @@ impl SourcingHandler {
     }
 
     pub async fn submit_quote(&self, cmd: SubmitQuoteCommand) -> Result<String> {
-        let rfq = self.repo.find_rfq_by_number(&cmd.rfq_number).await?
+        let rfq = self
+            .repo
+            .find_rfq_by_number(&cmd.rfq_number)
+            .await?
             .ok_or_else(|| anyhow::anyhow!("RFQ not found"))?;
 
         let quote_id = Uuid::new_v4();
@@ -58,16 +61,20 @@ impl SourcingHandler {
             validity_end_date: Some((Utc::now() + chrono::Duration::days(90)).date_naive()),
             status: "SUBMITTED".to_string(),
             created_at: Utc::now(),
-            items: rfq.items.into_iter().map(|item| QuoteItem {
-                quote_item_id: Uuid::new_v4(),
-                quote_id,
-                rfq_item_number: item.item_number,
-                quantity: item.quantity,
-                unit: item.unit,
-                net_price: Some(rust_decimal::Decimal::new(50, 0)),
-                currency: "CNY".to_string(),
-                notes: None,
-            }).collect(),
+            items: rfq
+                .items
+                .into_iter()
+                .map(|item| QuoteItem {
+                    quote_item_id: Uuid::new_v4(),
+                    quote_id,
+                    rfq_item_number: item.item_number,
+                    quantity: item.quantity,
+                    unit: item.unit,
+                    net_price: Some(rust_decimal::Decimal::new(50, 0)),
+                    currency: "CNY".to_string(),
+                    notes: None,
+                })
+                .collect(),
         };
 
         self.repo.save_quote(&quote).await?;

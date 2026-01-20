@@ -1,6 +1,6 @@
 use crate::domain::{UserSession, UserSessionRepository};
-use cuba_core::repository::Repository;
 use async_trait::async_trait;
+use cuba_core::repository::Repository;
 use sqlx::{Pool, Postgres};
 
 pub struct PostgresUserSessionRepository {
@@ -61,7 +61,10 @@ impl Repository<UserSession> for PostgresUserSessionRepository {
 
 #[async_trait]
 impl UserSessionRepository for PostgresUserSessionRepository {
-    async fn find_by_refresh_token(&self, token: &str) -> Result<Option<UserSession>, anyhow::Error> {
+    async fn find_by_refresh_token(
+        &self,
+        token: &str,
+    ) -> Result<Option<UserSession>, anyhow::Error> {
         let row = sqlx::query_as::<_, UserSession>(
             r#"
             SELECT id, user_id, tenant_id, refresh_token, 
@@ -77,12 +80,10 @@ impl UserSessionRepository for PostgresUserSessionRepository {
     }
 
     async fn revoke_by_user_id(&self, user_id: &str) -> Result<(), anyhow::Error> {
-        sqlx::query(
-            "UPDATE user_sessions SET is_revoked = TRUE WHERE user_id = $1",
-        )
-        .bind(user_id)
-        .execute(&self.pool)
-        .await?;
+        sqlx::query("UPDATE user_sessions SET is_revoked = TRUE WHERE user_id = $1")
+            .bind(user_id)
+            .execute(&self.pool)
+            .await?;
         Ok(())
     }
 }

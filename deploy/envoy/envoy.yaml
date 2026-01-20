@@ -157,13 +157,7 @@ static_resources:
                       services:
                         - "iam.auth.v1.AuthService"
                         - "iam.rbac.v1.RBACService"
-                        - "iam.oauth.v1.OAuthService"
                         - "fi.gl.v1.GlJournalEntryService"
-                        - "fi.ap.v1.AccountsReceivablePayableService"
-                        - "fi.ar.v1.AccountsReceivableService"
-                        - "fi.co.v1.ControllingAllocationService"
-                        - "fi.tr.v1.TreasuryService"
-                        - "fi.coa.v1.ChartOfAccountsService"
                       print_options:
                         add_whitespace: true
                         always_print_primitive_fields: true

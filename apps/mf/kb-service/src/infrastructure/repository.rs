@@ -1,6 +1,6 @@
-use sqlx::PgPool;
 use crate::domain::{ControlCycle, KanbanContainer};
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct KanbanRepository {
     pool: PgPool,
@@ -52,7 +52,11 @@ impl KanbanRepository {
         Ok(h)
     }
 
-    pub async fn update_container_status(&self, container_id: uuid::Uuid, new_status: &str) -> Result<()> {
+    pub async fn update_container_status(
+        &self,
+        container_id: uuid::Uuid,
+        new_status: &str,
+    ) -> Result<()> {
         sqlx::query("UPDATE kanban_containers SET status = $1, last_status_change = NOW() WHERE container_id = $2")
             .bind(new_status)
             .bind(container_id)
@@ -60,7 +64,10 @@ impl KanbanRepository {
         Ok(())
     }
 
-    pub async fn list_containers_by_cycle(&self, cycle_id: uuid::Uuid) -> Result<Vec<KanbanContainer>> {
+    pub async fn list_containers_by_cycle(
+        &self,
+        cycle_id: uuid::Uuid,
+    ) -> Result<Vec<KanbanContainer>> {
         let rows = sqlx::query_as::<_, KanbanContainer>("SELECT container_id, container_code, cycle_id, status, last_status_change FROM kanban_containers WHERE cycle_id = $1")
             .bind(cycle_id)
             .fetch_all(&self.pool).await?;

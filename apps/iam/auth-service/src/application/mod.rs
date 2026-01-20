@@ -1,3 +1,3 @@
 pub mod handlers;
 
-pub use handlers::{RegisterUserHandler, LoginUserHandler, RefreshTokenHandler};
+pub use handlers::{LoginUserHandler, RefreshTokenHandler, RegisterUserHandler};

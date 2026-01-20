@@ -1,11 +1,10 @@
-use sqlx::PgPool;
-use crate::domain::{AllocationRun, AllocationSender, AllocationReceiver};
+use crate::domain::{AllocationReceiver, AllocationRun, AllocationSender};
 use anyhow::Result;
+use sqlx::PgPool;
 
 cuba_database::define_repository!(AllocationRepository);
 
 impl AllocationRepository {
-
     pub async fn save_run(&self, run: &AllocationRun) -> Result<()> {
         let mut tx = self.pool.begin().await?;
         sqlx::query(
@@ -60,14 +59,20 @@ impl AllocationRepository {
             "SELECT run_id, controlling_area, fiscal_year, fiscal_period, allocation_cycle, allocation_type, test_run, status, created_at FROM allocation_runs WHERE run_id = $1")
             .bind(run_id)
             .fetch_optional(&self.pool).await?;
-        
+
         if let Some(mut h) = h {
-            let senders = sqlx::query_as::<_, AllocationSender>("SELECT * FROM allocation_senders WHERE run_id = $1")
-                .bind(run_id)
-                .fetch_all(&self.pool).await?;
-            let receivers = sqlx::query_as::<_, AllocationReceiver>("SELECT * FROM allocation_receivers WHERE run_id = $1")
-                .bind(run_id)
-                .fetch_all(&self.pool).await?;
+            let senders = sqlx::query_as::<_, AllocationSender>(
+                "SELECT * FROM allocation_senders WHERE run_id = $1",
+            )
+            .bind(run_id)
+            .fetch_all(&self.pool)
+            .await?;
+            let receivers = sqlx::query_as::<_, AllocationReceiver>(
+                "SELECT * FROM allocation_receivers WHERE run_id = $1",
+            )
+            .bind(run_id)
+            .fetch_all(&self.pool)
+            .await?;
             h.senders = senders;
             h.receivers = receivers;
             Ok(Some(h))

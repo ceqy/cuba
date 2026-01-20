@@ -1,11 +1,11 @@
-use std::sync::Arc;
+use crate::application::commands::RunMrpCommand;
 use crate::domain::PlannedOrder;
 use crate::infrastructure::repository::PlannedOrderRepository;
-use crate::application::commands::RunMrpCommand;
 use anyhow::Result;
-use uuid::Uuid;
-use chrono::{Utc, Duration};
+use chrono::{Duration, Utc};
 use rust_decimal::Decimal;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct RunMrpHandler {
     repo: Arc<PlannedOrderRepository>,
@@ -18,7 +18,7 @@ impl RunMrpHandler {
 
     pub async fn handle(&self, cmd: RunMrpCommand) -> Result<String> {
         let job_id = Uuid::new_v4().to_string();
-        
+
         // MVP: Simulate creating 1 planned order for each material
         for mat in &cmd.materials {
             let plaf = PlannedOrder {

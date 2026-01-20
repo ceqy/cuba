@@ -1,2 +1,2 @@
-pub mod role;
 pub mod permission;
+pub mod role;

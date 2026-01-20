@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
+use cuba_core::domain::{AggregateRoot, Entity};
 use serde::{Deserialize, Serialize};
-use cuba_core::domain::{Entity, AggregateRoot};
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct UserSession {

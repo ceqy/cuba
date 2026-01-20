@@ -1,6 +1,6 @@
-use sqlx::PgPool;
-use crate::domain::{BillOfMaterial, BOMItem};
+use crate::domain::{BOMItem, BillOfMaterial};
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct BOMRepository {
     pool: PgPool,
@@ -13,7 +13,7 @@ impl BOMRepository {
 
     pub async fn sync_bom(&self, bom: &BillOfMaterial) -> Result<()> {
         let mut tx = self.pool.begin().await?;
-        
+
         // Upsert header
         sqlx::query(
             "INSERT INTO bom_headers (bom_id, material, plant, bom_usage, bom_status, base_quantity, alternative_bom, valid_from) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (material, plant, bom_usage, alternative_bom) DO UPDATE SET bom_status = EXCLUDED.bom_status, base_quantity = EXCLUDED.base_quantity")
@@ -30,7 +30,8 @@ impl BOMRepository {
         // Delete old items
         sqlx::query("DELETE FROM bom_items WHERE bom_id = $1")
             .bind(bom.bom_id)
-        .execute(&mut *tx).await?;
+            .execute(&mut *tx)
+            .await?;
 
         for item in &bom.items {
             sqlx::query(
@@ -50,7 +51,12 @@ impl BOMRepository {
         Ok(())
     }
 
-    pub async fn find_by_key(&self, material: &str, plant: &str, usage: &str) -> Result<Option<BillOfMaterial>> {
+    pub async fn find_by_key(
+        &self,
+        material: &str,
+        plant: &str,
+        usage: &str,
+    ) -> Result<Option<BillOfMaterial>> {
         let h = sqlx::query_as::<_, BillOfMaterial>("SELECT bom_id, material, plant, bom_usage, bom_status, base_quantity, alternative_bom, valid_from, created_at FROM bom_headers WHERE material = $1 AND plant = $2 AND bom_usage = $3")
             .bind(material)
             .bind(plant)

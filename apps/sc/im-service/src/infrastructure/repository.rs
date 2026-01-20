@@ -1,7 +1,7 @@
-use sqlx::{PgPool, Postgres, Transaction};
-use crate::domain::{MaterialStock, MaterialDocument};
+use crate::domain::{MaterialDocument, MaterialStock};
 use anyhow::Result;
 use rust_decimal::Decimal;
+use sqlx::{PgPool, Postgres, Transaction};
 
 pub struct InventoryRepository {
     pool: PgPool,
@@ -27,10 +27,11 @@ impl InventoryRepository {
             FROM material_stock
             WHERE material = $1 AND plant = $2
             AND ($3::text IS NULL OR storage_location = $3)
-            "#)
-            .bind(material)
-            .bind(plant)
-            .bind(storage_location)
+            "#,
+        )
+        .bind(material)
+        .bind(plant)
+        .bind(storage_location)
         .fetch_all(&self.pool)
         .await?;
 
@@ -48,16 +49,17 @@ impl InventoryRepository {
                 document_type, reference_document, header_text, created_at
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            "#)
-            .bind(doc.document_id)
-            .bind(&doc.document_number)
-            .bind(doc.fiscal_year)
-            .bind(doc.document_date)
-            .bind(doc.posting_date)
-            .bind(&doc.document_type)
-            .bind(&doc.reference_document)
-            .bind(&doc.header_text)
-            .bind(doc.created_at)
+            "#,
+        )
+        .bind(doc.document_id)
+        .bind(&doc.document_number)
+        .bind(doc.fiscal_year)
+        .bind(doc.document_date)
+        .bind(doc.posting_date)
+        .bind(&doc.document_type)
+        .bind(&doc.reference_document)
+        .bind(&doc.header_text)
+        .bind(doc.created_at)
         .execute(&mut *tx)
         .await?;
 
@@ -70,19 +72,20 @@ impl InventoryRepository {
                     material, plant, storage_location, batch, quantity, unit_of_measure, amount_lc
                 )
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-                "#)
-                .bind(item.item_id)
-                .bind(item.document_id)
-                .bind(item.line_item_number)
-                .bind(&item.movement_type)
-                .bind(&item.debit_credit_indicator)
-                .bind(&item.material)
-                .bind(&item.plant)
-                .bind(&item.storage_location)
-                .bind(item.batch.as_deref().unwrap_or(""))
-                .bind(item.quantity)
-                .bind(&item.unit_of_measure)
-                .bind(item.amount_lc)
+                "#,
+            )
+            .bind(item.item_id)
+            .bind(item.document_id)
+            .bind(item.line_item_number)
+            .bind(&item.movement_type)
+            .bind(&item.debit_credit_indicator)
+            .bind(&item.material)
+            .bind(&item.plant)
+            .bind(&item.storage_location)
+            .bind(item.batch.as_deref().unwrap_or(""))
+            .bind(item.quantity)
+            .bind(&item.unit_of_measure)
+            .bind(item.amount_lc)
             .execute(&mut *tx)
             .await?;
 
@@ -100,7 +103,7 @@ impl InventoryRepository {
         item: &crate::domain::MaterialDocumentItem,
     ) -> Result<()> {
         let batch = item.batch.as_deref().unwrap_or("");
-        
+
         // Simple UPSERT to initialize stock record if missing
         // Note: In real world, we might want to check if material exists in Plant (MARC) first.
         sqlx::query(
@@ -109,21 +112,26 @@ impl InventoryRepository {
                 plant, storage_location, material, batch, base_unit
             ) VALUES ($1, $2, $3, $4, $5)
             ON CONFLICT (plant, storage_location, material, batch) DO NOTHING
-            "#)
-            .bind(&item.plant)
-            .bind(&item.storage_location)
-            .bind(&item.material)
-            .bind(batch)
-            .bind(&item.unit_of_measure)
+            "#,
+        )
+        .bind(&item.plant)
+        .bind(&item.storage_location)
+        .bind(&item.material)
+        .bind(batch)
+        .bind(&item.unit_of_measure)
         .execute(&mut **tx)
         .await?;
-        
+
         // Determine sign based on Debit/Credit (S/H)
         // S = Debit (Stock Increase), H = Credit (Stock Decrease)
-        let sign = if item.debit_credit_indicator == "S" { Decimal::ONE } else { Decimal::NEGATIVE_ONE };
+        let sign = if item.debit_credit_indicator == "S" {
+            Decimal::ONE
+        } else {
+            Decimal::NEGATIVE_ONE
+        };
         let delta = item.quantity * sign;
 
-        // MVP: Only updating Unrestricted Use stock for now. 
+        // MVP: Only updating Unrestricted Use stock for now.
         // Real-world would depend on Movement Type config (Quality, Blocked, etc.)
         sqlx::query(
             r#"
@@ -132,17 +140,18 @@ impl InventoryRepository {
                 last_movement_date = NOW(),
                 updated_at = NOW()
             WHERE plant = $2 AND storage_location = $3 AND material = $4 AND batch = $5
-            "#)
-            .bind(delta)
-            .bind(&item.plant)
-            .bind(&item.storage_location)
-            .bind(&item.material)
-            .bind(batch)
+            "#,
+        )
+        .bind(delta)
+        .bind(&item.plant)
+        .bind(&item.storage_location)
+        .bind(&item.material)
+        .bind(batch)
         .execute(&mut **tx)
         .await?;
 
         // Check for negative stock if not allowed (omitted for MVP, assumed DB constraints or logic)
-        
+
         Ok(())
     }
 }

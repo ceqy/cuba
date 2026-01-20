@@ -16,12 +16,11 @@ impl CoaApplicationService {
     }
 
     /// 创建科目
-    pub async fn create_account(
-        &self,
-        account: GlAccount,
-    ) -> anyhow::Result<String> {
+    pub async fn create_account(&self, account: GlAccount) -> anyhow::Result<String> {
         // 验证科目代码格式
-        account.validate_account_code().map_err(anyhow::Error::msg)?;
+        account
+            .validate_account_code()
+            .map_err(anyhow::Error::msg)?;
 
         // 检查科目是否已存在
         if let Some(_existing) = self
@@ -48,10 +47,7 @@ impl CoaApplicationService {
     }
 
     /// 更新科目
-    pub async fn update_account(
-        &self,
-        account: GlAccount,
-    ) -> anyhow::Result<()> {
+    pub async fn update_account(&self, account: GlAccount) -> anyhow::Result<()> {
         // 检查科目是否存在
         if self
             .repository
@@ -74,7 +70,11 @@ impl CoaApplicationService {
     ) -> anyhow::Result<()> {
         if soft_delete {
             // 软删除：标记为删除状态
-            if let Some(mut account) = self.repository.find_by_code(chart_code, account_code).await? {
+            if let Some(mut account) = self
+                .repository
+                .find_by_code(chart_code, account_code)
+                .await?
+            {
                 account.deactivate();
                 self.repository.update(&account).await?;
             }
@@ -86,10 +86,7 @@ impl CoaApplicationService {
     }
 
     /// 查询科目列表
-    pub async fn list_accounts(
-        &self,
-        chart_code: &str,
-    ) -> anyhow::Result<Vec<GlAccount>> {
+    pub async fn list_accounts(&self, chart_code: &str) -> anyhow::Result<Vec<GlAccount>> {
         self.repository.find_all(chart_code).await
     }
 
@@ -103,10 +100,7 @@ impl CoaApplicationService {
     }
 
     /// 查询可过账科目
-    pub async fn list_postable_accounts(
-        &self,
-        chart_code: &str,
-    ) -> anyhow::Result<Vec<GlAccount>> {
+    pub async fn list_postable_accounts(&self, chart_code: &str) -> anyhow::Result<Vec<GlAccount>> {
         self.repository.find_postable_accounts(chart_code).await
     }
 
@@ -145,7 +139,9 @@ impl CoaApplicationService {
         chart_code: &str,
         parent_account: &str,
     ) -> anyhow::Result<Vec<GlAccount>> {
-        self.repository.find_children(chart_code, parent_account).await
+        self.repository
+            .find_children(chart_code, parent_account)
+            .await
     }
 
     /// 查询科目路径（从根到当前科目的所有祖先）
@@ -154,7 +150,9 @@ impl CoaApplicationService {
         chart_code: &str,
         account_code: &str,
     ) -> anyhow::Result<Vec<GlAccount>> {
-        self.repository.find_ancestors(chart_code, account_code).await
+        self.repository
+            .find_ancestors(chart_code, account_code)
+            .await
     }
 
     /// 批量创建科目
@@ -164,7 +162,9 @@ impl CoaApplicationService {
     ) -> anyhow::Result<Vec<String>> {
         // 验证所有科目代码
         for account in &accounts {
-            account.validate_account_code().map_err(anyhow::Error::msg)?;
+            account
+                .validate_account_code()
+                .map_err(anyhow::Error::msg)?;
         }
         self.repository.batch_create(&accounts).await
     }

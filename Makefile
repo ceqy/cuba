@@ -23,6 +23,7 @@ help:
 	@echo ""
 	@echo "Protobuf:"
 	@echo "  make proto        - 生成 protobuf 代码"
+	@echo "  make openapi      - 生成 OpenAPI 文档"
 	@echo ""
 	@echo "Kubernetes:"
 	@echo "  make k8s-deploy   - 部署到 Kubernetes"
@@ -108,6 +109,9 @@ proto-lint:
 
 proto-breaking:
 	buf breaking --against '.git#branch=main'
+
+openapi:
+	@./scripts/generate-openapi.sh
 
 # ============================================================================
 # Kubernetes

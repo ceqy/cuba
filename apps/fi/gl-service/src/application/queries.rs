@@ -18,7 +18,7 @@ pub struct ListJournalEntriesQuery {
 #[derive(Debug, Deserialize, Clone)]
 pub struct ListSpecialGlEntriesQuery {
     pub company_code: String,
-    pub special_gl_type: String,  // SAP 代码: A, F, V, W
+    pub special_gl_type: String, // SAP 代码: A, F, V, W
     pub status: Option<String>,
     pub page: u64,
     pub page_size: u64,
@@ -29,7 +29,7 @@ pub struct ListSpecialGlEntriesQuery {
 pub struct ListBusinessPartnerSpecialGlQuery {
     pub company_code: String,
     pub business_partner: String,
-    pub special_gl_type: Option<String>,  // 可选，不指定则返回所有特殊总账
+    pub special_gl_type: Option<String>, // 可选，不指定则返回所有特殊总账
     pub status: Option<String>,
     pub page: u64,
     pub page_size: u64,

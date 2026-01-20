@@ -1,6 +1,6 @@
-use sqlx::PgPool;
-use crate::domain::{SensorDataPoint, AssetHealthStatus, PredictiveAlert};
+use crate::domain::{AssetHealthStatus, PredictiveAlert, SensorDataPoint};
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct HealthRepository {
     pool: PgPool,
@@ -32,9 +32,12 @@ impl HealthRepository {
     }
 
     pub async fn find_alerts_by_equipment(&self, equip: &str) -> Result<Vec<PredictiveAlert>> {
-        let rows = sqlx::query_as::<_, PredictiveAlert>("SELECT * FROM predictive_alerts WHERE equipment_number = $1 ORDER BY alert_time DESC")
-            .bind(equip)
-            .fetch_all(&self.pool).await?;
+        let rows = sqlx::query_as::<_, PredictiveAlert>(
+            "SELECT * FROM predictive_alerts WHERE equipment_number = $1 ORDER BY alert_time DESC",
+        )
+        .bind(equip)
+        .fetch_all(&self.pool)
+        .await?;
         Ok(rows)
     }
 }

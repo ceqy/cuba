@@ -1,14 +1,13 @@
 //! PostgreSQL Repository implementations for AP Service
 
+use crate::domain::{Invoice, InvoiceItem, OpenItem, Supplier};
 use sqlx::Row;
 use uuid::Uuid;
-use crate::domain::{Supplier, Invoice, OpenItem, InvoiceItem};
 
 // Define all repositories using the macro
 cuba_database::define_repository!(SupplierRepository, OpenItemRepository, InvoiceRepository);
 
 impl SupplierRepository {
-
     pub async fn find_by_id(&self, id: Uuid) -> Result<Option<Supplier>, sqlx::Error> {
         let row = sqlx::query_as::<_, Supplier>(
             r#"
@@ -17,7 +16,7 @@ impl SupplierRepository {
                    company_code, reconciliation_account, payment_terms, check_double_invoice,
                    purchasing_organization, order_currency, created_at, updated_at
             FROM suppliers WHERE id = $1
-            "#
+            "#,
         )
         .bind(id)
         .fetch_optional(&self.pool)
@@ -26,7 +25,10 @@ impl SupplierRepository {
         Ok(row)
     }
 
-    pub async fn find_by_supplier_id(&self, supplier_id: &str) -> Result<Option<Supplier>, sqlx::Error> {
+    pub async fn find_by_supplier_id(
+        &self,
+        supplier_id: &str,
+    ) -> Result<Option<Supplier>, sqlx::Error> {
         let row = sqlx::query_as::<_, Supplier>(
             r#"
             SELECT id, supplier_id, business_partner_id, name, account_group,
@@ -34,7 +36,7 @@ impl SupplierRepository {
                    company_code, reconciliation_account, payment_terms, check_double_invoice,
                    purchasing_organization, order_currency, created_at, updated_at
             FROM suppliers WHERE supplier_id = $1
-            "#
+            "#,
         )
         .bind(supplier_id)
         .fetch_optional(&self.pool)
@@ -70,7 +72,7 @@ impl SupplierRepository {
                 purchasing_organization = EXCLUDED.purchasing_organization,
                 order_currency = EXCLUDED.order_currency,
                 updated_at = NOW()
-            "#
+            "#,
         )
         .bind(supplier.id)
         .bind(&supplier.supplier_id)
@@ -99,12 +101,11 @@ impl SupplierRepository {
 }
 
 impl OpenItemRepository {
-
     pub async fn list_by_supplier(
         &self,
         supplier_id: Uuid,
         company_code: &str,
-        include_cleared: bool
+        include_cleared: bool,
     ) -> Result<Vec<OpenItem>, sqlx::Error> {
         let query = if include_cleared {
             r#"
@@ -163,7 +164,7 @@ impl OpenItemRepository {
               AND due_date <= $2
               AND payment_block IS NULL
             ORDER BY supplier_id, due_date ASC
-            "#
+            "#,
         )
         .bind(company_code)
         .bind(due_by_date)
@@ -239,7 +240,7 @@ impl OpenItemRepository {
         clearing_date: chrono::NaiveDate,
     ) -> Result<i64, sqlx::Error> {
         let mut query_builder = sqlx::QueryBuilder::new(
-            "UPDATE open_items SET is_cleared = true, open_amount = 0, clearing_document = "
+            "UPDATE open_items SET is_cleared = true, open_amount = 0, clearing_document = ",
         );
         query_builder.push_bind(clearing_document);
         query_builder.push(", clearing_date = ");
@@ -287,7 +288,6 @@ impl OpenItemRepository {
 }
 
 impl InvoiceRepository {
-
     pub async fn find_by_id(&self, id: Uuid) -> Result<Option<Invoice>, sqlx::Error> {
         // Fetch header
         let invoice = sqlx::query_as::<_, Invoice>(
@@ -299,7 +299,7 @@ impl InvoiceRepository {
                    transaction_type, reference_transaction_type,
                    status, clearing_document, clearing_date, created_at, updated_at
             FROM invoices WHERE id = $1
-            "#
+            "#,
         )
         .bind(id)
         .fetch_optional(&self.pool)
@@ -314,7 +314,7 @@ impl InvoiceRepository {
                        po_item_number, goods_receipt, gr_item_number, quantity, unit_of_measure
                 FROM invoice_items WHERE invoice_id = $1
                 ORDER BY line_item_number ASC
-                "#
+                "#,
             )
             .bind(id)
             .fetch_all(&self.pool)
@@ -345,7 +345,7 @@ impl InvoiceRepository {
                 $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26
             ) 
             ON CONFLICT (document_number, company_code, fiscal_year) DO NOTHING
-            "#
+            "#,
         )
         .bind(invoice.id)
         .bind(&invoice.document_number)
@@ -389,7 +389,7 @@ impl InvoiceRepository {
                     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
                 )
                 ON CONFLICT (invoice_id, line_item_number) DO NOTHING
-                "#
+                "#,
             )
             .bind(item.id)
             .bind(item.invoice_id)
@@ -432,7 +432,7 @@ impl InvoiceRepository {
                    transaction_type, reference_transaction_type,
                    status, clearing_document, clearing_date, created_at, updated_at
             FROM invoices WHERE company_code =
-            "#
+            "#,
         );
         query_builder.push_bind(company_code);
 
@@ -461,7 +461,7 @@ impl InvoiceRepository {
                        po_item_number, goods_receipt, gr_item_number, quantity, unit_of_measure
                 FROM invoice_items WHERE invoice_id = $1
                 ORDER BY line_item_number ASC
-                "#
+                "#,
             )
             .bind(invoice.id)
             .fetch_all(&self.pool)
@@ -474,10 +474,13 @@ impl InvoiceRepository {
         Ok(result)
     }
 
-    pub async fn count(&self, company_code: &str, status: Option<&str>) -> Result<i64, sqlx::Error> {
-        let mut query_builder = sqlx::QueryBuilder::new(
-            "SELECT COUNT(*) as count FROM invoices WHERE company_code = "
-        );
+    pub async fn count(
+        &self,
+        company_code: &str,
+        status: Option<&str>,
+    ) -> Result<i64, sqlx::Error> {
+        let mut query_builder =
+            sqlx::QueryBuilder::new("SELECT COUNT(*) as count FROM invoices WHERE company_code = ");
         query_builder.push_bind(company_code);
 
         if let Some(s) = status {
@@ -492,17 +495,13 @@ impl InvoiceRepository {
         Ok(count)
     }
 
-    pub async fn update_status(
-        &self,
-        id: Uuid,
-        status: &str,
-    ) -> Result<(), sqlx::Error> {
+    pub async fn update_status(&self, id: Uuid, status: &str) -> Result<(), sqlx::Error> {
         sqlx::query(
             r#"
             UPDATE invoices
             SET status = $2, updated_at = NOW()
             WHERE id = $1
-            "#
+            "#,
         )
         .bind(id)
         .bind(status)

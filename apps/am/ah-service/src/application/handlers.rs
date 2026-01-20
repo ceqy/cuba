@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use crate::application::commands::IngestDataCommand;
 use crate::domain::SensorDataPoint;
 use crate::infrastructure::repository::HealthRepository;
-use crate::application::commands::IngestDataCommand;
 use anyhow::Result;
-use uuid::Uuid;
 use chrono::Utc;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct HealthHandler {
     repo: Arc<HealthRepository>,

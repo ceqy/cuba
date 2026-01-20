@@ -1,13 +1,16 @@
-use tonic::{Request, Response, Status};
-use std::sync::Arc;
-use std::str::FromStr;
 use chrono::Datelike;
+use std::str::FromStr;
+use std::sync::Arc;
+use tonic::{Request, Response, Status};
 
-use crate::application::commands::{PostCustomerCommand, ListOpenItemsQuery};
-use crate::application::handlers::{PostCustomerHandler, ListOpenItemsHandler, PostSalesInvoiceHandler, ClearOpenItemsHandler, PartialClearHandler};
+use crate::application::commands::{ListOpenItemsQuery, PostCustomerCommand};
+use crate::application::handlers::{
+    ClearOpenItemsHandler, ListOpenItemsHandler, PartialClearHandler, PostCustomerHandler,
+    PostSalesInvoiceHandler,
+};
 
-use crate::api::proto::fi::ap::v1 as ap_v1;
 use crate::api::proto::common::v1 as common_v1;
+use crate::api::proto::fi::ap::v1 as ap_v1;
 
 use ap_v1::accounts_receivable_payable_service_server::AccountsReceivablePayableService;
 use ap_v1::*;
@@ -58,7 +61,7 @@ impl AccountsReceivablePayableService for ArServiceImpl {
         request: Request<CustomerDetails>,
     ) -> Result<Response<CustomerDetails>, Status> {
         let req = request.into_inner();
-        
+
         let (street, city, postal_code, country) = if let Some(addr) = &req.address {
             (
                 Some(addr.street.clone()),
@@ -69,7 +72,7 @@ impl AccountsReceivablePayableService for ArServiceImpl {
         } else {
             (None, None, None, None)
         };
-        
+
         let cmd = PostCustomerCommand {
             customer_id: req.customer_id,
             business_partner_id: Some(req.business_partner_id),
@@ -83,10 +86,13 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             reconciliation_account: req.reconciliation_account,
             payment_terms: Some(req.payment_terms),
             sales_organization: None, // Not in proto
-            order_currency: None, // Not in proto
+            order_currency: None,     // Not in proto
         };
 
-        let customer = self.post_customer_handler.handle(cmd).await
+        let customer = self
+            .post_customer_handler
+            .handle(cmd)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
         Ok(Response::new(CustomerDetails {
@@ -96,7 +102,7 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             account_group: customer.account_group,
             company_code: customer.company_code,
             reconciliation_account: customer.reconciliation_account,
-            ..Default::default() 
+            ..Default::default()
         }))
     }
 
@@ -111,16 +117,15 @@ impl AccountsReceivablePayableService for ArServiceImpl {
         &self,
         _request: Request<GetPartnerDetailsRequest>,
     ) -> Result<Response<GetPartnerDetailsResponse>, Status> {
-         Err(Status::unimplemented("Not implemented"))
+        Err(Status::unimplemented("Not implemented"))
     }
 
     async fn batch_get_partner_details(
         &self,
         _request: Request<BatchGetPartnerDetailsRequest>,
     ) -> Result<Response<BatchGetPartnerDetailsResponse>, Status> {
-         Err(Status::unimplemented("Not implemented"))
+        Err(Status::unimplemented("Not implemented"))
     }
-
 
     // ----------------------------------------------------------------
     // Open Items
@@ -134,13 +139,15 @@ impl AccountsReceivablePayableService for ArServiceImpl {
 
         // AR Service only handles Customer open items. SAP "D" = Customer (Debitor)
         if req.account_type != "D" {
-             return Err(Status::invalid_argument("AR Service requires Account Type 'D' (Customer)"));
+            return Err(Status::invalid_argument(
+                "AR Service requires Account Type 'D' (Customer)",
+            ));
         }
 
         if req.business_partner_id.is_empty() {
-             return Err(Status::invalid_argument("Business Partner ID required"));
+            return Err(Status::invalid_argument("Business Partner ID required"));
         }
-        
+
         let query = ListOpenItemsQuery {
             // In MVP we assume BP ID = Customer ID for simplicity, or we'd query a mapping
             customer_id: req.business_partner_id,
@@ -150,11 +157,15 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             page_token: None,
         };
 
-        let items = self.list_open_items_handler.handle(query).await
-             .map_err(|e| Status::internal(e.to_string()))?;
+        let items = self
+            .list_open_items_handler
+            .handle(query)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
 
-        let proto_items = items.into_iter().map(|item| {
-            OpenItem {
+        let proto_items = items
+            .into_iter()
+            .map(|item| OpenItem {
                 document_reference: Some(common_v1::SystemDocumentReference {
                     document_number: item.document_number,
                     fiscal_year: item.fiscal_year,
@@ -164,16 +175,26 @@ impl AccountsReceivablePayableService for ArServiceImpl {
                 }),
                 line_item_number: item.line_item_number,
                 posting_date: Some(prost_types::Timestamp {
-                    seconds: item.posting_date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
+                    seconds: item
+                        .posting_date
+                        .and_hms_opt(0, 0, 0)
+                        .unwrap()
+                        .and_utc()
+                        .timestamp(),
                     nanos: 0,
                 }),
                 due_date: Some(prost_types::Timestamp {
-                    seconds: item.due_date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
+                    seconds: item
+                        .due_date
+                        .and_hms_opt(0, 0, 0)
+                        .unwrap()
+                        .and_utc()
+                        .timestamp(),
                     nanos: 0,
                 }),
                 amount: Some(to_proto_money(item.original_amount, &item.currency)),
                 open_amount: Some(to_proto_money(item.open_amount, &item.currency)),
-                gl_account: "".to_string(), 
+                gl_account: "".to_string(),
                 payment_block: item.payment_block.unwrap_or_default(),
                 reference_document: item.reference_document.unwrap_or_default(),
                 item_text: item.item_text.unwrap_or_default(),
@@ -190,8 +211,8 @@ impl AccountsReceivablePayableService for ArServiceImpl {
                 transaction_type: item.transaction_type.unwrap_or_default(),
                 reference_transaction_type: item.reference_transaction_type.unwrap_or_default(),
                 ledger: item.ledger,
-            }
-        }).collect();
+            })
+            .collect();
 
         Ok(Response::new(ListOpenItemsResponse {
             items: proto_items,
@@ -202,7 +223,10 @@ impl AccountsReceivablePayableService for ArServiceImpl {
     // ----------------------------------------------------------------
     // Stub Implementations (Same as AP Service)
     // ----------------------------------------------------------------
-    async fn get_account_balance(&self, request: Request<GetAccountBalanceRequest>) -> Result<Response<GetAccountBalanceResponse>, Status> {
+    async fn get_account_balance(
+        &self,
+        request: Request<GetAccountBalanceRequest>,
+    ) -> Result<Response<GetAccountBalanceResponse>, Status> {
         let req = request.into_inner();
 
         // List all open items for the customer
@@ -214,12 +238,18 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             page_token: None,
         };
 
-        let items = self.list_open_items_handler.handle(query).await
+        let items = self
+            .list_open_items_handler
+            .handle(query)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
         // Calculate total balance
         let mut total_balance = rust_decimal::Decimal::ZERO;
-        let currency = items.first().map(|i| i.currency.clone()).unwrap_or_else(|| "CNY".to_string());
+        let currency = items
+            .first()
+            .map(|i| i.currency.clone())
+            .unwrap_or_else(|| "CNY".to_string());
 
         for item in &items {
             total_balance += item.open_amount;
@@ -230,7 +260,10 @@ impl AccountsReceivablePayableService for ArServiceImpl {
         }))
     }
 
-    async fn get_aging_analysis(&self, request: Request<GetAgingAnalysisRequest>) -> Result<Response<GetAgingAnalysisResponse>, Status> {
+    async fn get_aging_analysis(
+        &self,
+        request: Request<GetAgingAnalysisRequest>,
+    ) -> Result<Response<GetAgingAnalysisResponse>, Status> {
         let req = request.into_inner();
 
         // List all open items
@@ -242,7 +275,10 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             page_token: None,
         };
 
-        let items = self.list_open_items_handler.handle(query).await
+        let items = self
+            .list_open_items_handler
+            .handle(query)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
         // Calculate aging buckets
@@ -269,7 +305,10 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             }
         }
 
-        let currency = items.first().map(|i| i.currency.clone()).unwrap_or_else(|| "CNY".to_string());
+        let currency = items
+            .first()
+            .map(|i| i.currency.clone())
+            .unwrap_or_else(|| "CNY".to_string());
         let total = current + days_1_30 + days_31_60 + days_61_90 + days_over_90;
 
         Ok(Response::new(GetAgingAnalysisResponse {
@@ -309,8 +348,13 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             }),
         }))
     }
-    async fn post_invoice(&self, _r: Request<PostInvoiceRequest>) -> Result<Response<PostInvoiceResponse>, Status> { Err(Status::unimplemented("Handled by AP Service")) }
-    
+    async fn post_invoice(
+        &self,
+        _r: Request<PostInvoiceRequest>,
+    ) -> Result<Response<PostInvoiceResponse>, Status> {
+        Err(Status::unimplemented("Handled by AP Service"))
+    }
+
     async fn post_sales_invoice(
         &self,
         request: Request<PostSalesInvoiceRequest>,
@@ -319,7 +363,9 @@ impl AccountsReceivablePayableService for ArServiceImpl {
 
         // Default dates if not provided by Proto
         let now = chrono::Utc::now().date_naive();
-        let currency = req.items.first()
+        let currency = req
+            .items
+            .first()
             .and_then(|i| i.amount.as_ref())
             .map(|a| a.currency_code.clone())
             .unwrap_or_else(|| "CNY".to_string());
@@ -332,20 +378,38 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             currency,
             reference_document: None,
             header_text: None,
-            items: req.items.into_iter().map(|item| {
-                crate::application::commands::SalesInvoiceItemCommand {
-                    gl_account: item.gl_account,
-                    debit_credit: item.debit_credit_indicator,
-                    amount: rust_decimal::Decimal::from_str(&item.amount.unwrap_or_default().value).unwrap_or_default(),
-                    cost_center: if item.cost_center.is_empty() { None } else { Some(item.cost_center) },
-                    item_text: if item.item_text.is_empty() { None } else { Some(item.item_text) },
-                }
-            }).collect(),
-            ledger: None,           // 使用默认主分类账 "0L"
-            ledger_type: None,      // 使用默认类型
+            items: req
+                .items
+                .into_iter()
+                .map(
+                    |item| crate::application::commands::SalesInvoiceItemCommand {
+                        gl_account: item.gl_account,
+                        debit_credit: item.debit_credit_indicator,
+                        amount: rust_decimal::Decimal::from_str(
+                            &item.amount.unwrap_or_default().value,
+                        )
+                        .unwrap_or_default(),
+                        cost_center: if item.cost_center.is_empty() {
+                            None
+                        } else {
+                            Some(item.cost_center)
+                        },
+                        item_text: if item.item_text.is_empty() {
+                            None
+                        } else {
+                            Some(item.item_text)
+                        },
+                    },
+                )
+                .collect(),
+            ledger: None,      // 使用默认主分类账 "0L"
+            ledger_type: None, // 使用默认类型
         };
 
-        let invoice = self.post_sales_invoice_handler.handle(cmd).await
+        let invoice = self
+            .post_sales_invoice_handler
+            .handle(cmd)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
         Ok(Response::new(PostSalesInvoiceResponse {
@@ -358,10 +422,14 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             }),
         }))
     }
-    async fn reverse_document(&self, request: Request<ReverseDocumentRequest>) -> Result<Response<ReverseDocumentResponse>, Status> {
+    async fn reverse_document(
+        &self,
+        request: Request<ReverseDocumentRequest>,
+    ) -> Result<Response<ReverseDocumentResponse>, Status> {
         let req = request.into_inner();
 
-        let _doc_ref = req.document_to_reverse
+        let _doc_ref = req
+            .document_to_reverse
             .ok_or_else(|| Status::invalid_argument("Missing document reference"))?;
 
         // For MVP: mark document as reversed
@@ -372,12 +440,18 @@ impl AccountsReceivablePayableService for ArServiceImpl {
         // 4. Update original invoice status to REVERSED
 
         // Simplified implementation - just acknowledge the request
-        Ok(Response::new(ReverseDocumentResponse {
-            success: true,
-        }))
+        Ok(Response::new(ReverseDocumentResponse { success: true }))
     }
-    async fn verify_invoice(&self, _r: Request<VerifyInvoiceRequest>) -> Result<Response<VerifyInvoiceResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn generate_statement(&self, request: Request<GenerateStatementRequest>) -> Result<Response<GenerateStatementResponse>, Status> {
+    async fn verify_invoice(
+        &self,
+        _r: Request<VerifyInvoiceRequest>,
+    ) -> Result<Response<VerifyInvoiceResponse>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn generate_statement(
+        &self,
+        request: Request<GenerateStatementRequest>,
+    ) -> Result<Response<GenerateStatementResponse>, Status> {
         let req = request.into_inner();
 
         // Get all open items for the customer (both cleared and uncleared)
@@ -389,7 +463,10 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             page_token: None,
         };
 
-        let items = self.list_open_items_handler.handle(query).await
+        let items = self
+            .list_open_items_handler
+            .handle(query)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
         // Sort by posting date
@@ -407,11 +484,18 @@ impl AccountsReceivablePayableService for ArServiceImpl {
 
             statement_items.push(ap_v1::StatementItem {
                 posting_date: Some(prost_types::Timestamp {
-                    seconds: item.posting_date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp(),
+                    seconds: item
+                        .posting_date
+                        .and_hms_opt(0, 0, 0)
+                        .unwrap()
+                        .and_utc()
+                        .timestamp(),
                     nanos: 0,
                 }),
                 document_type_desc: item.doc_type.clone(),
-                reference: item.reference_document.unwrap_or_else(|| item.document_number.clone()),
+                reference: item
+                    .reference_document
+                    .unwrap_or_else(|| item.document_number.clone()),
                 amount: Some(common_v1::MonetaryValue {
                     value: item.original_amount.to_string(),
                     currency_code: currency.clone(),
@@ -431,7 +515,10 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             }),
         }))
     }
-    async fn get_dunning_history(&self, request: Request<GetDunningHistoryRequest>) -> Result<Response<GetDunningHistoryResponse>, Status> {
+    async fn get_dunning_history(
+        &self,
+        request: Request<GetDunningHistoryRequest>,
+    ) -> Result<Response<GetDunningHistoryResponse>, Status> {
         let _req = request.into_inner();
 
         // For MVP: return mock dunning history for AR
@@ -440,26 +527,25 @@ impl AccountsReceivablePayableService for ArServiceImpl {
         // 2. Return dunning history with dunning levels and dates
         // 3. Support multiple dunning runs
 
-        let history = vec![
-            ap_v1::DunningRecord {
-                dunning_date: Some(prost_types::Timestamp {
-                    seconds: chrono::Utc::now().timestamp() - 30 * 86400,
-                    nanos: 0,
-                }),
-                dunning_level: 1,
-                dunning_amount: Some(common_v1::MonetaryValue {
-                    value: "10000.00".to_string(),
-                    currency_code: "CNY".to_string(),
-                }),
-                dunning_text: "First dunning notice for customer".to_string(),
-            },
-        ];
+        let history = vec![ap_v1::DunningRecord {
+            dunning_date: Some(prost_types::Timestamp {
+                seconds: chrono::Utc::now().timestamp() - 30 * 86400,
+                nanos: 0,
+            }),
+            dunning_level: 1,
+            dunning_amount: Some(common_v1::MonetaryValue {
+                value: "10000.00".to_string(),
+                currency_code: "CNY".to_string(),
+            }),
+            dunning_text: "First dunning notice for customer".to_string(),
+        }];
 
-        Ok(Response::new(GetDunningHistoryResponse {
-            history,
-        }))
+        Ok(Response::new(GetDunningHistoryResponse { history }))
     }
-    async fn trigger_dunning(&self, request: Request<TriggerDunningRequest>) -> Result<Response<TriggerDunningResponse>, Status> {
+    async fn trigger_dunning(
+        &self,
+        request: Request<TriggerDunningRequest>,
+    ) -> Result<Response<TriggerDunningResponse>, Status> {
         let _req = request.into_inner();
 
         // For MVP: acknowledge the dunning trigger for AR
@@ -469,11 +555,12 @@ impl AccountsReceivablePayableService for ArServiceImpl {
         // 3. Create dunning documents
         // 4. Send notifications to customers
 
-        Ok(Response::new(TriggerDunningResponse {
-            success: true,
-        }))
+        Ok(Response::new(TriggerDunningResponse { success: true }))
     }
-    async fn get_clearing_proposal(&self, request: Request<GetClearingProposalRequest>) -> Result<Response<GetClearingProposalResponse>, Status> {
+    async fn get_clearing_proposal(
+        &self,
+        request: Request<GetClearingProposalRequest>,
+    ) -> Result<Response<GetClearingProposalResponse>, Status> {
         let req = request.into_inner();
 
         // Get all open items for the customer
@@ -485,7 +572,10 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             page_token: None,
         };
 
-        let items = self.list_open_items_handler.handle(query).await
+        let items = self
+            .list_open_items_handler
+            .handle(query)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
 
         // Separate debit and credit items
@@ -542,11 +632,12 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             }
         }
 
-        Ok(Response::new(GetClearingProposalResponse {
-            proposals,
-        }))
+        Ok(Response::new(GetClearingProposalResponse { proposals }))
     }
-    async fn execute_clearing_proposal(&self, request: Request<ExecuteClearingProposalRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> {
+    async fn execute_clearing_proposal(
+        &self,
+        request: Request<ExecuteClearingProposalRequest>,
+    ) -> Result<Response<ClearOpenItemsResponse>, Status> {
         let _req = request.into_inner();
 
         // For MVP: acknowledge the request
@@ -561,7 +652,10 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             clearing_document: None,
         }))
     }
-    async fn clear_open_items(&self, request: Request<ClearOpenItemsRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> {
+    async fn clear_open_items(
+        &self,
+        request: Request<ClearOpenItemsRequest>,
+    ) -> Result<Response<ClearOpenItemsResponse>, Status> {
         let _req = request.into_inner();
 
         // Simplified stub - full implementation requires proper ID extraction
@@ -570,7 +664,10 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             clearing_document: None,
         }))
     }
-    async fn partial_clear_items(&self, request: Request<PartialClearItemsRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> {
+    async fn partial_clear_items(
+        &self,
+        request: Request<PartialClearItemsRequest>,
+    ) -> Result<Response<ClearOpenItemsResponse>, Status> {
         let _req = request.into_inner();
 
         // Simplified stub - full implementation requires item lookup
@@ -579,14 +676,20 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             clearing_document: None,
         }))
     }
-    async fn net_clearing(&self, _r: Request<NetClearingRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> {
+    async fn net_clearing(
+        &self,
+        _r: Request<NetClearingRequest>,
+    ) -> Result<Response<ClearOpenItemsResponse>, Status> {
         // For MVP: simplified stub
         Ok(Response::new(ClearOpenItemsResponse {
             success: true,
             clearing_document: None,
         }))
     }
-    async fn check_credit_limit(&self, request: Request<CheckCreditLimitRequest>) -> Result<Response<CheckCreditLimitResponse>, Status> {
+    async fn check_credit_limit(
+        &self,
+        request: Request<CheckCreditLimitRequest>,
+    ) -> Result<Response<CheckCreditLimitResponse>, Status> {
         let req = request.into_inner();
 
         // For MVP: simplified credit check for customers
@@ -622,7 +725,10 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             }),
         }))
     }
-    async fn update_credit_exposure(&self, request: Request<UpdateCreditExposureRequest>) -> Result<Response<UpdateCreditExposureResponse>, Status> {
+    async fn update_credit_exposure(
+        &self,
+        request: Request<UpdateCreditExposureRequest>,
+    ) -> Result<Response<UpdateCreditExposureResponse>, Status> {
         let _req = request.into_inner();
 
         // For MVP: acknowledge the credit update
@@ -630,9 +736,22 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             success: true,
         }))
     }
-    async fn generate_payment_proposal(&self, _r: Request<GeneratePaymentProposalRequest>) -> Result<Response<GeneratePaymentProposalResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn execute_payment_proposal(&self, _r: Request<ExecutePaymentProposalRequest>) -> Result<Response<PaymentExecutionResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn request_down_payment(&self, request: Request<DownPaymentRequest>) -> Result<Response<DownPaymentResponse>, Status> {
+    async fn generate_payment_proposal(
+        &self,
+        _r: Request<GeneratePaymentProposalRequest>,
+    ) -> Result<Response<GeneratePaymentProposalResponse>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn execute_payment_proposal(
+        &self,
+        _r: Request<ExecutePaymentProposalRequest>,
+    ) -> Result<Response<PaymentExecutionResponse>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn request_down_payment(
+        &self,
+        request: Request<DownPaymentRequest>,
+    ) -> Result<Response<DownPaymentResponse>, Status> {
         let req = request.into_inner();
 
         // For MVP: create a down payment advance for customers (预收款)
@@ -662,9 +781,15 @@ impl AccountsReceivablePayableService for ArServiceImpl {
         //     },
         // ];
 
-        let dp_doc_number = format!("DPA-{}-{}",
+        let dp_doc_number = format!(
+            "DPA-{}-{}",
             chrono::Utc::now().format("%Y%m%d"),
-            uuid::Uuid::new_v4().simple().to_string().chars().take(6).collect::<String>()
+            uuid::Uuid::new_v4()
+                .simple()
+                .to_string()
+                .chars()
+                .take(6)
+                .collect::<String>()
         );
 
         Ok(Response::new(DownPaymentResponse {
@@ -677,7 +802,10 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             }),
         }))
     }
-    async fn clear_down_payment(&self, request: Request<DownPaymentClearingRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> {
+    async fn clear_down_payment(
+        &self,
+        request: Request<DownPaymentClearingRequest>,
+    ) -> Result<Response<ClearOpenItemsResponse>, Status> {
         let _req = request.into_inner();
 
         // For MVP: acknowledge down payment clearing for customers
@@ -692,7 +820,10 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             clearing_document: None,
         }))
     }
-    async fn list_attachments(&self, request: Request<ListAttachmentsRequest>) -> Result<Response<ListAttachmentsResponse>, Status> {
+    async fn list_attachments(
+        &self,
+        request: Request<ListAttachmentsRequest>,
+    ) -> Result<Response<ListAttachmentsResponse>, Status> {
         let req = request.into_inner();
 
         // For MVP: return mock attachments for AR documents
@@ -721,12 +852,18 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             },
         ];
 
-        Ok(Response::new(ListAttachmentsResponse {
-            attachments,
-        }))
+        Ok(Response::new(ListAttachmentsResponse { attachments }))
     }
-    async fn upload_attachment(&self, _r: Request<UploadAttachmentRequest>) -> Result<Response<OperationResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn import_bank_statement(&self, request: Request<ImportBankStatementRequest>) -> Result<Response<ImportBankStatementResponse>, Status> {
+    async fn upload_attachment(
+        &self,
+        _r: Request<UploadAttachmentRequest>,
+    ) -> Result<Response<OperationResponse>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn import_bank_statement(
+        &self,
+        request: Request<ImportBankStatementRequest>,
+    ) -> Result<Response<ImportBankStatementResponse>, Status> {
         let _req = request.into_inner();
 
         // For MVP: acknowledge bank statement import for AR
@@ -736,14 +873,20 @@ impl AccountsReceivablePayableService for ArServiceImpl {
         // 3. Match customer payments
         // 4. Apply cash to customer invoices
 
-        Ok(Response::new(ImportBankStatementResponse {
-            success: true,
-        }))
+        Ok(Response::new(ImportBankStatementResponse { success: true }))
     }
-    async fn process_lockbox(&self, _r: Request<ProcessLockboxRequest>) -> Result<Response<ProcessLockboxResponse>, Status> {
-        Err(Status::unimplemented("Lockbox processing requires image OCR"))
+    async fn process_lockbox(
+        &self,
+        _r: Request<ProcessLockboxRequest>,
+    ) -> Result<Response<ProcessLockboxResponse>, Status> {
+        Err(Status::unimplemented(
+            "Lockbox processing requires image OCR",
+        ))
     }
-    async fn apply_cash(&self, request: Request<ApplyCashRequest>) -> Result<Response<ClearOpenItemsResponse>, Status> {
+    async fn apply_cash(
+        &self,
+        request: Request<ApplyCashRequest>,
+    ) -> Result<Response<ClearOpenItemsResponse>, Status> {
         let _req = request.into_inner();
 
         // For MVP: acknowledge cash application for AR
@@ -758,7 +901,10 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             clearing_document: None,
         }))
     }
-    async fn get_tolerance_groups(&self, _r: Request<GetToleranceGroupsRequest>) -> Result<Response<GetToleranceGroupsResponse>, Status> {
+    async fn get_tolerance_groups(
+        &self,
+        _r: Request<GetToleranceGroupsRequest>,
+    ) -> Result<Response<GetToleranceGroupsResponse>, Status> {
         // For MVP: return mock tolerance groups for AR
         let groups = vec![
             ap_v1::ToleranceGroup {
@@ -772,11 +918,12 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             },
         ];
 
-        Ok(Response::new(GetToleranceGroupsResponse {
-            groups,
-        }))
+        Ok(Response::new(GetToleranceGroupsResponse { groups }))
     }
-    async fn perform_compliance_check(&self, _r: Request<PerformComplianceCheckRequest>) -> Result<Response<PerformComplianceCheckResponse>, Status> {
+    async fn perform_compliance_check(
+        &self,
+        _r: Request<PerformComplianceCheckRequest>,
+    ) -> Result<Response<PerformComplianceCheckResponse>, Status> {
         // For MVP: return mock compliance check for AR
         // Full implementation would check customer credit, business reputation, etc.
 
@@ -784,16 +931,27 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             passed: true,
         }))
     }
-    async fn export_report(&self, _r: Request<ExportReportRequest>) -> Result<Response<ExportReportResponse>, Status> {
+    async fn export_report(
+        &self,
+        _r: Request<ExportReportRequest>,
+    ) -> Result<Response<ExportReportResponse>, Status> {
         // For MVP: mock report export for AR
         Ok(Response::new(ExportReportResponse {
             download_url: "s3://reports/ar-aging-2024-01-18.pdf".to_string(),
         }))
     }
-    async fn subscribe_to_events(&self, _r: Request<SubscribeToEventsRequest>) -> Result<Response<SubscribeToEventsResponse>, Status> {
-        Err(Status::unimplemented("Event subscription requires message queue infrastructure"))
+    async fn subscribe_to_events(
+        &self,
+        _r: Request<SubscribeToEventsRequest>,
+    ) -> Result<Response<SubscribeToEventsResponse>, Status> {
+        Err(Status::unimplemented(
+            "Event subscription requires message queue infrastructure",
+        ))
     }
-    async fn list_event_types(&self, _r: Request<ListEventTypesRequest>) -> Result<Response<ListEventTypesResponse>, Status> {
+    async fn list_event_types(
+        &self,
+        _r: Request<ListEventTypesRequest>,
+    ) -> Result<Response<ListEventTypesResponse>, Status> {
         // For MVP: return available event types for AR
         let types = vec![
             ap_v1::EventType {
@@ -814,8 +972,6 @@ impl AccountsReceivablePayableService for ArServiceImpl {
             },
         ];
 
-        Ok(Response::new(ListEventTypesResponse {
-            types,
-        }))
+        Ok(Response::new(ListEventTypesResponse { types }))
     }
 }

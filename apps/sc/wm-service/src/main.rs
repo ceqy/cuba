@@ -1,11 +1,11 @@
+use std::sync::Arc;
 use tonic::transport::Server;
 use tracing::info;
-use std::sync::Arc;
 
 use wm_service::api::grpc_server::WmServiceImpl;
 use wm_service::api::proto::sc::wm::v1::warehouse_operations_service_server::WarehouseOperationsServiceServer;
-use wm_service::infrastructure::repository::TransferOrderRepository;
 use wm_service::application::handlers::WarehouseHandler;
+use wm_service::infrastructure::repository::TransferOrderRepository;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -16,17 +16,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let migrator = sqlx::migrate!("./migrations");
     cuba_database::run_migrations(&pool, &migrator).await?;
-    
+
     let repo = Arc::new(TransferOrderRepository::new(pool.clone()));
     let handler = Arc::new(WarehouseHandler::new(repo.clone()));
     let service = WmServiceImpl::new(handler, repo);
-    
+
     let reflection_service = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(wm_service::api::proto::sc::wm::v1::FILE_DESCRIPTOR_SET)
+        .register_encoded_file_descriptor_set(
+            wm_service::api::proto::sc::wm::v1::FILE_DESCRIPTOR_SET,
+        )
         .build_v1()?;
 
     info!("SC Warehouse Operations Service listening on {}", addr);
-    
+
     Server::builder()
         .add_service(WarehouseOperationsServiceServer::new(service))
         .add_service(reflection_service)

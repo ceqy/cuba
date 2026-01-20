@@ -11,10 +11,10 @@ pub mod infrastructure;
 pub use api::grpc_server::GlServiceImpl;
 pub use infrastructure::persistence::postgres_journal_repository::PostgresJournalRepository;
 
-use std::sync::Arc;
 use cuba_database::DbPool;
-use infrastructure::clients::CoaClient;
 use domain::services::AccountValidationService;
+use infrastructure::clients::CoaClient;
+use std::sync::Arc;
 
 /// Factory function to create and wire up the GL Service with all its dependencies.
 ///
@@ -40,17 +40,19 @@ pub async fn create_gl_service(
         match CoaClient::connect(&endpoint).await {
             Ok(coa_client) => {
                 tracing::info!("Connected to COA service at {}", endpoint);
-                let chart_code = std::env::var("CHART_OF_ACCOUNTS")
-                    .unwrap_or_else(|_| "CN01".to_string());
-                Some(Arc::new(AccountValidationService::new(coa_client, chart_code)))
-            }
+                let chart_code =
+                    std::env::var("CHART_OF_ACCOUNTS").unwrap_or_else(|_| "CN01".to_string());
+                Some(Arc::new(AccountValidationService::new(
+                    coa_client, chart_code,
+                )))
+            },
             Err(e) => {
                 tracing::warn!(
                     "Failed to connect to COA service: {}. Account validation will be skipped.",
                     e
                 );
                 None
-            }
+            },
         }
     } else {
         None

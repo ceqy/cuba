@@ -29,7 +29,7 @@ impl Default for DatabaseConfig {
 
 pub async fn init_pool(config: &DatabaseConfig) -> Result<DbPool> {
     info!("Initializing database connection pool...");
-    
+
     let pool = PgPoolOptions::new()
         .max_connections(config.max_connections)
         .min_connections(config.min_connections)
@@ -46,7 +46,10 @@ pub async fn init_pool(config: &DatabaseConfig) -> Result<DbPool> {
 /// Run database migrations
 pub async fn run_migrations(pool: &DbPool, migrator: &sqlx::migrate::Migrator) -> Result<()> {
     info!("Running database migrations...");
-    migrator.run(pool).await.context("Failed to run database migrations")?;
+    migrator
+        .run(pool)
+        .await
+        .context("Failed to run database migrations")?;
     info!("Database migrations completed successfully");
     Ok(())
 }
@@ -69,21 +72,19 @@ impl UnitOfWork for DbPool {
 pub async fn with_transaction<F, Fut, T>(pool: &DbPool, f: F) -> Result<T>
 where
     F: FnOnce(sqlx::Transaction<'static, sqlx::Postgres>) -> Fut + Send,
-    Fut: std::future::Future<Output = Result<(T, sqlx::Transaction<'static, sqlx::Postgres>)>> + Send,
+    Fut: std::future::Future<Output = Result<(T, sqlx::Transaction<'static, sqlx::Postgres>)>>
+        + Send,
 {
     let tx = pool.begin().await.context("Failed to start transaction")?;
-    
+
     match f(tx).await {
         Ok((result, tx)) => {
             tx.commit().await.context("Failed to commit transaction")?;
             Ok(result)
-        }
-        Err(e) => {
-            Err(e)
         },
+        Err(e) => Err(e),
     }
 }
-
 
 use std::marker::PhantomData;
 
@@ -103,21 +104,21 @@ impl<T> Repository<T> {
 }
 
 /// Macro to define a repository struct with common boilerplate.
-/// 
+///
 /// # Example
 /// ```ignore
 /// use cuba_database::define_repository;
-/// 
+///
 /// define_repository!(SupplierRepository);
 /// define_repository!(InvoiceRepository, OpenItemRepository);
 /// ```
-/// 
+///
 /// This generates:
 /// ```ignore
 /// pub struct SupplierRepository {
 ///     pool: sqlx::PgPool,
 /// }
-/// 
+///
 /// impl SupplierRepository {
 ///     pub fn new(pool: sqlx::PgPool) -> Self {
 ///         Self { pool }
@@ -135,12 +136,12 @@ macro_rules! define_repository {
             pub struct $name {
                 pool: sqlx::PgPool,
             }
-            
+
             impl $name {
                 pub fn new(pool: sqlx::PgPool) -> Self {
                     Self { pool }
                 }
-                
+
                 #[allow(dead_code)]
                 pub fn pool(&self) -> &sqlx::PgPool {
                     &self.pool

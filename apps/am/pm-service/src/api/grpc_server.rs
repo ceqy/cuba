@@ -1,8 +1,10 @@
-use tonic::{Request, Response, Status};
-use std::sync::Arc;
-use crate::application::commands::{CreateNotificationCommand, CreateOrderCommand, ConfirmOperationCommand};
+use crate::application::commands::{
+    ConfirmOperationCommand, CreateNotificationCommand, CreateOrderCommand,
+};
 use crate::application::handlers::MaintenanceHandler;
 use crate::infrastructure::repository::MaintenanceRepository;
+use std::sync::Arc;
+use tonic::{Request, Response, Status};
 
 use crate::api::proto::am::pm::v1 as pm_v1;
 use crate::api::proto::common::v1 as common_v1;
@@ -23,7 +25,6 @@ impl PmServiceImpl {
 
 #[tonic::async_trait]
 impl AssetMaintenanceService for PmServiceImpl {
-
     async fn create_maintenance_notification(
         &self,
         request: Request<CreateNotificationRequest>,
@@ -35,7 +36,10 @@ impl AssetMaintenanceService for PmServiceImpl {
             description: notif.description,
             equipment_number: notif.equipment_number,
         };
-        let num = self.handler.create_notification(cmd).await
+        let num = self
+            .handler
+            .create_notification(cmd)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
         Ok(Response::new(NotificationResponse {
             success: true,
@@ -55,7 +59,10 @@ impl AssetMaintenanceService for PmServiceImpl {
             equipment_number: req.equipment_number,
             maintenance_plant: req.planning_plant, // Simplified mapping
         };
-        let num = self.handler.create_order(cmd).await
+        let num = self
+            .handler
+            .create_order(cmd)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
         Ok(Response::new(MaintenanceOrderResponse {
             success: true,
@@ -70,7 +77,10 @@ impl AssetMaintenanceService for PmServiceImpl {
         request: Request<GetMaintenanceOrderRequest>,
     ) -> Result<Response<MaintenanceOrderDetail>, Status> {
         let req = request.into_inner();
-        let order = self.repo.find_order_by_number(&req.order_number).await
+        let order = self
+            .repo
+            .find_order_by_number(&req.order_number)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("Order not found"))?;
         let maint_plant = order.maintenance_plant.clone(); // Clone before move
@@ -88,25 +98,33 @@ impl AssetMaintenanceService for PmServiceImpl {
             system_status: order.system_status,
             user_status: "".to_string(),
             priority: order.priority,
-            basic_start_date: None, basic_finish_date: None,
-            scheduled_start_date: None, scheduled_finish_date: None,
-            actual_start_date: None, actual_finish_date: None,
+            basic_start_date: None,
+            basic_finish_date: None,
+            scheduled_start_date: None,
+            scheduled_finish_date: None,
+            actual_start_date: None,
+            actual_finish_date: None,
             currency: "CNY".to_string(),
-            estimated_total_cost: None, actual_total_cost: None,
-            operations: order.operations.into_iter().map(|op| MaintenanceOperation {
-                operation_number: op.operation_number,
-                sub_operation_number: "".to_string(),
-                control_key: "".to_string(),
-                work_center: op.work_center.unwrap_or_default(),
-                plant: maint_plant.clone(),
-                description: op.description.unwrap_or_default(),
-                long_description: "".to_string(),
-                planned_work_duration: op.planned_work_duration.to_string(),
-                actual_work_duration: op.actual_work_duration.to_string(),
-                work_unit: op.work_unit,
-                quantity: None,
-                system_status: common_v1::OperationStatus::Crtd as i32,
-            }).collect(),
+            estimated_total_cost: None,
+            actual_total_cost: None,
+            operations: order
+                .operations
+                .into_iter()
+                .map(|op| MaintenanceOperation {
+                    operation_number: op.operation_number,
+                    sub_operation_number: "".to_string(),
+                    control_key: "".to_string(),
+                    work_center: op.work_center.unwrap_or_default(),
+                    plant: maint_plant.clone(),
+                    description: op.description.unwrap_or_default(),
+                    long_description: "".to_string(),
+                    planned_work_duration: op.planned_work_duration.to_string(),
+                    actual_work_duration: op.actual_work_duration.to_string(),
+                    work_unit: op.work_unit,
+                    quantity: None,
+                    system_status: common_v1::OperationStatus::Crtd as i32,
+                })
+                .collect(),
             components: vec![],
         }))
     }
@@ -121,7 +139,10 @@ impl AssetMaintenanceService for PmServiceImpl {
             operation_number: req.operation_number,
             actual_duration: req.actual_work_duration.parse().unwrap_or_default(),
         };
-        let conf_num = self.handler.confirm_operation(cmd).await
+        let conf_num = self
+            .handler
+            .confirm_operation(cmd)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
         Ok(Response::new(ConfirmMaintenanceOperationResponse {
             success: true,
@@ -131,13 +152,58 @@ impl AssetMaintenanceService for PmServiceImpl {
     }
 
     // Stubs
-    async fn update_maintenance_notification(&self, _r: Request<UpdateNotificationRequest>) -> Result<Response<NotificationResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn release_maintenance_notification(&self, _r: Request<ReleaseNotificationRequest>) -> Result<Response<NotificationResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn list_maintenance_notifications(&self, _r: Request<ListNotificationsRequest>) -> Result<Response<ListNotificationsResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn update_maintenance_order(&self, _r: Request<UpdateMaintenanceOrderRequest>) -> Result<Response<MaintenanceOrderResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn release_maintenance_order(&self, _r: Request<ReleaseMaintenanceOrderRequest>) -> Result<Response<MaintenanceOrderResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn cancel_maintenance_order(&self, _r: Request<CancelMaintenanceOrderRequest>) -> Result<Response<MaintenanceOrderResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn complete_maintenance_order(&self, _r: Request<CompleteMaintenanceOrderRequest>) -> Result<Response<MaintenanceOrderResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn list_maintenance_orders(&self, _r: Request<ListOrdersRequest>) -> Result<Response<ListOrdersResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn get_order_components(&self, _r: Request<GetOrderComponentsRequest>) -> Result<Response<OrderComponentsResponse>, Status> { Err(Status::unimplemented("")) }
+    async fn update_maintenance_notification(
+        &self,
+        _r: Request<UpdateNotificationRequest>,
+    ) -> Result<Response<NotificationResponse>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn release_maintenance_notification(
+        &self,
+        _r: Request<ReleaseNotificationRequest>,
+    ) -> Result<Response<NotificationResponse>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn list_maintenance_notifications(
+        &self,
+        _r: Request<ListNotificationsRequest>,
+    ) -> Result<Response<ListNotificationsResponse>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn update_maintenance_order(
+        &self,
+        _r: Request<UpdateMaintenanceOrderRequest>,
+    ) -> Result<Response<MaintenanceOrderResponse>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn release_maintenance_order(
+        &self,
+        _r: Request<ReleaseMaintenanceOrderRequest>,
+    ) -> Result<Response<MaintenanceOrderResponse>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn cancel_maintenance_order(
+        &self,
+        _r: Request<CancelMaintenanceOrderRequest>,
+    ) -> Result<Response<MaintenanceOrderResponse>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn complete_maintenance_order(
+        &self,
+        _r: Request<CompleteMaintenanceOrderRequest>,
+    ) -> Result<Response<MaintenanceOrderResponse>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn list_maintenance_orders(
+        &self,
+        _r: Request<ListOrdersRequest>,
+    ) -> Result<Response<ListOrdersResponse>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn get_order_components(
+        &self,
+        _r: Request<GetOrderComponentsRequest>,
+    ) -> Result<Response<OrderComponentsResponse>, Status> {
+        Err(Status::unimplemented(""))
+    }
 }

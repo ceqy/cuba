@@ -1,5 +1,5 @@
+use chrono::{DateTime, NaiveDate, Utc};
 use rust_decimal::Decimal;
-use chrono::{NaiveDate, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -10,13 +10,13 @@ pub struct MaterialStock {
     pub storage_location: String,
     pub material: String,
     pub batch: String,
-    
+
     pub unrestricted_quantity: Decimal,
     pub quality_inspection_quantity: Decimal,
     pub blocked_quantity: Decimal,
-    
+
     pub base_unit: String,
-    
+
     pub last_movement_date: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -32,10 +32,10 @@ pub struct MaterialDocument {
     pub document_type: Option<String>,
     pub reference_document: Option<String>,
     pub header_text: Option<String>,
-    
+
     #[sqlx(skip)]
     pub items: Vec<MaterialDocumentItem>,
-    
+
     pub created_at: DateTime<Utc>,
 }
 

@@ -1,8 +1,8 @@
-use sqlx::PgPool;
-use crate::domain::{ServiceContract, BillingPlanItem};
+use crate::domain::{BillingPlanItem, ServiceContract};
 use anyhow::Result;
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
+use sqlx::PgPool;
 
 pub struct ContractRepository {
     pool: PgPool,
@@ -44,9 +44,12 @@ impl ContractRepository {
             .bind(contract_number)
             .fetch_optional(&self.pool).await?;
         if let Some(mut h) = h {
-            let items = sqlx::query_as::<_, BillingPlanItem>("SELECT * FROM billing_plan_items WHERE contract_id = $1 ORDER BY planned_date")
-                .bind(h.contract_id)
-                .fetch_all(&self.pool).await?;
+            let items = sqlx::query_as::<_, BillingPlanItem>(
+                "SELECT * FROM billing_plan_items WHERE contract_id = $1 ORDER BY planned_date",
+            )
+            .bind(h.contract_id)
+            .fetch_all(&self.pool)
+            .await?;
             h.billing_plan = items;
             Ok(Some(h))
         } else {

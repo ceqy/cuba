@@ -8,7 +8,8 @@ pub mod sc {
     pub mod im {
         pub mod v1 {
             tonic::include_proto!("sc.im.v1");
-            pub const FILE_DESCRIPTOR_SET: &[u8] = tonic::include_file_descriptor_set!("descriptor");
+            pub const FILE_DESCRIPTOR_SET: &[u8] =
+                tonic::include_file_descriptor_set!("descriptor");
         }
     }
 }

@@ -1,9 +1,9 @@
-use tonic::transport::Server;
-use tracing::info;
-use std::sync::Arc;
-use rbac_service::infrastructure::grpc::iam::rbac::v1::rbac_service_server::RbacServiceServer;
 use rbac_service::api::grpc_server::RBACServiceImpl;
 use rbac_service::infrastructure::PostgresRbacRepository;
+use rbac_service::infrastructure::grpc::iam::rbac::v1::rbac_service_server::RbacServiceServer;
+use std::sync::Arc;
+use tonic::transport::Server;
+use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -14,10 +14,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Infrastructure
     let rbac_repo = Arc::new(PostgresRbacRepository::new(pool.clone()));
-    
+
     // Service
     let rbac_service = RBACServiceImpl::new(rbac_repo.clone(), rbac_repo.clone());
-    
+
     // Reflection
     let descriptor = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));
     let reflection_service = tonic_reflection::server::Builder::configure()
@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_v1()?;
 
     info!("Server listening on {}", addr);
-    
+
     Server::builder()
         .add_service(reflection_service)
         .add_service(RbacServiceServer::new(rbac_service))

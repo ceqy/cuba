@@ -1,6 +1,6 @@
-use sqlx::PgPool;
 use crate::domain::PricingCondition;
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct PricingRepository {
     pool: PgPool,
@@ -28,7 +28,13 @@ impl PricingRepository {
         Ok(())
     }
 
-    pub async fn find_conditions(&self, material: &str, customer: Option<&str>, sales_org: &str, pricing_date: chrono::NaiveDate) -> Result<Vec<PricingCondition>> {
+    pub async fn find_conditions(
+        &self,
+        material: &str,
+        customer: Option<&str>,
+        sales_org: &str,
+        pricing_date: chrono::NaiveDate,
+    ) -> Result<Vec<PricingCondition>> {
         let conditions = sqlx::query_as::<_, PricingCondition>(
             "SELECT condition_id, condition_type, material, customer, sales_org, amount, COALESCE(currency, '') as currency, valid_from, valid_to, created_at FROM pricing_conditions WHERE (material = $1 OR material IS NULL) AND (customer = $2 OR customer IS NULL) AND sales_org = $3 AND (valid_from IS NULL OR valid_from <= $4) AND (valid_to IS NULL OR valid_to >= $4)"
         )

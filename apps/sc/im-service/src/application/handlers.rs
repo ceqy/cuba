@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use crate::application::commands::{GetStockOverviewQuery, PostStockMovementCommand};
 use crate::domain::{MaterialDocument, MaterialDocumentItem, MaterialStock};
 use crate::infrastructure::repository::InventoryRepository;
-use crate::application::commands::{PostStockMovementCommand, GetStockOverviewQuery};
 use anyhow::Result;
+use chrono::{Datelike, Utc};
+use std::sync::Arc;
 use uuid::Uuid;
-use chrono::{Utc, Datelike};
 
 pub struct PostStockMovementHandler {
     repo: Arc<InventoryRepository>,
@@ -78,6 +78,12 @@ impl GetStockOverviewHandler {
     }
 
     pub async fn handle(&self, query: GetStockOverviewQuery) -> Result<Vec<MaterialStock>> {
-        self.repo.get_stock(&query.material, &query.plant, query.storage_location.as_deref()).await
+        self.repo
+            .get_stock(
+                &query.material,
+                &query.plant,
+                query.storage_location.as_deref(),
+            )
+            .await
     }
 }

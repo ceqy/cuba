@@ -1,4 +1,4 @@
-use jsonwebtoken::{encode, decode, EncodingKey, DecodingKey, Header, Validation};
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -22,7 +22,13 @@ impl JwtService {
         Self { secret }
     }
 
-    pub fn generate_access_token(&self, user_id: &str, client_id: &str, tenant_id: &str, scope: &str) -> Result<String, anyhow::Error> {
+    pub fn generate_access_token(
+        &self,
+        user_id: &str,
+        client_id: &str,
+        tenant_id: &str,
+        scope: &str,
+    ) -> Result<String, anyhow::Error> {
         let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as usize;
         let expiration = now + 3600; // 1 hour
 
@@ -35,7 +41,11 @@ impl JwtService {
             tenant_id: tenant_id.to_owned(),
         };
 
-        let token = encode(&Header::default(), &claims, &EncodingKey::from_secret(self.secret.as_bytes()))?;
+        let token = encode(
+            &Header::default(),
+            &claims,
+            &EncodingKey::from_secret(self.secret.as_bytes()),
+        )?;
         Ok(token)
     }
 

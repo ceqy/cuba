@@ -1,10 +1,12 @@
-use std::sync::Arc;
+use crate::application::commands::{
+    AssignTechnicianCommand, CreateOrderCommand, UpdateStatusCommand,
+};
 use crate::domain::ServiceOrder;
 use crate::infrastructure::repository::ServiceOrderRepository;
-use crate::application::commands::{CreateOrderCommand, AssignTechnicianCommand, UpdateStatusCommand};
 use anyhow::Result;
-use uuid::Uuid;
 use chrono::Utc;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct ServiceHandler {
     repo: Arc<ServiceOrderRepository>,
@@ -34,10 +36,14 @@ impl ServiceHandler {
     }
 
     pub async fn assign_technician(&self, cmd: AssignTechnicianCommand) -> Result<()> {
-        self.repo.assign_technician(&cmd.order_number, &cmd.technician_id, cmd.scheduled_time).await
+        self.repo
+            .assign_technician(&cmd.order_number, &cmd.technician_id, cmd.scheduled_time)
+            .await
     }
 
     pub async fn update_status(&self, cmd: UpdateStatusCommand) -> Result<()> {
-        self.repo.update_status(&cmd.order_number, &cmd.new_status).await
+        self.repo
+            .update_status(&cmd.order_number, &cmd.new_status)
+            .await
     }
 }

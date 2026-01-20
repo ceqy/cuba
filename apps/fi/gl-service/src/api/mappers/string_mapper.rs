@@ -10,21 +10,13 @@ pub trait EmptyToOption {
 
 impl EmptyToOption for String {
     fn empty_to_option(self) -> Option<Self> {
-        if self.is_empty() {
-            None
-        } else {
-            Some(self)
-        }
+        if self.is_empty() { None } else { Some(self) }
     }
 }
 
 impl<'a> EmptyToOption for &'a str {
     fn empty_to_option(self) -> Option<Self> {
-        if self.is_empty() {
-            None
-        } else {
-            Some(self)
-        }
+        if self.is_empty() { None } else { Some(self) }
     }
 }
 
@@ -49,7 +41,10 @@ mod tests {
     #[test]
     fn test_empty_to_option_string() {
         assert_eq!("".to_string().empty_to_option(), None);
-        assert_eq!("test".to_string().empty_to_option(), Some("test".to_string()));
+        assert_eq!(
+            "test".to_string().empty_to_option(),
+            Some("test".to_string())
+        );
     }
 
     #[test]

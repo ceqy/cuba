@@ -27,8 +27,8 @@ pub fn line_item_from_proto(proto: &ProtoLineItem) -> Result<LineItemDTO, Status
             return Err(Status::invalid_argument(format!(
                 "Invalid debit_credit: {}",
                 proto.debit_credit_indicator
-            )))
-        }
+            )));
+        },
     };
 
     // 解析金额
@@ -69,21 +69,24 @@ pub fn line_item_from_proto(proto: &ProtoLineItem) -> Result<LineItemDTO, Status
         .map(payment_terms_from_proto)
         .transpose()?;
 
-    let invoice_reference = proto.invoice_reference.as_ref().map(|ir| InvoiceReferenceDTO {
-        reference_document_number: str_to_option(&ir.reference_document_number),
-        reference_fiscal_year: if ir.reference_fiscal_year == 0 {
-            None
-        } else {
-            Some(ir.reference_fiscal_year)
-        },
-        reference_line_item: if ir.reference_line_item == 0 {
-            None
-        } else {
-            Some(ir.reference_line_item)
-        },
-        reference_document_type: str_to_option(&ir.reference_document_type),
-        reference_company_code: str_to_option(&ir.reference_company_code),
-    });
+    let invoice_reference = proto
+        .invoice_reference
+        .as_ref()
+        .map(|ir| InvoiceReferenceDTO {
+            reference_document_number: str_to_option(&ir.reference_document_number),
+            reference_fiscal_year: if ir.reference_fiscal_year == 0 {
+                None
+            } else {
+                Some(ir.reference_fiscal_year)
+            },
+            reference_line_item: if ir.reference_line_item == 0 {
+                None
+            } else {
+                Some(ir.reference_line_item)
+            },
+            reference_document_type: str_to_option(&ir.reference_document_type),
+            reference_company_code: str_to_option(&ir.reference_company_code),
+        });
 
     let dunning_detail = proto.dunning_detail.as_ref().map(|dd| DunningDetailDTO {
         dunning_key: str_to_option(&dd.dunning_key),
@@ -136,7 +139,11 @@ pub fn line_item_from_proto(proto: &ProtoLineItem) -> Result<LineItemDTO, Status
         text: str_to_option(&proto.text),
         special_gl_indicator,
         ledger: str_to_option(&proto.ledger),
-        ledger_type: if proto.ledger_type == 0 { None } else { Some(proto.ledger_type) },
+        ledger_type: if proto.ledger_type == 0 {
+            None
+        } else {
+            Some(proto.ledger_type)
+        },
         ledger_amount,
         financial_area: str_to_option(&proto.financial_area),
         business_area: str_to_option(&proto.business_area),
@@ -144,7 +151,16 @@ pub fn line_item_from_proto(proto: &ProtoLineItem) -> Result<LineItemDTO, Status
         account_assignment: str_to_option(&proto.account_assignment),
         business_partner: str_to_option(&proto.business_partner),
         business_partner_type,
-        maturity_date: proto_to_naive_date_opt(proto.payment_terms_detail.as_ref().and_then(|pt| pt.baseline_date.as_ref()).or(proto.payment_execution.as_ref().and_then(|pe| pe.payment_baseline_date.as_ref()))),
+        maturity_date: proto_to_naive_date_opt(
+            proto
+                .payment_terms_detail
+                .as_ref()
+                .and_then(|pt| pt.baseline_date.as_ref())
+                .or(proto
+                    .payment_execution
+                    .as_ref()
+                    .and_then(|pe| pe.payment_baseline_date.as_ref())),
+        ),
         payment_execution,
         payment_terms_detail,
         invoice_reference,
@@ -164,13 +180,16 @@ pub fn line_item_from_proto(proto: &ProtoLineItem) -> Result<LineItemDTO, Status
 /// LineItem: Domain → Proto
 /// 用于 get_journal_entry 和 query_journal_entries
 pub fn line_item_to_proto(domain: &LineItem, currency_code: &str) -> ProtoLineItem {
-    let invoice_reference = domain.invoice_reference.as_ref().map(|ir| ProtoInvoiceReference {
-        reference_document_number: ir.reference_document_number.clone().unwrap_or_default(),
-        reference_fiscal_year: ir.reference_fiscal_year.unwrap_or(0),
-        reference_line_item: ir.reference_line_item.unwrap_or(0),
-        reference_document_type: ir.reference_document_type.clone().unwrap_or_default(),
-        reference_company_code: ir.reference_company_code.clone().unwrap_or_default(),
-    });
+    let invoice_reference = domain
+        .invoice_reference
+        .as_ref()
+        .map(|ir| ProtoInvoiceReference {
+            reference_document_number: ir.reference_document_number.clone().unwrap_or_default(),
+            reference_fiscal_year: ir.reference_fiscal_year.unwrap_or(0),
+            reference_line_item: ir.reference_line_item.unwrap_or(0),
+            reference_document_type: ir.reference_document_type.clone().unwrap_or_default(),
+            reference_company_code: ir.reference_company_code.clone().unwrap_or_default(),
+        });
 
     let dunning_detail = domain.dunning_detail.as_ref().map(|dd| ProtoDunningDetail {
         dunning_key: dd.dunning_key.clone().unwrap_or_default(),
@@ -275,13 +294,12 @@ pub fn line_item_to_proto(domain: &LineItem, currency_code: &str) -> ProtoLineIt
                 currency_code: domain.object_currency.clone().unwrap_or_default(),
             }
         }),
-        amount_in_profit_center_currency: domain
-            .amount_in_profit_center_currency
-            .as_ref()
-            .map(|amt| crate::infrastructure::grpc::common::v1::MonetaryValue {
+        amount_in_profit_center_currency: domain.amount_in_profit_center_currency.as_ref().map(
+            |amt| crate::infrastructure::grpc::common::v1::MonetaryValue {
                 value: amt.to_string(),
                 currency_code: domain.profit_center_currency.clone().unwrap_or_default(),
-            }),
+            },
+        ),
 
         // 科目分配字段
         account_assignment: domain.account_assignment.clone().unwrap_or_default(),
@@ -297,7 +315,7 @@ pub fn line_item_to_proto(domain: &LineItem, currency_code: &str) -> ProtoLineIt
             .map(|ptd| payment_terms_to_proto(ptd, currency_code)),
 
         // 发票参考
-        invoice_reference: invoice_reference,
+        invoice_reference,
         dunning_detail,
 
         // 内部交易详细信息

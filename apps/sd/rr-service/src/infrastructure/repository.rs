@@ -1,6 +1,6 @@
-use sqlx::PgPool;
-use crate::domain::{RevenueContract, PerformanceObligation, RevenuePostingDocument};
+use crate::domain::{PerformanceObligation, RevenueContract, RevenuePostingDocument};
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct RevenueRepository {
     pool: PgPool,

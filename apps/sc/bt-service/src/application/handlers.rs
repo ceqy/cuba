@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use crate::application::commands::{CreateBatchCommand, TraceCommand};
 use crate::domain::{Batch, BatchHistoryEvent};
 use crate::infrastructure::repository::BatchRepository;
-use crate::application::commands::{CreateBatchCommand, TraceCommand};
 use anyhow::Result;
-use uuid::Uuid;
 use chrono::Utc;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct BatchHandler {
     repo: Arc<BatchRepository>,
@@ -31,7 +31,7 @@ impl BatchHandler {
             created_at: Utc::now(),
         };
         self.repo.save(&b).await?;
-        
+
         // Log creation event
         let event = BatchHistoryEvent {
             event_id: Uuid::new_v4(),
@@ -44,7 +44,7 @@ impl BatchHandler {
             document_type: None,
         };
         self.repo.add_history(&event).await?;
-        
+
         Ok(batch_number)
     }
 

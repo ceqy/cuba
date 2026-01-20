@@ -7,8 +7,10 @@
 //! - SO 销售订单审批
 //! - 其他需要状态追踪的业务单据
 
-mod status_history;
 mod repository;
+mod status_history;
 
+pub use repository::{
+    PgStatusHistoryRepository, RepositoryError, StatusHistoryRepository, create_table_sql,
+};
 pub use status_history::{ActionType, StandardAction, StatusHistory, StatusHistoryBuilder};
-pub use repository::{PgStatusHistoryRepository, RepositoryError, StatusHistoryRepository, create_table_sql};

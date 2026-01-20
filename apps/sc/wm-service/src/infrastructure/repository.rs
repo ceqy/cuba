@@ -1,6 +1,6 @@
-use sqlx::PgPool;
 use crate::domain::{TransferOrder, TransferOrderItem};
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct TransferOrderRepository {
     pool: PgPool,
@@ -53,9 +53,12 @@ impl TransferOrderRepository {
             .bind(to_num)
             .fetch_optional(&self.pool).await?;
         if let Some(mut h) = h {
-            let items = sqlx::query_as::<_, TransferOrderItem>("SELECT * FROM transfer_order_items WHERE to_id = $1 ORDER BY item_number")
-                .bind(h.to_id)
-                .fetch_all(&self.pool).await?;
+            let items = sqlx::query_as::<_, TransferOrderItem>(
+                "SELECT * FROM transfer_order_items WHERE to_id = $1 ORDER BY item_number",
+            )
+            .bind(h.to_id)
+            .fetch_all(&self.pool)
+            .await?;
             h.items = items;
             Ok(Some(h))
         } else {
@@ -66,7 +69,8 @@ impl TransferOrderRepository {
     pub async fn confirm_order(&self, to_id: uuid::Uuid) -> Result<()> {
         sqlx::query("UPDATE transfer_orders SET status = 'CONFIRMED' WHERE to_id = $1")
             .bind(to_id)
-            .execute(&self.pool).await?;
+            .execute(&self.pool)
+            .await?;
         sqlx::query("UPDATE transfer_order_items SET confirmed = true, actual_quantity = target_quantity WHERE to_id = $1")
             .bind(to_id)
             .execute(&self.pool).await?;

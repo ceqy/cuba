@@ -1,5 +1,5 @@
-use crate::domain::{Role, Permission};
-use crate::domain::repositories::{RoleRepository, PermissionRepository};
+use crate::domain::repositories::{PermissionRepository, RoleRepository};
+use crate::domain::{Permission, Role};
 use async_trait::async_trait;
 use cuba_database::DbPool;
 use sqlx::Row;
@@ -87,12 +87,12 @@ impl RoleRepository for PostgresRbacRepository {
                 WHERE r.parent_id IS NOT NULL
             )
             SELECT r.* FROM roles r 
-            JOIN role_hierarchy rh ON r.id = rh.role_id"
+            JOIN role_hierarchy rh ON r.id = rh.role_id",
         )
         .bind(user_id)
         .fetch_all(&self.pool)
         .await?;
-        
+
         let mut roles = Vec::new();
         for row in rows {
             roles.push(Role {
@@ -108,7 +108,11 @@ impl RoleRepository for PostgresRbacRepository {
         Ok(roles)
     }
 
-    async fn grant_permissions(&self, role_id: &str, permission_ids: &[String]) -> anyhow::Result<()> {
+    async fn grant_permissions(
+        &self,
+        role_id: &str,
+        permission_ids: &[String],
+    ) -> anyhow::Result<()> {
         for perm_id in permission_ids {
             sqlx::query("INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
                 .bind(role_id)
@@ -120,11 +124,13 @@ impl RoleRepository for PostgresRbacRepository {
     }
 
     async fn assign_to_user(&self, user_id: &str, role_id: &str) -> Result<(), anyhow::Error> {
-        sqlx::query("INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
-            .bind(user_id)
-            .bind(role_id)
-            .execute(&self.pool)
-            .await?;
+        sqlx::query(
+            "INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+        )
+        .bind(user_id)
+        .bind(role_id)
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 
@@ -169,7 +175,7 @@ impl PermissionRepository for PostgresRbacRepository {
             )
             SELECT DISTINCT p.* FROM permissions p 
             JOIN role_permissions rp ON p.id = rp.permission_id 
-            JOIN role_hierarchy rh ON rp.role_id = rh.role_id"
+            JOIN role_hierarchy rh ON rp.role_id = rh.role_id",
         )
         .bind(user_id)
         .fetch_all(&self.pool)

@@ -1,5 +1,5 @@
-use async_trait::async_trait;
 use crate::domain::AggregateRoot;
+use async_trait::async_trait;
 
 #[async_trait]
 pub trait Repository<T: AggregateRoot>: Send + Sync {

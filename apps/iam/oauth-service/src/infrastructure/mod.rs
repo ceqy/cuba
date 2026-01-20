@@ -3,4 +3,4 @@ pub mod persistence;
 pub mod services;
 
 pub use persistence::PostgresOAuthRepository;
-pub use services::{JwtService, CryptoService, ClientSecretService};
+pub use services::{ClientSecretService, CryptoService, JwtService};

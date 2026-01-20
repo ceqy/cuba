@@ -7,22 +7,22 @@ use uuid::Uuid;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "account_nature", rename_all = "UPPERCASE")]
 pub enum AccountNature {
-    Asset,        // 资产
-    Liability,    // 负债
-    Equity,       // 权益
-    Revenue,      // 收入
-    Expense,      // 费用
-    ProfitLoss,   // 损益
+    Asset,      // 资产
+    Liability,  // 负债
+    Equity,     // 权益
+    Revenue,    // 收入
+    Expense,    // 费用
+    ProfitLoss, // 损益
 }
 
 /// 科目状态
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "account_status", rename_all = "UPPERCASE")]
 pub enum AccountStatus {
-    Active,              // 激活
-    Inactive,            // 停用
-    Blocked,             // 冻结
-    MarkedForDeletion,   // 标记为删除
+    Active,            // 激活
+    Inactive,          // 停用
+    Blocked,           // 冻结
+    MarkedForDeletion, // 标记为删除
 }
 
 /// 余额方向
@@ -30,9 +30,9 @@ pub enum AccountStatus {
 #[sqlx(type_name = "balance_indicator", rename_all = "UPPERCASE")]
 pub enum BalanceIndicator {
     #[sqlx(rename = "D")]
-    Debit,   // 借方
+    Debit, // 借方
     #[sqlx(rename = "C")]
-    Credit,  // 贷方
+    Credit, // 贷方
 }
 
 /// 会计科目聚合根

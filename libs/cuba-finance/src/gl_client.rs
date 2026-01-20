@@ -3,11 +3,11 @@
 //! Shared GL Client for all FI services (AP, AR, CO, TR) to create journal entries.
 //! This eliminates code duplication and ensures consistent GL integration across services.
 
-use tonic::transport::Channel;
+use chrono::{Datelike, NaiveDate};
 use prost_types::Timestamp;
-use chrono::{NaiveDate, Datelike};
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tonic::transport::Channel;
 
 // Import generated GL proto types
 pub mod proto {
@@ -25,8 +25,8 @@ pub mod proto {
     }
 }
 
-use proto::fi::gl::v1 as gl_v1;
 use gl_v1::gl_journal_entry_service_client::GlJournalEntryServiceClient;
+use proto::fi::gl::v1 as gl_v1;
 
 /// GL Service Client wrapper
 pub struct GlClient {

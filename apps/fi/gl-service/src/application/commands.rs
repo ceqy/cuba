@@ -25,16 +25,16 @@ pub struct LineItemDTO {
     pub business_partner_type: Option<String>, // 业务伙伴类型: CUSTOMER/VENDOR
     pub maturity_date: Option<NaiveDate>,     // FAEDT: 到期日
     pub invoice_reference: Option<InvoiceReferenceDTO>, // 发票参考
-    pub dunning_detail: Option<DunningDetailDTO>,       // 催款详细信息
-    pub transaction_type: Option<String>,               // VRGNG 业务交易类型
-    pub reference_transaction_type: Option<String>,     // AWTYP 参考交易类型
-    pub trading_partner_company: Option<String>,        // VBUND 交易伙伴公司
-    pub amount_in_object_currency: Option<Decimal>,     // OSL 对象货币金额
-    pub object_currency: Option<String>,                // 对象货币代码
+    pub dunning_detail: Option<DunningDetailDTO>, // 催款详细信息
+    pub transaction_type: Option<String>,     // VRGNG 业务交易类型
+    pub reference_transaction_type: Option<String>, // AWTYP 参考交易类型
+    pub trading_partner_company: Option<String>, // VBUND 交易伙伴公司
+    pub amount_in_object_currency: Option<Decimal>, // OSL 对象货币金额
+    pub object_currency: Option<String>,      // 对象货币代码
     pub amount_in_profit_center_currency: Option<Decimal>, // VSL 利润中心货币金额
-    pub profit_center_currency: Option<String>,         // 利润中心货币代码
-    pub amount_in_group_currency: Option<Decimal>,      // 集团货币金额
-    pub group_currency: Option<String>,                 // 集团货币代码
+    pub profit_center_currency: Option<String>, // 利润中心货币代码
+    pub amount_in_group_currency: Option<Decimal>, // 集团货币金额
+    pub group_currency: Option<String>,       // 集团货币代码
 }
 
 /// 发票参考 DTO

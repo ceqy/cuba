@@ -1,11 +1,11 @@
-use tonic::{Request, Response, Status};
-use std::sync::Arc;
 use crate::application::commands::{AssignTechnicianCommand, UpdateStatusCommand};
 use crate::application::handlers::ServiceHandler;
 use crate::infrastructure::repository::ServiceOrderRepository;
+use std::sync::Arc;
+use tonic::{Request, Response, Status};
 
-use crate::api::proto::cs::fd::v1 as fd_v1;
 use crate::api::proto::common::v1 as common_v1;
+use crate::api::proto::cs::fd::v1 as fd_v1;
 
 use fd_v1::field_service_dispatch_service_server::FieldServiceDispatchService;
 use fd_v1::*;
@@ -23,13 +23,15 @@ impl FdServiceImpl {
 
 #[tonic::async_trait]
 impl FieldServiceDispatchService for FdServiceImpl {
-
     async fn get_service_order(
         &self,
         request: Request<GetServiceOrderRequest>,
     ) -> Result<Response<ServiceOrderDetail>, Status> {
         let req = request.into_inner();
-        let order = self.repo.find_by_number(&req.order_number).await
+        let order = self
+            .repo
+            .find_by_number(&req.order_number)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?
             .ok_or_else(|| Status::not_found("Order not found"))?;
         Ok(Response::new(ServiceOrderDetail {
@@ -55,7 +57,9 @@ impl FieldServiceDispatchService for FdServiceImpl {
             technician_id: req.technician_id,
             scheduled_time: chrono::Utc::now(), // Simplified
         };
-        self.handler.assign_technician(cmd).await
+        self.handler
+            .assign_technician(cmd)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
         Ok(Response::new(AssignTechnicianResponse {
             success: true,
@@ -80,7 +84,9 @@ impl FieldServiceDispatchService for FdServiceImpl {
             order_number: req.order_number,
             new_status: status_str.to_string(),
         };
-        self.handler.update_status(cmd).await
+        self.handler
+            .update_status(cmd)
+            .await
             .map_err(|e| Status::internal(e.to_string()))?;
         Ok(Response::new(UpdateServiceOrderStatusResponse {
             success: true,
@@ -89,7 +95,22 @@ impl FieldServiceDispatchService for FdServiceImpl {
     }
 
     // Stubs
-    async fn list_service_orders(&self, _r: Request<ListServiceOrdersRequest>) -> Result<Response<ListServiceOrdersResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn cancel_assignment(&self, _r: Request<CancelAssignmentRequest>) -> Result<Response<AssignTechnicianResponse>, Status> { Err(Status::unimplemented("")) }
-    async fn reschedule_order(&self, _r: Request<RescheduleOrderRequest>) -> Result<Response<ServiceOrderDetail>, Status> { Err(Status::unimplemented("")) }
+    async fn list_service_orders(
+        &self,
+        _r: Request<ListServiceOrdersRequest>,
+    ) -> Result<Response<ListServiceOrdersResponse>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn cancel_assignment(
+        &self,
+        _r: Request<CancelAssignmentRequest>,
+    ) -> Result<Response<AssignTechnicianResponse>, Status> {
+        Err(Status::unimplemented(""))
+    }
+    async fn reschedule_order(
+        &self,
+        _r: Request<RescheduleOrderRequest>,
+    ) -> Result<Response<ServiceOrderDetail>, Status> {
+        Err(Status::unimplemented(""))
+    }
 }

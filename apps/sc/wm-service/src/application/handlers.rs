@@ -1,11 +1,11 @@
-use std::sync::Arc;
+use crate::application::commands::{ConfirmTOCommand, CreateTOCommand};
 use crate::domain::{TransferOrder, TransferOrderItem};
 use crate::infrastructure::repository::TransferOrderRepository;
-use crate::application::commands::{CreateTOCommand, ConfirmTOCommand};
 use anyhow::{Result, anyhow};
-use uuid::Uuid;
 use chrono::Utc;
 use rust_decimal::Decimal;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct WarehouseHandler {
     repo: Arc<TransferOrderRepository>,
@@ -50,7 +50,10 @@ impl WarehouseHandler {
     }
 
     pub async fn confirm_transfer_order(&self, cmd: ConfirmTOCommand) -> Result<()> {
-        let to = self.repo.find_by_number(&cmd.warehouse_number, &cmd.to_number).await?
+        let to = self
+            .repo
+            .find_by_number(&cmd.warehouse_number, &cmd.to_number)
+            .await?
             .ok_or_else(|| anyhow!("TO not found"))?;
         self.repo.confirm_order(to.to_id).await
     }

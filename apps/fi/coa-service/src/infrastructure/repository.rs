@@ -14,13 +14,34 @@ pub trait GlAccountRepository: Send + Sync {
     async fn create(&self, account: &GlAccount) -> anyhow::Result<()>;
     async fn update(&self, account: &GlAccount) -> anyhow::Result<()>;
     async fn delete(&self, chart_code: &str, account_code: &str) -> anyhow::Result<()>;
-    async fn find_by_code(&self, chart_code: &str, account_code: &str) -> anyhow::Result<Option<GlAccount>>;
+    async fn find_by_code(
+        &self,
+        chart_code: &str,
+        account_code: &str,
+    ) -> anyhow::Result<Option<GlAccount>>;
     async fn find_all(&self, chart_code: &str) -> anyhow::Result<Vec<GlAccount>>;
-    async fn find_by_nature(&self, chart_code: &str, nature: &AccountNature) -> anyhow::Result<Vec<GlAccount>>;
+    async fn find_by_nature(
+        &self,
+        chart_code: &str,
+        nature: &AccountNature,
+    ) -> anyhow::Result<Vec<GlAccount>>;
     async fn find_postable_accounts(&self, chart_code: &str) -> anyhow::Result<Vec<GlAccount>>;
-    async fn validate_account(&self, chart_code: &str, account_code: &str, posting_date: NaiveDate) -> anyhow::Result<AccountValidationResult>;
-    async fn find_children(&self, chart_code: &str, parent_account: &str) -> anyhow::Result<Vec<GlAccount>>;
-    async fn find_ancestors(&self, chart_code: &str, account_code: &str) -> anyhow::Result<Vec<GlAccount>>;
+    async fn validate_account(
+        &self,
+        chart_code: &str,
+        account_code: &str,
+        posting_date: NaiveDate,
+    ) -> anyhow::Result<AccountValidationResult>;
+    async fn find_children(
+        &self,
+        chart_code: &str,
+        parent_account: &str,
+    ) -> anyhow::Result<Vec<GlAccount>>;
+    async fn find_ancestors(
+        &self,
+        chart_code: &str,
+        account_code: &str,
+    ) -> anyhow::Result<Vec<GlAccount>>;
     async fn batch_create(&self, accounts: &[GlAccount]) -> anyhow::Result<Vec<String>>;
 }
 
@@ -129,7 +150,11 @@ impl GlAccountRepository for PgGlAccountRepository {
         Ok(())
     }
 
-    async fn find_by_code(&self, chart_code: &str, account_code: &str) -> anyhow::Result<Option<GlAccount>> {
+    async fn find_by_code(
+        &self,
+        chart_code: &str,
+        account_code: &str,
+    ) -> anyhow::Result<Option<GlAccount>> {
         let row = sqlx::query_as::<_, GlAccount>(
             r#"
             SELECT * FROM gl_accounts
@@ -155,7 +180,11 @@ impl GlAccountRepository for PgGlAccountRepository {
         Ok(rows)
     }
 
-    async fn find_by_nature(&self, chart_code: &str, nature: &AccountNature) -> anyhow::Result<Vec<GlAccount>> {
+    async fn find_by_nature(
+        &self,
+        chart_code: &str,
+        nature: &AccountNature,
+    ) -> anyhow::Result<Vec<GlAccount>> {
         let nature_str = format!("{:?}", nature).to_uppercase();
         let rows = sqlx::query_as::<_, GlAccount>(
             "SELECT * FROM gl_accounts WHERE chart_code = $1 AND account_nature = $2",
@@ -169,60 +198,76 @@ impl GlAccountRepository for PgGlAccountRepository {
     }
 
     async fn find_postable_accounts(&self, chart_code: &str) -> anyhow::Result<Vec<GlAccount>> {
-        let rows = sqlx::query(
-            "SELECT * FROM vw_postable_accounts WHERE chart_code = $1",
-        )
-        .bind(chart_code)
-        .fetch_all(&self.pool)
-        .await?;
+        let rows = sqlx::query("SELECT * FROM vw_postable_accounts WHERE chart_code = $1")
+            .bind(chart_code)
+            .fetch_all(&self.pool)
+            .await?;
 
         use sqlx::Row;
-        Ok(rows.into_iter().map(|r| GlAccount {
-            id: Uuid::new_v4(), // 视图没有ID，临时生成
-            chart_code: r.get::<Option<String>, _>("chart_code").unwrap_or_default(),
-            account_code: r.get::<Option<String>, _>("account_code").unwrap_or_default(),
-            account_name: r.get::<Option<String>, _>("account_name").unwrap_or_default(),
-            account_name_long: None,
-            search_key: None,
-            account_nature: r.get::<Option<String>, _>("account_nature")
-                .map(|s| parse_account_nature(&s))
-                .unwrap_or(AccountNature::Asset),
-            account_category: String::new(),
-            account_group: None,
-            account_level: r.get::<Option<i32>, _>("account_level").unwrap_or(1),
-            parent_account: r.get::<Option<String>, _>("parent_account"),
-            is_leaf_account: true,
-            full_path: None,
-            depth: 0,
-            is_postable: true,
-            is_cost_element: false,
-            line_item_display: true,
-            open_item_management: false,
-            balance_indicator: r.get::<Option<String>, _>("balance_indicator")
-                .map(|s| if s == "C" {
-                    BalanceIndicator::Credit
-                } else {
-                    BalanceIndicator::Debit
-                }).unwrap_or(BalanceIndicator::Debit),
-            currency: None,
-            only_local_currency: true,
-            exchange_rate_diff: false,
-            tax_relevant: false,
-            tax_category: None,
-            status: r.get::<Option<String>, _>("status")
-                .map(|s| parse_account_status(&s))
-                .unwrap_or(AccountStatus::Active),
-            valid_from: None,
-            valid_to: None,
-            created_by: None,
-            created_at: chrono::Utc::now(),
-            changed_by: None,
-            changed_at: None,
-            tenant_id: None,
-        }).collect())
+        Ok(rows
+            .into_iter()
+            .map(|r| GlAccount {
+                id: Uuid::new_v4(), // 视图没有ID，临时生成
+                chart_code: r.get::<Option<String>, _>("chart_code").unwrap_or_default(),
+                account_code: r
+                    .get::<Option<String>, _>("account_code")
+                    .unwrap_or_default(),
+                account_name: r
+                    .get::<Option<String>, _>("account_name")
+                    .unwrap_or_default(),
+                account_name_long: None,
+                search_key: None,
+                account_nature: r
+                    .get::<Option<String>, _>("account_nature")
+                    .map(|s| parse_account_nature(&s))
+                    .unwrap_or(AccountNature::Asset),
+                account_category: String::new(),
+                account_group: None,
+                account_level: r.get::<Option<i32>, _>("account_level").unwrap_or(1),
+                parent_account: r.get::<Option<String>, _>("parent_account"),
+                is_leaf_account: true,
+                full_path: None,
+                depth: 0,
+                is_postable: true,
+                is_cost_element: false,
+                line_item_display: true,
+                open_item_management: false,
+                balance_indicator: r
+                    .get::<Option<String>, _>("balance_indicator")
+                    .map(|s| {
+                        if s == "C" {
+                            BalanceIndicator::Credit
+                        } else {
+                            BalanceIndicator::Debit
+                        }
+                    })
+                    .unwrap_or(BalanceIndicator::Debit),
+                currency: None,
+                only_local_currency: true,
+                exchange_rate_diff: false,
+                tax_relevant: false,
+                tax_category: None,
+                status: r
+                    .get::<Option<String>, _>("status")
+                    .map(|s| parse_account_status(&s))
+                    .unwrap_or(AccountStatus::Active),
+                valid_from: None,
+                valid_to: None,
+                created_by: None,
+                created_at: chrono::Utc::now(),
+                changed_by: None,
+                changed_at: None,
+                tenant_id: None,
+            })
+            .collect())
     }
 
-    async fn validate_account(&self, chart_code: &str, account_code: &str, posting_date: NaiveDate) -> anyhow::Result<AccountValidationResult> {
+    async fn validate_account(
+        &self,
+        chart_code: &str,
+        account_code: &str,
+        posting_date: NaiveDate,
+    ) -> anyhow::Result<AccountValidationResult> {
         let result = sqlx::query("SELECT * FROM fn_validate_account($1, $2, $3)")
             .bind(chart_code)
             .bind(account_code)
@@ -233,14 +278,20 @@ impl GlAccountRepository for PgGlAccountRepository {
         use sqlx::Row;
         Ok(AccountValidationResult {
             is_valid: result.get::<Option<bool>, _>("is_valid").unwrap_or(false),
-            exists: result.get::<Option<bool>, _>("exists").unwrap_or(false),
+            exists: result.get::<Option<bool>, _>("account_exists").unwrap_or(false),
             is_active: result.get::<Option<bool>, _>("is_active").unwrap_or(false),
-            is_postable: result.get::<Option<bool>, _>("is_postable").unwrap_or(false),
+            is_postable: result
+                .get::<Option<bool>, _>("is_postable")
+                .unwrap_or(false),
             error_message: result.get::<Option<String>, _>("error_message"),
         })
     }
 
-    async fn find_children(&self, chart_code: &str, parent_account: &str) -> anyhow::Result<Vec<GlAccount>> {
+    async fn find_children(
+        &self,
+        chart_code: &str,
+        parent_account: &str,
+    ) -> anyhow::Result<Vec<GlAccount>> {
         let rows = sqlx::query_as::<_, GlAccount>(
             "SELECT * FROM gl_accounts WHERE chart_code = $1 AND parent_account = $2 ORDER BY account_code",
         )
@@ -252,7 +303,11 @@ impl GlAccountRepository for PgGlAccountRepository {
         Ok(rows)
     }
 
-    async fn find_ancestors(&self, chart_code: &str, account_code: &str) -> anyhow::Result<Vec<GlAccount>> {
+    async fn find_ancestors(
+        &self,
+        chart_code: &str,
+        account_code: &str,
+    ) -> anyhow::Result<Vec<GlAccount>> {
         // 递归查询祖先科目
         let rows = sqlx::query_as::<_, GlAccount>(
             r#"

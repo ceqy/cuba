@@ -1,11 +1,11 @@
-use std::sync::Arc;
-use crate::domain::{RevenueContract, PerformanceObligation, RevenuePostingDocument};
-use crate::infrastructure::repository::RevenueRepository;
 use crate::application::commands::{CreateContractCommand, RunPostingCommand};
+use crate::domain::{PerformanceObligation, RevenueContract, RevenuePostingDocument};
+use crate::infrastructure::repository::RevenueRepository;
 use anyhow::Result;
-use uuid::Uuid;
 use chrono::Utc;
 use rust_decimal::Decimal;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct RevenueHandler {
     repo: Arc<RevenueRepository>,
@@ -19,11 +19,11 @@ impl RevenueHandler {
     pub async fn create_contract(&self, cmd: CreateContractCommand) -> Result<String> {
         let contract_id = Uuid::new_v4();
         let contract_number = format!("RC{}", Utc::now().timestamp_subsec_micros());
-        
+
         // Create a default POB
         let pob_id = Uuid::new_v4();
         let pob_code = format!("POB-{}", Utc::now().timestamp_subsec_micros());
-        
+
         let c = RevenueContract {
             contract_id,
             contract_number: contract_number.clone(),
@@ -50,7 +50,7 @@ impl RevenueHandler {
 
     pub async fn run_posting(&self, cmd: RunPostingCommand) -> Result<(String, i32)> {
         let run_id = format!("RUN-{}", Utc::now().timestamp_subsec_micros());
-        
+
         // Simplified: Create one posting document
         let posting = RevenuePostingDocument {
             posting_id: Uuid::new_v4(),
@@ -64,7 +64,7 @@ impl RevenueHandler {
             created_at: Utc::now(),
         };
         self.repo.save_posting(&posting).await?;
-        
+
         Ok((run_id, 1))
     }
 }

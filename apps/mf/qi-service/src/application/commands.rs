@@ -1,12 +1,12 @@
-use serde::Deserialize;
 use rust_decimal::Decimal;
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateInspectionLotCommand {
     pub material: String,
     pub plant: String,
     pub quantity: Decimal,
-    pub origin: i32, 
+    pub origin: i32,
 }
 
 #[derive(Debug, Deserialize)]

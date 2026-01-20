@@ -1,6 +1,6 @@
-use serde::Deserialize;
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateBillingPlanCommand {

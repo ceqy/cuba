@@ -1,11 +1,11 @@
+use std::sync::Arc;
 use tonic::transport::Server;
 use tracing::info;
-use std::sync::Arc;
 
 use gs_service::api::grpc_server::GsServiceImpl;
 use gs_service::api::proto::am::gs::v1::geo_service_server::GeoServiceServer;
-use gs_service::infrastructure::repository::SettingsRepository;
 use gs_service::application::handlers::SettingsHandler;
+use gs_service::infrastructure::repository::SettingsRepository;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -22,7 +22,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let service = GsServiceImpl::new(handler, repo);
 
     let reflection_service = tonic_reflection::server::Builder::configure()
-        .register_encoded_file_descriptor_set(gs_service::api::proto::am::gs::v1::FILE_DESCRIPTOR_SET)
+        .register_encoded_file_descriptor_set(
+            gs_service::api::proto::am::gs::v1::FILE_DESCRIPTOR_SET,
+        )
         .build_v1()?;
 
     info!("AM Geo Service listening on {}", addr);

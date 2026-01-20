@@ -1,6 +1,6 @@
-use sqlx::PgPool;
-use crate::domain::{Survey, SurveyResponse, Recognition};
+use crate::domain::{Recognition, Survey, SurveyResponse};
 use anyhow::Result;
+use sqlx::PgPool;
 
 pub struct ExperienceRepository {
     pool: PgPool,
