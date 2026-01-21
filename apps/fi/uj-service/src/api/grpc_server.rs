@@ -13,12 +13,21 @@ use std::sync::Arc;
 use tonic::{Request, Response, Status};
 
 pub struct UniversalJournalServiceImpl {
-    repository: Arc<dyn UniversalJournalRepository>,
+    postgres_repo: Arc<dyn UniversalJournalRepository>,
+    // ClickHouse repo is optional because it might not be configured in all environments (e.g. tests)
+    // or we might want to toggle it.
+    clickhouse_repo: Option<Arc<dyn UniversalJournalRepository>>,
 }
 
 impl UniversalJournalServiceImpl {
-    pub fn new(repository: Arc<dyn UniversalJournalRepository>) -> Self {
-        Self { repository }
+    pub fn new(
+        postgres_repo: Arc<dyn UniversalJournalRepository>,
+        clickhouse_repo: Option<Arc<dyn UniversalJournalRepository>>,
+    ) -> Self {
+        Self {
+            postgres_repo,
+            clickhouse_repo,
+        }
     }
 
     /// 将 proto 过滤器转换为领域过滤器
@@ -139,8 +148,8 @@ impl UniversalJournalServiceImpl {
     }
 
     /// 将领域模型转换为 proto 模型
+    /// 将领域模型转换为 proto 模型
     fn convert_to_proto(
-        &self,
         entry: &UniversalJournalEntry,
     ) -> crate::infrastructure::grpc::proto::uj::v1::UniversalJournalEntry {
         use crate::infrastructure::grpc::proto::uj::v1;
@@ -382,13 +391,13 @@ impl UniversalJournalService for UniversalJournalServiceImpl {
 
         // 查询数据
         let (entries, pagination_response) = self
-            .repository
+            .postgres_repo
             .query(&filter, &pagination, &req.order_by)
             .await
             .map_err(|e| Status::internal(format!("Failed to query: {}", e)))?;
 
         // 转换为 proto 模型
-        let proto_entries: Vec<_> = entries.iter().map(|e| self.convert_to_proto(e)).collect();
+        let proto_entries: Vec<_> = entries.iter().map(|e| Self::convert_to_proto(e)).collect();
 
         Ok(Response::new(QueryUniversalJournalResponse {
             entries: proto_entries,
@@ -417,22 +426,41 @@ impl UniversalJournalService for UniversalJournalServiceImpl {
         let filter = self.convert_filter(req.filter);
 
         // 查询数据
-        let entries = self
-            .repository
-            .stream(&filter, &req.order_by)
+        // 优先使用 ClickHouse，如果未配置则回退到 Postgres
+        let repo = self
+            .clickhouse_repo
+            .as_ref()
+            .map(|r| r.as_ref())
+            .unwrap_or(self.postgres_repo.as_ref());
+
+        let params = crate::domain::streaming::StreamingParams::default();
+        let mut stream = repo
+            .stream_batched(&filter, &req.order_by, &params)
             .await
             .map_err(|e| Status::internal(format!("Failed to stream: {}", e)))?;
-
-        // 转换为 proto 模型
-        let proto_entries: Vec<_> = entries.iter().map(|e| self.convert_to_proto(e)).collect();
 
         // 创建流
         let (tx, rx) = tokio::sync::mpsc::channel(100);
 
         tokio::spawn(async move {
-            for proto_entry in proto_entries {
-                if tx.send(Ok(proto_entry)).await.is_err() {
-                    break;
+            use futures::StreamExt;
+            while let Some(batch_result) = stream.next().await {
+                match batch_result {
+                    Ok(batch) => {
+                        for entry in batch {
+                             let proto_entry = Self::convert_to_proto(&entry);
+                             if tx.send(Ok(proto_entry)).await.is_err() {
+                                 return; // Receiver dropped, stop streaming
+                             }
+                        }
+                    }
+                    Err(e) => {
+                        // Log error and stop? 
+                        // For streams, we might want to send an error status in the stream?
+                        // But ReceiverStream expects Result<Item, Status>.
+                        let _ = tx.send(Err(Status::internal(format!("Stream error: {}", e)))).await;
+                        break;
+                    },
                 }
             }
         });
@@ -450,7 +478,7 @@ impl UniversalJournalService for UniversalJournalServiceImpl {
         let req = request.into_inner();
 
         let entry = self
-            .repository
+            .postgres_repo
             .get_by_key(
                 &req.ledger,
                 &req.company_code,
@@ -462,7 +490,7 @@ impl UniversalJournalService for UniversalJournalServiceImpl {
             .map_err(|e| Status::internal(format!("Failed to get entry: {}", e)))?
             .ok_or_else(|| Status::not_found("Entry not found"))?;
 
-        Ok(Response::new(self.convert_to_proto(&entry)))
+        Ok(Response::new(Self::convert_to_proto(&entry)))
     }
 
     async fn aggregate_universal_journal(
@@ -481,8 +509,14 @@ impl UniversalJournalService for UniversalJournalServiceImpl {
         let measure = format!("{:?}", req.measure);
 
         // 查询聚合数据
-        let results = self
-            .repository
+        // 优先使用 ClickHouse，如果未配置则回退到 Postgres
+        let repo = self
+            .clickhouse_repo
+            .as_ref()
+            .map(|r| r.as_ref())
+            .unwrap_or(self.postgres_repo.as_ref());
+
+        let results = repo
             .aggregate(&filter, &dimensions, &measure, &req.measure_field)
             .await
             .map_err(|e| Status::internal(format!("Failed to aggregate: {}", e)))?;
@@ -571,7 +605,7 @@ mod tests {
 
     #[test]
     fn convert_filter_maps_source_modules() {
-        let svc = UniversalJournalServiceImpl::new(Arc::new(DummyRepo));
+        let svc = UniversalJournalServiceImpl::new(Arc::new(DummyRepo), None);
         let filter = crate::infrastructure::grpc::proto::uj::v1::UniversalJournalFilter {
             source_modules: vec![2, 3, 7, 8],
             ..Default::default()

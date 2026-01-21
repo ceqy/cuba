@@ -35,6 +35,8 @@ prost-types.workspace = true
 
 # Database
 sqlx.workspace = true
+clickhouse = { version = "0.11", features = ["time", "uuid"] }
+
 
 # Serialization
 serde.workspace = true

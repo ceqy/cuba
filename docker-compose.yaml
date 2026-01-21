@@ -141,5 +141,25 @@ services:
     volumes:
       - ./docs/openapi/generated:/usr/share/nginx/html/specs:ro
 
+  # ClickHouse OLAP Engine
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3
+    container_name: cuba-clickhouse
+    ports:
+      - "8123:8123"  # HTTP Port
+      - "9000:9000"  # Native Port
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "localhost:8123/ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
+  clickhouse_data:

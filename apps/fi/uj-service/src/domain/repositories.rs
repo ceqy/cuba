@@ -111,6 +111,15 @@ pub trait UniversalJournalRepository: Send + Sync {
         order_by: &[String],
     ) -> Result<Vec<UniversalJournalEntry>, RepositoryError>;
 
+    /// 分批流式查询 Universal Journal 条目
+    async fn stream_batched(
+        &self,
+        filter: &UniversalJournalFilter,
+        order_by: &[String],
+        params: &crate::domain::streaming::StreamingParams,
+    ) -> Result<std::pin::Pin<Box<dyn futures::Stream<Item = Result<Vec<UniversalJournalEntry>, RepositoryError>> + Send>>, RepositoryError>;
+
+
     /// 获取单条 Universal Journal 记录
     async fn get_by_key(
         &self,

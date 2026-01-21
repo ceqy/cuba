@@ -1648,6 +1648,23 @@ impl UniversalJournalRepository for PostgresUniversalJournalRepository {
         Ok(entries)
     }
 
+    async fn stream_batched(
+        &self,
+        filter: &UniversalJournalFilter,
+        order_by: &[String],
+        params: &crate::domain::streaming::StreamingParams,
+    ) -> Result<std::pin::Pin<Box<dyn futures::Stream<Item = Result<Vec<UniversalJournalEntry>, RepositoryError>> + Send>>, RepositoryError> {
+        let entries = self.stream(filter, order_by).await?;
+        let batch_size = params.batch_size.max(1);
+        
+        let chunks: Vec<Vec<UniversalJournalEntry>> = entries
+            .chunks(batch_size)
+            .map(|chunk| chunk.to_vec())
+            .collect();
+            
+        Ok(Box::pin(futures::stream::iter(chunks.into_iter().map(Ok))))
+    }
+
     async fn get_by_key(
         &self,
         ledger: &str,
